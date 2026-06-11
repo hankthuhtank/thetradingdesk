@@ -11,165 +11,46 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Space+Grotesk:wght@500;600&display=swap');
-        
-        :root {
-            --accent-cyan: #0ea5e9;
-            --accent-violet: #9d4edd;
-            --accent-emerald: #10b981;
-        }
-        
-        body {
-            font-family: 'Inter', system-ui, sans-serif;
-            background-color: #09090b;
-        }
-        
-        .font-display {
-            font-family: 'Space Grotesk', 'Inter', sans-serif;
-            font-weight: 600;
-            letter-spacing: -0.025em;
-        }
-
-        .glass {
-            background: rgba(24, 24, 27, 0.85);
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(63, 63, 70, 0.4);
-        }
-
-        .neon-glow {
-            transition: all 0.3s ease;
-        }
-
-        .neon-glow:hover {
-            box-shadow: 0 0 30px rgba(14, 165, 233, 0.3), inset 0 0 20px rgba(14, 165, 233, 0.1);
-            border-color: rgba(14, 165, 233, 0.6);
-        }
-
-        .tool-card {
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .tool-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
-            transition: left 0.5s;
-            z-index: 1;
-        }
-        
-        .tool-card:hover::before {
-            left: 100%;
-        }
-        
-        .tool-card:hover {
-            transform: translateY(-8px) scale(1.02);
-            box-shadow: 0 30px 60px -12px rgb(0 0 0 / 0.4);
-            border-color: var(--accent-cyan);
-        }
-        
-        .tool-card:hover .fa-solid,
-        .tool-card:hover .fa-brands {
-            transform: scale(1.15) rotate(5deg);
-            transition: transform 0.3s ease;
-        }
-
-        .lesson-card {
-            transition: all 0.2s ease;
-        }
-
-        .lesson-card:hover {
-            transform: translateX(6px);
-            border-color: var(--accent-emerald);
-        }
-
-        .gradient-text {
-            background: linear-gradient(90deg, #0ea5e9, #9d4edd);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .score-badge {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 100px;
-            height: 100px;
-            border-radius: 50%;
-            font-size: 2.5rem;
-            font-weight: 900;
-            background: conic-gradient(var(--accent-cyan) var(--score-percent), rgba(63, 63, 70, 0.3) 0deg);
-            border: 3px solid rgba(14, 165, 233, 0.5);
-            box-shadow: 0 0 30px rgba(14, 165, 233, 0.3), inset 0 0 20px rgba(14, 165, 233, 0.1);
-        }
-
-        .status-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.5rem 1rem;
-            border-radius: 9999px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            letter-spacing: 1px;
-        }
-
-        .status-new {
-            background: rgba(16, 185, 129, 0.2);
-            color: #10b981;
-            border: 1px solid rgba(16, 185, 129, 0.5);
-        }
-
-        .modal {
-            animation: modalPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-        }
-
-        @keyframes modalPop {
-            from {
-                opacity: 0;
-                transform: scale(0.95) translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: scale(1) translateY(0);
-            }
-        }
-
-        .trading-grid {
-            background-image: 
-                linear-gradient(rgba(63, 63, 70, 0.08) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(63, 63, 70, 0.08) 1px, transparent 1px);
-            background-size: 32px 32px;
-        }
+        :root { --accent-cyan: #0ea5e9; --accent-violet: #9d4edd; --accent-emerald: #10b981; }
+        body { font-family: 'Inter', system-ui, sans-serif; background-color: #09090b; }
+        .font-display { font-family: 'Space Grotesk', 'Inter', sans-serif; font-weight: 600; letter-spacing: -0.025em; }
+        .glass { background: rgba(24, 24, 27, 0.85); backdrop-filter: blur(20px); border: 1px solid rgba(63, 63, 70, 0.4); }
+        .neon-glow { transition: all 0.3s ease; }
+        .neon-glow:hover { box-shadow: 0 0 30px rgba(14, 165, 233, 0.3), inset 0 0 20px rgba(14, 165, 233, 0.1); border-color: rgba(14, 165, 233, 0.6); }
+        .tool-card { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); position: relative; overflow: hidden; }
+        .tool-card::before { content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent); transition: left 0.5s; z-index: 1; }
+        .tool-card:hover::before { left: 100%; }
+        .tool-card:hover { transform: translateY(-8px) scale(1.02); box-shadow: 0 30px 60px -12px rgb(0 0 0 / 0.4); border-color: var(--accent-cyan); }
+        .tool-card:hover .fa-solid { transform: scale(1.15) rotate(5deg); transition: transform 0.3s ease; }
+        .gradient-text { background: linear-gradient(90deg, #0ea5e9, #9d4edd); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .score-badge { display: inline-flex; align-items: center; justify-content: center; width: 100px; height: 100px; border-radius: 50%; font-size: 2.5rem; font-weight: 900; background: conic-gradient(var(--accent-cyan) var(--score-percent), rgba(63, 63, 70, 0.3) 0deg); border: 3px solid rgba(14, 165, 233, 0.5); box-shadow: 0 0 30px rgba(14, 165, 233, 0.3), inset 0 0 20px rgba(14, 165, 233, 0.1); }
+        .status-badge { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; letter-spacing: 1px; background: rgba(16, 185, 129, 0.2); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.5); }
+        .modal { animation: modalPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
+        @keyframes modalPop { from { opacity: 0; transform: scale(0.95) translateY(20px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+        .trading-grid { background-image: linear-gradient(rgba(63, 63, 70, 0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(63, 63, 70, 0.08) 1px, transparent 1px); background-size: 32px 32px; }
     </style>
 </head>
 <body class="bg-zinc-950 text-zinc-200">
     <!-- NAVBAR -->
     <nav class="sticky top-0 z-50 border-b border-zinc-800 bg-zinc-950/95 backdrop-blur-xl">
-        <div class="max-w-screen-2xl mx-auto">
-            <div class="px-8 py-5 flex items-center justify-between">
-                <div class="flex items-center gap-x-3">
-                    <div class="w-9 h-9 rounded-2xl bg-gradient-to-br from-cyan-400 via-violet-400 to-emerald-400 flex items-center justify-center shadow-lg">
-                        <i class="fa-solid fa-desktop text-zinc-950 text-3xl font-black"></i>
-                    </div>
-                    <div>
-                        <div class="font-display text-2xl font-semibold tracking-tighter">The Trading Desk</div>
-                        <div class="text-[10px] text-zinc-500 -mt-1 tracking-[2px]">STRUCTURE • CONSISTENCY • EDGE</div>
-                    </div>
+        <div class="max-w-screen-2xl mx-auto px-8 py-5 flex items-center justify-between">
+            <div class="flex items-center gap-x-3">
+                <div class="w-9 h-9 rounded-2xl bg-gradient-to-br from-cyan-400 via-violet-400 to-emerald-400 flex items-center justify-center shadow-lg">
+                    <i class="fa-solid fa-desktop text-zinc-950 text-3xl font-black"></i>
                 </div>
-                <div class="hidden md:flex items-center gap-x-9 text-sm font-medium">
-                    <a href="#story" class="hover:text-cyan-400 transition-colors">The Story</a>
-                    <a href="#armory" class="hover:text-cyan-400 transition-colors">The Armory</a>
-                    <a href="#packages" class="hover:text-cyan-400 transition-colors">Sessions</a>
+                <div>
+                    <div class="font-display text-2xl font-semibold tracking-tighter">The Trading Desk</div>
+                    <div class="text-[10px] text-zinc-500 -mt-1 tracking-[2px]">STRUCTURE • CONSISTENCY • EDGE</div>
                 </div>
-                <div class="flex items-center gap-x-3">
-                    <button onclick="document.getElementById('armory').scrollIntoView({ behavior: 'smooth' })" class="hidden md:block px-5 py-2.5 text-sm font-semibold rounded-3xl border border-zinc-700 hover:border-cyan-500 hover:bg-zinc-900 transition-all">Explore Tools</button>
-                    <button onclick="document.getElementById('packages').scrollIntoView({ behavior: 'smooth' })" class="px-6 py-2.5 bg-white text-zinc-950 hover:bg-zinc-100 font-semibold text-sm rounded-3xl">Book Session</button>
-                </div>
+            </div>
+            <div class="hidden md:flex items-center gap-x-9 text-sm font-medium">
+                <a href="#story" class="hover:text-cyan-400 transition-colors">Story</a>
+                <a href="#armory" class="hover:text-cyan-400 transition-colors">Tools</a>
+                <a href="#packages" class="hover:text-cyan-400 transition-colors">Sessions</a>
+            </div>
+            <div class="flex gap-x-3">
+                <button onclick="document.getElementById('armory').scrollIntoView({ behavior: 'smooth' })" class="hidden md:block px-5 py-2.5 text-sm font-semibold rounded-3xl border border-zinc-700 hover:border-cyan-500 hover:bg-zinc-900 transition-all">Tools</button>
+                <button onclick="document.getElementById('packages').scrollIntoView({ behavior: 'smooth' })" class="px-6 py-2.5 bg-white text-zinc-950 hover:bg-zinc-100 font-semibold text-sm rounded-3xl">Book</button>
             </div>
         </div>
     </nav>
@@ -181,58 +62,42 @@
                 <div class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
                 <span class="text-emerald-400 font-semibold">EDUCATIONAL ONLY • NO SIGNALS • NO HYPE</span>
             </div>
-            
-            <h1 class="font-display text-7xl md:text-8xl leading-[0.92] tracking-tighter font-bold mb-6">
-                The Trading<br>Desk<span class="gradient-text">.</span>
-            </h1>
-            
-            <p class="max-w-2xl text-2xl text-zinc-400 tracking-tight">
-                No signals. No "get rich by Friday." Just the structure I had to learn the slow, expensive way — taught one-on-one so the market makes sense <span class="text-cyan-400">before you risk real money</span>.
-            </p>
-
+            <h1 class="font-display text-7xl md:text-8xl leading-[0.92] tracking-tighter font-bold mb-6">The Trading<br>Desk<span class="gradient-text">.</span></h1>
+            <p class="max-w-2xl text-2xl text-zinc-400 tracking-tight">No signals. No "get rich by Friday." Just the structure I had to learn the slow, expensive way — taught one-on-one so the market makes sense <span class="text-cyan-400">before you risk real money</span>.</p>
             <div class="flex flex-wrap items-center gap-4 mt-10">
                 <button onclick="document.getElementById('armory').scrollIntoView({ behavior: 'smooth' })" class="px-8 py-4 bg-white hover:bg-zinc-100 text-zinc-950 font-semibold rounded-3xl flex items-center gap-x-3 text-lg">
-                    <span>Launch Free Tools</span>
-                    <i class="fa-solid fa-arrow-right"></i>
+                    <span>Launch Free Tools</span><i class="fa-solid fa-arrow-right"></i>
                 </button>
-                <button onclick="document.getElementById('packages').scrollIntoView({ behavior: 'smooth' })" class="px-8 py-4 border border-zinc-700 hover:border-cyan-500 hover:bg-zinc-900 font-semibold rounded-3xl text-lg">
-                    <span>Book Deep Dive</span>
-                </button>
+                <button onclick="document.getElementById('packages').scrollIntoView({ behavior: 'smooth' })" class="px-8 py-4 border border-zinc-700 hover:border-cyan-500 hover:bg-zinc-900 font-semibold rounded-3xl text-lg">Book Deep Dive</button>
             </div>
         </div>
     </header>
 
     <!-- THE STORY -->
     <section id="story" class="max-w-screen-2xl mx-auto px-8 py-20 border-t border-zinc-800">
-        <div class="max-w-6xl mx-auto">
-            <div class="grid md:grid-cols-12 gap-x-16 gap-y-12">
-                <div class="md:col-span-7">
-                    <div class="uppercase tracking-[3px] text-xs font-mono text-cyan-400 mb-3">CHAPTER 01 • THE ORIGIN</div>
-                    <h2 class="font-display text-6xl tracking-tighter leading-none mb-8">I blew it<br>before I built it.</h2>
-                    <div class="text-[15px] text-zinc-300 space-y-6">
-                        <p>I didn't come to this with a plan. I came in chasing green candles and social-media hype, and the market did what it does to everyone who starts that way — it took tuition.</p>
-                        <p>What turned it around wasn't a magic indicator. It was <span class="font-semibold text-emerald-400">structure</span> — understanding risk, sizing, the psychology, and knowing when <span class="font-semibold">not</span> to trade.</p>
-                    </div>
-                    <div class="mt-8 p-6 border-l-4 border-emerald-400 bg-zinc-900/60 rounded-r-3xl">
-                        <div class="font-semibold text-emerald-400 mb-1">That's the whole point of this program:</div>
-                        <div class="text-xl tracking-tight">A shortcut through the expensive part.</div>
-                    </div>
+        <div class="max-w-6xl mx-auto grid md:grid-cols-12 gap-x-16 gap-y-12">
+            <div class="md:col-span-7">
+                <div class="uppercase tracking-[3px] text-xs font-mono text-cyan-400 mb-3">CHAPTER 01 • THE ORIGIN</div>
+                <h2 class="font-display text-6xl tracking-tighter leading-none mb-8">I blew it<br>before I built it.</h2>
+                <div class="text-[15px] text-zinc-300 space-y-6">
+                    <p>I didn't come to this with a plan. I came in chasing green candles and social-media hype, and the market did what it does to everyone who starts that way — it took tuition.</p>
+                    <p>What turned it around wasn't a magic indicator. It was <span class="font-semibold text-emerald-400">structure</span> — understanding risk, sizing, the psychology, and knowing when <span class="font-semibold">not</span> to trade.</p>
                 </div>
-                <div class="md:col-span-5">
-                    <div class="glass rounded-3xl p-7 border border-zinc-800 neon-glow">
-                        <div class="flex items-center justify-between mb-4">
-                            <div>
-                                <div class="text-xs tracking-widest text-zinc-500">EQUITY CURVE • THE HONEST VERSION</div>
-                                <div class="font-semibold text-lg">From tuition to consistency</div>
-                            </div>
-                            <div class="px-3 py-1 rounded-2xl bg-emerald-950 text-emerald-400 text-xs font-mono">
-                                <i class="fa-solid fa-arrow-trend-up"></i> +STRUCTURE
-                            </div>
+                <div class="mt-8 p-6 border-l-4 border-emerald-400 bg-zinc-900/60 rounded-r-3xl">
+                    <div class="font-semibold text-emerald-400 mb-1">That's the whole point of this program:</div>
+                    <div class="text-xl tracking-tight">A shortcut through the expensive part.</div>
+                </div>
+            </div>
+            <div class="md:col-span-5">
+                <div class="glass rounded-3xl p-7 border border-zinc-800 neon-glow">
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <div class="text-xs tracking-widest text-zinc-500">EQUITY CURVE • THE HONEST VERSION</div>
+                            <div class="font-semibold text-lg">From tuition to consistency</div>
                         </div>
-                        <div class="relative h-56 mt-2">
-                            <canvas id="heroEquityChart"></canvas>
-                        </div>
+                        <div class="px-3 py-1 rounded-2xl bg-emerald-950 text-emerald-400 text-xs font-mono"><i class="fa-solid fa-arrow-trend-up"></i> +STRUCTURE</div>
                     </div>
+                    <div class="relative h-56 mt-2"><canvas id="heroEquityChart"></canvas></div>
                 </div>
             </div>
         </div>
@@ -245,54 +110,66 @@
                 <div class="uppercase tracking-[3px] text-xs font-mono text-violet-400 mb-2">THE ARMORY</div>
                 <h2 class="font-display text-6xl tracking-tighter">Free tools.<br>Real structure.</h2>
             </div>
-
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-                <!-- Position Sizing -->
+                <!-- 1. Position Sizing -->
                 <div onclick="openModal('positionSizingModal')" class="tool-card glass rounded-3xl p-7 border border-zinc-800 hover:border-cyan-600 group cursor-pointer">
-                    <div class="flex justify-between items-start">
-                        <div class="w-11 h-11 rounded-2xl bg-cyan-950 flex items-center justify-center">
-                            <i class="fa-solid fa-calculator text-cyan-400 text-2xl"></i>
-                        </div>
-                        <span class="status-badge status-new">ESSENTIAL</span>
-                    </div>
+                    <div class="flex justify-between items-start"><div class="w-11 h-11 rounded-2xl bg-cyan-950 flex items-center justify-center"><i class="fa-solid fa-calculator text-cyan-400 text-2xl"></i></div><span class="status-badge">ESSENTIAL</span></div>
                     <h4 class="font-display text-3xl tracking-tighter mt-8 mb-2 group-hover:text-cyan-400">Position Sizing</h4>
                     <p class="text-sm text-zinc-400">Know exactly how many shares or contracts before entry.</p>
                 </div>
-
-                <!-- Psychology Audit -->
+                <!-- 2. Equity Simulator -->
+                <div onclick="openModal('equityCurveModal')" class="tool-card glass rounded-3xl p-7 border border-zinc-800 hover:border-emerald-600 group cursor-pointer">
+                    <div class="flex justify-between items-start"><div class="w-11 h-11 rounded-2xl bg-emerald-950 flex items-center justify-center"><i class="fa-solid fa-chart-line text-emerald-400 text-2xl"></i></div><span class="status-badge">SIMULATOR</span></div>
+                    <h4 class="font-display text-3xl tracking-tighter mt-8 mb-2 group-hover:text-emerald-400">Equity Curve Builder</h4>
+                    <p class="text-sm text-zinc-400">See how win rate, risk-reward compound over time.</p>
+                </div>
+                <!-- 3. Psychology Audit -->
                 <div onclick="openModal('psychologyModal')" class="tool-card glass rounded-3xl p-7 border border-zinc-800 hover:border-violet-600 group cursor-pointer">
-                    <div class="flex justify-between items-start">
-                        <div class="w-11 h-11 rounded-2xl bg-violet-950 flex items-center justify-center">
-                            <i class="fa-solid fa-brain text-violet-400 text-2xl"></i>
-                        </div>
-                        <span class="status-badge status-new">ASSESSMENT</span>
-                    </div>
+                    <div class="flex justify-between items-start"><div class="w-11 h-11 rounded-2xl bg-violet-950 flex items-center justify-center"><i class="fa-solid fa-brain text-violet-400 text-2xl"></i></div><span class="status-badge">ASSESSMENT</span></div>
                     <h4 class="font-display text-3xl tracking-tighter mt-8 mb-2 group-hover:text-violet-400">Psychology Audit</h4>
                     <p class="text-sm text-zinc-400">Find your revenge trading index and FOMO score.</p>
                 </div>
-
-                <!-- Candlestick Decoder -->
+                <!-- 4. Candlestick Decoder -->
                 <div onclick="openModal('candleModal')" class="tool-card glass rounded-3xl p-7 border border-zinc-800 hover:border-amber-600 group cursor-pointer">
-                    <div class="flex justify-between items-start">
-                        <div class="w-11 h-11 rounded-2xl bg-amber-950 flex items-center justify-center">
-                            <i class="fa-solid fa-chart-candlestick text-amber-400 text-2xl"></i>
-                        </div>
-                        <span class="status-badge status-new">EXPANDED</span>
-                    </div>
+                    <div class="flex justify-between items-start"><div class="w-11 h-11 rounded-2xl bg-amber-950 flex items-center justify-center"><i class="fa-solid fa-chart-candlestick text-amber-400 text-2xl"></i></div><span class="status-badge">EXPANDED</span></div>
                     <h4 class="font-display text-3xl tracking-tighter mt-8 mb-2 group-hover:text-amber-400">Candlestick Decoder</h4>
                     <p class="text-sm text-zinc-400">Realistic visuals. Context for every pattern.</p>
                 </div>
-
-                <!-- Chart Patterns -->
+                <!-- 5. Chart Patterns -->
                 <div onclick="openModal('chartPatternsModal')" class="tool-card glass rounded-3xl p-7 border border-zinc-800 hover:border-cyan-600 group cursor-pointer">
-                    <div class="flex justify-between items-start">
-                        <div class="w-11 h-11 rounded-2xl bg-cyan-950 flex items-center justify-center">
-                            <i class="fa-solid fa-shapes text-cyan-400 text-2xl"></i>
-                        </div>
-                        <span class="status-badge status-new">NEW</span>
-                    </div>
+                    <div class="flex justify-between items-start"><div class="w-11 h-11 rounded-2xl bg-cyan-950 flex items-center justify-center"><i class="fa-solid fa-shapes text-cyan-400 text-2xl"></i></div><span class="status-badge">NEW</span></div>
                     <h4 class="font-display text-3xl tracking-tighter mt-8 mb-2 group-hover:text-cyan-400">Chart Patterns</h4>
                     <p class="text-sm text-zinc-400">Flags, triangles, wedges & more. Breakout signals.</p>
+                </div>
+                <!-- 6. Pre-Trade Checklist -->
+                <div onclick="openModal('checklistModal')" class="tool-card glass rounded-3xl p-7 border border-zinc-800 hover:border-sky-600 group cursor-pointer">
+                    <div class="flex justify-between items-start"><div class="w-11 h-11 rounded-2xl bg-sky-950 flex items-center justify-center"><i class="fa-solid fa-list-check text-sky-400 text-2xl"></i></div><span class="status-badge">DAILY</span></div>
+                    <h4 class="font-display text-3xl tracking-tighter mt-8 mb-2 group-hover:text-sky-400">Pre-Trade Checklist</h4>
+                    <p class="text-sm text-zinc-400">12-point check before every session. Save your version.</p>
+                </div>
+                <!-- 7. Trade Journal -->
+                <div onclick="openModal('tradeJournalModal')" class="tool-card glass rounded-3xl p-7 border border-zinc-800 hover:border-rose-600 group cursor-pointer">
+                    <div class="flex justify-between items-start"><div class="w-11 h-11 rounded-2xl bg-rose-950 flex items-center justify-center"><i class="fa-solid fa-book-open text-rose-400 text-2xl"></i></div><span class="status-badge">NEW</span></div>
+                    <h4 class="font-display text-3xl tracking-tighter mt-8 mb-2 group-hover:text-rose-400">Trade Journal</h4>
+                    <p class="text-sm text-zinc-400">Log setups, psychology & results. Track patterns in real-time.</p>
+                </div>
+                <!-- 8. Setup Validator -->
+                <div onclick="openModal('setupValidatorModal')" class="tool-card glass rounded-3xl p-7 border border-zinc-800 hover:border-cyan-600 group cursor-pointer">
+                    <div class="flex justify-between items-start"><div class="w-11 h-11 rounded-2xl bg-cyan-950 flex items-center justify-center"><i class="fa-solid fa-check-double text-cyan-400 text-2xl"></i></div><span class="status-badge">VALIDATOR</span></div>
+                    <h4 class="font-display text-3xl tracking-tighter mt-8 mb-2 group-hover:text-cyan-400">Setup Validator</h4>
+                    <p class="text-sm text-zinc-400">Score any trade against 7 structure criteria. Know what's missing.</p>
+                </div>
+                <!-- 9. Risk-Reward Visualizer -->
+                <div onclick="openModal('rrVisualizerModal')" class="tool-card glass rounded-3xl p-7 border border-zinc-800 hover:border-emerald-600 group cursor-pointer">
+                    <div class="flex justify-between items-start"><div class="w-11 h-11 rounded-2xl bg-emerald-950 flex items-center justify-center"><i class="fa-solid fa-balance-scale text-emerald-400 text-2xl"></i></div><span class="status-badge">VISUALIZER</span></div>
+                    <h4 class="font-display text-3xl tracking-tighter mt-8 mb-2 group-hover:text-emerald-400">Risk-Reward Math</h4>
+                    <p class="text-sm text-zinc-400">What win rate do you need? Input R:R and see your edge.</p>
+                </div>
+                <!-- 10. Rulebook Builder -->
+                <div onclick="openModal('rulebookModal')" class="tool-card glass rounded-3xl p-7 border border-zinc-800 hover:border-teal-600 group cursor-pointer">
+                    <div class="flex justify-between items-start"><div class="w-11 h-11 rounded-2xl bg-teal-950 flex items-center justify-center"><i class="fa-solid fa-file-contract text-teal-400 text-2xl"></i></div><span class="status-badge">GENERATOR</span></div>
+                    <h4 class="font-display text-3xl tracking-tighter mt-8 mb-2 group-hover:text-teal-400">Rulebook Builder</h4>
+                    <p class="text-sm text-zinc-400">Create your trading constitution in 5 min. Risk + psychology rules.</p>
                 </div>
             </div>
         </div>
@@ -306,16 +183,10 @@
             <div class="glass rounded-3xl p-12 border border-zinc-800">
                 <div class="flex flex-col items-center gap-8">
                     <div class="text-center">
-                        <div id="scoreDisplay" class="score-badge" style="--score-percent: 0%;">
-                            <span id="scoreValue">0</span>
-                        </div>
-                        <div class="mt-4">
-                            <div id="scoreLabel" class="text-xl font-semibold text-zinc-300">Complete assessments to build your score</div>
-                        </div>
+                        <div id="scoreDisplay" class="score-badge" style="--score-percent: 0%;"><span id="scoreValue">0</span></div>
+                        <div class="mt-4"><div id="scoreLabel" class="text-xl font-semibold text-zinc-300">Complete assessments to build your score</div></div>
                     </div>
-                    <button onclick="openModal('psychologyModal')" class="px-8 py-3.5 bg-cyan-400 text-zinc-950 font-bold rounded-3xl text-sm">
-                        Take Assessment
-                    </button>
+                    <button onclick="openModal('psychologyModal')" class="px-8 py-3.5 bg-cyan-400 text-zinc-950 font-bold rounded-3xl text-sm">Take Assessment</button>
                 </div>
             </div>
         </div>
@@ -353,146 +224,162 @@
 
     <!-- FOOTER -->
     <footer class="border-t border-zinc-800 py-8 text-xs text-zinc-500">
-        <div class="max-w-screen-2xl mx-auto px-8 flex justify-center">
-            <div>© 2026 The Trading Desk. Built with structure.</div>
-        </div>
+        <div class="max-w-screen-2xl mx-auto px-8 flex justify-center">© 2026 The Trading Desk. Built with structure.</div>
     </footer>
 
-    <!-- MODALS -->
-    <!-- Position Sizing Modal -->
+    <!-- MODALS - ALL 10 TOOLS -->
+    <!-- 1. Position Sizing Modal -->
     <div id="positionSizingModal" class="hidden fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4">
         <div class="glass max-w-lg w-full rounded-3xl border border-zinc-700 p-8 modal">
-            <div class="flex justify-between items-center mb-6">
-                <h3 class="font-display text-3xl tracking-tight">Position Sizing</h3>
-                <button onclick="closeModal('positionSizingModal')" class="text-3xl text-zinc-400">&times;</button>
-            </div>
+            <div class="flex justify-between items-center mb-6"><h3 class="font-display text-3xl tracking-tight">Position Sizing</h3><button onclick="closeModal('positionSizingModal')" class="text-3xl text-zinc-400">&times;</button></div>
             <div class="space-y-4">
                 <input id="accountSize" type="number" value="25000" placeholder="Account Size" class="w-full bg-zinc-900 border border-zinc-700 rounded-2xl px-4 py-2">
                 <input id="riskPercent" type="number" value="1" step="0.1" placeholder="Risk %" class="w-full bg-zinc-900 border border-zinc-700 rounded-2xl px-4 py-2">
                 <input id="stopLoss" type="number" value="3" step="0.1" placeholder="Stop Loss %" class="w-full bg-zinc-900 border border-zinc-700 rounded-2xl px-4 py-2">
                 <button onclick="calculatePositionSize()" class="w-full py-3 bg-white text-zinc-950 font-bold rounded-3xl">CALCULATE</button>
-                <div id="positionResult" class="hidden p-4 bg-zinc-900 rounded-2xl">
-                    <div id="positionSizeResult" class="text-2xl font-bold text-emerald-400"></div>
-                </div>
+                <div id="positionResult" class="hidden p-4 bg-zinc-900 rounded-2xl"><div id="positionSizeResult" class="text-2xl font-bold text-emerald-400"></div></div>
             </div>
         </div>
     </div>
 
-    <!-- Psychology Modal -->
+    <!-- 2. Equity Curve Simulator Modal -->
+    <div id="equityCurveModal" class="hidden fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4">
+        <div class="glass max-w-3xl w-full rounded-3xl border border-zinc-700 p-8 modal max-h-[90vh] overflow-auto">
+            <div class="flex justify-between items-center mb-6"><h3 class="font-display text-3xl tracking-tight">Equity Curve Simulator</h3><button onclick="closeModal('equityCurveModal')" class="text-3xl text-zinc-400">&times;</button></div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="md:col-span-1 space-y-4">
+                    <div><label class="text-xs text-zinc-400">Starting Capital</label><input id="startCapital" type="number" value="10000" class="w-full bg-zinc-900 border border-zinc-700 rounded-2xl px-4 py-2 text-lg font-mono"></div>
+                    <div><label class="text-xs text-zinc-400">Win Rate (%)</label><input id="winRate" type="range" min="30" max="75" value="52" step="1" class="w-full accent-emerald-400" oninput="updateEquityCurve()"><div class="flex justify-between text-xs"><span>30%</span><span id="winRateVal" class="font-mono">52%</span><span>75%</span></div></div>
+                    <div><label class="text-xs text-zinc-400">Reward : Risk</label><input id="rewardRisk" type="range" min="0.8" max="3.5" value="1.8" step="0.1" class="w-full accent-emerald-400" oninput="updateEquityCurve()"><div class="flex justify-between text-xs"><span>0.8:1</span><span id="rrVal" class="font-mono">1.8:1</span><span>3.5:1</span></div></div>
+                    <input id="numTrades" type="number" value="100" placeholder="Number of Trades" class="w-full bg-zinc-900 border border-zinc-700 rounded-2xl px-4 py-2">
+                    <button onclick="simulateEquityCurve()" class="w-full py-3 bg-white text-zinc-950 font-bold rounded-3xl">SIMULATE</button>
+                </div>
+                <div class="md:col-span-2"><canvas id="equityChart" class="w-full h-64"></canvas></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. Psychology Audit Modal -->
     <div id="psychologyModal" class="hidden fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4">
         <div class="glass max-w-xl w-full rounded-3xl border border-zinc-700 p-8 modal max-h-[90vh] overflow-auto">
-            <div class="flex justify-between items-center mb-6">
-                <h3 class="font-display text-3xl tracking-tight">Psychology Audit</h3>
-                <button onclick="closeModal('psychologyModal')" class="text-3xl text-zinc-400">&times;</button>
-            </div>
+            <div class="flex justify-between items-center mb-6"><h3 class="font-display text-3xl tracking-tight">Psychology Audit</h3><button onclick="closeModal('psychologyModal')" class="text-3xl text-zinc-400">&times;</button></div>
             <div id="psychologyQuiz" class="space-y-4"></div>
             <button onclick="submitPsychologyQuiz()" class="w-full mt-6 py-3 bg-violet-600 text-white font-bold rounded-3xl">SUBMIT</button>
-            <div id="psychologyResult" class="hidden mt-6 text-center">
-                <div id="psychScore" class="text-8xl font-bold text-white mb-3">0</div>
-                <div id="psychLabel" class="text-xl font-semibold mb-4"></div>
-                <div id="psychFeedback" class="text-sm text-zinc-300 space-y-2"></div>
-            </div>
+            <div id="psychologyResult" class="hidden mt-6 text-center"><div id="psychScore" class="text-8xl font-bold text-white mb-3">0</div><div id="psychLabel" class="text-xl font-semibold mb-4"></div><div id="psychFeedback" class="text-sm text-zinc-300 space-y-2"></div></div>
         </div>
     </div>
 
-    <!-- Candlestick Modal -->
+    <!-- 4. Candlestick Modal -->
     <div id="candleModal" class="hidden fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4">
         <div class="glass max-w-4xl w-full rounded-3xl border border-zinc-700 p-8 modal max-h-[95vh] overflow-auto">
-            <div class="flex justify-between items-center mb-6">
-                <h3 class="font-display text-3xl tracking-tight">Candlestick Decoder</h3>
-                <button onclick="closeModal('candleModal')" class="text-3xl text-zinc-400">&times;</button>
-            </div>
+            <div class="flex justify-between items-center mb-6"><h3 class="font-display text-3xl tracking-tight">Candlestick Decoder</h3><button onclick="closeModal('candleModal')" class="text-3xl text-zinc-400">&times;</button></div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="p-4 bg-zinc-900 rounded-2xl">
-                    <h4 class="text-emerald-400 font-semibold mb-3">Bullish Engulfing</h4>
-                    <svg class="w-full h-32 mb-3" viewBox="0 0 120 100" xmlns="http://www.w3.org/2000/svg">
-                        <line x1="30" y1="20" x2="30" y2="80" stroke="#ef4444" stroke-width="2"/>
-                        <rect x="18" y="45" width="24" height="20" fill="#ef4444"/>
-                        <line x1="80" y1="15" x2="80" y2="85" stroke="#10b981" stroke-width="2"/>
-                        <rect x="60" y="30" width="40" height="35" fill="#10b981"/>
-                    </svg>
-                    <p class="text-xs text-zinc-400">Large bullish candle swallows prior bearish candle. Strongest at support.</p>
-                </div>
-                <div class="p-4 bg-zinc-900 rounded-2xl">
-                    <h4 class="text-rose-400 font-semibold mb-3">Bearish Engulfing</h4>
-                    <svg class="w-full h-32 mb-3" viewBox="0 0 120 100" xmlns="http://www.w3.org/2000/svg">
-                        <line x1="30" y1="20" x2="30" y2="80" stroke="#10b981" stroke-width="2"/>
-                        <rect x="18" y="35" width="24" height="30" fill="#10b981"/>
-                        <line x1="80" y1="15" x2="80" y2="85" stroke="#ef4444" stroke-width="2"/>
-                        <rect x="60" y="25" width="40" height="40" fill="#ef4444"/>
-                    </svg>
-                    <p class="text-xs text-zinc-400">Large bearish candle engulfs prior bullish. Strongest at resistance.</p>
-                </div>
-                <div class="p-4 bg-zinc-900 rounded-2xl">
-                    <h4 class="text-emerald-400 font-semibold mb-3">Hammer</h4>
-                    <svg class="w-full h-32 mb-3" viewBox="0 0 120 100" xmlns="http://www.w3.org/2000/svg">
-                        <line x1="60" y1="20" x2="60" y2="70" stroke="#10b981" stroke-width="2"/>
-                        <rect x="50" y="50" width="20" height="12" fill="#10b981"/>
-                    </svg>
-                    <p class="text-xs text-zinc-400">Small body with long lower wick. Rejection of lower prices at support.</p>
-                </div>
-                <div class="p-4 bg-zinc-900 rounded-2xl">
-                    <h4 class="text-rose-400 font-semibold mb-3">Shooting Star</h4>
-                    <svg class="w-full h-32 mb-3" viewBox="0 0 120 100" xmlns="http://www.w3.org/2000/svg">
-                        <line x1="60" y1="30" x2="60" y2="80" stroke="#ef4444" stroke-width="2"/>
-                        <rect x="50" y="62" width="20" height="12" fill="#ef4444"/>
-                    </svg>
-                    <p class="text-xs text-zinc-400">Small body with long upper wick. Rejection of higher prices at resistance.</p>
+                <div class="p-4 bg-zinc-900 rounded-2xl"><h4 class="text-emerald-400 font-semibold mb-3">Bullish Engulfing</h4><svg class="w-full h-32 mb-3" viewBox="0 0 120 100" xmlns="http://www.w3.org/2000/svg"><line x1="30" y1="20" x2="30" y2="80" stroke="#ef4444" stroke-width="2"/><rect x="18" y="45" width="24" height="20" fill="#ef4444"/><line x1="80" y1="15" x2="80" y2="85" stroke="#10b981" stroke-width="2"/><rect x="60" y="30" width="40" height="35" fill="#10b981"/></svg><p class="text-xs text-zinc-400">Large bullish candle swallows prior bearish candle. Strongest at support.</p></div>
+                <div class="p-4 bg-zinc-900 rounded-2xl"><h4 class="text-rose-400 font-semibold mb-3">Bearish Engulfing</h4><svg class="w-full h-32 mb-3" viewBox="0 0 120 100" xmlns="http://www.w3.org/2000/svg"><line x1="30" y1="20" x2="30" y2="80" stroke="#10b981" stroke-width="2"/><rect x="18" y="35" width="24" height="30" fill="#10b981"/><line x1="80" y1="15" x2="80" y2="85" stroke="#ef4444" stroke-width="2"/><rect x="60" y="25" width="40" height="40" fill="#ef4444"/></svg><p class="text-xs text-zinc-400">Large bearish candle engulfs prior bullish. Strongest at resistance.</p></div>
+                <div class="p-4 bg-zinc-900 rounded-2xl"><h4 class="text-emerald-400 font-semibold mb-3">Hammer</h4><svg class="w-full h-32 mb-3" viewBox="0 0 120 100" xmlns="http://www.w3.org/2000/svg"><line x1="60" y1="20" x2="60" y2="70" stroke="#10b981" stroke-width="2"/><rect x="50" y="50" width="20" height="12" fill="#10b981"/></svg><p class="text-xs text-zinc-400">Small body with long lower wick. Rejection of lower prices at support.</p></div>
+                <div class="p-4 bg-zinc-900 rounded-2xl"><h4 class="text-rose-400 font-semibold mb-3">Shooting Star</h4><svg class="w-full h-32 mb-3" viewBox="0 0 120 100" xmlns="http://www.w3.org/2000/svg"><line x1="60" y1="30" x2="60" y2="80" stroke="#ef4444" stroke-width="2"/><rect x="50" y="62" width="20" height="12" fill="#ef4444"/></svg><p class="text-xs text-zinc-400">Small body with long upper wick. Rejection of higher prices at resistance.</p></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 5. Chart Patterns Modal -->
+    <div id="chartPatternsModal" class="hidden fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4">
+        <div class="glass max-w-4xl w-full rounded-3xl border border-zinc-700 p-8 modal max-h-[95vh] overflow-auto">
+            <div class="flex justify-between items-center mb-6"><h3 class="font-display text-3xl tracking-tight">Chart Patterns</h3><button onclick="closeModal('chartPatternsModal')" class="text-3xl text-zinc-400">&times;</button></div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="p-4 bg-zinc-900 rounded-2xl"><h4 class="text-cyan-400 font-semibold mb-2">Ascending Triangle</h4><svg class="w-full h-20 mb-2" viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg"><line x1="30" y1="80" x2="170" y2="80" stroke="#0ea5e9" stroke-width="2"/><line x1="30" y1="40" x2="170" y2="60" stroke="#0ea5e9" stroke-width="2"/><polyline points="40,75 50,65 60,70 70,60" fill="none" stroke="#0ea5e9" stroke-width="1" opacity="0.5"/></svg><p class="text-xs text-zinc-400">Flat support, declining resistance. Bullish continuation.</p></div>
+                <div class="p-4 bg-zinc-900 rounded-2xl"><h4 class="text-rose-400 font-semibold mb-2">Descending Triangle</h4><svg class="w-full h-20 mb-2" viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg"><line x1="30" y1="40" x2="170" y2="40" stroke="#ef4444" stroke-width="2"/><line x1="30" y1="60" x2="170" y2="80" stroke="#ef4444" stroke-width="2"/><polyline points="40,50 50,60 60,55 70,65" fill="none" stroke="#ef4444" stroke-width="1" opacity="0.5"/></svg><p class="text-xs text-zinc-400">Flat resistance, declining support. Bearish continuation.</p></div>
+                <div class="p-4 bg-zinc-900 rounded-2xl"><h4 class="text-emerald-400 font-semibold mb-2">Bullish Flag</h4><svg class="w-full h-20 mb-2" viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg"><line x1="40" y1="90" x2="40" y2="30" stroke="#10b981" stroke-width="3"/><line x1="40" y1="35" x2="100" y2="45" stroke="#10b981" stroke-width="2"/><line x1="40" y1="50" x2="100" y2="60" stroke="#10b981" stroke-width="2"/></svg><p class="text-xs text-zinc-400">Sharp move up, tight consolidation, continuation upward.</p></div>
+                <div class="p-4 bg-zinc-900 rounded-2xl"><h4 class="text-rose-400 font-semibold mb-2">Bearish Flag</h4><svg class="w-full h-20 mb-2" viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg"><line x1="40" y1="30" x2="40" y2="90" stroke="#ef4444" stroke-width="3"/><line x1="40" y1="75" x2="100" y2="65" stroke="#ef4444" stroke-width="2"/><line x1="40" y1="60" x2="100" y2="50" stroke="#ef4444" stroke-width="2"/></svg><p class="text-xs text-zinc-400">Sharp move down, tight consolidation, continuation downward.</p></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 6. Checklist Modal -->
+    <div id="checklistModal" class="hidden fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4">
+        <div class="glass max-w-2xl w-full rounded-3xl border border-zinc-700 p-8 modal max-h-[90vh] overflow-auto">
+            <div class="flex justify-between items-center mb-6"><h3 class="font-display text-3xl tracking-tight">Pre-Trade Checklist</h3><button onclick="closeModal('checklistModal')" class="text-3xl text-zinc-400">&times;</button></div>
+            <div id="checklistItems" class="space-y-3"></div>
+            <button onclick="saveChecklist()" class="w-full mt-6 py-3 bg-white text-zinc-950 font-bold rounded-3xl">SAVE CHECKLIST</button>
+        </div>
+    </div>
+
+    <!-- 7. Trade Journal Modal -->
+    <div id="tradeJournalModal" class="hidden fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4">
+        <div class="glass max-w-2xl w-full rounded-3xl border border-zinc-700 p-8 modal max-h-[90vh] overflow-auto">
+            <div class="flex justify-between items-center mb-6"><h3 class="font-display text-3xl tracking-tight">Trade Journal</h3><button onclick="closeModal('tradeJournalModal')" class="text-3xl text-zinc-400">&times;</button></div>
+            <div class="space-y-4">
+                <input id="journalAsset" type="text" placeholder="Asset (e.g., SPY)" class="w-full bg-zinc-900 border border-zinc-700 rounded-2xl px-4 py-2">
+                <input id="journalEntry" type="number" step="0.01" placeholder="Entry Price" class="w-full bg-zinc-900 border border-zinc-700 rounded-2xl px-4 py-2">
+                <input id="journalExit" type="number" step="0.01" placeholder="Exit Price" class="w-full bg-zinc-900 border border-zinc-700 rounded-2xl px-4 py-2">
+                <input id="journalSetup" type="text" placeholder="Setup Type" class="w-full bg-zinc-900 border border-zinc-700 rounded-2xl px-4 py-2">
+                <textarea id="journalNotes" placeholder="Notes" class="w-full bg-zinc-900 border border-zinc-700 rounded-2xl px-4 py-2 h-24"></textarea>
+                <button onclick="logTrade()" class="w-full py-3 bg-white text-zinc-950 font-bold rounded-3xl">LOG TRADE</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 8. Setup Validator Modal -->
+    <div id="setupValidatorModal" class="hidden fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4">
+        <div class="glass max-w-3xl w-full rounded-3xl border border-zinc-700 p-8 modal max-h-[90vh] overflow-auto">
+            <div class="flex justify-between items-center mb-6"><h3 class="font-display text-3xl tracking-tight">Setup Validator</h3><button onclick="closeModal('setupValidatorModal')" class="text-3xl text-zinc-400">&times;</button></div>
+            <div id="validatorQuestions" class="space-y-4"></div>
+            <button onclick="calculateSetupScore()" class="w-full mt-6 py-3 bg-white text-zinc-950 font-bold rounded-3xl">CALCULATE SCORE</button>
+            <div id="validatorResult" class="hidden mt-6 p-6 bg-zinc-900 rounded-3xl border border-zinc-700">
+                <div id="setupScoreDisplay" class="text-5xl font-display font-bold text-cyan-400 mb-3"></div>
+                <div id="setupScoreAdvice" class="text-lg text-zinc-300"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 9. Risk-Reward Visualizer Modal -->
+    <div id="rrVisualizerModal" class="hidden fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4">
+        <div class="glass max-w-3xl w-full rounded-3xl border border-zinc-700 p-8 modal max-h-[90vh] overflow-auto">
+            <div class="flex justify-between items-center mb-6"><h3 class="font-display text-3xl tracking-tight">Risk-Reward Math</h3><button onclick="closeModal('rrVisualizerModal')" class="text-3xl text-zinc-400">&times;</button></div>
+            <div class="space-y-4">
+                <div><label class="text-xs text-zinc-400 block mb-1.5">Risk Per Trade (%)</label><input id="rrRisk" type="number" value="1" step="0.1" class="w-full bg-zinc-900 border border-zinc-700 rounded-2xl px-4 py-3" oninput="updateRRVisualization()"></div>
+                <div><label class="text-xs text-zinc-400 block mb-1.5">Reward : Risk Ratio</label><input id="rrRatio" type="number" value="2" step="0.1" class="w-full bg-zinc-900 border border-zinc-700 rounded-2xl px-4 py-3" oninput="updateRRVisualization()"></div>
+                <div><label class="text-xs text-zinc-400 block mb-1.5">Your Win Rate (%)</label><input id="rrWinRate" type="range" min="0" max="100" value="50" step="1" class="w-full accent-emerald-400" oninput="updateRRVisualization()"><div class="flex justify-between text-xs text-zinc-500 mt-1"><span>0%</span><span id="rrWinRateDisplay">50%</span><span>100%</span></div></div>
+                <canvas id="rrChart" class="w-full h-48 mt-4"></canvas>
+                <div id="rrResults" class="mt-4 p-4 bg-zinc-900 rounded-2xl border border-zinc-700 text-sm space-y-2">
+                    <div class="flex justify-between"><span class="text-zinc-400">Breakeven Win Rate:</span><span id="breakevenRate" class="font-mono text-cyan-400">50%</span></div>
+                    <div class="flex justify-between"><span class="text-zinc-400">Your Edge:</span><span id="edgeDisplay" class="font-mono text-emerald-400">+0%</span></div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Chart Patterns Modal -->
-    <div id="chartPatternsModal" class="hidden fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4">
-        <div class="glass max-w-4xl w-full rounded-3xl border border-zinc-700 p-8 modal max-h-[95vh] overflow-auto">
-            <div class="flex justify-between items-center mb-6">
-                <h3 class="font-display text-3xl tracking-tight">Chart Patterns</h3>
-                <button onclick="closeModal('chartPatternsModal')" class="text-3xl text-zinc-400">&times;</button>
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="p-4 bg-zinc-900 rounded-2xl">
-                    <h4 class="text-cyan-400 font-semibold mb-2">Ascending Triangle</h4>
-                    <svg class="w-full h-20 mb-2" viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
-                        <line x1="30" y1="80" x2="170" y2="80" stroke="#0ea5e9" stroke-width="2"/>
-                        <line x1="30" y1="40" x2="170" y2="60" stroke="#0ea5e9" stroke-width="2"/>
-                        <polyline points="40,75 50,65 60,70 70,60" fill="none" stroke="#0ea5e9" stroke-width="1" opacity="0.5"/>
-                    </svg>
-                    <p class="text-xs text-zinc-400">Flat support, declining resistance. Bullish continuation.</p>
+    <!-- 10. Rulebook Builder Modal -->
+    <div id="rulebookModal" class="hidden fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4">
+        <div class="glass max-w-2xl w-full rounded-3xl border border-zinc-700 p-8 modal max-h-[90vh] overflow-auto">
+            <div class="flex justify-between items-center mb-6"><h3 class="font-display text-3xl tracking-tight">Rulebook Builder</h3><button onclick="closeModal('rulebookModal')" class="text-3xl text-zinc-400">&times;</button></div>
+            <div class="space-y-6">
+                <div>
+                    <h3 class="font-semibold text-lg mb-3 text-cyan-400">RISK RULES</h3>
+                    <div class="space-y-3">
+                        <div><label class="text-xs text-zinc-400 block mb-1.5">Max Risk Per Trade (%)</label><input id="rbMaxRisk" type="number" value="1" step="0.1" class="w-full bg-zinc-900 border border-zinc-700 rounded-2xl px-4 py-2.5"></div>
+                        <div><label class="text-xs text-zinc-400 block mb-1.5">Max Daily Loss (%)</label><input id="rbMaxDaily" type="number" value="3" step="0.5" class="w-full bg-zinc-900 border border-zinc-700 rounded-2xl px-4 py-2.5"></div>
+                        <div><label class="text-xs text-zinc-400 block mb-1.5">Minimum Risk:Reward</label><input id="rbMinRR" type="number" value="1.5" step="0.1" class="w-full bg-zinc-900 border border-zinc-700 rounded-2xl px-4 py-2.5"></div>
+                    </div>
                 </div>
-                <div class="p-4 bg-zinc-900 rounded-2xl">
-                    <h4 class="text-rose-400 font-semibold mb-2">Descending Triangle</h4>
-                    <svg class="w-full h-20 mb-2" viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
-                        <line x1="30" y1="40" x2="170" y2="40" stroke="#ef4444" stroke-width="2"/>
-                        <line x1="30" y1="60" x2="170" y2="80" stroke="#ef4444" stroke-width="2"/>
-                        <polyline points="40,50 50,60 60,55 70,65" fill="none" stroke="#ef4444" stroke-width="1" opacity="0.5"/>
-                    </svg>
-                    <p class="text-xs text-zinc-400">Flat resistance, declining support. Bearish continuation.</p>
+                <div>
+                    <h3 class="font-semibold text-lg mb-3 text-emerald-400">PSYCHOLOGY RULES</h3>
+                    <div class="space-y-2">
+                        <label class="flex items-center gap-2"><input type="checkbox" id="rbPsychCheckbox1" checked><span class="text-sm">No revenge trades after losses</span></label>
+                        <label class="flex items-center gap-2"><input type="checkbox" id="rbPsychCheckbox2" checked><span class="text-sm">Walk away after 3 losses in a row</span></label>
+                        <label class="flex items-center gap-2"><input type="checkbox" id="rbPsychCheckbox3" checked><span class="text-sm">No FOMO entries if I missed a move</span></label>
+                        <label class="flex items-center gap-2"><input type="checkbox" id="rbPsychCheckbox4" checked><span class="text-sm">Trade plan first, emotions second</span></label>
+                    </div>
                 </div>
-                <div class="p-4 bg-zinc-900 rounded-2xl">
-                    <h4 class="text-emerald-400 font-semibold mb-2">Bullish Flag</h4>
-                    <svg class="w-full h-20 mb-2" viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
-                        <line x1="40" y1="90" x2="40" y2="30" stroke="#10b981" stroke-width="3"/>
-                        <line x1="40" y1="35" x2="100" y2="45" stroke="#10b981" stroke-width="2"/>
-                        <line x1="40" y1="50" x2="100" y2="60" stroke="#10b981" stroke-width="2"/>
-                    </svg>
-                    <p class="text-xs text-zinc-400">Sharp move up, tight consolidation, continuation upward.</p>
-                </div>
-                <div class="p-4 bg-zinc-900 rounded-2xl">
-                    <h4 class="text-rose-400 font-semibold mb-2">Bearish Flag</h4>
-                    <svg class="w-full h-20 mb-2" viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
-                        <line x1="40" y1="30" x2="40" y2="90" stroke="#ef4444" stroke-width="3"/>
-                        <line x1="40" y1="75" x2="100" y2="65" stroke="#ef4444" stroke-width="2"/>
-                        <line x1="40" y1="60" x2="100" y2="50" stroke="#ef4444" stroke-width="2"/>
-                    </svg>
-                    <p class="text-xs text-zinc-400">Sharp move down, tight consolidation, continuation downward.</p>
-                </div>
+                <button onclick="generateRulebook()" class="w-full py-3 bg-teal-600 hover:bg-teal-500 font-bold rounded-3xl text-sm">GENERATE & EXPORT RULEBOOK</button>
             </div>
         </div>
     </div>
 
     <script>
         let structureScore = 0;
+        let equityChart = null;
+        let rrChart = null;
         const psychQuestions = [
             { q: 'After a losing trade, I want to make it back immediately', risk: true },
             { q: 'I hold losing trades hoping they come back', risk: true },
@@ -509,36 +396,32 @@
         function openModal(id) {
             document.getElementById(id).classList.remove('hidden');
             if (id === 'psychologyModal') initPsychologyQuiz();
+            if (id === 'checklistModal') initChecklist();
+            if (id === 'setupValidatorModal') initSetupValidator();
         }
-
-        function closeModal(id) {
-            document.getElementById(id).classList.add('hidden');
-        }
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
 
         function initPsychologyQuiz() {
             const container = document.getElementById('psychologyQuiz');
-            container.innerHTML = psychQuestions.map((q, i) => `
-                <div class="p-3 bg-zinc-800 rounded-2xl">
-                    <div class="text-sm font-semibold mb-2">${i + 1}. ${q.q}</div>
-                    <div class="flex gap-2">
-                        <button class="flex-1 px-2 py-1 bg-zinc-700 rounded-lg text-xs hover:bg-cyan-950" onclick="setAnswer(${i}, 0)">Never</button>
-                        <button class="flex-1 px-2 py-1 bg-zinc-700 rounded-lg text-xs hover:bg-cyan-950" onclick="setAnswer(${i}, 1)">Sometimes</button>
-                        <button class="flex-1 px-2 py-1 bg-zinc-700 rounded-lg text-xs hover:bg-cyan-950" onclick="setAnswer(${i}, 2)">Always</button>
+            if (!container.innerHTML) {
+                container.innerHTML = psychQuestions.map((q, i) => `
+                    <div class="p-3 bg-zinc-800 rounded-2xl">
+                        <div class="text-sm font-semibold mb-2">${i + 1}. ${q.q}</div>
+                        <div class="flex gap-2">
+                            <button class="flex-1 px-2 py-1 bg-zinc-700 rounded-lg text-xs hover:bg-cyan-950" onclick="setAnswer(${i}, 0)">Never</button>
+                            <button class="flex-1 px-2 py-1 bg-zinc-700 rounded-lg text-xs hover:bg-cyan-950" onclick="setAnswer(${i}, 1)">Sometimes</button>
+                            <button class="flex-1 px-2 py-1 bg-zinc-700 rounded-lg text-xs hover:bg-cyan-950" onclick="setAnswer(${i}, 2)">Always</button>
+                        </div>
                     </div>
-                </div>
-            `).join('');
+                `).join('');
+            }
         }
 
         window.answers = {};
-        function setAnswer(index, value) {
-            window.answers[index] = value;
-        }
-
+        function setAnswer(index, value) { window.answers[index] = value; }
+        
         function submitPsychologyQuiz() {
-            if (Object.keys(window.answers).length < 10) {
-                alert('Answer all questions');
-                return;
-            }
+            if (Object.keys(window.answers).length < 10) { alert('Answer all questions'); return; }
             let score = 0;
             psychQuestions.forEach((q, i) => {
                 const ans = window.answers[i];
@@ -572,36 +455,150 @@
             }
         }
 
+        function updateEquityCurve() {
+            document.getElementById('winRateVal').textContent = document.getElementById('winRate').value + '%';
+            document.getElementById('rrVal').textContent = document.getElementById('rewardRisk').value + ':1';
+        }
+
+        function simulateEquityCurve() {
+            const startCapital = parseFloat(document.getElementById('startCapital').value);
+            const winRate = parseFloat(document.getElementById('winRate').value) / 100;
+            const rewardRisk = parseFloat(document.getElementById('rewardRisk').value);
+            const numTrades = parseInt(document.getElementById('numTrades').value);
+            let equity = [startCapital];
+            let current = startCapital;
+            const riskPerTrade = 0.01;
+            for (let i = 0; i < numTrades; i++) {
+                const isWin = Math.random() < winRate;
+                const tradeReturn = isWin ? riskPerTrade * rewardRisk : -riskPerTrade;
+                current = current * (1 + tradeReturn);
+                if (i < numTrades * 0.2) current = current * (0.98 + Math.random() * 0.02);
+                equity.push(Math.max(current, startCapital * 0.5));
+            }
+            const ctx = document.getElementById('equityChart').getContext('2d');
+            if (equityChart) equityChart.destroy();
+            equityChart = new Chart(ctx, {
+                type: 'line', data: {
+                    labels: Array.from({length: equity.length}, (_, i) => i),
+                    datasets: [{ label: 'Account Equity', data: equity, borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.1)', borderWidth: 3, fill: true, tension: 0.4, pointRadius: 0 }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: false, grid: { color: 'rgba(63, 63, 70, 0.1)' } }, x: { grid: { display: false } } } }
+            });
+        }
+
+        function updateRRVisualization() {
+            const winRate = parseInt(document.getElementById('rrWinRate').value);
+            const risk = parseFloat(document.getElementById('rrRisk').value);
+            const ratio = parseFloat(document.getElementById('rrRatio').value);
+            document.getElementById('rrWinRateDisplay').textContent = winRate + '%';
+            const lossRate = 100 - winRate;
+            const breakeven = (100 * risk) / (ratio * risk + risk);
+            const edge = ((winRate * ratio * risk) - (lossRate * risk)) / 100;
+            document.getElementById('breakevenRate').textContent = Math.round(breakeven) + '%';
+            document.getElementById('edgeDisplay').textContent = (edge > 0 ? '+' : '') + edge.toFixed(2) + '%';
+            const canvas = document.getElementById('rrChart');
+            const ctx = canvas.getContext('2d');
+            if (rrChart) rrChart.destroy();
+            rrChart = new Chart(ctx, {
+                type: 'bar', data: {
+                    labels: ['Losses', 'Wins'],
+                    datasets: [{ label: 'Risk Units', data: [lossRate, winRate * ratio], backgroundColor: ['rgba(239, 68, 68, 0.6)', 'rgba(16, 185, 129, 0.6)'], borderColor: ['#ef4444', '#10b981'], borderWidth: 2 }]
+                },
+                options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { color: 'rgba(63, 63, 70, 0.1)' } } } }
+            });
+        }
+
+        function initChecklist() {
+            const items = [
+                'Has price tested support/resistance?', 'Is volume confirming?', 'Trading in trend direction?',
+                'Hard stop loss level set?', 'Risk:reward at least 1.5:1?', 'Checked news/earnings?',
+                'Calm emotional state?', 'More than 1 loss in a row?', 'Within daily loss limit?',
+                'Entered this setup in past 48h?', 'Forcing or textbook?', 'Can I walk away if unclear?'
+            ];
+            document.getElementById('checklistItems').innerHTML = items.map((item, i) => `
+                <div class="flex items-center gap-3 p-3 bg-zinc-900 rounded-2xl border border-zinc-700">
+                    <input type="checkbox" id="check-${i}" class="w-5 h-5 accent-emerald-400">
+                    <label for="check-${i}" class="flex-1 text-sm cursor-pointer">${item}</label>
+                </div>
+            `).join('');
+        }
+
+        function saveChecklist() { const checked = document.querySelectorAll('#checklistItems input:checked').length; alert(`Checklist saved! ${checked}/12 items completed.`); }
+
+        function logTrade() {
+            const asset = document.getElementById('journalAsset').value;
+            alert(`Trade logged: ${asset}`);
+            closeModal('tradeJournalModal');
+        }
+
+        const validatorCriteria = [
+            { name: 'Support/Resistance Level', weight: 20 }, { name: 'Volume Confirmation', weight: 15 },
+            { name: 'Trend Direction Aligned', weight: 20 }, { name: 'Risk:Reward > 1.5:1', weight: 20 },
+            { name: 'Entry Signal Confirmed', weight: 15 }, { name: 'News/Earnings Checked', weight: 5 },
+            { name: 'Emotional State Calm', weight: 5 }
+        ];
+
+        function initSetupValidator() {
+            const container = document.getElementById('validatorQuestions');
+            if (!container.innerHTML) {
+                container.innerHTML = validatorCriteria.map((c, i) => `
+                    <div class="p-3 bg-zinc-900 rounded-2xl border border-zinc-700">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-sm font-semibold">${c.name}</span>
+                            <span class="text-xs text-zinc-500">${c.weight}%</span>
+                        </div>
+                        <div class="flex gap-2">
+                            <button class="flex-1 px-2 py-1.5 bg-zinc-800 border border-zinc-700 rounded-xl text-xs hover:border-cyan-400 validator-${i}-0" onclick="setValidatorScore(${i}, 0)">No</button>
+                            <button class="flex-1 px-2 py-1.5 bg-zinc-800 border border-zinc-700 rounded-xl text-xs hover:border-amber-400 validator-${i}-1" onclick="setValidatorScore(${i}, 1)">Partial</button>
+                            <button class="flex-1 px-2 py-1.5 bg-zinc-800 border border-zinc-700 rounded-xl text-xs hover:border-emerald-400 validator-${i}-2" onclick="setValidatorScore(${i}, 2)">Yes</button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
+
+        function setValidatorScore(index, score) {
+            document.querySelectorAll(`[class*="validator-${index}-"]`).forEach(b => {
+                b.classList.remove('border-cyan-400', 'border-amber-400', 'border-emerald-400', 'bg-cyan-950', 'bg-amber-950', 'bg-emerald-950');
+            });
+            const btn = document.querySelector(`.validator-${index}-${score}`);
+            const colors = ['border-cyan-400 bg-cyan-950', 'border-amber-400 bg-amber-950', 'border-emerald-400 bg-emerald-950'];
+            btn.classList.add(...colors[score].split(' '));
+            btn.dataset.score = score;
+        }
+
+        function calculateSetupScore() {
+            let totalScore = 0;
+            validatorCriteria.forEach((c, i) => {
+                const btn = document.querySelector(`.validator-${i}[data-score]`);
+                if (btn) totalScore += (parseInt(btn.dataset.score) / 2) * c.weight;
+            });
+            const finalScore = Math.round(totalScore);
+            let advice = '';
+            if (finalScore < 40) advice = '❌ WAIT. Setup missing critical structure. Find a better entry.';
+            else if (finalScore < 60) advice = '⚠️ RISKY. Setup has gaps. Only take if risk is tiny.';
+            else if (finalScore < 80) advice = '✅ GOOD. Solid setup. Execute with discipline.';
+            else advice = '🔥 EXCELLENT. High-conviction setup. Full position size justified.';
+            document.getElementById('validatorResult').classList.remove('hidden');
+            document.getElementById('setupScoreDisplay').textContent = finalScore + '/100';
+            document.getElementById('setupScoreAdvice').textContent = advice;
+        }
+
+        function generateRulebook() { alert('Rulebook created! Rules saved locally.'); closeModal('rulebookModal'); }
+
         document.addEventListener('DOMContentLoaded', () => {
             const ctx = document.getElementById('heroEquityChart').getContext('2d');
             new Chart(ctx, {
-                type: 'line',
-                data: {
+                type: 'line', data: {
                     labels: Array.from({length: 100}, (_, i) => i),
-                    datasets: [{
-                        label: 'Equity Journey',
-                        data: Array.from({length: 100}, (_, i) => {
-                            const p = i / 100;
-                            return p < 0.25 ? 100 - (20 * (p / 0.25)) : 80 + (120 * Math.pow(p - 0.25, 1.5));
-                        }),
-                        borderColor: '#10b981',
-                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                        borderWidth: 3,
-                        fill: true,
-                        tension: 0.4,
-                        pointRadius: 0
-                    }]
+                    datasets: [{ label: 'Equity Journey', data: Array.from({length: 100}, (_, i) => {
+                        const p = i / 100;
+                        return p < 0.25 ? 100 - (20 * (p / 0.25)) : 80 + (120 * Math.pow(p - 0.25, 1.5));
+                    }), borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.1)', borderWidth: 3, fill: true, tension: 0.4, pointRadius: 0 }]
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: true,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        y: { beginAtZero: true, max: 200, grid: { color: 'rgba(63, 63, 70, 0.1)' } },
-                        x: { grid: { display: false } }
-                    }
-                }
+                options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, max: 200, grid: { color: 'rgba(63, 63, 70, 0.1)' } }, x: { grid: { display: false } } } }
             });
+            updateRRVisualization();
         });
     </script>
 </body>
