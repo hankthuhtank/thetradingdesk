@@ -1,743 +1,1474 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The Trading Desk • Advanced Trading Command Center</title>
-    <meta name="description" content="Professional-grade trading tools. Real structure. No hype.">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/lightweight-charts@4.1.0/dist/lightweight-charts.standalone.production.js"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=Courier+Prime:wght@400;700&display=swap');
-        :root { --accent-cyan: #0ea5e9; --accent-violet: #9d4edd; --accent-emerald: #10b981; --accent-red: #ef4444; --accent-orange: #f97316; }
-        * { scroll-behavior: smooth; }
-        body { font-family: 'Inter', system-ui, sans-serif; background: linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 100%); color: #e4e4e7; overflow-x: hidden; }
-        .font-display { font-family: 'Space Grotesk', sans-serif; font-weight: 700; letter-spacing: -0.02em; }
-        .font-mono { font-family: 'Courier Prime', monospace; }
-        .glass { background: rgba(24, 24, 27, 0.6); backdrop-filter: blur(20px); border: 1px solid rgba(63, 63, 70, 0.3); }
-        .glass-thick { background: rgba(24, 24, 27, 0.85); backdrop-filter: blur(20px); border: 1px solid rgba(63, 63, 70, 0.5); }
-        .glow-cyan { box-shadow: 0 0 20px rgba(14, 165, 233, 0.3), inset 0 0 20px rgba(14, 165, 233, 0.05); }
-        .glow-emerald { box-shadow: 0 0 20px rgba(16, 185, 129, 0.3), inset 0 0 20px rgba(16, 185, 129, 0.05); }
-        .glow-red { box-shadow: 0 0 20px rgba(239, 68, 68, 0.3), inset 0 0 20px rgba(239, 68, 68, 0.05); }
-        .gradient-text { background: linear-gradient(135deg, #0ea5e9, #9d4edd, #10b981); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
-        .gradient-border { background: linear-gradient(135deg, #0ea5e9, #9d4edd) border-box; border: 2px solid transparent; }
-        .tool-card { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); position: relative; overflow: hidden; }
-        .tool-card::before { content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent); transition: left 0.5s; }
-        .tool-card:hover::before { left: 100%; }
-        .tool-card:hover { transform: translateY(-6px); }
-        .btn-primary { background: linear-gradient(135deg, #0ea5e9, #9d4edd); color: white; font-weight: 600; transition: all 0.3s; border: none; }
-        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(14, 165, 233, 0.3); }
-        .badge { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.4rem 0.8rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.5px; }
-        .badge-live { background: rgba(239, 68, 68, 0.2); color: #ff6b6b; border: 1px solid rgba(239, 68, 68, 0.5); animation: pulse 2s infinite; }
-        .badge-new { background: rgba(16, 185, 129, 0.2); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.5); }
-        .badge-pro { background: rgba(14, 165, 233, 0.2); color: #0ea5e9; border: 1px solid rgba(14, 165, 233, 0.5); }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
-        @keyframes slideInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        .animate-in { animation: slideInUp 0.5s ease-out; }
-        .chart-container { position: relative; width: 100%; height: 400px; }
-        .heatmap { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 8px; }
-        .heatmap-cell { padding: 12px; border-radius: 8px; text-align: center; font-weight: 600; cursor: pointer; transition: all 0.2s; border: 1px solid rgba(255,255,255,0.1); }
-        .heatmap-cell:hover { transform: scale(1.05); }
-        .heatmap-up { background: linear-gradient(135deg, rgba(16, 185, 129, 0.3), rgba(16, 185, 129, 0.1)); }
-        .heatmap-down { background: linear-gradient(135deg, rgba(239, 68, 68, 0.3), rgba(239, 68, 68, 0.1)); }
-        .candle-pattern { display: flex; flex-direction: column; align-items: center; padding: 16px; border-radius: 12px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); transition: all 0.2s; cursor: pointer; }
-        .candle-pattern:hover { border-color: var(--accent-cyan); background: rgba(14, 165, 233, 0.1); }
-        .candle-svg { width: 80px; height: 60px; margin: 8px 0; }
-        .scanner-row { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr 1fr; gap: 12px; align-items: center; padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.9rem; }
-        .scanner-row:hover { background: rgba(255,255,255,0.02); }
-        .modal { animation: modalPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
-        @keyframes modalPop { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
-        .code-block { background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 12px; overflow-x: auto; }
-        .tabs { display: flex; gap: 0; border-bottom: 1px solid rgba(255,255,255,0.1); }
-        .tab { padding: 12px 20px; cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s; font-weight: 500; }
-        .tab.active { border-bottom-color: var(--accent-cyan); color: var(--accent-cyan); }
-        .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
-        .stat-card { padding: 16px; border-radius: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); }
-        .stat-label { font-size: 0.85rem; color: #a1a1aa; text-transform: uppercase; letter-spacing: 1px; }
-        .stat-value { font-size: 2rem; font-weight: 700; margin-top: 8px; }
-        .mini-chart { height: 60px; }
-        @media (max-width: 768px) { .scanner-row { grid-template-columns: 1fr 1fr; font-size: 0.8rem; } .heatmap { grid-template-columns: repeat(3, 1fr); } }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Trading Desk — Structure Over Signals</title>
+<meta name="description" content="No signals. No hype. Free trader tools, a full candlestick pattern library, and 1:1 trading education from someone who paid the market's tuition so you don't have to. A Safi Solutions project.">
+<meta name="theme-color" content="#0A0907">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0A0907;
+  --bg-2:#100E09;
+  --card:#15130C;
+  --card-2:#1B180F;
+  --line:rgba(235,220,185,.13);
+  --line-2:rgba(235,220,185,.07);
+  --text:#EFE9DB;
+  --dim:#9C937D;
+  --faint:#6A6250;
+  --amber:#FFAD1F;
+  --amber-2:#FFCB66;
+  --amber-glow:rgba(255,173,31,.14);
+  --green:#2BD97C;
+  --green-bg:rgba(43,217,124,.09);
+  --red:#FF4A5E;
+  --red-bg:rgba(255,74,94,.09);
+  --disp:'Archivo',sans-serif;
+  --body:'IBM Plex Sans',sans-serif;
+  --mono:'IBM Plex Mono',monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{font-family:var(--body);background:var(--bg);color:var(--text);line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+::selection{background:var(--amber);color:var(--bg)}
+a{color:inherit}
+.wrap{width:min(1240px,92%);margin:0 auto}
+.disp{font-family:var(--disp);font-variation-settings:'wdth' 118;font-weight:900;text-transform:uppercase;letter-spacing:-.01em;line-height:.92}
+.eyebrow{font-family:var(--mono);font-size:.7rem;letter-spacing:.26em;text-transform:uppercase;color:var(--amber);display:flex;align-items:center;gap:12px}
+.eyebrow::before{content:"";width:26px;height:1px;background:var(--amber)}
+.up{color:var(--green)} .dn{color:var(--red)}
+.reveal{opacity:0;transform:translateY(24px);transition:opacity .8s cubic-bezier(.16,.8,.3,1),transform .8s cubic-bezier(.16,.8,.3,1)}
+.reveal.in{opacity:1;transform:none}
+button{font-family:inherit;color:inherit;background:none;border:none;cursor:pointer}
+a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,summary:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+@media (prefers-reduced-motion: reduce){
+  html{scroll-behavior:auto}
+  .reveal{opacity:1;transform:none;transition:none}
+  .tape-track{animation:none !important}
+  #heroChart{display:none}
+  *{animation-duration:.001s !important;transition-duration:.001s !important}
+}
+
+/* ============ TICKER TAPE ============ */
+.tape{border-bottom:1px solid var(--line);background:var(--bg-2);overflow:hidden;white-space:nowrap;position:relative}
+.tape-track{display:inline-flex;gap:0;padding:8px 0;animation:tape 52s linear infinite;will-change:transform}
+.tape:hover .tape-track{animation-play-state:paused}
+@keyframes tape{to{transform:translateX(-50%)}}
+.tape i{font-style:normal;font-family:var(--mono);font-size:.72rem;letter-spacing:.12em;color:var(--dim);padding:0 22px;border-right:1px solid var(--line-2)}
+.tape i b{font-weight:600;color:var(--text)}
+
+/* ============ NAV ============ */
+#nav{position:sticky;top:0;z-index:80;background:rgba(10,9,7,.86);backdrop-filter:blur(14px) saturate(1.2);border-bottom:1px solid var(--line)}
+.nav-in{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 0}
+.brand{display:flex;align-items:center;gap:12px;text-decoration:none}
+.brand .bx{width:38px;height:38px;border:1px solid var(--amber);border-radius:8px;display:grid;place-items:center;position:relative;background:var(--amber-glow)}
+.brand .bx svg{display:block}
+.brand .bt{font-family:var(--disp);font-variation-settings:'wdth' 120;font-weight:900;text-transform:uppercase;font-size:1.02rem;letter-spacing:.02em;line-height:1}
+.brand .bt small{display:block;font-family:var(--mono);font-weight:400;font-size:.55rem;letter-spacing:.3em;color:var(--faint);margin-top:3px;text-transform:uppercase}
+.nav-links{display:flex;align-items:center;gap:26px;list-style:none}
+.nav-links a{text-decoration:none;font-family:var(--mono);font-size:.74rem;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);transition:color .2s}
+.nav-links a:hover{color:var(--amber)}
+.nav-cta{color:var(--bg) !important;background:var(--amber);border-radius:8px;padding:10px 18px;font-weight:600 !important;transition:background .2s}
+.nav-cta:hover{background:var(--amber-2);color:var(--bg) !important}
+.status-chip{display:none;align-items:center;gap:8px;font-family:var(--mono);font-size:.66rem;letter-spacing:.1em;color:var(--dim);border:1px solid var(--line);border-radius:100px;padding:7px 14px}
+.status-chip .dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 9px var(--green);animation:pulse 1.8s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.35}}
+.menu-btn{display:none;border:1px solid var(--line);border-radius:8px;padding:9px 14px;font-family:var(--mono);font-size:.72rem;letter-spacing:.12em;text-transform:uppercase}
+@media (min-width:1100px){.status-chip{display:inline-flex}}
+@media (max-width:920px){
+  .nav-links{position:fixed;inset:66px 14px auto 14px;background:var(--card);border:1px solid var(--line);border-radius:14px;flex-direction:column;align-items:stretch;padding:20px;gap:16px;display:none;box-shadow:0 30px 60px rgba(0,0,0,.75)}
+  .nav-links.open{display:flex}
+  .nav-cta{text-align:center}
+  .menu-btn{display:block}
+}
+
+/* ============ HERO ============ */
+header{position:relative;padding:96px 0 80px;overflow:hidden;border-bottom:1px solid var(--line)}
+#heroChart{position:absolute;inset:0;width:100%;height:100%;opacity:.5;pointer-events:none}
+header::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,rgba(10,9,7,.25),rgba(10,9,7,.55) 55%,var(--bg) 96%)}
+.hero{position:relative;z-index:2;max-width:980px}
+.hero .badge{display:inline-flex;align-items:center;gap:10px;font-family:var(--mono);font-size:.68rem;letter-spacing:.18em;text-transform:uppercase;color:var(--dim);border:1px solid var(--line);border-radius:100px;padding:8px 16px;margin-bottom:30px;background:rgba(16,14,9,.6);backdrop-filter:blur(6px)}
+.hero .badge b{color:var(--green);font-weight:600}
+.hero h1{font-size:clamp(2.9rem,8.4vw,7rem)}
+.hero h1 .ln{display:block}
+.hero h1 .amber{color:var(--amber)}
+.hero .sub{font-size:clamp(1.05rem,2.2vw,1.3rem);color:var(--dim);max-width:640px;margin:28px 0 12px}
+.hero .sub b{color:var(--text);font-weight:600}
+.hero .sub em{color:var(--amber);font-style:normal}
+.hero .micro{font-family:var(--mono);font-size:.72rem;color:var(--faint);letter-spacing:.06em;margin-bottom:36px}
+.cta-row{display:flex;gap:14px;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;text-decoration:none;font-family:var(--mono);font-weight:600;font-size:.8rem;letter-spacing:.1em;text-transform:uppercase;padding:16px 28px;border-radius:10px;border:1px solid transparent;transition:transform .12s,background .25s,border-color .25s,color .25s}
+.btn:active{transform:scale(.97)}
+.btn-amber{background:var(--amber);color:var(--bg)}
+.btn-amber:hover{background:var(--amber-2)}
+.btn-ghost{border-color:var(--line);color:var(--text);background:rgba(21,19,12,.5)}
+.btn-ghost:hover{border-color:var(--amber);color:var(--amber)}
+.kbd-hint{font-family:var(--mono);font-size:.68rem;color:var(--faint);margin-top:22px}
+.kbd-hint kbd{border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:2px 7px;color:var(--dim);font-family:var(--mono)}
+@media (max-width:560px){.kbd-hint{display:none}}
+
+/* ============ HONEST BAND ============ */
+.band{border-bottom:1px solid var(--line);background:var(--bg-2)}
+.band .grid{display:grid;grid-template-columns:repeat(4,1fr)}
+.band .b{padding:32px 24px;border-right:1px solid var(--line-2)}
+.band .b:last-child{border-right:none}
+.band .n{font-family:var(--disp);font-variation-settings:'wdth' 115;font-weight:900;font-size:clamp(1.8rem,3.6vw,2.7rem);line-height:1;color:var(--amber)}
+.band .n.neutral{color:var(--text)}
+.band .l{font-family:var(--mono);font-size:.66rem;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin-top:9px;line-height:1.7}
+.band .foot{grid-column:1/-1;border-top:1px solid var(--line-2);padding:12px 24px;font-family:var(--mono);font-size:.62rem;letter-spacing:.04em;color:var(--faint)}
+@media (max-width:820px){.band .grid{grid-template-columns:1fr 1fr}.band .b:nth-child(2){border-right:none}.band .b:nth-child(-n+2){border-bottom:1px solid var(--line-2)}}
+
+/* ============ SECTIONS ============ */
+.section{padding:104px 0;position:relative}
+.sec-head{margin-bottom:50px;max-width:780px}
+.sec-head h2{font-size:clamp(2.1rem,5.6vw,4rem);margin-top:18px}
+.sec-head h2 .amber{color:var(--amber)}
+.sec-head p{color:var(--dim);max-width:600px;font-size:1.05rem;margin-top:16px}
+.rule{border:none;border-top:1px solid var(--line)}
+
+/* ============ STORY ============ */
+.story{display:grid;grid-template-columns:1.05fr .95fr;gap:54px;align-items:center}
+.story h3{font-family:var(--disp);font-variation-settings:'wdth' 112;font-weight:900;text-transform:uppercase;font-size:1.9rem;line-height:1;margin-bottom:20px}
+.story p{color:var(--dim);font-size:1.05rem;margin-bottom:16px}
+.story p strong{color:var(--text);font-weight:600}
+.story p strong.g{color:var(--green)}
+.story .pq{border-left:2px solid var(--amber);padding:4px 0 4px 20px;font-family:var(--disp);font-variation-settings:'wdth' 105;font-weight:700;text-transform:uppercase;font-size:1.15rem;line-height:1.35;color:var(--text);margin-top:26px}
+.term{border:1px solid var(--line);border-radius:14px;background:var(--card);overflow:hidden}
+.term-bar{display:flex;align-items:center;gap:12px;padding:11px 16px;border-bottom:1px solid var(--line);font-family:var(--mono);font-size:.66rem;letter-spacing:.1em;color:var(--faint);background:var(--bg-2)}
+.term-bar .dots{display:flex;gap:6px}
+.term-bar .dots s{width:10px;height:10px;border-radius:50%;display:block;text-decoration:none}
+.term-bar .dots s:nth-child(1){background:var(--red)}
+.term-bar .dots s:nth-child(2){background:var(--amber)}
+.term-bar .dots s:nth-child(3){background:var(--green)}
+.term-bar .tag{margin-left:auto;color:var(--green)}
+.term-body{padding:20px}
+.term-body svg{display:block;width:100%;height:auto}
+.term-foot{display:flex;justify-content:space-between;padding:0 20px 16px;font-family:var(--mono);font-size:.64rem;letter-spacing:.08em;color:var(--faint)}
+.term-foot .r{color:var(--red)} .term-foot .g{color:var(--green)}
+@media (max-width:880px){.story{grid-template-columns:1fr;gap:36px}}
+
+/* ============ DIFF CARDS ============ */
+.diff{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:54px}
+.diff .d{border:1px solid var(--line);border-radius:14px;padding:28px;background:var(--card);transition:border-color .25s,transform .25s}
+.diff .d:hover{border-color:rgba(255,173,31,.4);transform:translateY(-4px)}
+.diff .d .di{font-family:var(--mono);font-size:.66rem;letter-spacing:.2em;color:var(--amber);margin-bottom:16px}
+.diff .d h4{font-family:var(--disp);font-variation-settings:'wdth' 110;font-weight:900;text-transform:uppercase;font-size:1.22rem;line-height:1.05;margin-bottom:10px}
+.diff .d p{color:var(--dim);font-size:.95rem}
+@media (max-width:780px){.diff{grid-template-columns:1fr}}
+
+/* ============ ARMORY ============ */
+.armory{background:var(--bg-2);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.tools{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.tool{border:1px solid var(--line);border-radius:14px;background:var(--card);padding:24px;text-align:left;display:flex;flex-direction:column;gap:0;transition:border-color .25s,transform .25s;position:relative;overflow:hidden}
+.tool::after{content:"";position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--amber),transparent);opacity:0;transition:opacity .3s}
+.tool:hover{border-color:rgba(255,173,31,.45);transform:translateY(-4px)}
+.tool:hover::after{opacity:1}
+.tool .t-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+.tool .t-ic{width:40px;height:40px;border:1px solid var(--line);border-radius:10px;display:grid;place-items:center;color:var(--amber)}
+.tool .t-kind{font-family:var(--mono);font-size:.58rem;letter-spacing:.18em;color:var(--faint);border:1px solid var(--line-2);border-radius:5px;padding:4px 8px;text-transform:uppercase}
+.tool h4{font-family:var(--disp);font-variation-settings:'wdth' 110;font-weight:900;text-transform:uppercase;font-size:1.2rem;line-height:1.05;margin-bottom:8px}
+.tool p{color:var(--dim);font-size:.9rem;flex:1}
+.tool .t-go{margin-top:18px;font-family:var(--mono);font-size:.68rem;letter-spacing:.14em;color:var(--amber);text-transform:uppercase}
+@media (max-width:980px){.tools{grid-template-columns:1fr 1fr}}
+@media (max-width:640px){.tools{grid-template-columns:1fr}}
+
+/* ============ PATTERN LIBRARY ============ */
+.plib-controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:26px}
+.pfilter{display:flex;flex-wrap:wrap;gap:8px}
+.pfilter button{font-family:var(--mono);font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);border:1px solid var(--line);border-radius:100px;padding:9px 16px;transition:all .2s}
+.pfilter button:hover{color:var(--amber);border-color:var(--amber)}
+.pfilter button.on{background:var(--amber);border-color:var(--amber);color:var(--bg);font-weight:600}
+.psearch{margin-left:auto;display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:10px;padding:9px 14px;background:var(--card);min-width:220px}
+.psearch input{background:none;border:none;outline:none;color:var(--text);font-family:var(--mono);font-size:.78rem;width:100%}
+.psearch input::placeholder{color:var(--faint)}
+.psearch svg{color:var(--faint);flex:0 0 auto}
+@media (max-width:760px){.psearch{margin-left:0;width:100%}}
+.pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(195px,1fr));gap:12px}
+.pcard{border:1px solid var(--line);border-radius:12px;background:var(--card);padding:16px;text-align:left;transition:border-color .2s,transform .2s;display:flex;flex-direction:column;gap:10px}
+.pcard:hover{border-color:var(--amber);transform:translateY(-3px)}
+.pcard .pv{height:92px;display:grid;place-items:center;border:1px solid var(--line-2);border-radius:8px;background:var(--bg-2);position:relative;overflow:hidden}
+.pcard .pv svg{display:block}
+.pcard .pn{font-family:var(--disp);font-variation-settings:'wdth' 108;font-weight:900;text-transform:uppercase;font-size:.92rem;line-height:1.1}
+.pcard .pm{display:flex;justify-content:space-between;align-items:center;font-family:var(--mono);font-size:.58rem;letter-spacing:.12em;text-transform:uppercase;color:var(--faint)}
+.pcard .side{padding:3px 8px;border-radius:4px;font-weight:600}
+.side.bull{color:var(--green);background:var(--green-bg)}
+.side.bear{color:var(--red);background:var(--red-bg)}
+.side.neut{color:var(--amber);background:var(--amber-glow)}
+.pcount{font-family:var(--mono);font-size:.66rem;letter-spacing:.1em;color:var(--faint);margin-top:18px;text-align:center;text-transform:uppercase}
+
+/* ============ CURRICULUM ============ */
+.curr{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.sess{border:1px solid var(--line);border-radius:12px;background:var(--card);overflow:hidden;transition:border-color .2s}
+.sess[open]{border-color:rgba(255,173,31,.45)}
+.sess summary{padding:20px 22px;cursor:pointer;display:flex;align-items:center;gap:16px;list-style:none}
+.sess summary::-webkit-details-marker{display:none}
+.sess .snum{font-family:var(--mono);font-size:.72rem;font-weight:600;color:var(--amber);border:1px solid rgba(255,173,31,.35);border-radius:6px;padding:5px 9px;background:var(--amber-glow)}
+.sess .stitle{font-family:var(--disp);font-variation-settings:'wdth' 108;font-weight:900;text-transform:uppercase;font-size:1.02rem;flex:1;line-height:1.15}
+.sess .chev{color:var(--faint);transition:transform .25s;font-family:var(--mono)}
+.sess[open] .chev{transform:rotate(90deg)}
+.sess .sbody{padding:0 22px 22px;color:var(--dim);font-size:.94rem}
+.sess .sbody .skey{margin-top:14px;border-left:2px solid var(--amber);padding:8px 0 8px 14px;font-size:.85rem;color:var(--text)}
+.sess .sbody .skey b{color:var(--amber)}
+@media (max-width:760px){.curr{grid-template-columns:1fr}}
+
+/* ============ PRICING ============ */
+.tiers{display:grid;grid-template-columns:1fr 1fr;gap:18px;max-width:920px;margin:0 auto}
+.tier{border:1px solid var(--line);border-radius:16px;background:var(--card);padding:36px 32px;position:relative;overflow:hidden;transition:transform .25s,border-color .25s}
+.tier:hover{transform:translateY(-5px)}
+.tier.t1:hover{border-color:rgba(255,173,31,.5)}
+.tier.t2{border-color:rgba(255,173,31,.55);background:linear-gradient(170deg,var(--card-2),var(--card))}
+.tier .ribbon{position:absolute;top:20px;right:20px;font-family:var(--mono);font-size:.58rem;letter-spacing:.16em;text-transform:uppercase;color:var(--bg);background:var(--amber);padding:6px 12px;border-radius:100px;font-weight:600}
+.tier .tname{font-family:var(--disp);font-variation-settings:'wdth' 112;font-weight:900;text-transform:uppercase;font-size:1.5rem}
+.tier .tdur{font-family:var(--mono);font-size:.7rem;color:var(--faint);letter-spacing:.1em;margin-top:6px}
+.tier .price{font-family:var(--disp);font-variation-settings:'wdth' 118;font-weight:900;font-size:3.6rem;margin:20px 0 4px;line-height:1}
+.tier.t2 .price{color:var(--amber)}
+.tier .price small{font-family:var(--mono);font-size:.76rem;color:var(--faint);font-weight:400;letter-spacing:.06em}
+.tier .tfor{color:var(--dim);font-size:.95rem;margin-bottom:22px}
+.tier ul{list-style:none;display:flex;flex-direction:column;gap:10px;margin-bottom:26px}
+.tier li{font-size:.93rem;padding-left:24px;position:relative;line-height:1.45}
+.tier li::before{content:"+";position:absolute;left:0;top:-1px;color:var(--amber);font-family:var(--mono);font-weight:600}
+.tier .tres{font-style:italic;font-size:.9rem;color:var(--faint);border-top:1px solid var(--line);padding-top:16px;margin-bottom:24px}
+@media (max-width:760px){.tiers{grid-template-columns:1fr}}
+
+/* ============ BOOK FORM ============ */
+.book-box{max-width:760px;margin:60px auto 0;border:1px solid var(--line);border-radius:16px;background:var(--card);overflow:hidden}
+.book-form{display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:30px}
+.bf{display:flex;flex-direction:column;gap:8px}
+.bf.full{grid-column:1/-1}
+.bf label{font-family:var(--mono);font-size:.62rem;letter-spacing:.18em;text-transform:uppercase;color:var(--faint)}
+.bf label em{color:var(--amber);font-style:normal}
+.bf input,.bf select,.bf textarea{width:100%;background:var(--bg-2);border:1px solid var(--line);border-radius:10px;padding:14px 16px;color:var(--text);font-family:var(--body);font-size:.96rem;outline:none;transition:border-color .2s,box-shadow .2s;appearance:none}
+.bf input::placeholder,.bf textarea::placeholder{color:var(--faint)}
+.bf input:focus,.bf select:focus,.bf textarea:focus{border-color:var(--amber);box-shadow:0 0 0 3px var(--amber-glow)}
+.bf select{cursor:pointer;background-image:linear-gradient(45deg,transparent 50%,var(--dim) 50%),linear-gradient(135deg,var(--dim) 50%,transparent 50%);background-position:calc(100% - 21px) 50%,calc(100% - 16px) 50%;background-size:5px 5px,5px 5px;background-repeat:no-repeat}
+.bf select option{background:var(--card);color:var(--text)}
+.bf textarea{min-height:110px;resize:vertical}
+.book-form .btn{grid-column:1/-1;width:100%;border:none}
+.book-foot{grid-column:1/-1;text-align:center;font-family:var(--mono);font-size:.66rem;letter-spacing:.04em;color:var(--faint)}
+.book-foot b{color:var(--text)} .book-foot a{color:var(--amber);text-decoration:none}
+@media (max-width:640px){.book-form{grid-template-columns:1fr}.bf{grid-column:1/-1}}
+
+/* ============ DISCLAIMER + FOOTER ============ */
+.disc{max-width:860px;margin:80px auto 0;border:1px solid var(--line);border-radius:14px;padding:26px;background:var(--bg-2)}
+.disc .dh{font-family:var(--mono);font-size:.68rem;letter-spacing:.18em;text-transform:uppercase;color:var(--amber);margin-bottom:12px}
+.disc p{font-size:.8rem;line-height:1.75;color:var(--faint)}
+footer.site{border-top:1px solid var(--line);padding:44px 0;margin-top:90px;background:var(--bg-2)}
+.foot{display:flex;justify-content:space-between;align-items:center;gap:22px;flex-wrap:wrap}
+.foot .fr{font-family:var(--mono);font-size:.7rem;color:var(--faint);text-align:right;line-height:2}
+.foot .fr a{color:var(--amber);text-decoration:none}
+@media (max-width:640px){.foot{flex-direction:column;text-align:center}.foot .fr{text-align:center}}
+
+/* ============ MODALS ============ */
+.modal{position:fixed;inset:0;z-index:120;background:rgba(5,4,3,.88);backdrop-filter:blur(6px);display:none;align-items:flex-start;justify-content:center;padding:4vh 16px;overflow-y:auto}
+.modal.open{display:flex}
+.mwin{width:100%;max-width:680px;border:1px solid var(--line);border-radius:16px;background:var(--card);overflow:hidden;margin:auto 0;animation:mpop .22s cubic-bezier(.3,1.4,.6,1)}
+.mwin.wide{max-width:880px}
+@keyframes mpop{from{opacity:0;transform:translateY(14px) scale(.985)}to{opacity:1;transform:none}}
+.mbar{display:flex;align-items:center;gap:12px;padding:13px 18px;border-bottom:1px solid var(--line);background:var(--bg-2)}
+.mbar .dots{display:flex;gap:6px}
+.mbar .dots s{width:10px;height:10px;border-radius:50%;display:block}
+.mbar .dots s:nth-child(1){background:var(--red)}
+.mbar .dots s:nth-child(2){background:var(--amber)}
+.mbar .dots s:nth-child(3){background:var(--green)}
+.mbar .mt{font-family:var(--mono);font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+.mbar .mx{margin-left:auto;font-size:1.3rem;color:var(--faint);line-height:1;padding:2px 8px;border-radius:6px}
+.mbar .mx:hover{color:var(--text);background:var(--card-2)}
+.mbody{padding:26px}
+.mbody h3{font-family:var(--disp);font-variation-settings:'wdth' 112;font-weight:900;text-transform:uppercase;font-size:1.5rem;line-height:1;margin-bottom:6px}
+.mbody .msub{font-family:var(--mono);font-size:.7rem;letter-spacing:.08em;color:var(--faint);margin-bottom:22px}
+.mgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.mgrid .full{grid-column:1/-1}
+@media (max-width:560px){.mgrid{grid-template-columns:1fr}.mgrid>*{grid-column:1/-1}}
+.mf{display:flex;flex-direction:column;gap:7px}
+.mf label{font-family:var(--mono);font-size:.6rem;letter-spacing:.16em;text-transform:uppercase;color:var(--faint)}
+.mf input,.mf select,.mf textarea{width:100%;background:var(--bg-2);border:1px solid var(--line);border-radius:10px;padding:12px 14px;color:var(--text);font-family:var(--mono);font-size:1rem;outline:none;transition:border-color .2s}
+.mf input:focus,.mf select:focus,.mf textarea:focus{border-color:var(--amber)}
+.mf textarea{font-family:var(--body);font-size:.92rem;min-height:84px;resize:vertical}
+.mbtn{width:100%;background:var(--amber);color:var(--bg);font-family:var(--mono);font-weight:600;font-size:.78rem;letter-spacing:.12em;text-transform:uppercase;padding:15px;border-radius:10px;margin-top:18px;transition:background .2s}
+.mbtn:hover{background:var(--amber-2)}
+.mbtn.ghost{background:none;border:1px solid var(--line);color:var(--text)}
+.mbtn.ghost:hover{border-color:var(--amber);color:var(--amber)}
+.mres{margin-top:20px;border:1px solid rgba(43,217,124,.3);background:var(--green-bg);border-radius:12px;padding:20px;display:none}
+.mres.show{display:block}
+.mres .rk{font-family:var(--mono);font-size:.62rem;letter-spacing:.16em;text-transform:uppercase;color:var(--green);margin-bottom:6px}
+.mres .rv{font-family:var(--disp);font-variation-settings:'wdth' 115;font-weight:900;font-size:2.5rem;line-height:1}
+.mres .rs{font-size:.85rem;color:var(--dim);margin-top:6px}
+.mnote{font-family:var(--mono);font-size:.62rem;color:var(--faint);margin-top:16px;line-height:1.8}
+.likert{display:flex;flex-direction:column;gap:8px;margin-top:16px}
+.likert button{text-align:left;border:1px solid var(--line);border-radius:10px;padding:13px 16px;font-size:.92rem;color:var(--text);transition:border-color .15s,background .15s}
+.likert button:hover{border-color:var(--amber);background:var(--card-2)}
+.qprog{font-family:var(--mono);font-size:.64rem;letter-spacing:.16em;color:var(--amber);text-transform:uppercase;margin-bottom:10px}
+.qtext{font-size:1.08rem;font-weight:500;line-height:1.5}
+.score-big{text-align:center;padding:10px 0 4px}
+.score-big .sv{font-family:var(--disp);font-variation-settings:'wdth' 120;font-weight:900;font-size:5rem;line-height:1}
+.score-big .sl{font-family:var(--mono);font-size:.78rem;letter-spacing:.2em;text-transform:uppercase;margin-top:6px}
+.fb-box{margin-top:20px;border:1px solid var(--line);border-radius:12px;padding:18px;font-size:.92rem;color:var(--dim)}
+.check-list{display:flex;flex-direction:column;gap:8px}
+.check-item{display:flex;align-items:flex-start;gap:12px;border:1px solid var(--line);border-radius:10px;padding:13px 15px;cursor:pointer;transition:border-color .15s}
+.check-item:hover{border-color:rgba(255,173,31,.4)}
+.check-item input{accent-color:var(--amber);width:16px;height:16px;margin-top:3px;flex:0 0 auto}
+.check-item span{font-size:.9rem}
+.check-score{display:flex;justify-content:space-between;align-items:center;margin-top:18px;font-family:var(--mono)}
+.check-score .cs{font-size:1.2rem;font-weight:600;color:var(--amber)}
+.yn{display:flex;gap:10px;margin-top:10px}
+.yn button{flex:1;border:1px solid var(--line);border-radius:8px;padding:10px;font-family:var(--mono);font-size:.74rem;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);transition:all .15s}
+.yn button.sel-y{background:var(--green-bg);border-color:var(--green);color:var(--green)}
+.yn button.sel-n{background:var(--red-bg);border-color:var(--red);color:var(--red)}
+.vq{border:1px solid var(--line);border-radius:10px;padding:15px;margin-bottom:10px}
+.vq .vqt{font-size:.9rem}
+.lev-table{width:100%;border-collapse:collapse;margin-top:18px;font-family:var(--mono);font-size:.86rem}
+.lev-table td{padding:10px 12px;border-bottom:1px solid var(--line-2)}
+.lev-table td:first-child{color:var(--dim);font-size:.7rem;letter-spacing:.1em;text-transform:uppercase}
+.lev-table td:last-child{text-align:right;font-weight:600}
+.lev-table tr.r td:last-child{color:var(--red)}
+.lev-table tr.p td:last-child{color:var(--amber)}
+.lev-table tr.s td:last-child{color:var(--green)}
+.crypto-row{display:flex;justify-content:space-between;align-items:center;border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin-bottom:8px}
+.crypto-row .cn{font-weight:600;font-size:.95rem}
+.crypto-row .cn small{color:var(--faint);font-family:var(--mono);font-size:.68rem;margin-left:8px}
+.crypto-row .cp{text-align:right;font-family:var(--mono)}
+.crypto-row .cp .v{font-size:1.05rem;font-weight:600}
+.crypto-row .cp .c{font-size:.7rem}
+/* pattern detail modal */
+.pd-hero{border:1px solid var(--line);border-radius:12px;background:var(--bg-2);display:grid;place-items:center;padding:22px;margin-bottom:20px}
+.pd-meta{display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap}
+.pd-meta span{font-family:var(--mono);font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;border:1px solid var(--line);border-radius:5px;padding:5px 10px;color:var(--dim)}
+.pd-row{display:grid;grid-template-columns:96px 1fr;gap:14px;padding:13px 0;border-top:1px solid var(--line-2);font-size:.92rem}
+.pd-row .k{font-family:var(--mono);font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;color:var(--amber);padding-top:4px}
+.pd-row .v{color:var(--dim)}
+.pd-row .v b{color:var(--text)}
+/* equity sim canvas */
+#simCanvas{width:100%;height:240px;border:1px solid var(--line);border-radius:10px;background:var(--bg-2);margin-top:18px}
+.sim-ctrl{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.range-val{font-family:var(--mono);font-size:.8rem;color:var(--amber);font-weight:600}
+input[type=range]{accent-color:var(--amber);width:100%}
+/* command palette */
+#cmdk{position:fixed;inset:0;z-index:200;background:rgba(5,4,3,.85);display:none;align-items:flex-start;justify-content:center;padding-top:12vh}
+#cmdk.open{display:flex}
+.cmdk-win{width:min(560px,92%);border:1px solid var(--line);border-radius:14px;background:var(--card);overflow:hidden;box-shadow:0 40px 90px rgba(0,0,0,.8)}
+.cmdk-in{display:flex;align-items:center;gap:12px;padding:16px 18px;border-bottom:1px solid var(--line)}
+.cmdk-in input{flex:1;background:none;border:none;outline:none;color:var(--text);font-family:var(--mono);font-size:.95rem}
+.cmdk-list{max-height:320px;overflow-y:auto;padding:8px}
+.cmdk-item{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-radius:9px;cursor:pointer;font-size:.92rem}
+.cmdk-item:hover,.cmdk-item.hot{background:var(--card-2);color:var(--amber)}
+.cmdk-item small{font-family:var(--mono);font-size:.6rem;letter-spacing:.12em;color:var(--faint);text-transform:uppercase}
+.cmdk-foot{padding:10px 18px;border-top:1px solid var(--line);font-family:var(--mono);font-size:.6rem;letter-spacing:.08em;color:var(--faint);display:flex;justify-content:space-between}
+body.locked{overflow:hidden}
+</style>
 </head>
 <body>
-    <!-- NAVIGATION -->
-    <nav class="sticky top-0 z-50 glass-thick border-b border-zinc-800">
-        <div class="max-w-8xl mx-auto px-6 py-4 flex items-center justify-between">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-400 via-violet-400 to-emerald-400 flex items-center justify-center">
-                    <i class="fa-solid fa-chart-line text-black font-black text-lg"></i>
-                </div>
-                <div>
-                    <div class="font-display text-2xl">The Trading Desk</div>
-                    <div class="text-xs text-zinc-500 tracking-widest">COMMAND CENTER</div>
-                </div>
-            </div>
-            <div class="hidden lg:flex items-center gap-8 text-sm font-medium">
-                <a href="#research" class="hover:text-cyan-400 transition">Research</a>
-                <a href="#scanner" class="hover:text-cyan-400 transition">Scanner</a>
-                <a href="#analysis" class="hover:text-cyan-400 transition">Analysis</a>
-                <a href="#journal" class="hover:text-cyan-400 transition">Journal</a>
-            </div>
-            <button class="px-6 py-2.5 bg-white text-black font-semibold rounded-lg hover:bg-zinc-100 transition">
-                Open Dashboard
-            </button>
-        </div>
-    </nav>
 
-    <!-- HERO SECTION -->
-    <section class="relative overflow-hidden pt-20 pb-32">
-        <div class="absolute inset-0 opacity-30">
-            <div class="absolute top-20 left-20 w-96 h-96 bg-cyan-500 rounded-full blur-3xl"></div>
-            <div class="absolute bottom-20 right-20 w-96 h-96 bg-violet-500 rounded-full blur-3xl"></div>
-        </div>
-        <div class="relative max-w-6xl mx-auto px-6 text-center">
-            <div class="badge badge-live mx-auto mb-6">
-                <i class="fa-solid fa-circle-notch animate-spin"></i>
-                LIVE TRADING INTELLIGENCE
-            </div>
-            <h1 class="font-display text-7xl md:text-8xl tracking-tighter mb-6">
-                The <span class="gradient-text">Command Center</span>
-            </h1>
-            <p class="text-xl text-zinc-400 max-w-3xl mx-auto mb-12">
-                40+ candlestick patterns. Real-time market scanner. Backtesting engine. Trade journal with edge detection. Everything a serious trader needs, all in one place.
-            </p>
-            <div class="flex flex-wrap justify-center gap-4">
-                <button onclick="document.getElementById('research').scrollIntoView({ behavior: 'smooth' })" class="btn-primary px-8 py-3.5 rounded-lg flex items-center gap-2">
-                    <i class="fa-solid fa-microscope"></i> Explore Tools
-                </button>
-                <button onclick="openModal('quickStart')" class="px-8 py-3.5 border border-zinc-700 rounded-lg hover:bg-zinc-900 transition">
-                    Quick Start Guide
-                </button>
-            </div>
-        </div>
-    </section>
+<!-- TICKER TAPE -->
+<div class="tape" aria-hidden="true">
+  <div class="tape-track" id="tapeTrack"></div>
+</div>
 
-    <!-- RESEARCH HUB -->
-    <section id="research" class="py-20 border-t border-zinc-800">
-        <div class="max-w-8xl mx-auto px-6">
-            <div class="mb-12">
-                <div class="text-xs font-mono text-cyan-400 mb-2 tracking-widest">PHASE 2</div>
-                <h2 class="font-display text-5xl mb-3">Research & Pattern Recognition</h2>
-                <p class="text-lg text-zinc-400">Master every candlestick pattern. Understand when to enter, when to avoid.</p>
-            </div>
+<!-- NAV -->
+<nav id="nav" aria-label="Main">
+  <div class="wrap nav-in">
+    <a class="brand" href="#top">
+      <span class="bx">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+          <line x1="5" y1="2" x2="5" y2="18" stroke="#FF4A5E" stroke-width="1.6"/>
+          <rect x="2.5" y="6" width="5" height="6" fill="#FF4A5E"/>
+          <line x1="14" y1="2" x2="14" y2="18" stroke="#2BD97C" stroke-width="1.6"/>
+          <rect x="11.5" y="7" width="5" height="7" fill="#2BD97C"/>
+        </svg>
+      </span>
+      <span class="bt">The Trading Desk<small>Structure over signals</small></span>
+    </a>
+    <button class="menu-btn" id="menuBtn" aria-expanded="false" aria-controls="navLinks">Menu</button>
+    <ul class="nav-links" id="navLinks">
+      <li><a href="#story">The Story</a></li>
+      <li><a href="#armory">The Armory</a></li>
+      <li><a href="#patterns">Patterns</a></li>
+      <li><a href="#path">Curriculum</a></li>
+      <li><a href="#sessions" class="nav-cta">Book a session</a></li>
+    </ul>
+    <span class="status-chip"><span class="dot"></span>DESK OPEN · PARIS, TX</span>
+  </div>
+</nav>
 
-            <!-- TABS FOR PATTERN CATEGORIES -->
-            <div class="glass-thick rounded-xl border border-zinc-700 overflow-hidden mb-8">
-                <div class="tabs">
-                    <div class="tab active" onclick="switchPatternTab('reversals')">Reversals</div>
-                    <div class="tab" onclick="switchPatternTab('continuations')">Continuations</div>
-                    <div class="tab" onclick="switchPatternTab('indecision')">Indecision</div>
-                    <div class="tab" onclick="switchPatternTab('gaps')">Gaps & Breaks</div>
-                </div>
-                <div id="patternsContainer" class="p-8">
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="patternGrid"></div>
-                </div>
-            </div>
+<!-- HERO -->
+<header id="top">
+  <canvas id="heroChart" aria-hidden="true"></canvas>
+  <div class="wrap hero">
+    <div class="badge"><b>●</b> EDUCATIONAL ONLY — NO SIGNALS, NO HYPE, NO "GET RICH BY FRIDAY"</div>
+    <h1 class="disp">
+      <span class="ln">The market</span>
+      <span class="ln">charges tuition.</span>
+      <span class="ln amber">Class is cheaper.</span>
+    </h1>
+    <p class="sub">Free trader tools, a full pattern library, and one-on-one education built from the structure I had to learn the slow, expensive way — so the market makes sense <em>before</em> your money's on the line. <b>No signals. Ever.</b></p>
+    <p class="micro">// free tools · pattern reference · risk math · 1:1 sessions · paris, tx → nationwide</p>
+    <div class="cta-row">
+      <a class="btn btn-amber" href="#armory">Open the free tools</a>
+      <a class="btn btn-ghost" href="#patterns">Browse the pattern library</a>
+    </div>
+    <p class="kbd-hint">Press <kbd>/</kbd> anywhere to quick-launch any tool</p>
+  </div>
+</header>
 
-            <!-- ECONOMIC CALENDAR -->
-            <div class="grid lg:grid-cols-3 gap-6 mb-8">
-                <div class="lg:col-span-2 glass-thick rounded-xl border border-zinc-700 p-6">
-                    <h3 class="font-display text-2xl mb-4 flex items-center gap-2">
-                        <i class="fa-solid fa-calendar-days text-orange-400"></i> Economic Calendar
-                    </h3>
-                    <div id="economicCalendar" class="space-y-3">
-                        <div class="flex items-center justify-between p-3 bg-black/40 rounded-lg border border-orange-900/30">
-                            <div>
-                                <div class="font-semibold">Fed Chair Powell Speaks</div>
-                                <div class="text-xs text-zinc-500">High Impact • Today 14:00 UTC</div>
-                            </div>
-                            <div class="badge badge-live"><i class="fa-solid fa-fire"></i> CRITICAL</div>
-                        </div>
-                        <div class="flex items-center justify-between p-3 bg-black/40 rounded-lg border border-orange-900/30">
-                            <div>
-                                <div class="font-semibold">US GDP (Preliminary)</div>
-                                <div class="text-xs text-zinc-500">High Impact • Tomorrow 12:30 UTC</div>
-                            </div>
-                            <div class="badge badge-new"><i class="fa-solid fa-chart-bar"></i> HIGH</div>
-                        </div>
-                        <div class="flex items-center justify-between p-3 bg-black/40 rounded-lg border border-zinc-800">
-                            <div>
-                                <div class="font-semibold">CPI (Consumer Price Index)</div>
-                                <div class="text-xs text-zinc-500">High Impact • Jun 12 12:30 UTC</div>
-                            </div>
-                            <div class="badge badge-new"><i class="fa-solid fa-chart-bar"></i> HIGH</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="glass-thick rounded-xl border border-zinc-700 p-6">
-                    <h3 class="font-display text-2xl mb-4">
-                        <i class="fa-solid fa-triangle-exclamation text-red-400"></i> Market Alerts
-                    </h3>
-                    <div class="space-y-3 text-sm">
-                        <div class="p-3 bg-red-950/30 border border-red-900/30 rounded-lg">
-                            <div class="font-semibold text-red-400">VIX Spike Alert</div>
-                            <p class="text-xs mt-1">Volatility jumped 15% • High uncertainty mode</p>
-                        </div>
-                        <div class="p-3 bg-emerald-950/30 border border-emerald-900/30 rounded-lg">
-                            <div class="font-semibold text-emerald-400">Sector Rotation</div>
-                            <p class="text-xs mt-1">Tech momentum weakening • Defensive flows</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
+<!-- HONEST BAND -->
+<div class="band">
+  <div class="wrap"><div class="grid">
+    <div class="b"><div class="n">MOST</div><div class="l">short-term retail traders lose money over time — the widely cited reality</div></div>
+    <div class="b"><div class="n neutral">$0</div><div class="l">cost of every tool and reference on this site — no login, no paywall</div></div>
+    <div class="b"><div class="n neutral">8</div><div class="l">sessions from zero structure to your own written trading plan</div></div>
+    <div class="b"><div class="n neutral">1:1</div><div class="l">every session — no group calls, no recycled course videos</div></div>
+    <div class="foot">Loss-rate figures vary by study, market, and year — but the direction never does. That's exactly why this desk teaches structure first and sells no signals.</div>
+  </div></div>
+</div>
 
-            <!-- SECTOR HEAT MAP -->
-            <div class="glass-thick rounded-xl border border-zinc-700 p-6">
-                <h3 class="font-display text-2xl mb-6 flex items-center gap-2">
-                    <i class="fa-solid fa-fire text-orange-400"></i> Sector Heat Map (Today)
-                </h3>
-                <div class="heatmap" id="sectorHeatmap">
-                    <div class="heatmap-cell heatmap-up"><div class="font-display text-xl">+8.2%</div><div class="text-xs mt-1">Tech</div></div>
-                    <div class="heatmap-cell heatmap-down"><div class="font-display text-xl">-2.1%</div><div class="text-xs mt-1">Finance</div></div>
-                    <div class="heatmap-cell heatmap-up"><div class="font-display text-xl">+3.5%</div><div class="text-xs mt-1">Energy</div></div>
-                    <div class="heatmap-cell heatmap-up"><div class="font-display text-xl">+1.8%</div><div class="text-xs mt-1">Healthcare</div></div>
-                    <div class="heatmap-cell heatmap-down"><div class="font-display text-xl">-0.9%</div><div class="text-xs mt-1">Utilities</div></div>
-                    <div class="heatmap-cell heatmap-up"><div class="font-display text-xl">+4.2%</div><div class="text-xs mt-1">Crypto</div></div>
-                    <div class="heatmap-cell heatmap-down"><div class="font-display text-xl">-1.5%</div><div class="text-xs mt-1">Consumer</div></div>
-                    <div class="heatmap-cell heatmap-up"><div class="font-display text-xl">+2.3%</div><div class="text-xs mt-1">Industrials</div></div>
-                </div>
-            </div>
-        </div>
-    </section>
+<main>
+<!-- STORY -->
+<section class="section" id="story">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div class="eyebrow">TAPE 01 // THE ORIGIN</div>
+      <h2 class="disp">I blew it <span class="amber">before I built it.</span></h2>
+    </div>
+    <div class="story reveal">
+      <div>
+        <p>I didn't come to this with a plan. I came in chasing green candles and social-media hype, and the market did what it does to everyone who starts that way — <strong>it took its tuition.</strong> Stretches of losses, revenge trades that dug the hole deeper, the whole cycle.</p>
+        <p>What turned it around wasn't a magic indicator. It was <strong class="g">structure</strong> — understanding risk, sizing, the psychology, and most of all learning <strong>when not to trade.</strong> Consistency came after the lessons I wish someone had just walked me through.</p>
+        <p class="pq">The whole point of this desk: a shortcut through the expensive part.</p>
+      </div>
+      <div class="term">
+        <div class="term-bar"><span class="dots"><s></s><s></s><s></s></span>EQUITY.LOG — THE HONEST VERSION<span class="tag">+STRUCTURE</span></div>
+        <div class="term-body"><svg id="eqSvg" viewBox="0 0 460 210" preserveAspectRatio="xMidYMid meet" aria-label="Equity curve: losses early, consistency after structure"></svg></div>
+        <div class="term-foot"><span class="r">↓ the tuition years</span><span class="g">structure → consistency ↗</span></div>
+      </div>
+    </div>
+    <div class="diff reveal">
+      <div class="d"><div class="di">DIFF / 01</div><h4>Shown, not just told</h4><p>Every piece of this is researchable on your own. The difference is having someone walk you through it live, answer the "but why" in real time, and catch the mistakes before they cost you.</p></div>
+      <div class="d"><div class="di">DIFF / 02</div><h4>What <em>not</em> to do</h4><p>Most courses sell you setups. I spend just as much time on the traps — the revenge trades, the FOMO entries, the account-killers I learned about firsthand.</p></div>
+      <div class="d"><div class="di">DIFF / 03</div><h4>Built around you</h4><p>One-on-one and paced to where you actually are — whether the goal is understanding before you risk a dollar, or putting real structure under what you're already doing.</p></div>
+    </div>
+  </div>
+</section>
 
-    <!-- MARKET SCANNER -->
-    <section id="scanner" class="py-20 border-t border-zinc-800">
-        <div class="max-w-8xl mx-auto px-6">
-            <div class="mb-12">
-                <div class="text-xs font-mono text-emerald-400 mb-2 tracking-widest">PHASE 3</div>
-                <h2 class="font-display text-5xl mb-3">Market Scanner & Watchlist</h2>
-                <p class="text-lg text-zinc-400">Find high-probability setups automatically. Real-time momentum, volume, and breakouts.</p>
-            </div>
+<!-- ARMORY -->
+<section class="section armory" id="armory">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div class="eyebrow">TAPE 02 // THE ARMORY</div>
+      <h2 class="disp">Free tools. <span class="amber">Real structure.</span></h2>
+      <p>Everything I wish I'd had when I started. No login, no paywall, nothing fake — every number on this desk is either your input or live data, never a simulation dressed up as a feed.</p>
+    </div>
+    <div class="tools reveal" id="toolGrid"></div>
+  </div>
+</section>
 
-            <!-- SCANNER CONTROLS -->
-            <div class="glass-thick rounded-xl border border-zinc-700 p-6 mb-8">
-                <div class="grid md:grid-cols-4 gap-4 mb-6">
-                    <div>
-                        <label class="text-xs text-zinc-500 block mb-2">Filter by Momentum</label>
-                        <select class="w-full bg-black/50 border border-zinc-700 rounded px-3 py-2">
-                            <option>All Signals</option>
-                            <option>Strong Bullish (+5%+)</option>
-                            <option>Moderate (+2-5%)</option>
-                            <option>Weak (+0-2%)</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="text-xs text-zinc-500 block mb-2">Volume Filter</label>
-                        <select class="w-full bg-black/50 border border-zinc-700 rounded px-3 py-2">
-                            <option>Any Volume</option>
-                            <option>Above Average</option>
-                            <option>2x Average</option>
-                            <option>3x Average</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="text-xs text-zinc-500 block mb-2">Pattern Type</label>
-                        <select class="w-full bg-black/50 border border-zinc-700 rounded px-3 py-2">
-                            <option>All Patterns</option>
-                            <option>Breakouts</option>
-                            <option>Reversals</option>
-                            <option>Continuations</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="text-xs text-zinc-500 block mb-2">Asset Class</label>
-                        <select class="w-full bg-black/50 border border-zinc-700 rounded px-3 py-2">
-                            <option>Stocks (US)</option>
-                            <option>Crypto</option>
-                            <option>Forex Pairs</option>
-                            <option>Futures</option>
-                        </select>
-                    </div>
-                </div>
-                <button class="btn-primary px-6 py-2.5 rounded-lg">
-                    <i class="fa-solid fa-magnifying-glass"></i> Scan Markets
-                </button>
-            </div>
+<!-- PATTERN LIBRARY -->
+<section class="section" id="patterns">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div class="eyebrow">TAPE 03 // THE PATTERN LIBRARY</div>
+      <h2 class="disp">Every candle <span class="amber">tells on somebody.</span></h2>
+      <p>The full reference — single candles to chart structures — each with what it shows, where it actually matters, and the trap that catches beginners. Patterns are clues, never commands.</p>
+    </div>
+    <div class="plib-controls reveal">
+      <div class="pfilter" id="pFilters"></div>
+      <label class="psearch">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4-4"/></svg>
+        <input type="search" id="pSearch" placeholder="Search patterns…" aria-label="Search patterns">
+      </label>
+    </div>
+    <div class="pgrid reveal" id="pGrid"></div>
+    <div class="pcount" id="pCount"></div>
+  </div>
+</section>
 
-            <!-- SCANNER RESULTS -->
-            <div class="glass-thick rounded-xl border border-zinc-700 overflow-hidden">
-                <div class="scanner-row font-mono text-xs font-bold bg-black/50 border-b border-zinc-700">
-                    <div>TICKER</div>
-                    <div>PRICE / CHANGE</div>
-                    <div>VOLUME</div>
-                    <div>PATTERN</div>
-                    <div>ACTION</div>
-                </div>
-                <div class="scanner-row">
-                    <div class="font-mono font-bold text-cyan-400">NVDA</div>
-                    <div><span class="text-emerald-400 font-bold">$145.32 +4.2%</span></div>
-                    <div><span class="text-orange-400">2.1x avg</span></div>
-                    <div><span class="text-cyan-400">Breakout</span></div>
-                    <div><button onclick="openModal('setupDetail')" class="text-cyan-400 hover:text-cyan-300 font-semibold">Analyze →</button></div>
-                </div>
-                <div class="scanner-row">
-                    <div class="font-mono font-bold text-purple-400">BTC</div>
-                    <div><span class="text-emerald-400 font-bold">$68,420 +3.8%</span></div>
-                    <div><span class="text-orange-400">1.8x avg</span></div>
-                    <div><span class="text-violet-400">Triangle Break</span></div>
-                    <div><button class="text-cyan-400 hover:text-cyan-300 font-semibold">Analyze →</button></div>
-                </div>
-                <div class="scanner-row">
-                    <div class="font-mono font-bold text-blue-400">TSLA</div>
-                    <div><span class="text-emerald-400 font-bold">$245.67 +2.1%</span></div>
-                    <div><span class="text-orange-400">1.5x avg</span></div>
-                    <div><span class="text-emerald-400">Flag</span></div>
-                    <div><button class="text-cyan-400 hover:text-cyan-300 font-semibold">Analyze →</button></div>
-                </div>
-                <div class="scanner-row">
-                    <div class="font-mono font-bold text-green-400">SPY</div>
-                    <div><span class="text-red-400 font-bold">$532.10 -0.8%</span></div>
-                    <div><span class="text-zinc-500">0.9x avg</span></div>
-                    <div><span class="text-red-400">Rejection</span></div>
-                    <div><button class="text-cyan-400 hover:text-cyan-300 font-semibold">Analyze →</button></div>
-                </div>
-            </div>
-        </div>
-    </section>
+<!-- CURRICULUM -->
+<section class="section armory" id="path">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div class="eyebrow">TAPE 04 // THE 8-SESSION PATH</div>
+      <h2 class="disp">Zero to a <span class="amber">written plan.</span></h2>
+      <p>The full arc, in order — each session builds on the last, and the last one ends with your own trading plan on paper. Numbered because the sequence is the point.</p>
+    </div>
+    <div class="curr reveal" id="currGrid"></div>
+  </div>
+</section>
 
-    <!-- ANALYSIS & BACKTESTING -->
-    <section id="analysis" class="py-20 border-t border-zinc-800">
-        <div class="max-w-8xl mx-auto px-6">
-            <div class="mb-12">
-                <div class="text-xs font-mono text-emerald-400 mb-2 tracking-widest">PHASE 4</div>
-                <h2 class="font-display text-5xl mb-3">Reality Simulator & Backtester</h2>
-                <p class="text-lg text-zinc-400">Test your setup on 5 years of historical data. See real results with slippage and commissions baked in.</p>
-            </div>
-
-            <div class="grid lg:grid-cols-3 gap-6 mb-8">
-                <!-- BACKTEST SETUP -->
-                <div class="lg:col-span-1 glass-thick rounded-xl border border-zinc-700 p-6">
-                    <h3 class="font-display text-xl mb-4">Backtest Configuration</h3>
-                    <div class="space-y-4">
-                        <div>
-                            <label class="text-xs text-zinc-400 block mb-1.5">Select Asset</label>
-                            <input type="text" placeholder="e.g., SPY, AAPL, BTC" class="w-full bg-black/50 border border-zinc-700 rounded px-3 py-2">
-                        </div>
-                        <div>
-                            <label class="text-xs text-zinc-400 block mb-1.5">Lookback Period</label>
-                            <select class="w-full bg-black/50 border border-zinc-700 rounded px-3 py-2">
-                                <option>1 Year</option>
-                                <option selected>2 Years</option>
-                                <option>5 Years</option>
-                                <option>10 Years</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="text-xs text-zinc-400 block mb-1.5">Commission per Trade</label>
-                            <input type="number" value="10" class="w-full bg-black/50 border border-zinc-700 rounded px-3 py-2">
-                        </div>
-                        <div>
-                            <label class="text-xs text-zinc-400 block mb-1.5">Slippage (%)</label>
-                            <input type="number" value="0.05" step="0.01" class="w-full bg-black/50 border border-zinc-700 rounded px-3 py-2">
-                        </div>
-                        <div>
-                            <label class="text-xs text-zinc-400 block mb-1.5">Starting Capital</label>
-                            <input type="number" value="25000" class="w-full bg-black/50 border border-zinc-700 rounded px-3 py-2">
-                        </div>
-                        <button class="btn-primary w-full py-2.5 rounded-lg font-semibold">Run Backtest</button>
-                    </div>
-                </div>
-
-                <!-- BACKTEST RESULTS -->
-                <div class="lg:col-span-2 glass-thick rounded-xl border border-zinc-700 p-6">
-                    <h3 class="font-display text-xl mb-6">Backtest Results (SPY, 2Y)</h3>
-                    <div class="stat-grid mb-6">
-                        <div class="stat-card">
-                            <div class="stat-label">Total Return</div>
-                            <div class="stat-value text-emerald-400">+$8,420</div>
-                            <div class="text-xs text-zinc-500">+33.7%</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-label">Win Rate</div>
-                            <div class="stat-value text-cyan-400">58.3%</div>
-                            <div class="text-xs text-zinc-500">35/60 trades</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-label">Max Drawdown</div>
-                            <div class="stat-value text-orange-400">-18.2%</div>
-                            <div class="text-xs text-zinc-500">Account dip</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-label">Profit Factor</div>
-                            <div class="stat-value text-violet-400">2.14</div>
-                            <div class="text-xs text-zinc-500">Wins/Losses</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-label">Avg Win</div>
-                            <div class="stat-value text-emerald-400">$325</div>
-                            <div class="text-xs text-zinc-500">Per winning trade</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-label">Avg Loss</div>
-                            <div class="stat-value text-red-400">-$157</div>
-                            <div class="text-xs text-zinc-500">Per losing trade</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-label">Sharpe Ratio</div>
-                            <div class="stat-value text-cyan-400">1.68</div>
-                            <div class="text-xs text-zinc-500">Risk-adjusted return</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-label">Consecutive Losses</div>
-                            <div class="stat-value text-orange-400">-5</div>
-                            <div class="text-xs text-zinc-500">Worst streak</div>
-                        </div>
-                    </div>
-                    <div class="chart-container">
-                        <canvas id="backTestChart"></canvas>
-                    </div>
-                </div>
-            </div>
-
-            <!-- MONTE CARLO ANALYSIS -->
-            <div class="glass-thick rounded-xl border border-zinc-700 p-6">
-                <h3 class="font-display text-xl mb-4">Monte Carlo Analysis (Worst Case Scenario)</h3>
-                <p class="text-sm text-zinc-400 mb-4">1,000 simulations of random trade sequences to test robustness:</p>
-                <div class="grid md:grid-cols-4 gap-4">
-                    <div class="stat-card">
-                        <div class="stat-label">5th Percentile</div>
-                        <div class="stat-value text-orange-400">-$2,150</div>
-                        <div class="text-xs text-zinc-500">Very bad outcome</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-label">25th Percentile</div>
-                        <div class="stat-value text-cyan-400">+$1,800</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-label">Median (50th)</div>
-                        <div class="stat-value text-emerald-400">+$8,420</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-label">95th Percentile</div>
-                        <div class="stat-value text-emerald-400">+$18,750</div>
-                        <div class="text-xs text-zinc-500">Very good outcome</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- TRADE JOURNAL & EDGE DETECTION -->
-    <section id="journal" class="py-20 border-t border-zinc-800">
-        <div class="max-w-8xl mx-auto px-6">
-            <div class="mb-12">
-                <div class="text-xs font-mono text-violet-400 mb-2 tracking-widest">PHASE 5</div>
-                <h2 class="font-display text-5xl mb-3">Trade Journal & Edge Mining</h2>
-                <p class="text-lg text-zinc-400">Log trades. System detects YOUR edge automatically. See which setups actually work for YOU.</p>
-            </div>
-
-            <div class="grid lg:grid-cols-3 gap-6 mb-8">
-                <!-- QUICK ENTRY -->
-                <div class="glass-thick rounded-xl border border-zinc-700 p-6">
-                    <h3 class="font-display text-lg mb-4">Log Trade</h3>
-                    <div class="space-y-3">
-                        <input type="text" placeholder="Ticker" class="w-full bg-black/50 border border-zinc-700 rounded px-3 py-2 text-sm">
-                        <input type="number" placeholder="Entry Price" class="w-full bg-black/50 border border-zinc-700 rounded px-3 py-2 text-sm">
-                        <input type="number" placeholder="Exit Price" class="w-full bg-black/50 border border-zinc-700 rounded px-3 py-2 text-sm">
-                        <input type="text" placeholder="Pattern Used" class="w-full bg-black/50 border border-zinc-700 rounded px-3 py-2 text-sm">
-                        <input type="text" placeholder="Timeframe" class="w-full bg-black/50 border border-zinc-700 rounded px-3 py-2 text-sm">
-                        <textarea placeholder="Notes (mood, market, mistakes)" class="w-full bg-black/50 border border-zinc-700 rounded px-3 py-2 text-sm h-20 resize-none"></textarea>
-                        <button class="btn-primary w-full py-2.5 rounded-lg font-semibold text-sm">Save Trade</button>
-                    </div>
-                </div>
-
-                <!-- EDGE DETECTION RESULTS -->
-                <div class="lg:col-span-2 glass-thick rounded-xl border border-zinc-700 p-6">
-                    <h3 class="font-display text-lg mb-4"><i class="fa-solid fa-lightbulb text-yellow-400"></i> Your Edges (24 trades analyzed)</h3>
-                    <div class="space-y-4">
-                        <div class="p-4 bg-emerald-950/30 border border-emerald-900/50 rounded-lg">
-                            <div class="flex items-start justify-between mb-2">
-                                <div>
-                                    <div class="font-semibold text-emerald-400">Bullish Engulfing + Higher Low</div>
-                                    <div class="text-xs text-zinc-500">When price tests support & engulfs</div>
-                                </div>
-                                <div class="stat-value text-emerald-400 text-lg">72%</div>
-                            </div>
-                            <div class="flex gap-6 text-sm">
-                                <div><span class="text-zinc-500">Wins:</span> <span class="font-semibold text-emerald-400">13/18</span></div>
-                                <div><span class="text-zinc-500">Avg Win:</span> <span class="font-semibold text-emerald-400">+2.4%</span></div>
-                                <div><span class="text-zinc-500">Risk:Reward:</span> <span class="font-semibold text-emerald-400">1:2.1</span></div>
-                            </div>
-                        </div>
-                        <div class="p-4 bg-orange-950/30 border border-orange-900/50 rounded-lg">
-                            <div class="flex items-start justify-between mb-2">
-                                <div>
-                                    <div class="font-semibold text-orange-400">RSI Divergence (only 2H+ TF)</div>
-                                    <div class="text-xs text-zinc-500">Price up, RSI down = reversal setup</div>
-                                </div>
-                                <div class="stat-value text-orange-400 text-lg">58%</div>
-                            </div>
-                            <div class="flex gap-6 text-sm">
-                                <div><span class="text-zinc-500">Wins:</span> <span class="font-semibold text-orange-400">7/12</span></div>
-                                <div><span class="text-zinc-500">Avg Win:</span> <span class="font-semibold text-orange-400">+1.8%</span></div>
-                                <div><span class="text-zinc-500">Risk:Reward:</span> <span class="font-semibold text-orange-400">1:1.5</span></div>
-                            </div>
-                        </div>
-                        <div class="p-4 bg-red-950/30 border border-red-900/50 rounded-lg">
-                            <div class="flex items-start justify-between mb-2">
-                                <div>
-                                    <div class="font-semibold text-red-400">Breakout on 2x Volume (low conviction)</div>
-                                    <div class="text-xs text-zinc-500">Trading without confluence</div>
-                                </div>
-                                <div class="stat-value text-red-400 text-lg">33%</div>
-                            </div>
-                            <div class="flex gap-6 text-sm">
-                                <div><span class="text-zinc-500">Wins:</span> <span class="font-semibold text-red-400">2/6</span></div>
-                                <div><span class="text-zinc-500">Avg Loss:</span> <span class="font-semibold text-red-400">-1.2%</span></div>
-                                <div><span class="text-zinc-500">Risk:Reward:</span> <span class="font-semibold text-red-400">1:0.8</span></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- TRADE HISTORY TABLE -->
-            <div class="glass-thick rounded-xl border border-zinc-700 overflow-hidden">
-                <div class="p-6 border-b border-zinc-700">
-                    <h3 class="font-display text-lg">Recent Trades</h3>
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-sm">
-                        <thead class="bg-black/50 border-b border-zinc-700">
-                            <tr class="font-mono text-xs font-bold">
-                                <th class="px-6 py-3 text-left">DATE</th>
-                                <th class="px-6 py-3 text-left">TICKER</th>
-                                <th class="px-6 py-3 text-left">PATTERN</th>
-                                <th class="px-6 py-3 text-left">ENTRY</th>
-                                <th class="px-6 py-3 text-left">EXIT</th>
-                                <th class="px-6 py-3 text-left">P&L</th>
-                                <th class="px-6 py-3 text-left">%</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr class="border-b border-zinc-800 hover:bg-black/30">
-                                <td class="px-6 py-3">Jun 10</td>
-                                <td class="px-6 py-3 font-semibold text-cyan-400">NVDA</td>
-                                <td class="px-6 py-3">Engulfing</td>
-                                <td class="px-6 py-3">$142.50</td>
-                                <td class="px-6 py-3">$147.20</td>
-                                <td class="px-6 py-3 text-emerald-400">+$235</td>
-                                <td class="px-6 py-3 text-emerald-400">+3.3%</td>
-                            </tr>
-                            <tr class="border-b border-zinc-800 hover:bg-black/30">
-                                <td class="px-6 py-3">Jun 09</td>
-                                <td class="px-6 py-3 font-semibold text-purple-400">BTC</td>
-                                <td class="px-6 py-3">Break + Retest</td>
-                                <td class="px-6 py-3">$67,500</td>
-                                <td class="px-6 py-3">$66,800</td>
-                                <td class="px-6 py-3 text-red-400">-$350</td>
-                                <td class="px-6 py-3 text-red-400">-1.0%</td>
-                            </tr>
-                            <tr class="border-b border-zinc-800 hover:bg-black/30">
-                                <td class="px-6 py-3">Jun 08</td>
-                                <td class="px-6 py-3 font-semibold text-blue-400">TSLA</td>
-                                <td class="px-6 py-3">Flag Breakout</td>
-                                <td class="px-6 py-3">$245.00</td>
-                                <td class="px-6 py-3">$251.50</td>
-                                <td class="px-6 py-3 text-emerald-400">+$325</td>
-                                <td class="px-6 py-3 text-emerald-400">+2.7%</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- FOOTER -->
-    <footer class="border-t border-zinc-800 py-12 mt-20">
-        <div class="max-w-8xl mx-auto px-6 text-center">
-            <p class="text-zinc-500">© 2026 The Trading Desk. All data is simulated for educational purposes.</p>
-            <p class="text-xs text-zinc-600 mt-2">Not financial advice. Past performance ≠ future results. Trade responsibly.</p>
-        </div>
-    </footer>
-
-    <!-- MODALS -->
-    <!-- Quick Start Modal -->
-    <div id="quickStart" class="hidden fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4">
-        <div class="glass-thick max-w-2xl w-full rounded-xl border border-zinc-700 p-8 modal">
-            <div class="flex justify-between items-center mb-6">
-                <h3 class="font-display text-3xl">Quick Start Guide</h3>
-                <button onclick="closeModal('quickStart')" class="text-2xl text-zinc-400 hover:text-white">&times;</button>
-            </div>
-            <div class="space-y-4 text-sm">
-                <div class="p-4 bg-black/50 rounded-lg border-l-4 border-cyan-400">
-                    <div class="font-semibold text-cyan-400">Step 1: Explore Patterns</div>
-                    <p class="text-zinc-400 mt-1">Scroll through the 40+ candlestick patterns. Each shows win rate, timeframe, and when to trade it.</p>
-                </div>
-                <div class="p-4 bg-black/50 rounded-lg border-l-4 border-emerald-400">
-                    <div class="font-semibold text-emerald-400">Step 2: Use the Scanner</div>
-                    <p class="text-zinc-400 mt-1">Filter by momentum, volume, and asset class. The scanner finds setups matching your criteria.</p>
-                </div>
-                <div class="p-4 bg-black/50 rounded-lg border-l-4 border-violet-400">
-                    <div class="font-semibold text-violet-400">Step 3: Backtest Your Idea</div>
-                    <p class="text-zinc-400 mt-1">Test any setup on 5 years of historical data. See realistic results with slippage & commissions.</p>
-                </div>
-                <div class="p-4 bg-black/50 rounded-lg border-l-4 border-orange-400">
-                    <div class="font-semibold text-orange-400">Step 4: Log & Track</div>
-                    <p class="text-zinc-400 mt-1">After each trade, log it. The system automatically detects YOUR personal edges.</p>
-                </div>
-            </div>
-        </div>
+<!-- SESSIONS / PRICING + BOOK -->
+<section class="section" id="sessions">
+  <div class="wrap">
+    <div class="sec-head reveal" style="text-align:center;max-width:none">
+      <div class="eyebrow" style="justify-content:center">TAPE 05 // 1:1 SESSIONS</div>
+      <h2 class="disp">Choose your <span class="amber">depth.</span></h2>
+    </div>
+    <div class="tiers reveal">
+      <div class="tier t1">
+        <div class="tname">Starter Session</div>
+        <div class="tdur">// 1 HOUR · FOR BEGINNERS</div>
+        <div class="price">$99<small> / session</small></div>
+        <p class="tfor">For the curious who just want it to finally click.</p>
+        <ul>
+          <li>Long-term investing vs. fast trading</li>
+          <li>What stocks, options, futures, crypto &amp; forex really are</li>
+          <li>How apps and brokers actually work</li>
+          <li>How charts show price movement</li>
+          <li>Why indicators aren't magic</li>
+          <li>The rules that keep an account alive</li>
+        </ul>
+        <p class="tres">You walk out with the confusion gone — and the beginner mistakes avoided.</p>
+        <button class="btn btn-ghost" style="width:100%" onclick="pickTier('Starter Session ($99)')">Book the starter</button>
+      </div>
+      <div class="tier t2">
+        <span class="ribbon">Goes deepest</span>
+        <div class="tname">Deep Dive</div>
+        <div class="tdur">// 2.5 HOURS · FOR THE SERIOUS</div>
+        <div class="price">$200<small> / session</small></div>
+        <p class="tfor">Everything in the Starter, plus the real framework.</p>
+        <ul>
+          <li>How real strategies get built</li>
+          <li>When <em>not</em> to trade</li>
+          <li>How news &amp; earnings move price</li>
+          <li>How to size a position</li>
+          <li>Why traders blow up — the psychology underneath</li>
+          <li>Build your own trading rulebook</li>
+          <li>Get accounts set up practice/trade-ready</li>
+        </ul>
+        <p class="tres">You leave with structure instead of guesses.</p>
+        <button class="btn btn-amber" style="width:100%" onclick="pickTier('Deep Dive ($200)')">Book the deep dive</button>
+      </div>
     </div>
 
-    <!-- Setup Detail Modal -->
-    <div id="setupDetail" class="hidden fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4">
-        <div class="glass-thick max-w-3xl w-full rounded-xl border border-zinc-700 p-8 modal max-h-[90vh] overflow-auto">
-            <div class="flex justify-between items-center mb-6">
-                <h3 class="font-display text-3xl">NVDA Setup Analysis</h3>
-                <button onclick="closeModal('setupDetail')" class="text-2xl text-zinc-400 hover:text-white">&times;</button>
-            </div>
-            <div class="space-y-6">
-                <div class="p-4 bg-cyan-950/30 rounded-lg border border-cyan-700">
-                    <div class="font-semibold text-cyan-400 mb-2">Current Price: $145.32</div>
-                    <div class="text-sm text-zinc-300">Change: <span class="text-emerald-400 font-bold">+4.2% today</span> | Volume: <span class="text-orange-400">2.1x average</span></div>
-                </div>
-                <div>
-                    <h4 class="font-semibold mb-2">Pattern Detected: Breakout</h4>
-                    <p class="text-sm text-zinc-400">Price broke above $142 resistance with 2.1x volume. Historical win rate: 68% on this pattern.</p>
-                </div>
-                <div class="grid md:grid-cols-3 gap-4">
-                    <div class="stat-card">
-                        <div class="stat-label">Suggested Entry</div>
-                        <div class="stat-value text-cyan-400">$145.50</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-label">Stop Loss</div>
-                        <div class="stat-value text-red-400">$141.80</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-label">Take Profit (1:2)</div>
-                        <div class="stat-value text-emerald-400">$153.20</div>
-                    </div>
-                </div>
-                <button class="btn-primary w-full py-3 rounded-lg">Log This Trade</button>
-            </div>
+    <div class="book-box reveal" id="book">
+      <div class="term-bar"><span class="dots"><s></s><s></s><s></s></span>BOOKING.REQUEST — GOES STRAIGHT TO THE DESK</div>
+      <form class="book-form" action="https://formsubmit.co/safihelal@gmail.com" method="POST">
+        <input type="hidden" name="_subject" value="New session inquiry — thetradingdesk.org">
+        <input type="hidden" name="_template" value="table">
+        <input type="text" name="_honey" style="display:none" tabindex="-1" autocomplete="off">
+        <div class="bf"><label for="bk-name">Your name <em>*</em></label><input id="bk-name" name="name" type="text" placeholder="Jane Smith" required></div>
+        <div class="bf"><label for="bk-email">Email <em>*</em></label><input id="bk-email" name="email" type="email" placeholder="you@email.com" required></div>
+        <div class="bf"><label for="bk-phone">Phone (optional)</label><input id="bk-phone" name="phone" type="tel" placeholder="(555) 555-5555"></div>
+        <div class="bf"><label for="bk-exp">Where are you now?</label>
+          <select id="bk-exp" name="experience">
+            <option>Never traded — starting from zero</option>
+            <option>Dabbled — a few trades, no structure</option>
+            <option>Active — trading but inconsistent</option>
+          </select>
         </div>
+        <div class="bf full"><label for="bk-tier">Session</label>
+          <select id="bk-tier" name="session">
+            <option>Starter Session ($99)</option>
+            <option>Deep Dive ($200)</option>
+            <option>Not sure yet — help me choose</option>
+          </select>
+        </div>
+        <div class="bf full"><label for="bk-msg">What do you want to work on? (optional)</label><textarea id="bk-msg" name="message" placeholder="Where you're stuck, what keeps costing you, what you want to understand…"></textarea></div>
+        <button class="btn btn-amber" type="submit">Send my request →</button>
+        <p class="book-foot">Goes directly to <b>The Trading Desk</b> · no spam, no mailing lists · or email <a href="mailto:safihelal@gmail.com">safihelal@gmail.com</a></p>
+      </form>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/lightweight-charts@4.1.0/dist/lightweight-charts.standalone.production.js"></script>
-    <script>
-        // Pattern Database (40+ patterns)
-        const candlePatterns = {
-            reversals: [
-                { name: 'Hammer', desc: 'Small body, long lower wick. Reversal at support.', winRate: 72, timeframe: '1H+', color: '#10b981' },
-                { name: 'Shooting Star', desc: 'Small body, long upper wick. Rejection at resistance.', winRate: 68, timeframe: '1H+', color: '#ef4444' },
-                { name: 'Engulfing (Bullish)', desc: 'Large green candle swallows prior red. Support reversal.', winRate: 75, timeframe: '4H+', color: '#10b981' },
-                { name: 'Engulfing (Bearish)', desc: 'Large red candle swallows prior green. Resistance reversal.', winRate: 71, timeframe: '4H+', color: '#ef4444' },
-                { name: 'Evening Star', desc: 'Three-candle reversal at resistance. High reliability.', winRate: 76, timeframe: 'Daily', color: '#ef4444' },
-                { name: 'Morning Star', desc: 'Three-candle reversal at support. Gap up finish.', winRate: 78, timeframe: 'Daily', color: '#10b981' },
-                { name: 'Inverted Hammer', desc: 'Upper wick rejection. Bullish at support zones.', winRate: 65, timeframe: '1H+', color: '#10b981' },
-                { name: 'Harami (Bullish)', desc: 'Small green inside large red. Potential bounce.', winRate: 62, timeframe: '4H+', color: '#10b981' },
-                { name: 'Harami (Bearish)', desc: 'Small red inside large green. Weakness signal.', winRate: 63, timeframe: '4H+', color: '#ef4444' },
-                { name: 'Piercing Line', desc: 'Two-candle reversal. Green closes > 50% of prior red.', winRate: 70, timeframe: '4H+', color: '#10b981' }
-            ],
-            continuations: [
-                { name: 'Bullish Flag', desc: 'Sharp up move, tight consolidation. Continuation up.', winRate: 74, timeframe: '15m+', color: '#10b981' },
-                { name: 'Bearish Flag', desc: 'Sharp down move, consolidation. Continues down.', winRate: 72, timeframe: '15m+', color: '#ef4444' },
-                { name: 'Ascending Triangle', desc: 'Flat support, higher resistance. Breakout up likely.', winRate: 73, timeframe: '1H+', color: '#10b981' },
-                { name: 'Descending Triangle', desc: 'Flat resistance, lower support. Breakout down.', winRate: 71, timeframe: '1H+', color: '#ef4444' },
-                { name: 'Symmetrical Triangle', desc: 'Converging trendlines. Breakout imminent (either way).', winRate: 68, timeframe: '4H+', color: '#f97316' },
-                { name: 'Pennant (Bullish)', desc: 'Small consolidation after strong up move. Resume up.', winRate: 76, timeframe: '15m+', color: '#10b981' },
-                { name: 'Cup & Handle', desc: 'U-shaped recovery, small handle pullback. Bullish breakout.', winRate: 79, timeframe: 'Daily', color: '#10b981' },
-                { name: 'Double Bottom', desc: 'Price dips twice to same level. Strong reversal up.', winRate: 74, timeframe: 'Daily', color: '#10b981' },
-                { name: 'Double Top', desc: 'Price peaks twice at same level. Strong reversal down.', winRate: 72, timeframe: 'Daily', color: '#ef4444' },
-                { name: 'Head & Shoulders (Top)', desc: 'Three peaks (middle highest). Bearish reversal.', winRate: 77, timeframe: 'Daily', color: '#ef4444' }
-            ],
-            indecision: [
-                { name: 'Doji', desc: 'Open = close. Market indecision. Look for context.', winRate: 58, timeframe: '1H+', color: '#f97316' },
-                { name: 'Spinning Top', desc: 'Small body, large wicks both sides. Uncertainty.', winRate: 55, timeframe: '1H+', color: '#f97316' },
-                { name: 'Dragonfly Doji', desc: 'Like hammer. Bottom rejection. Support area.', winRate: 70, timeframe: '4H+', color: '#10b981' },
-                { name: 'Gravestone Doji', desc: 'Like shooting star. Top rejection. Resistance area.', winRate: 68, timeframe: '4H+', color: '#ef4444' },
-                { name: 'Long Legged Doji', desc: 'Long wicks both sides. Extreme indecision.', winRate: 54, timeframe: '4H+', color: '#f97316' }
-            ],
-            gaps: [
-                { name: 'Gap Up (Breakaway)', desc: 'Overnight gap up on breakout. Bullish continuation.', winRate: 71, timeframe: 'Daily', color: '#10b981' },
-                { name: 'Gap Down (Breakaway)', desc: 'Overnight gap down on breakdown. Bearish continuation.', winRate: 70, timeframe: 'Daily', color: '#ef4444' },
-                { name: 'Gap Up (Runaway)', desc: 'Mid-move gap. Strong continuation signal.', winRate: 75, timeframe: 'Daily', color: '#10b981' },
-                { name: 'Gap Down (Runaway)', desc: 'Mid-downtrend gap. Acceleration down.', winRate: 73, timeframe: 'Daily', color: '#ef4444' },
-                { name: 'Exhaustion Gap', desc: 'Gap opposite to trend after big move. Often reversal.', winRate: 69, timeframe: 'Daily', color: '#f97316' }
-            ]
-        };
+    <div class="disc reveal">
+      <div class="dh">⚠ Educational purposes only — not financial advice</div>
+      <p>The Trading Desk and all associated content, tools, sessions, and materials are strictly for educational and informational purposes. Nothing on this site constitutes financial, investment, trading, or professional advice of any kind, and no tool output is a recommendation to buy or sell anything. Trading and investing involve substantial risk of loss and are not suitable for every person. Past performance is not indicative of future results. Consult a qualified financial advisor, attorney, or tax professional before making financial decisions. Only risk capital you can afford to lose. The Trading Desk and Safi Solutions L.L.C. assume no liability for losses or damages of any kind.</p>
+    </div>
+  </div>
+</section>
+</main>
 
-        let currentPatternTab = 'reversals';
+<footer class="site">
+  <div class="wrap foot">
+    <a class="brand" href="#top">
+      <span class="bx">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+          <line x1="5" y1="2" x2="5" y2="18" stroke="#FF4A5E" stroke-width="1.6"/>
+          <rect x="2.5" y="6" width="5" height="6" fill="#FF4A5E"/>
+          <line x1="14" y1="2" x2="14" y2="18" stroke="#2BD97C" stroke-width="1.6"/>
+          <rect x="11.5" y="7" width="5" height="7" fill="#2BD97C"/>
+        </svg>
+      </span>
+      <span class="bt">The Trading Desk<small>thetradingdesk.org</small></span>
+    </a>
+    <div class="fr">
+      A <a href="https://safisolutions.org" target="_blank" rel="noopener">Safi Solutions</a> project · Paris, Texas · <a href="mailto:safihelal@gmail.com">safihelal@gmail.com</a><br>
+      © <span id="yr"></span> Safi Solutions L.L.C. — structure over signals, always.
+    </div>
+  </div>
+</footer>
 
-        function switchPatternTab(tab) {
-            currentPatternTab = tab;
-            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            event.target.classList.add('active');
-            renderPatterns();
-        }
+<!-- ===== TOOL MODALS ===== -->
+<div class="modal" id="m-size" role="dialog" aria-modal="true" aria-label="Position size calculator">
+  <div class="mwin">
+    <div class="mbar"><span class="dots"><s></s><s></s><s></s></span><span class="mt">TOOL // POSITION SIZE</span><button class="mx" onclick="closeModal('m-size')" aria-label="Close">×</button></div>
+    <div class="mbody">
+      <h3>Position Size Calculator</h3>
+      <p class="msub">Size from your risk, not your feelings. Entry and stop decide the share count.</p>
+      <div class="mgrid">
+        <div class="mf"><label for="ps-acct">Account size ($)</label><input id="ps-acct" type="number" value="10000" min="0"></div>
+        <div class="mf"><label for="ps-risk">Risk per trade (%)</label><input id="ps-risk" type="number" value="1" step="0.1" min="0"></div>
+        <div class="mf"><label for="ps-entry">Entry price ($)</label><input id="ps-entry" type="number" value="100" step="0.01" min="0"></div>
+        <div class="mf"><label for="ps-stop">Stop price ($)</label><input id="ps-stop" type="number" value="97" step="0.01" min="0"></div>
+      </div>
+      <button class="mbtn" onclick="calcSize()">Calculate size</button>
+      <div class="mres" id="ps-res">
+        <div class="rk">Max position</div>
+        <div class="rv" id="ps-shares">—</div>
+        <div class="rs" id="ps-detail"></div>
+      </div>
+      <p class="mnote">Works for shares or contracts: for options/futures, treat "entry/stop" as the contract price and remember each contract controls a multiplier (options ×100). Risk amount = account × risk%. Size = risk ÷ per-unit stop distance.</p>
+    </div>
+  </div>
+</div>
 
-        function renderPatterns() {
-            const patterns = candlePatterns[currentPatternTab];
-            const grid = document.getElementById('patternGrid');
-            grid.innerHTML = patterns.map(p => `
-                <div class="candle-pattern group">
-                    <div class="font-semibold text-lg">${p.name}</div>
-                    <svg class="candle-svg" viewBox="0 0 100 80" xmlns="http://www.w3.org/2000/svg">
-                        <line x1="20" y1="20" x2="20" y2="60" stroke="${p.color}" stroke-width="3"/>
-                        <rect x="10" y="35" width="20" height="25" fill="${p.color}" stroke="${p.color}" stroke-width="1.5"/>
-                        <circle cx="50" cy="40" r="8" fill="${p.color}" opacity="0.3"/>
-                        <line x1="80" y1="25" x2="80" y2="65" stroke="${p.color}" stroke-width="2" opacity="0.6"/>
-                        <rect x="72" y="30" width="16" height="20" fill="${p.color}" opacity="0.6" stroke="${p.color}" stroke-width="1"/>
-                    </svg>
-                    <p class="text-xs text-zinc-400 text-center">${p.desc}</p>
-                    <div class="flex justify-between items-center mt-3 text-xs w-full">
-                        <span class="text-zinc-500">Win Rate: <span class="font-semibold text-emerald-400">${p.winRate}%</span></span>
-                        <span class="text-zinc-500">${p.timeframe}</span>
-                    </div>
-                </div>
-            `).join('');
-        }
+<div class="modal" id="m-rr" role="dialog" aria-modal="true" aria-label="Expectancy lab">
+  <div class="mwin">
+    <div class="mbar"><span class="dots"><s></s><s></s><s></s></span><span class="mt">TOOL // EXPECTANCY LAB</span><button class="mx" onclick="closeModal('m-rr')" aria-label="Close">×</button></div>
+    <div class="mbody">
+      <h3>Expectancy Lab</h3>
+      <p class="msub">The math doesn't care about your feelings. Find your breakeven and your edge.</p>
+      <div class="mgrid">
+        <div class="mf"><label for="rr-risk">Risk per trade ($)</label><input id="rr-risk" type="number" value="100" min="0"></div>
+        <div class="mf"><label for="rr-mult">Reward : risk</label><input id="rr-mult" type="number" value="2" step="0.1" min="0.1"></div>
+        <div class="mf full"><label for="rr-wr">Estimated win rate — <span class="range-val" id="rr-wrv">45%</span></label><input id="rr-wr" type="range" min="20" max="80" value="45" oninput="document.getElementById('rr-wrv').textContent=this.value+'%'"></div>
+      </div>
+      <button class="mbtn" onclick="calcRR()">Run the math</button>
+      <div class="mres" id="rr-res">
+        <div class="mgrid">
+          <div><div class="rk">Breakeven win rate</div><div class="rv" id="rr-be">—</div></div>
+          <div><div class="rk">Expectancy / trade</div><div class="rv" id="rr-ev">—</div></div>
+        </div>
+        <div class="rs" id="rr-note"></div>
+      </div>
+      <p class="mnote">Breakeven win rate = 1 ÷ (1 + R). Expectancy = (win% × reward) − (loss% × risk). A positive expectancy repeated with discipline is the entire game — everything else is decoration.</p>
+    </div>
+  </div>
+</div>
 
-        function openModal(id) {
-            document.getElementById(id).classList.remove('hidden');
-        }
+<div class="modal" id="m-sim" role="dialog" aria-modal="true" aria-label="Equity curve simulator">
+  <div class="mwin wide">
+    <div class="mbar"><span class="dots"><s></s><s></s><s></s></span><span class="mt">TOOL // EQUITY SIMULATOR</span><button class="mx" onclick="closeModal('m-sim')" aria-label="Close">×</button></div>
+    <div class="mbody">
+      <h3>Equity Curve Simulator</h3>
+      <p class="msub">Five random runs of the same strategy — same edge, different luck. Watch how variance feels before it's your money.</p>
+      <div class="sim-ctrl">
+        <div class="mf"><label for="sim-wr">Win rate — <span class="range-val" id="sim-wrv">50%</span></label><input id="sim-wr" type="range" min="25" max="75" value="50" oninput="document.getElementById('sim-wrv').textContent=this.value+'%'"></div>
+        <div class="mf"><label for="sim-rr">Reward : risk — <span class="range-val" id="sim-rrv">1.8</span></label><input id="sim-rr" type="range" min="0.5" max="4" step="0.1" value="1.8" oninput="document.getElementById('sim-rrv').textContent=this.value"></div>
+        <div class="mf"><label for="sim-n">Trades — <span class="range-val" id="sim-nv">150</span></label><input id="sim-n" type="range" min="40" max="400" step="10" value="150" oninput="document.getElementById('sim-nv').textContent=this.value"></div>
+        <div class="mf"><label for="sim-riskpct">Risk per trade — <span class="range-val" id="sim-rpv">1%</span></label><input id="sim-riskpct" type="range" min="0.5" max="5" step="0.5" value="1" oninput="document.getElementById('sim-rpv').textContent=this.value+'%'"></div>
+      </div>
+      <canvas id="simCanvas"></canvas>
+      <button class="mbtn" onclick="runSim()">Run 5 simulations</button>
+      <p class="mnote" id="sim-summary">Each line risks the same % per trade with the same odds — the spread between best and worst run is pure variance. If 1% risk already looks scary here, imagine 10%.</p>
+    </div>
+  </div>
+</div>
 
-        function closeModal(id) {
-            document.getElementById(id).classList.add('hidden');
-        }
+<div class="modal" id="m-psy" role="dialog" aria-modal="true" aria-label="Psychology audit">
+  <div class="mwin">
+    <div class="mbar"><span class="dots"><s></s><s></s><s></s></span><span class="mt">TOOL // PSYCHOLOGY AUDIT</span><button class="mx" onclick="closeModal('m-psy')" aria-label="Close">×</button></div>
+    <div class="mbody" id="psyBody"></div>
+  </div>
+</div>
 
-        // Initialize patterns on load
-        document.addEventListener('DOMContentLoaded', () => {
-            renderPatterns();
+<div class="modal" id="m-check" role="dialog" aria-modal="true" aria-label="Pre-trade checklist">
+  <div class="mwin">
+    <div class="mbar"><span class="dots"><s></s><s></s><s></s></span><span class="mt">TOOL // PRE-TRADE CHECKLIST</span><button class="mx" onclick="closeModal('m-check')" aria-label="Close">×</button></div>
+    <div class="mbody">
+      <h3>Pre-Trade Checklist</h3>
+      <p class="msub">Run it before every click. Saved in your browser — nobody else sees it.</p>
+      <div class="check-list" id="checkList"></div>
+      <div class="check-score"><span class="cs" id="checkScore">0 / 12</span><button class="mbtn ghost" style="width:auto;margin:0;padding:11px 20px" onclick="resetChecklist()">Reset for next trade</button></div>
+      <p class="mnote" id="checkVerdict">Anything under 12/12 is a structural reason to wait. The market will still be there tomorrow.</p>
+    </div>
+  </div>
+</div>
 
-            // Backtest Chart
-            const btCtx = document.getElementById('backTestChart')?.getContext('2d');
-            if (btCtx) {
-                new Chart(btCtx, {
-                    type: 'line',
-                    data: {
-                        labels: Array.from({length: 61}, (_, i) => i),
-                        datasets: [{
-                            label: 'Account Value',
-                            data: Array.from({length: 61}, (_, i) => {
-                                const p = i / 60;
-                                return 25000 + (p < 0.2 ? -800 * (p / 0.2) : 8420 * Math.pow(p - 0.2, 1.2));
-                            }),
-                            borderColor: '#10b981',
-                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                            borderWidth: 3,
-                            fill: true,
-                            tension: 0.4,
-                            pointRadius: 0
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: { legend: { display: false } },
-                        scales: {
-                            y: { beginAtZero: false, grid: { color: 'rgba(255,255,255,0.05)' } },
-                            x: { grid: { display: false } }
-                        }
-                    }
-                });
-            }
-        });
-    </script>
+<div class="modal" id="m-rules" role="dialog" aria-modal="true" aria-label="Rulebook builder">
+  <div class="mwin">
+    <div class="mbar"><span class="dots"><s></s><s></s><s></s></span><span class="mt">TOOL // RULEBOOK BUILDER</span><button class="mx" onclick="closeModal('m-rules')" aria-label="Close">×</button></div>
+    <div class="mbody">
+      <h3>Rulebook Builder</h3>
+      <p class="msub">Your trading constitution. If it's not written down, it doesn't exist.</p>
+      <div class="mf"><label for="rb-risk">Risk rules</label><textarea id="rb-risk" placeholder="Max risk per trade: 1%. Max daily loss: 3%. Two losses in a row = done for the day…"></textarea></div>
+      <div class="mf" style="margin-top:14px"><label for="rb-psy">Psychology rules</label><textarea id="rb-psy" placeholder="No revenge trades. No entries within 10 minutes of a loss. Journal before the next session…"></textarea></div>
+      <div class="mf" style="margin-top:14px"><label for="rb-exec">Execution rules</label><textarea id="rb-exec" placeholder="Only setups that pass the checklist. Stop placed before entry, never moved against me…"></textarea></div>
+      <div class="mgrid" style="margin-top:18px">
+        <button class="mbtn" style="margin:0" onclick="buildRules()">Generate rulebook</button>
+        <button class="mbtn ghost" style="margin:0" onclick="downloadRules()">Download as .txt</button>
+      </div>
+      <pre id="rb-out" style="display:none;margin-top:18px;border:1px solid var(--line);border-radius:10px;padding:18px;font-family:var(--mono);font-size:.74rem;line-height:1.8;white-space:pre-wrap;color:var(--dim);max-height:300px;overflow-y:auto"></pre>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="m-valid" role="dialog" aria-modal="true" aria-label="Setup validator">
+  <div class="mwin">
+    <div class="mbar"><span class="dots"><s></s><s></s><s></s></span><span class="mt">TOOL // SETUP VALIDATOR</span><button class="mx" onclick="closeModal('m-valid')" aria-label="Close">×</button></div>
+    <div class="mbody" id="validBody"></div>
+  </div>
+</div>
+
+<div class="modal" id="m-levels" role="dialog" aria-modal="true" aria-label="Key levels workbench">
+  <div class="mwin">
+    <div class="mbar"><span class="dots"><s></s><s></s><s></s></span><span class="mt">TOOL // KEY LEVELS WORKBENCH</span><button class="mx" onclick="closeModal('m-levels')" aria-label="Close">×</button></div>
+    <div class="mbody">
+      <h3>Key Levels Workbench</h3>
+      <p class="msub">Enter yesterday's numbers from your own chart — get the classic pivot map traders mark before the open. Your data in, honest math out.</p>
+      <div class="mgrid">
+        <div class="mf"><label for="kl-h">Previous day high</label><input id="kl-h" type="number" step="0.01" placeholder="602.40"></div>
+        <div class="mf"><label for="kl-l">Previous day low</label><input id="kl-l" type="number" step="0.01" placeholder="594.10"></div>
+        <div class="mf full"><label for="kl-c">Previous day close</label><input id="kl-c" type="number" step="0.01" placeholder="599.15"></div>
+      </div>
+      <button class="mbtn" onclick="calcLevels()">Map the levels</button>
+      <div id="kl-out"></div>
+      <p class="mnote">Classic floor-trader pivots: P = (H+L+C)÷3, then resistance and support bands derived from the prior range. These aren't predictions — they're the shared reference points a huge share of intraday traders are all watching, which is exactly why price reacts around them.</p>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="m-crypto" role="dialog" aria-modal="true" aria-label="Crypto pulse">
+  <div class="mwin">
+    <div class="mbar"><span class="dots"><s></s><s></s><s></s></span><span class="mt">TOOL // CRYPTO PULSE (LIVE)</span><button class="mx" onclick="closeModal('m-crypto')" aria-label="Close">×</button></div>
+    <div class="mbody">
+      <h3>Crypto Pulse</h3>
+      <p class="msub">Live prices via CoinGecko — the only external feed on this site, and it's real.</p>
+      <div id="cryptoOut"><p class="mnote">Loading live prices…</p></div>
+      <button class="mbtn ghost" onclick="loadCrypto()">Refresh</button>
+      <p class="mnote">Context only — crypto risk appetite often bleeds into equities and back. No reads, no calls.</p>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="m-pattern" role="dialog" aria-modal="true" aria-label="Pattern detail">
+  <div class="mwin">
+    <div class="mbar"><span class="dots"><s></s><s></s><s></s></span><span class="mt" id="pd-bar">PATTERN</span><button class="mx" onclick="closeModal('m-pattern')" aria-label="Close">×</button></div>
+    <div class="mbody" id="pdBody"></div>
+  </div>
+</div>
+
+<!-- COMMAND PALETTE -->
+<div id="cmdk" role="dialog" aria-modal="true" aria-label="Quick launcher">
+  <div class="cmdk-win">
+    <div class="cmdk-in">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FFAD1F" stroke-width="2.4" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4-4"/></svg>
+      <input id="cmdkInput" type="text" placeholder="Jump to a tool, pattern, or section…" autocomplete="off">
+    </div>
+    <div class="cmdk-list" id="cmdkList"></div>
+    <div class="cmdk-foot"><span>↵ open · esc close</span><span>THE DESK</span></div>
+  </div>
+</div>
+<script>
+/* ============================================================
+   THE TRADING DESK — all logic, zero dependencies
+   ============================================================ */
+'use strict';
+const $=(s,el=document)=>el.querySelector(s);
+const $$=(s,el=document)=>[...el.querySelectorAll(s)];
+const GREEN='#2BD97C', RED='#FF4A5E', AMBER='#FFAD1F', DIM='#9C937D', FAINT='#6A6250';
+const reduceMotion=matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ===== ticker tape ===== */
+(function(){
+  const items=[
+    ['SURVIVE FIRST','▲'],['FOMO ENTRIES','▼'],['RISK DEFINED BEFORE ENTRY','▲'],['REVENGE TRADES','▼'],
+    ['SIZE SMALL, THINK LONG','▲'],['HYPE','▼'],['THE BEST TRADE IS OFTEN NO TRADE','▲'],['GUESSING','▼'],
+    ['WRITTEN RULES','▲'],['MOVING YOUR STOP','▼'],['JOURNAL EVERY TRADE','▲'],['"CAN\'T LOSE" SETUPS','▼'],
+    ['PATIENCE PAYS THE BILLS','▲'],['OVERTRADING','▼']
+  ];
+  const half=items.map(([t,d])=>`<i><b class="${d==='▲'?'up':'dn'}">${d}</b> ${t}</i>`).join('');
+  $('#tapeTrack').innerHTML=half+half;
+})();
+
+/* ===== nav ===== */
+const menuBtn=$('#menuBtn'), navLinks=$('#navLinks');
+menuBtn.addEventListener('click',()=>{const o=navLinks.classList.toggle('open');menuBtn.setAttribute('aria-expanded',o);});
+$$('#navLinks a').forEach(a=>a.addEventListener('click',()=>{navLinks.classList.remove('open');menuBtn.setAttribute('aria-expanded','false');}));
+$('#yr').textContent=new Date().getFullYear();
+
+/* ===== reveal ===== */
+const io=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}})},{threshold:.08});
+$$('.reveal').forEach(el=>io.observe(el));
+
+/* ===== hero candlestick canvas ===== */
+(function(){
+  const c=$('#heroChart'); if(!c||reduceMotion) return;
+  const ctx=c.getContext('2d'); let w,h,dpr;
+  function size(){dpr=Math.min(devicePixelRatio||1,1.5);w=c.clientWidth;h=c.clientHeight;c.width=w*dpr;c.height=h*dpr;ctx.setTransform(dpr,0,0,dpr,0,0);}
+  size(); addEventListener('resize',size);
+  // generate a long random walk of candles
+  let price=50, candles=[];
+  function makeCandle(){
+    const drift=(Math.random()-.47)*6;
+    const o=price, cl=Math.max(8,Math.min(92,price+drift));
+    const hi=Math.max(o,cl)+Math.random()*3, lo=Math.min(o,cl)-Math.random()*3;
+    price=cl; return {o,c:cl,h:hi,l:lo};
+  }
+  for(let i=0;i<160;i++)candles.push(makeCandle());
+  let off=0, t=0;
+  function draw(){
+    t++;
+    if(t%26===0){candles.push(makeCandle());candles.shift();}
+    off=(t%26)/26;
+    ctx.clearRect(0,0,w,h);
+    // grid
+    ctx.strokeStyle='rgba(235,220,185,.05)';ctx.lineWidth=1;
+    for(let y=0;y<h;y+=Math.max(40,h/9)){ctx.beginPath();ctx.moveTo(0,y+.5);ctx.lineTo(w,y+.5);ctx.stroke();}
+    const cw=Math.max(7,w/110), gap=cw*.45, step=cw+gap;
+    const n=Math.ceil(w/step)+2;
+    const start=candles.length-n;
+    for(let i=0;i<n;i++){
+      const cd=candles[start+i]; if(!cd)continue;
+      const x=i*step-off*step;
+      const yo=h-(cd.o/100)*h, yc=h-(cd.c/100)*h, yh=h-(cd.h/100)*h, yl=h-(cd.l/100)*h;
+      const up=cd.c>=cd.o, col=up?'rgba(43,217,124,.34)':'rgba(255,74,94,.32)';
+      ctx.strokeStyle=col;ctx.lineWidth=1;
+      ctx.beginPath();ctx.moveTo(x+cw/2,yh);ctx.lineTo(x+cw/2,yl);ctx.stroke();
+      ctx.fillStyle=col;
+      ctx.fillRect(x,Math.min(yo,yc),cw,Math.max(2,Math.abs(yc-yo)));
+    }
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
+/* ===== story equity candlestick chart (draws on scroll) ===== */
+(function(){
+  const svg=$('#eqSvg'); if(!svg)return;
+  // hand-shaped journey: choppy red tuition -> structured green climb
+  const seq=[
+    [62,55],[56,59],[58,50],[51,55],[54,44],[45,49],[48,40],[41,45],[44,36],[37,41],[40,34],
+    [35,39],[38,43],[42,40],[41,47],[46,44],[45,51],[50,48],[49,55],[54,52],[53,60],[59,57],[58,65],[64,62],[63,71],[70,68],[69,77],[76,74],[75,83]
+  ];
+  const W=460,H=210,n=seq.length,step=W/(n+1),cw=step*.55;
+  let inner='';
+  seq.forEach((p,i)=>{
+    const [o,c]=p, up=c>=o;
+    const hi=Math.max(o,c)+2.5+Math.random()*2, lo=Math.min(o,c)-2.5-Math.random()*2;
+    const x=step*(i+.6);
+    const y=v=>H-(v/100)*H*1.78+H*.42; // scale into view
+    const col=up?GREEN:RED;
+    inner+=`<g class="eqc" style="opacity:0">`+
+      `<line x1="${(x+cw/2).toFixed(1)}" y1="${y(hi).toFixed(1)}" x2="${(x+cw/2).toFixed(1)}" y2="${y(lo).toFixed(1)}" stroke="${col}" stroke-width="1.2"/>`+
+      `<rect x="${x.toFixed(1)}" y="${Math.min(y(o),y(c)).toFixed(1)}" width="${cw.toFixed(1)}" height="${Math.max(2,Math.abs(y(c)-y(o))).toFixed(1)}" fill="${col}"/></g>`;
+  });
+  svg.innerHTML=`<line x1="0" y1="${H*.55}" x2="${W}" y2="${H*.55}" stroke="rgba(235,220,185,.12)" stroke-dasharray="3 5"/>`+inner;
+  const cells=$$('.eqc',svg);
+  const obs=new IntersectionObserver(es=>{es.forEach(e=>{
+    if(!e.isIntersecting)return; obs.disconnect();
+    cells.forEach((g,i)=>{setTimeout(()=>{g.style.transition='opacity .3s';g.style.opacity='1';}, reduceMotion?0:i*55);});
+  })},{threshold:.4});
+  obs.observe(svg);
+})();
+
+/* ============================================================
+   MODAL SYSTEM
+   ============================================================ */
+let lastFocus=null;
+function openModal(id){
+  lastFocus=document.activeElement;
+  const m=$('#'+id); m.classList.add('open'); document.body.classList.add('locked');
+  if(id==='m-check')renderChecklist();
+  if(id==='m-psy')startPsy();
+  if(id==='m-valid')startValid();
+  if(id==='m-crypto')loadCrypto();
+  if(id==='m-sim')setTimeout(runSim,80);
+  const f=m.querySelector('input,select,button.mx'); if(f)f.focus({preventScroll:true});
+}
+function closeModal(id){
+  $('#'+id).classList.remove('open');
+  if(!$$('.modal.open').length)document.body.classList.remove('locked');
+  if(lastFocus)lastFocus.focus({preventScroll:true});
+}
+$$('.modal').forEach(m=>m.addEventListener('mousedown',e=>{if(e.target===m)closeModal(m.id);}));
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){$$('.modal.open').forEach(m=>closeModal(m.id));closeCmdk();}
+});
+
+/* ============================================================
+   THE ARMORY — tool grid
+   ============================================================ */
+const TOOLS=[
+  {id:'m-size',kind:'calculator',name:'Position Size',desc:'Account, risk %, entry, stop — out comes the exact share count. Bad math blows up more accounts than bad ideas.',ic:'M4 20h16M6 16l4-6 3 3 5-8'},
+  {id:'m-rr',kind:'calculator',name:'Expectancy Lab',desc:'Win rate vs. reward-to-risk: find your breakeven, your edge, and whether the system math even works.',ic:'M12 3v18M5 9l7-6 7 6M7 21h10'},
+  {id:'m-sim',kind:'simulator',name:'Equity Simulator',desc:'Five random runs of the same edge, overlaid. Feel what variance does to identical strategies before it\u2019s your money.',ic:'M3 17l5-5 4 4 6-8 3 3'},
+  {id:'m-psy',kind:'assessment',name:'Psychology Audit',desc:'Ten brutally honest questions. Find your revenge-trade index and where the real leaks hide.',ic:'M12 3a7 7 0 0 1 7 7c0 3-2 4-2 7H7c0-3-2-4-2-7a7 7 0 0 1 7-7zM9 21h6'},
+  {id:'m-check',kind:'daily ritual',name:'Pre-Trade Checklist',desc:'Twelve structural checks before every click, saved in your browser. Under 12/12 means wait.',ic:'M4 6h12M4 12h12M4 18h8M18 16l2 2 4-4'},
+  {id:'m-valid',kind:'validator',name:'Setup Validator',desc:'Grade any trade idea against seven structure criteria. Know exactly what\u2019s missing before you commit.',ic:'M5 13l4 4L19 7'},
+  {id:'m-rules',kind:'generator',name:'Rulebook Builder',desc:'Risk, psychology, execution — written down and downloadable. If it isn\u2019t on paper, it doesn\u2019t exist.',ic:'M6 3h9l4 4v14H6zM14 3v5h5'},
+  {id:'m-levels',kind:'workbench',name:'Key Levels',desc:'Your previous-day numbers in, the classic pivot map out. The shared reference points the whole floor watches.',ic:'M4 6h16M4 12h10M4 18h16'},
+  {id:'m-crypto',kind:'live data',name:'Crypto Pulse',desc:'Real prices via CoinGecko — the one live feed here, clearly labeled. Context, never calls.',ic:'M12 2v20M8 6h6a3 3 0 0 1 0 6H8h7a3 3 0 0 1 0 6H8'}
+];
+$('#toolGrid').innerHTML=TOOLS.map(t=>`
+  <button class="tool" onclick="openModal('${t.id}')">
+    <span class="t-top"><span class="t-ic"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="${t.ic}"/></svg></span><span class="t-kind">${t.kind}</span></span>
+    <h4>${t.name}</h4><p>${t.desc}</p>
+    <span class="t-go">Open tool →</span>
+  </button>`).join('');
+
+/* ===== tool: position size ===== */
+function calcSize(){
+  const acct=+$('#ps-acct').value, rp=+$('#ps-risk').value, en=+$('#ps-entry').value, st=+$('#ps-stop').value;
+  const res=$('#ps-res');
+  if(!acct||!rp||!en||!st||en===st){res.classList.add('show');$('#ps-shares').textContent='—';$('#ps-detail').textContent='Fill every field — entry and stop can\u2019t be equal.';return;}
+  const riskAmt=acct*rp/100, dist=Math.abs(en-st), qty=Math.floor(riskAmt/dist);
+  $('#ps-shares').textContent=qty.toLocaleString()+' units';
+  $('#ps-detail').textContent=`Risking $${riskAmt.toFixed(0)} (${rp}%) · $${dist.toFixed(2)} stop distance per unit · ~$${(qty*en).toLocaleString(undefined,{maximumFractionDigits:0})} notional`;
+  res.classList.add('show');
+}
+
+/* ===== tool: expectancy ===== */
+function calcRR(){
+  const risk=+$('#rr-risk').value, mult=+$('#rr-mult').value, wr=+$('#rr-wr').value/100;
+  if(!risk||!mult)return;
+  const be=1/(1+mult)*100;
+  const ev=wr*(risk*mult)-(1-wr)*risk;
+  $('#rr-be').textContent=be.toFixed(1)+'%';
+  const evEl=$('#rr-ev'); evEl.textContent=(ev>=0?'+$':'-$')+Math.abs(ev).toFixed(0);
+  evEl.style.color=ev>=0?GREEN:RED;
+  let note;
+  if(wr*100<be) note=`At ${(wr*100).toFixed(0)}% you\u2019re below the ${be.toFixed(1)}% breakeven — this system loses money over time. Raise the reward multiple or skip lower-quality entries.`;
+  else if(wr*100>be+10) note=`Solidly above breakeven — that\u2019s roughly ${(ev>=0?'+$':'-$')+Math.abs(ev*100).toFixed(0)} per 100 trades at this size. The job now is discipline, not more indicators.`;
+  else note='You\u2019re hovering near breakeven. Small improvements in entry quality or reward multiple flip this from churn to edge.';
+  $('#rr-note').textContent=note;
+  $('#rr-res').classList.add('show');
+}
+
+/* ===== tool: equity simulator ===== */
+function runSim(){
+  const cv=$('#simCanvas'); if(!cv)return;
+  const ctx=cv.getContext('2d');
+  const dpr=Math.min(devicePixelRatio||1,2);
+  const w=cv.clientWidth,h=cv.clientHeight;
+  cv.width=w*dpr;cv.height=h*dpr;ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.clearRect(0,0,w,h);
+  const wr=+$('#sim-wr').value/100, rr=+$('#sim-rr').value, n=+$('#sim-n').value, riskPct=+$('#sim-riskpct').value/100;
+  const cols=[AMBER,GREEN,'#7FB6FF','#FF9CDA',DIM];
+  let finals=[], allMin=1e9, allMax=-1e9, runs=[];
+  for(let r=0;r<5;r++){
+    let eq=100, path=[eq];
+    for(let i=0;i<n;i++){
+      eq*= (Math.random()<wr) ? (1+riskPct*rr) : (1-riskPct);
+      path.push(eq);
+    }
+    runs.push(path); finals.push(eq);
+    allMin=Math.min(allMin,...path); allMax=Math.max(allMax,...path);
+  }
+  const pad=10, y=v=>h-pad-((v-allMin)/(allMax-allMin||1))*(h-pad*2);
+  // baseline at 100
+  ctx.strokeStyle='rgba(235,220,185,.18)';ctx.setLineDash([3,5]);
+  ctx.beginPath();ctx.moveTo(0,y(100));ctx.lineTo(w,y(100));ctx.stroke();ctx.setLineDash([]);
+  runs.forEach((path,r)=>{
+    ctx.strokeStyle=cols[r];ctx.lineWidth=r===0?2:1.3;ctx.globalAlpha=r===0?1:.75;
+    ctx.beginPath();
+    path.forEach((v,i)=>{const x=(i/n)*w; i?ctx.lineTo(x,y(v)):ctx.moveTo(x,y(v));});
+    ctx.stroke();
+  });
+  ctx.globalAlpha=1;
+  const best=Math.max(...finals), worst=Math.min(...finals);
+  $('#sim-summary').textContent=`Same ${(wr*100).toFixed(0)}% win rate, same ${rr}R, same ${(riskPct*100).toFixed(1)}% risk — yet luck alone spread these runs from ${worst.toFixed(0)} to ${best.toFixed(0)} (start = 100). That spread is why one good month proves nothing and one bad week breaks nobody who sized correctly.`;
+}
+
+/* ===== tool: psychology audit ===== */
+const PSY_Q=[
+  ['After two losses in a row, I feel the urge to make it back immediately.',false],
+  ['I sometimes move my stop further away when a trade goes against me.',false],
+  ['I check my P&L constantly during a trade, even with rules in place.',false],
+  ['I have written rules that I follow on every single trade.',true],
+  ['A big green candle on my watchlist makes me want to jump in right now.',false],
+  ['I review every trade in a journal before the next session.',true],
+  ['I trade the same size regardless of how good a setup feels.',true],
+  ['I have revenge-traded within the last 30 days.',false],
+  ['I know my exact daily loss limit and I respect it.',true],
+  ['I feel like I need to be in the market most days to succeed.',false]
+];
+const PSY_OPTS=['Strongly agree','Agree','Neutral','Disagree','Strongly disagree'];
+let psyI=0,psyScore=0;
+function startPsy(){psyI=0;psyScore=0;renderPsy();}
+function renderPsy(){
+  const body=$('#psyBody');
+  if(psyI<PSY_Q.length){
+    const [q]=PSY_Q[psyI];
+    body.innerHTML=`<h3>Psychology Audit</h3><p class="msub">Be brutally honest — the market already knows.</p>
+      <div class="qprog">Question ${psyI+1} / ${PSY_Q.length}</div>
+      <div class="qtext">${q}</div>
+      <div class="likert">${PSY_OPTS.map((o,i)=>`<button onclick="answerPsy(${i})">${o}</button>`).join('')}</div>`;
+  }else{
+    const pct=Math.round(psyScore/(PSY_Q.length*4)*100);
+    let label,fb,col;
+    if(pct>=85){label='STRUCTURE-FIRST';col=GREEN;fb='You already trade with real discipline. The Deep Dive is where this sharpens into a complete framework — strategy construction, sizing, and a written plan.';}
+    else if(pct>=65){label='SOLID, WITH LEAKS';col=AMBER;fb='Good instincts with a few expensive habits hiding in the gaps. Naming them is most of the fix — that\u2019s exactly what a session does.';}
+    else if(pct>=45){label='TUITION IN PROGRESS';col=AMBER;fb='The market is currently teaching you the hard way, one habit at a time. Structure shortcuts that — start with the checklist tool today, then the Starter Session.';}
+    else{label='HIGH TUITION RISK';col=RED;fb='These answers describe the exact psychology that empties accounts — and that\u2019s fixable, because it\u2019s habits, not destiny. Pause live trading; build rules first.';}
+    $('#psyBody').innerHTML=`<h3>Psychology Audit</h3><p class="msub">Result — a mirror, not a diagnosis.</p>
+      <div class="score-big"><div class="sv" style="color:${col}">${pct}</div><div class="sl" style="color:${col}">${label}</div></div>
+      <div class="fb-box">${fb}</div>
+      <button class="mbtn ghost" onclick="startPsy()">Retake</button>
+      <button class="mbtn" onclick="closeModal('m-psy');location.hash='sessions'">Put structure under it →</button>`;
+  }
+}
+function answerPsy(i){
+  const positive=PSY_Q[psyI][1];
+  psyScore += positive ? (4-i) : i;
+  psyI++; renderPsy();
+}
+
+/* ===== tool: checklist ===== */
+const CHECK_ITEMS=[
+  'The setup meets every one of my written criteria','Risk on this trade is within my max (1–2%)',
+  'Stop loss is decided and placed before entry','Reward-to-risk is at least 1.5 : 1',
+  'I am not trading to make back a previous loss','I checked the higher-timeframe structure',
+  'No major news or earnings in the next 2 hours','My daily loss limit has not been hit',
+  'I am calm — not bored, tilted, or euphoric','This trade fits my written plan',
+  'I know my exit for both the win and the loss','I am genuinely willing to skip this trade'
+];
+function renderChecklist(){
+  const saved=JSON.parse(localStorage.getItem('tdesk_check')||'[]');
+  $('#checkList').innerHTML=CHECK_ITEMS.map((t,i)=>`
+    <label class="check-item"><input type="checkbox" data-ci="${i}" ${saved.includes(i)?'checked':''} onchange="checkChanged()"><span>${t}</span></label>`).join('');
+  checkChanged(false);
+}
+function checkChanged(save=true){
+  const on=$$('#checkList input').filter(c=>c.checked).map(c=>+c.dataset.ci);
+  if(save)localStorage.setItem('tdesk_check',JSON.stringify(on));
+  $('#checkScore').textContent=`${on.length} / ${CHECK_ITEMS.length}`;
+  $('#checkVerdict').textContent = on.length===CHECK_ITEMS.length
+    ? 'All twelve. Execute the plan — and nothing but the plan.'
+    : `${CHECK_ITEMS.length-on.length} unchecked. Each one is a structural reason to wait — the market will still be there tomorrow.`;
+}
+function resetChecklist(){localStorage.removeItem('tdesk_check');renderChecklist();}
+
+/* ===== tool: rulebook ===== */
+function rulesText(){
+  const v=id=>$(id).value.trim();
+  const risk=v('#rb-risk')||'• Max risk per trade: 1%\n• Max daily loss: 3%\n• Two consecutive losses = done for the day';
+  const psy=v('#rb-psy')||'• No revenge trades, ever\n• Walk away when the daily limit hits\n• Journal every trade before the next session';
+  const exec=v('#rb-exec')||'• Only setups that pass the full checklist\n• Stop placed before entry, never widened\n• Exits planned for both outcomes before entry';
+  return `THE TRADING DESK — PERSONAL RULEBOOK\nGenerated ${new Date().toLocaleDateString()}\n\n=== RISK RULES ===\n${risk}\n\n=== PSYCHOLOGY RULES ===\n${psy}\n\n=== EXECUTION RULES ===\n${exec}\n\nThis is your constitution. Break it and you pay tuition.\nthetradingdesk.org — structure over signals`;
+}
+function buildRules(){const o=$('#rb-out');o.textContent=rulesText();o.style.display='block';}
+function downloadRules(){
+  const blob=new Blob([rulesText()],{type:'text/plain'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='my-trading-rulebook.txt';a.click();URL.revokeObjectURL(a.href);
+}
+
+/* ===== tool: setup validator ===== */
+const VALID_Q=[
+  ['Is price at a clear level — support, resistance, or prior day high/low?',true],
+  ['Is volume confirming the move (not drifting on air)?',true],
+  ['Is there a logical place for the stop — not just an arbitrary distance?',true],
+  ['Is reward-to-risk at least 1.8 : 1 from entry to target?',true],
+  ['Are you calm — not chasing, not making back a loss?',true],
+  ['Is major news or an earnings event due within ~90 minutes?',false],
+  ['Does this setup match your written rules?',true]
+];
+let validAns=[];
+function startValid(){
+  validAns=Array(VALID_Q.length).fill(null);
+  $('#validBody').innerHTML=`<h3>Setup Validator</h3><p class="msub">Be honest — structure doesn\u2019t lie.</p>
+    ${VALID_Q.map((q,i)=>`<div class="vq"><div class="vqt">${q[0]}</div>
+      <div class="yn"><button id="vy${i}" onclick="setValid(${i},true)">Yes</button><button id="vn${i}" onclick="setValid(${i},false)">No</button></div></div>`).join('')}
+    <button class="mbtn" onclick="scoreValid()">Grade this setup</button>
+    <div id="validOut"></div>`;
+}
+function setValid(i,val){
+  validAns[i]=val;
+  $('#vy'+i).className=val?'sel-y':''; $('#vn'+i).className=val?'':'sel-n';
+}
+function scoreValid(){
+  if(validAns.includes(null)){$('#validOut').innerHTML='<p class="mnote" style="color:var(--red)">Answer all seven — skipping questions is how trades skip structure.</p>';return;}
+  let score=0;
+  VALID_Q.forEach((q,i)=>{ if(validAns[i]===q[1])score++; });
+  const pct=Math.round(score/VALID_Q.length*100);
+  let label,col,fb;
+  if(pct>=85){label='HIGH-STRUCTURE SETUP';col=GREEN;fb='Real confluence across the board. If you take it: planned size, planned stop, planned exits — then hands off.';}
+  else if(pct>=70){label='CLOSE, NOT CLEAN';col=AMBER;fb='One or two legs are missing. The disciplined move is waiting for them to show up — or letting this one go.';}
+  else if(pct>=50){label='WEAK CONFLUENCE';col=AMBER;fb='Several structural pieces missing. This is probably a boredom or emotion trade wearing a costume.';}
+  else{label='WALK AWAY';col=RED;fb='This is how accounts get hurt. No structure, no trade — write down what attracted you to it and study that instead.';}
+  $('#validOut').innerHTML=`<div class="score-big"><div class="sv" style="color:${col}">${score}/7</div><div class="sl" style="color:${col}">${label}</div></div><div class="fb-box">${fb}</div>`;
+}
+
+/* ===== tool: key levels ===== */
+function calcLevels(){
+  const H=+$('#kl-h').value, L=+$('#kl-l').value, C=+$('#kl-c').value;
+  const out=$('#kl-out');
+  if(!H||!L||!C||H<L){out.innerHTML='<p class="mnote" style="color:var(--red)">Enter a valid high, low, and close (high must be above low).</p>';return;}
+  const P=(H+L+C)/3, range=H-L;
+  const R1=2*P-L, S1=2*P-H, R2=P+range, S2=P-range, R3=H+2*(P-L), S3=L-2*(H-P);
+  const f=v=>v.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+  out.innerHTML=`<table class="lev-table">
+    <tr class="r"><td>R3 — extension</td><td>${f(R3)}</td></tr>
+    <tr class="r"><td>R2 — outer resistance</td><td>${f(R2)}</td></tr>
+    <tr class="r"><td>R1 — first resistance</td><td>${f(R1)}</td></tr>
+    <tr class="p"><td>Pivot</td><td>${f(P)}</td></tr>
+    <tr class="s"><td>S1 — first support</td><td>${f(S1)}</td></tr>
+    <tr class="s"><td>S2 — outer support</td><td>${f(S2)}</td></tr>
+    <tr class="s"><td>S3 — extension</td><td>${f(S3)}</td></tr>
+    <tr><td>Prior range</td><td>${f(range)} (${(range/C*100).toFixed(2)}% of close)</td></tr>
+  </table>`;
+}
+
+/* ===== tool: crypto pulse (live, CoinGecko) ===== */
+async function loadCrypto(){
+  const out=$('#cryptoOut');
+  out.innerHTML='<p class="mnote">Loading live prices…</p>';
+  try{
+    const r=await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana,ripple,dogecoin&vs_currencies=usd&include_24hr_change=true');
+    const d=await r.json();
+    const coins=[['bitcoin','Bitcoin','BTC'],['ethereum','Ethereum','ETH'],['solana','Solana','SOL'],['ripple','XRP','XRP'],['dogecoin','Dogecoin','DOGE']];
+    out.innerHTML=coins.map(([id,name,sym])=>{
+      const c=d[id]; if(!c)return'';
+      const ch=c.usd_24h_change||0, up=ch>=0;
+      return `<div class="crypto-row"><span class="cn">${name}<small>${sym}</small></span>
+        <span class="cp"><div class="v">$${c.usd.toLocaleString()}</div><div class="c ${up?'up':'dn'}">${up?'▲':'▼'} ${Math.abs(ch).toFixed(2)}% / 24h</div></span></div>`;
+    }).join('');
+  }catch(e){
+    out.innerHTML='<p class="mnote" style="color:var(--red)">Live feed unavailable right now — likely a rate limit. Try again in a minute.</p>';
+  }
+}
+/* ============================================================
+   PATTERN LIBRARY — every pattern hand-built in SVG
+   ============================================================ */
+// candle format: [open, close, high, low] in price units (higher = higher price)
+const P=[
+/* ---- singles ---- */
+{n:'Doji',cat:'single',side:'neut',c:[[50,50,68,32]],
+ read:'Open and close land in the same spot — a dead heat between buyers and sellers.',
+ ctx:'Matters most after an extended trend or at a key level, where indecision can precede a turn.',
+ trap:'Mid-range dojis mean nothing. Indecision in the middle of nowhere is just noise.'},
+{n:'Dragonfly Doji',cat:'single',side:'bull',c:[[58,58,61,22]],
+ read:'Sellers drove price down hard; buyers shoved every bit of it back by the close.',
+ ctx:'Strongest at support after a decline — the long lower tail is rejection of lower prices.',
+ trap:'Without a level under it, it\u2019s one candle of noise. Wait for the next candle to confirm.'},
+{n:'Gravestone Doji',cat:'single',side:'bear',c:[[42,42,78,39]],
+ read:'Buyers pushed to the highs and got fully rejected — close back at the open.',
+ ctx:'Watch for it at resistance after a run-up; the failed push exposes exhausted buyers.',
+ trap:'In a strong uptrend a single rejection often just pauses the move. Confirmation first.'},
+{n:'Hammer',cat:'single',side:'bull',c:[[48,57,60,18]],
+ read:'A long lower wick with a small body up top — lows were bought aggressively.',
+ ctx:'After a downtrend into support. The deeper the wick relative to body, the louder the message.',
+ trap:'A hammer mid-fall is just a pause. Location makes the pattern, not the shape.'},
+{n:'Inverted Hammer',cat:'single',side:'bull',c:[[44,52,84,42]],
+ read:'An upper-wick probe after a decline — buyers tested higher and held the close.',
+ ctx:'At the bottom of a downtrend; needs a bullish candle after it to mean anything.',
+ trap:'Identical shape at a top is a shooting star — the bearish twin. Context decides which.'},
+{n:'Hanging Man',cat:'single',side:'bear',c:[[57,48,60,18]],
+ read:'Hammer shape, wrong neighborhood — a deep sell-off intraday after a rally.',
+ ctx:'At the top of an uptrend it warns that sellers showed real size for the first time.',
+ trap:'Often needs a red confirmation candle. Alone it\u2019s a warning light, not a turn.'},
+{n:'Shooting Star',cat:'single',side:'bear',c:[[52,44,84,42]],
+ read:'Buyers spiked it high and sellers slammed it back — the rally attempt failed.',
+ ctx:'At resistance after an advance. The long upper wick is the trap closing on late buyers.',
+ trap:'In strong momentum, one rejected push often just resets before continuation.'},
+{n:'Bullish Spinning Top',cat:'single',side:'bull',c:[[45,55,72,28]],
+ read:'Small green body, wicks both ways — a fight that buyers barely edged.',
+ ctx:'In a downtrend it hints that selling pressure is losing its grip.',
+ trap:'Spinning tops are pause candles. They suggest a turn — they never confirm one.'},
+{n:'Bearish Spinning Top',cat:'single',side:'bear',c:[[55,45,72,28]],
+ read:'Small red body with long wicks — sellers won the round, barely.',
+ ctx:'In an uptrend it signals momentum cooling before a possible roll-over.',
+ trap:'Same as its twin: a hint, not a signal. The next candle does the talking.'},
+{n:'Bullish Marubozu',cat:'single',side:'bull',c:[[22,80,80,22]],
+ read:'Open at the low, close at the high, no wicks — buyers in total control start to finish.',
+ ctx:'Breaking out of a range or level, it shows conviction; institutions don\u2019t hide in these.',
+ trap:'Chasing a giant marubozu means buying someone else\u2019s entire move. Late is late.'},
+{n:'Bearish Marubozu',cat:'single',side:'bear',c:[[80,22,80,22]],
+ read:'Open at the high, close at the low — sellers never let go of the wheel.',
+ ctx:'Through support it signals genuine distribution, not a dip.',
+ trap:'After an extended fall, the biggest red candle is often near the flush — not the start.'},
+/* ---- doubles ---- */
+{n:'Bullish Engulfing',cat:'double',side:'bull',c:[[56,42,59,39],[36,68,71,33]],
+ read:'A green body swallows the prior red one whole — buyers seized full control.',
+ ctx:'Highest quality at major support after a downtrend, ideally with rising volume.',
+ trap:'Engulfing mid-range is common and meaningless. The level does the heavy lifting.'},
+{n:'Bearish Engulfing',cat:'double',side:'bear',c:[[44,58,61,41],[64,32,67,29]],
+ read:'A red body swallows the prior green one — sellers took the handoff hard.',
+ ctx:'At resistance after a rally, it marks the spot late buyers got trapped.',
+ trap:'In a roaring uptrend single engulfings get steamrolled. Trend strength matters.'},
+{n:'Bullish Kicker',cat:'double',side:'bull',c:[[48,30,50,27],[58,82,85,56]],
+ read:'A gap up that never looks back — sentiment flipped overnight, violently.',
+ ctx:'Usually news-driven. One of the most forceful two-candle reversals there is.',
+ trap:'Gaps invite chasing. The disciplined entry is the retest, not the open.'},
+{n:'Bearish Kicker',cat:'double',side:'bear',c:[[52,70,73,50],[42,18,44,15]],
+ read:'A gap down with zero recovery — holders woke up trapped.',
+ ctx:'Often earnings or headline driven; respect it, gaps like this rarely fill fast.',
+ trap:'Shorting the panic candle is chasing too. Let the first bounce show its hand.'},
+{n:'Piercing Line',cat:'double',side:'bull',c:[[62,38,65,34],[30,52,56,27]],
+ read:'Opens below the prior low, then closes above the midpoint of the red candle.',
+ ctx:'A downtrend reversal cue at support — buyers reclaimed more than half the loss.',
+ trap:'Closing below the midpoint makes it just a bounce. The 50% line is the bar.'},
+{n:'Dark Cloud Cover',cat:'double',side:'bear',c:[[38,62,66,35],[70,48,73,44]],
+ read:'Gaps above the prior high, then closes below the green candle\u2019s midpoint.',
+ ctx:'At resistance it shows breakout buyers getting absorbed and reversed.',
+ trap:'Same midpoint rule in reverse — a shallow push-back into the body proves little.'},
+{n:'Tweezer Bottom',cat:'double',side:'bull',c:[[58,36,60,22],[36,54,57,22]],
+ read:'Two candles reject the exact same low — a price the market refuses to sell below.',
+ ctx:'The matched lows often mark a defended level; stronger with the second candle green.',
+ trap:'Tweezers define a level, not a rocket. Trade the level\u2019s hold, not the pattern.'},
+{n:'Tweezer Top',cat:'double',side:'bear',c:[[42,64,78,40],[64,46,78,43]],
+ read:'Two candles rejected at the identical high — supply sitting at one price.',
+ ctx:'Marks where sellers are stacked; a clean short reference if the level keeps holding.',
+ trap:'Three touches of a high can also precede a breakout. Watch how price leaves.'},
+{n:'Bullish Harami',cat:'double',side:'bull',c:[[68,32,71,29],[40,54,57,37]],
+ read:'A small green candle inside the prior big red body — the selling stalled.',
+ ctx:'After a steep decline it\u2019s the first sign sellers are exhausted, pending confirmation.',
+ trap:'"Inside" means undecided. Without the follow-through candle it\u2019s just rest.'},
+{n:'Bearish Harami',cat:'double',side:'bear',c:[[32,68,71,29],[60,46,63,43]],
+ read:'A small red candle inside the prior big green body — the buying stalled.',
+ ctx:'After a vertical run it hints at distribution beginning under the surface.',
+ trap:'Strong trends print haramis constantly and keep going. Demand confirmation.'},
+{n:'Rising Window',cat:'double',side:'bull',c:[[28,46,49,25],[56,74,77,53]],
+ read:'A gap up between two candles — demand outran supply overnight.',
+ ctx:'The gap zone itself becomes support; old resistance below it often flips.',
+ trap:'Exhaustion gaps late in a trend look identical to breakaway gaps early in one.'},
+{n:'Falling Window',cat:'double',side:'bear',c:[[72,54,75,51],[44,26,47,23]],
+ read:'A gap down between two candles — supply overwhelmed every resting bid.',
+ ctx:'The gap acts as resistance overhead; rallies into it tend to struggle.',
+ trap:'"Gaps always fill" is a slogan, not a rule. Some fill in hours, some in years.'},
+/* ---- multi (3+) ---- */
+{n:'Morning Star',cat:'multi',side:'bull',c:[[70,44,73,41],[36,32,39,27],[40,66,70,37]],
+ read:'Big red, tiny pause, big green — panic, indecision, then reversal in three acts.',
+ ctx:'One of the more reliable bottoming structures at real support after a downtrend.',
+ trap:'The third candle must close deep into the first red body. A weak third act voids it.'},
+{n:'Evening Star',cat:'multi',side:'bear',c:[[30,56,59,27],[64,68,73,61],[60,34,63,30]],
+ read:'Big green, stall at the highs, big red — euphoria rolling over in sequence.',
+ ctx:'At resistance after an advance, it maps the exact handoff from buyers to sellers.',
+ trap:'Same rule mirrored: the red candle must cut deep into the first green body.'},
+{n:'Bullish Abandoned Baby',cat:'multi',side:'bull',c:[[70,46,72,42],[30,28,34,24],[42,68,71,39]],
+ read:'A doji gapped away below everything, then a gap back up — the bottom got orphaned.',
+ ctx:'Rare and forceful: the isolated doji shows capitulation no one wanted to own.',
+ trap:'Both gaps must be real. Without true separation it\u2019s just a morning star.'},
+{n:'Bearish Abandoned Baby',cat:'multi',side:'bear',c:[[30,54,58,27],[70,72,76,66],[58,32,61,29]],
+ read:'A doji gapped above everything, then a gap back down — the top got orphaned.',
+ ctx:'The stranded doji is peak euphoria; the gap down strands everyone who bought it.',
+ trap:'Equally rare. If you\u2019re seeing them weekly, you\u2019re forcing the read.'},
+{n:'Three White Soldiers',cat:'multi',side:'bull',c:[[24,44,46,21],[40,60,62,37],[56,78,81,53]],
+ read:'Three strong green candles, each opening inside the last and closing higher.',
+ ctx:'Out of a base or downtrend it signals steady, committed accumulation.',
+ trap:'Three giant candles can also mean short-term exhaustion — late entries pay for it.'},
+{n:'Three Black Crows',cat:'multi',side:'bear',c:[[76,56,79,53],[60,40,63,37],[44,22,47,19]],
+ read:'Three heavy red candles stepping down in sequence — methodical distribution.',
+ ctx:'Off a top it shows sellers pressing with patience, not panic. Trend change energy.',
+ trap:'After the third crow the move is well known. Plan the pullback, not the chase.'},
+{n:'Three Line Strike',cat:'multi',side:'bull',c:[[70,58,72,55],[60,47,62,44],[49,35,51,32],[31,76,79,28]],
+ read:'Three red candles erased by one green bar that engulfs the entire sequence.',
+ ctx:'A violent reset: everyone who shorted the three-candle slide is now trapped.',
+ trap:'Statistically it\u2019s a continuation pattern more than a bottom call. Don\u2019t over-read it.'},
+{n:'Three Inside Up',cat:'multi',side:'bull',c:[[70,38,72,35],[44,58,61,41],[55,76,79,52]],
+ read:'A harami plus a confirmation close above the first candle\u2019s high.',
+ ctx:'It\u2019s the harami done right — the third candle supplies the proof the pattern needs.',
+ trap:'Entering on candle two is trading the hope, not the pattern. Wait for three.'},
+{n:'Three Inside Down',cat:'multi',side:'bear',c:[[30,62,65,27],[56,42,59,39],[45,24,48,21]],
+ read:'A bearish harami confirmed by a close below the first candle\u2019s low.',
+ ctx:'The structured version of "the rally stalled" — stall, then proof.',
+ trap:'Same discipline mirrored: the third candle is the pattern. Two is a guess.'},
+{n:'Three Outside Up',cat:'multi',side:'bull',c:[[56,44,58,41],[40,62,65,37],[58,78,81,55]],
+ read:'A bullish engulfing plus a third candle closing higher still.',
+ ctx:'Engulfing with receipts — the follow-through removes the biggest failure mode.',
+ trap:'By candle three the move is visible to everyone. Size for a pullback entry.'},
+{n:'Three Outside Down',cat:'multi',side:'bear',c:[[44,56,59,41],[60,38,63,35],[42,22,45,19]],
+ read:'A bearish engulfing confirmed by another lower close.',
+ ctx:'Distribution confirmed; old support levels below become the working map.',
+ trap:'Late shorts into confirmed weakness still need a stop above the structure.'},
+/* ---- chart structures ---- */
+{n:'Double Top',cat:'chart',side:'bear',pts:[[2,22],[22,72],[38,46],[58,72],[74,40],[98,12]],lines:[[20,46,84,46]],arr:'dn',
+ read:'Two failed pushes at the same high with a valley between — the "M" shape.',
+ ctx:'Triggers on the break of the valley low (the neckline), not at the second peak.',
+ trap:'Until the neckline breaks it\u2019s just a range. Most "double tops" resolve upward.'},
+{n:'Double Bottom',cat:'chart',side:'bull',pts:[[2,78],[22,28],[38,54],[58,28],[74,60],[98,88]],lines:[[20,54,84,54]],arr:'up',
+ read:'Two defended lows with a bounce between — the "W" that ends downtrends.',
+ ctx:'Confirmation is the close above the middle peak; the second low often undercuts slightly.',
+ trap:'Buying the second low before confirmation is catching a knife with a story.'},
+{n:'Triple Top',cat:'chart',side:'bear',pts:[[2,28],[16,70],[28,46],[42,72],[56,46],[70,70],[82,40],[98,12]],lines:[[14,46,86,46]],arr:'dn',
+ read:'Three rejections at one price — supply parked there isn\u2019t leaving.',
+ ctx:'Break of the twin valleys confirms; the more touches, the more obvious to everyone.',
+ trap:'Levels tested repeatedly also break upward often. The third touch isn\u2019t destiny.'},
+{n:'Triple Bottom',cat:'chart',side:'bull',pts:[[2,72],[16,30],[28,54],[42,28],[56,54],[70,30],[82,60],[98,88]],lines:[[14,54,86,54]],arr:'up',
+ read:'Three holds of the same low — a level someone with size keeps defending.',
+ ctx:'Confirmed by the break above the interior peaks, ideally on expanding volume.',
+ trap:'Each retest weakens stops below it. The break that does come can be violent — either way.'},
+{n:'Head & Shoulders',cat:'chart',side:'bear',pts:[[2,30],[14,58],[24,42],[40,82],[56,42],[68,58],[80,42],[98,10]],lines:[[20,42,84,42]],arr:'dn',
+ read:'A higher high (the head) flanked by two lower peaks — the uptrend\u2019s last gasp.',
+ ctx:'The neckline break is the pattern; the measured move targets roughly the head\u2019s height.',
+ trap:'People see H&S in everything. No clean neckline, no pattern — period.'},
+{n:'Inverse H&S',cat:'chart',side:'bull',pts:[[2,70],[14,42],[24,58],[40,18],[56,58],[68,42],[80,58],[98,90]],lines:[[20,58,84,58]],arr:'up',
+ read:'A capitulation low between two higher lows — the downtrend\u2019s last flush.',
+ ctx:'Neckline break confirms; the right shoulder forming above the head\u2019s low is the tell.',
+ trap:'Same disease in reverse: a sloppy neckline means you\u2019re drawing hope, not structure.'},
+{n:'Ascending Triangle',cat:'chart',side:'bull',pts:[[2,30],[16,64],[30,40],[44,64],[56,48],[68,64],[78,56],[86,64],[96,86]],lines:[[12,64,88,64],[8,32,84,58]],arr:'up',
+ read:'Flat ceiling, rising floor — buyers stepping up earlier on every dip.',
+ ctx:'Pressure builds into the flat resistance; the classic resolution is up and through it.',
+ trap:'"Classic" isn\u2019t "guaranteed" — failed triangles break hard the other way.'},
+{n:'Descending Triangle',cat:'chart',side:'bear',pts:[[2,70],[16,36],[30,60],[44,36],[56,52],[68,36],[78,44],[86,36],[96,14]],lines:[[12,36,88,36],[8,68,84,42]],arr:'dn',
+ read:'Flat floor, falling ceiling — sellers pressing lower into a defended level.',
+ ctx:'Each weaker bounce drains the bid; the floor break is the textbook resolution.',
+ trap:'In bull markets these break upward constantly. Trade the break, never the prediction.'},
+{n:'Symmetrical Triangle',cat:'chart',side:'neut',pts:[[2,50],[14,76],[26,30],[38,68],[50,38],[60,62],[70,46],[78,56],[88,50],[97,72]],lines:[[10,78,86,52],[10,28,86,48]],arr:null,
+ read:'Lower highs meeting higher lows — the spring coils, direction undecided.',
+ ctx:'A continuation pattern more often than not; the prior trend gets the benefit of the doubt.',
+ trap:'Breakouts in the final 10% of the apex are the least reliable. Early break > apex break.'},
+{n:'Rising Wedge',cat:'chart',side:'bear',pts:[[2,18],[14,42],[24,30],[36,54],[46,44],[58,64],[68,56],[78,70],[86,64],[96,38]],lines:[[6,14,84,60],[8,46,84,72]],arr:'dn',
+ read:'Price grinds higher inside converging lines — gains shrinking with every push.',
+ ctx:'Rising on fading momentum is distribution in slow motion; the break is usually down.',
+ trap:'Wedges can grind far longer than shorts can stay solvent. The break is the entry.'},
+{n:'Falling Wedge',cat:'chart',side:'bull',pts:[[2,82],[14,58],[24,70],[36,46],[46,56],[58,36],[68,44],[78,30],[86,36],[96,62]],lines:[[6,86,84,40],[8,54,84,28]],arr:'up',
+ read:'Price bleeds lower inside converging lines — each leg down losing force.',
+ ctx:'Selling pressure exhausting itself; the upside break tends to be sharp.',
+ trap:'"Losing momentum" still means falling. Knife-catching inside the wedge isn\u2019t the play.'},
+{n:'Bull Flag',cat:'chart',side:'bull',pts:[[2,10],[20,72],[30,62],[38,68],[46,58],[54,64],[62,54],[95,92]],lines:[[26,72,66,58],[28,58,68,46]],arr:'up',
+ read:'A sharp pole, then a tight drift against it — the market catching its breath.',
+ ctx:'Continuation: the measured move projects the pole\u2019s length from the breakout.',
+ trap:'A "flag" that retraces more than half the pole isn\u2019t resting — it\u2019s reversing.'},
+{n:'Bear Flag',cat:'chart',side:'bear',pts:[[2,90],[20,28],[30,38],[38,32],[46,42],[54,36],[62,46],[95,8]],lines:[[26,28,66,42],[28,42,68,54]],arr:'dn',
+ read:'A waterfall drop, then a weak upward drift — relief without conviction.',
+ ctx:'The drift bleeds out shorts and traps dip-buyers before continuation lower.',
+ trap:'Weak bounces can become V-reversals on news. Stops above the flag, always.'},
+{n:'Cup & Handle',cat:'chart',side:'bull',pts:[[2,70],[12,52],[22,36],[34,28],[46,30],[58,40],[66,58],[72,70],[78,62],[84,66],[90,60],[97,86]],lines:[[4,70,90,68]],arr:'up',
+ read:'A rounded base (the cup) plus a small dip near the rim (the handle).',
+ ctx:'A long accumulation arc; the handle shakes out weak hands before the rim breaks.',
+ trap:'Real cups take weeks to months. A "cup" formed in an afternoon is just a squiggle.'}
+];
+
+/* ===== SVG renderers ===== */
+function candleSVG(c,W,H,big){
+  const pad=big?14:8;
+  const hi=Math.max(...c.map(k=>Math.max(k[0],k[1],k[2])));
+  const lo=Math.min(...c.map(k=>Math.min(k[0],k[1],k[3])));
+  const y=v=>pad+(hi-v)/((hi-lo)||1)*(H-2*pad);
+  const n=c.length, slot=W/n, cw=Math.min(slot*.5,big?30:16);
+  let s='';
+  c.forEach((k,i)=>{
+    const [o,cl,h,l]=k;
+    const col = cl>o?GREEN : cl<o?RED : AMBER;
+    const x=slot*(i+.5);
+    const bt=Math.min(y(o),y(cl)), bh=Math.max(big?2.5:1.8,Math.abs(y(cl)-y(o)));
+    s+=`<line x1="${x}" y1="${y(h).toFixed(1)}" x2="${x}" y2="${y(l).toFixed(1)}" stroke="${col}" stroke-width="${big?2:1.4}"/>`;
+    s+=`<rect x="${(x-cw/2).toFixed(1)}" y="${bt.toFixed(1)}" width="${cw.toFixed(1)}" height="${bh.toFixed(1)}" fill="${col}" rx="1"/>`;
+  });
+  return `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" aria-hidden="true">${s}</svg>`;
+}
+function chartSVG(p,W,H,big){
+  const pad=big?14:9;
+  const sx=v=>pad+v/100*(W-2*pad), sy=v=>H-pad-(v/100)*(H-2*pad);
+  const pts=p.pts.map(([x,yv])=>`${sx(x).toFixed(1)},${sy(yv).toFixed(1)}`).join(' ');
+  let s=`<polyline points="${pts}" fill="none" stroke="${big?'#EFE9DB':DIM}" stroke-width="${big?2.2:1.6}" stroke-linejoin="round" stroke-linecap="round"/>`;
+  (p.lines||[]).forEach(([x1,y1,x2,y2])=>{
+    s+=`<line x1="${sx(x1).toFixed(1)}" y1="${sy(y1).toFixed(1)}" x2="${sx(x2).toFixed(1)}" y2="${sy(y2).toFixed(1)}" stroke="${AMBER}" stroke-width="1.1" stroke-dasharray="4 4" opacity=".8"/>`;
+  });
+  if(p.arr){
+    const last=p.pts[p.pts.length-1];
+    const ax=sx(last[0]), ay=sy(last[1]);
+    const col=p.arr==='up'?GREEN:RED, d=p.arr==='up'?-1:1;
+    s+=`<path d="M${ax} ${ay+d*4} l-5 ${d*8} l10 0 z" fill="${col}" transform="rotate(0)"/>`;
+  }
+  return `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" aria-hidden="true">${s}</svg>`;
+}
+function patternThumb(p,big){
+  const W=big?380:128, H=big?210:76;
+  return p.c ? candleSVG(p.c,W,H,big) : chartSVG(p,W,H,big);
+}
+
+/* ===== library render + filters ===== */
+const FILTERS=[['all','All'],['bull','Bullish'],['bear','Bearish'],['neut','Neutral'],['single','Single'],['double','2-candle'],['multi','3+ candle'],['chart','Chart patterns']];
+let pFilter='all', pQuery='';
+const SIDE_LABEL={bull:'Bullish',bear:'Bearish',neut:'Neutral'};
+const CAT_LABEL={single:'1 candle',double:'2 candles',multi:'3+ candles',chart:'Chart pattern'};
+$('#pFilters').innerHTML=FILTERS.map(([k,l])=>`<button data-f="${k}" class="${k==='all'?'on':''}" onclick="setPFilter('${k}',this)">${l}</button>`).join('');
+function setPFilter(k,btn){pFilter=k;$$('#pFilters button').forEach(b=>b.classList.remove('on'));btn.classList.add('on');renderPatterns();}
+$('#pSearch').addEventListener('input',e=>{pQuery=e.target.value.toLowerCase();renderPatterns();});
+function patternMatch(p){
+  if(pQuery && !p.n.toLowerCase().includes(pQuery))return false;
+  if(pFilter==='all')return true;
+  return p.side===pFilter || p.cat===pFilter;
+}
+function renderPatterns(){
+  const list=P.filter(patternMatch);
+  $('#pGrid').innerHTML=list.map(p=>{
+    const idx=P.indexOf(p);
+    return `<button class="pcard" onclick="openPattern(${idx})" aria-label="${p.n} details">
+      <span class="pv">${patternThumb(p,false)}</span>
+      <span class="pn">${p.n}</span>
+      <span class="pm"><span class="side ${p.side}">${SIDE_LABEL[p.side]}</span><span>${CAT_LABEL[p.cat]}</span></span>
+    </button>`;
+  }).join('');
+  $('#pCount').textContent=`${list.length} of ${P.length} patterns shown — click any card for the full read`;
+}
+function openPattern(i){
+  const p=P[i];
+  $('#pd-bar').textContent='PATTERN // '+p.n.toUpperCase();
+  $('#pdBody').innerHTML=`
+    <h3>${p.n}</h3>
+    <div class="pd-meta"><span class="side ${p.side}" style="border:none">${SIDE_LABEL[p.side]}</span><span>${CAT_LABEL[p.cat]}</span></div>
+    <div class="pd-hero">${patternThumb(p,true)}</div>
+    <div class="pd-row"><span class="k">The read</span><span class="v">${p.read}</span></div>
+    <div class="pd-row"><span class="k">Where it matters</span><span class="v">${p.ctx}</span></div>
+    <div class="pd-row"><span class="k">The trap</span><span class="v"><b>${p.trap}</b></span></div>
+    <p class="mnote">Patterns are clues, never commands — they only earn weight at real levels, with volume, inside your written rules. That\u2019s the whole curriculum in one sentence.</p>`;
+  openModal('m-pattern');
+}
+renderPatterns();
+
+/* ============================================================
+   CURRICULUM
+   ============================================================ */
+const SESSIONS=[
+  ['Investing vs. Trading','The real gap between buy-and-hold and short-term trading — pace, risk, mindset, and which actually fits your goals. Most people lose because they\u2019re playing one game with the other\u2019s rules.','Know which game you\u2019re playing before a dollar moves.'],
+  ['What Are Assets?','Stocks, options, futures, forex, and crypto in plain language — what each instrument really is, how it moves, the leverage hiding inside it, and the risk baked into each one.','Never trade an instrument you can\u2019t explain to someone else.'],
+  ['Getting Started','Capital, brokers, and setup — how much to start with, which platforms fit where you are, funding safely, building your layout, and why months of demo come before dollar one.','Paper first. The market charges full price for skipped steps.'],
+  ['Chart Reading','Candlesticks decoded — open, high, low, close, what red and green actually say about the fight underneath, support and resistance as the spine of everything, and volume as the lie detector.','Support, resistance, volume. Everything else is commentary.'],
+  ['Indicators','Moving averages, RSI, MACD, Bollinger Bands — what each one measures, what it lags, and how to use them as confluence instead of commands.','Indicators describe the past. Structure frames the future.'],
+  ['Strategies & Financials','How real strategies get built from repeatable edges — plus reading earnings, balance sheets, and valuation simply enough to know what moves your market.','A strategy you can\u2019t explain is a coin flip with extra steps.'],
+  ['Risk & Psychology','Position sizing as 80% of risk management, stops that don\u2019t move, daily loss limits, and the greed–fear loop that empties accounts faster than any bad strategy.','The market tests your rules daily. Journaling is how you pass.'],
+  ['Taxes & Your Plan','The tax basics worth knowing, the records worth keeping, the resources worth trusting — then everything assembled into your own written trading plan.','If the plan isn\u2019t written down, it doesn\u2019t exist.']
+];
+$('#currGrid').innerHTML=SESSIONS.map((s,i)=>`
+  <details class="sess"${i===0?' open':''}>
+    <summary><span class="snum">${String(i+1).padStart(2,'0')}</span><span class="stitle">${s[0]}</span><span class="chev">›</span></summary>
+    <div class="sbody">${s[1]}<div class="skey"><b>Key takeaway:</b> ${s[2]}</div></div>
+  </details>`).join('');
+
+/* ============================================================
+   BOOKING helpers
+   ============================================================ */
+function pickTier(t){
+  const sel=$('#bk-tier');
+  [...sel.options].forEach(o=>{if(o.text===t)sel.value=o.text;});
+  document.getElementById('book').scrollIntoView({behavior:reduceMotion?'auto':'smooth'});
+  setTimeout(()=>$('#bk-name').focus({preventScroll:true}),600);
+}
+
+/* ============================================================
+   COMMAND PALETTE
+   ============================================================ */
+const cmdk=$('#cmdk'), cmdkInput=$('#cmdkInput'), cmdkList=$('#cmdkList');
+const CMDS=[
+  ...TOOLS.map(t=>({label:t.name,kind:'tool',run:()=>openModal(t.id)})),
+  {label:'The Story',kind:'section',run:()=>location.hash='story'},
+  {label:'The Armory',kind:'section',run:()=>location.hash='armory'},
+  {label:'Pattern Library',kind:'section',run:()=>location.hash='patterns'},
+  {label:'8-Session Curriculum',kind:'section',run:()=>location.hash='path'},
+  {label:'Book a Session',kind:'section',run:()=>location.hash='sessions'},
+  ...P.map((p,i)=>({label:p.n,kind:'pattern',run:()=>openPattern(i)}))
+];
+function openCmdk(){cmdk.classList.add('open');document.body.classList.add('locked');cmdkInput.value='';renderCmdk('');cmdkInput.focus();}
+function closeCmdk(){cmdk.classList.remove('open');if(!$$('.modal.open').length)document.body.classList.remove('locked');}
+function renderCmdk(q){
+  const list=CMDS.filter(c=>c.label.toLowerCase().includes(q.toLowerCase())).slice(0,9);
+  cmdkList.innerHTML=list.length
+    ? list.map((c,i)=>`<div class="cmdk-item${i===0?' hot':''}" data-ci="${CMDS.indexOf(c)}"><span>${c.label}</span><small>${c.kind}</small></div>`).join('')
+    : '<div class="cmdk-item"><span>No match — try "size", "flag", "doji"…</span></div>';
+  $$('.cmdk-item[data-ci]').forEach(el=>el.addEventListener('click',()=>{closeCmdk();CMDS[+el.dataset.ci].run();}));
+}
+cmdkInput.addEventListener('input',()=>renderCmdk(cmdkInput.value));
+cmdkInput.addEventListener('keydown',e=>{
+  if(e.key==='Enter'){const first=$('.cmdk-item[data-ci]');if(first){closeCmdk();CMDS[+first.dataset.ci].run();}}
+});
+cmdk.addEventListener('mousedown',e=>{if(e.target===cmdk)closeCmdk();});
+document.addEventListener('keydown',e=>{
+  if(e.key==='/' && !/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)){
+    e.preventDefault(); cmdk.classList.contains('open')?closeCmdk():openCmdk();
+  }
+});
+</script>
 </body>
 </html>
