@@ -796,6 +796,7 @@ body.locked{overflow:hidden}
   </div>
 </div>
 <script>
+  
 /* ============================================================
    THE TRADING DESK — all logic, zero dependencies
    ============================================================ */
@@ -806,16 +807,57 @@ const GREEN='#00FF5E', RED='#FF1E3C', ACCENT='#00FF5E', DIM='#B8B2A4', FAINT='#7
 const reduceMotion=matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /* ===== ticker tape ===== */
-(function(){
-  const items=[
-    ['SURVIVE FIRST','▲'],['FOMO ENTRIES','▼'],['RISK DEFINED BEFORE ENTRY','▲'],['REVENGE TRADES','▼'],
-    ['SIZE SMALL, THINK LONG','▲'],['HYPE','▼'],['THE BEST TRADE IS OFTEN NO TRADE','▲'],['GUESSING','▼'],
-    ['WRITTEN RULES','▲'],['MOVING YOUR STOP','▼'],['JOURNAL EVERY TRADE','▲'],['"CAN\'T LOSE" SETUPS','▼'],
-    ['PATIENCE PAYS THE BILLS','▲'],['OVERTRADING','▼']
-  ];
-  const half=items.map(([t,d])=>`<i><b class="${d==='▲'?'up':'dn'}">${d}</b> ${t}</i>`).join('');
-  $('#tapeTrack').innerHTML=half+half;
-})();
+async function loadTickerTape() {
+  // Configured with SPY, QQQ, IWM, Magnificent 7, and AMD
+  const tickers = ['SPY', 'QQQ', 'IWM', 'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'META', 'TSLA', 'AMD'];
+  const key = (FINNHUB_KEY || '').trim() || (localStorage.getItem('tdesk_finnhub') || '').trim();
+  
+  if (!key) {
+    $('#tapeTrack').innerHTML = `<i><b class="dn">!</b> KEY MISSING — PASTE FINNHUB KEY TO LOAD TICKERS</i>`;
+    return;
+  }
+
+  // Helper to fetch single quote from Finnhub
+  async function fetchQuote(symbol) {
+    try {
+      const res = await fetch(`https://finnhub.io/api/v1/quote?symbol=${symbol}&token=${key}`);
+      if (!res.ok) return null;
+      const data = await res.json();
+      // c = Current price, pc = Previous close
+      if (data.c === 0 && data.pc === 0) return null; 
+      return {
+        symbol,
+        current: data.c,
+        changePercent: ((data.c - data.pc) / data.pc) * 100
+      };
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // Fetch all tickers in parallel
+  const results = await Promise.all(tickers.map(ticker => fetchQuote(ticker)));
+  const validQuotes = results.filter(q => q !== null);
+
+  if (validQuotes.length === 0) {
+    $('#tapeTrack').innerHTML = `<i><b class="dn">ERR</b> COULD NOT RETRIEVE REFRESH DATA</i>`;
+    return;
+  }
+
+  // Map the JSON payloads to styled ticker HTML components
+  const half = validQuotes.map(q => {
+    const isUp = q.changePercent >= 0;
+    const sign = isUp ? '▲' : '▼';
+    const colorClass = isUp ? 'up' : 'dn';
+    return `<i><b class="${colorClass}">${sign} ${q.changePercent.toFixed(2)}%</b> ${q.symbol} $${q.current.toFixed(2)}</i>`;
+  }).join('');
+
+  // Duplicate the string track elements to maintain the infinite loop seamless animation scroll
+  $('#tapeTrack').innerHTML = half + half;
+}
+
+// Fire data pull immediately on page load initialization
+loadTickerTape();
 
 /* ===== nav ===== */
 const menuBtn=$('#menuBtn'), navLinks=$('#navLinks');
@@ -1168,7 +1210,7 @@ async function loadCrypto(){
 }
 /* ===== tool: market pulse (live, Finnhub) ===== */
 // ▼ Paste your free finnhub.io key between the quotes (or leave blank and use the in-tool field).
-const FINNHUB_KEY='';
+const FINNHUB_KEY='d8mhpk1r01qkisoa50a0d8mhpk1r01qkisoa50ag';
 function mktKey(){ return (FINNHUB_KEY||'').trim() || (localStorage.getItem('tdesk_finnhub')||'').trim(); }
 function saveMktKey(){
   const v=$('#mktKey').value.trim();
