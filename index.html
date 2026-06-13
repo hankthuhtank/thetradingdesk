@@ -415,14 +415,14 @@ body.locked{overflow:hidden}
 <header id="top">
   <canvas id="heroChart" aria-hidden="true"></canvas>
   <div class="wrap hero">
-    <div class="badge"><b>●</b> EDUCATIONAL ONLY — NO SIGNALS, NO HYPE, NO "GET RICH BY FRIDAY"</div>
+    <div class="badge"><b>?</b> EDUCATIONAL ONLY — NO SIGNALS, NO HYPE, NO "GET RICH BY FRIDAY"</div>
     <h1 class="disp">
       <span class="ln">The market</span>
       <span class="ln">charges tuition.</span>
       <span class="ln amber">Class is cheaper.</span>
     </h1>
     <p class="sub">Free trader tools, a full pattern library, and one-on-one education built from the structure I had to learn the slow, expensive way — so the market makes sense <em>before</em> your money's on the line. <b>No signals. Ever.</b></p>
-    <p class="micro">// free tools · pattern reference · risk math · 1:1 sessions · paris, tx → nationwide</p>
+    <p class="micro">// free tools · pattern reference · risk math · 1:1 sessions · paris, tx ? nationwide</p>
     <div class="cta-row">
       <a class="btn btn-amber" href="#armory">Open the free tools</a>
       <a class="btn btn-ghost" href="#patterns">Browse the pattern library</a>
@@ -459,7 +459,7 @@ body.locked{overflow:hidden}
       <div class="term">
         <div class="term-bar"><span class="dots"><s></s><s></s><s></s></span>EQUITY.LOG — THE HONEST VERSION<span class="tag">+STRUCTURE</span></div>
         <div class="term-body"><svg id="eqSvg" viewBox="0 0 460 210" preserveAspectRatio="xMidYMid meet" aria-label="Equity curve: losses early, consistency after structure"></svg></div>
-        <div class="term-foot"><span class="r">↓ the tuition years</span><span class="g">structure → consistency ↗</span></div>
+        <div class="term-foot"><span class="r">? the tuition years</span><span class="g">structure ? consistency ?</span></div>
       </div>
     </div>
     <div class="diff reveal">
@@ -583,13 +583,13 @@ body.locked{overflow:hidden}
           </select>
         </div>
         <div class="bf full"><label for="bk-msg">What do you want to work on? (optional)</label><textarea id="bk-msg" name="message" placeholder="Where you're stuck, what keeps costing you, what you want to understand…"></textarea></div>
-        <button class="btn btn-amber" type="submit">Send my request →</button>
+        <button class="btn btn-amber" type="submit">Send my request ?</button>
         <p class="book-foot">Goes directly to <b>The Trading Desk</b> · no spam, no mailing lists </p>
       </form>
     </div>
 
     <div class="disc reveal">
-      <div class="dh">⚠ Educational purposes only — not financial advice</div>
+      <div class="dh">? Educational purposes only — not financial advice</div>
       <p>The Trading Desk and all associated content, tools, sessions, and materials are strictly for educational and informational purposes. Nothing on this site constitutes financial, investment, trading, or professional advice of any kind, and no tool output is a recommendation to buy or sell anything. Trading and investing involve substantial risk of loss and are not suitable for every person. Past performance is not indicative of future results. Consult a qualified financial advisor, attorney, or tax professional before making financial decisions. Only risk capital you can afford to lose. The Trading Desk and Safi Solutions L.L.C. assume no liability for losses or damages of any kind.</p>
     </div>
   </div>
@@ -659,7 +659,7 @@ body.locked{overflow:hidden}
         </div>
         <div class="rs" id="rr-note"></div>
       </div>
-      <p class="mnote">Breakeven win rate = 1 ÷ (1 + R). Expectancy = (win% × reward) − (loss% × risk). A positive expectancy repeated with discipline is the entire game — everything else is decoration.</p>
+      <p class="mnote">Breakeven win rate = 1 ÷ (1 + R). Expectancy = (win% × reward) ? (loss% × risk). A positive expectancy repeated with discipline is the entire game — everything else is decoration.</p>
     </div>
   </div>
 </div>
@@ -792,11 +792,10 @@ body.locked{overflow:hidden}
       <input id="cmdkInput" type="text" placeholder="Jump to a tool, pattern, or section…" autocomplete="off">
     </div>
     <div class="cmdk-list" id="cmdkList"></div>
-    <div class="cmdk-foot"><span>↵ open · esc close</span><span>THE DESK</span></div>
+    <div class="cmdk-foot"><span>? open · esc close</span><span>THE DESK</span></div>
   </div>
 </div>
 <script>
-  
 /* ============================================================
    THE TRADING DESK — all logic, zero dependencies
    ============================================================ */
@@ -808,43 +807,63 @@ const reduceMotion=matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /* ===== ticker tape ===== */
 async function loadTickerTape() {
-  // Configured with SPY, QQQ, IWM, Magnificent 7, and AMD
-  const tickers = ['SPY', 'QQQ', 'IWM', 'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'META', 'TSLA', 'AMD'];
+  // Configured with SPY, QQQ, IWM, Magnificent 7, AMD, and SPCX
+  const tickers = ['SPY', 'QQQ', 'IWM', 'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'META', 'TSLA', 'AMD', 'SPCX'];
   const key = (FINNHUB_KEY || '').trim() || (localStorage.getItem('tdesk_finnhub') || '').trim();
   
-  if (!key) {
-    $('#tapeTrack').innerHTML = `<i><b class="dn">!</b> KEY MISSING — PASTE FINNHUB KEY TO LOAD TICKERS</i>`;
+  // Targets your file's exact CSS layout element selector rule
+  const container = $('.tape-track');
+  
+  if (!container) {
+    console.error("Layout error: CSS track element '.tape-track' was not found on the active DOM page layout.");
     return;
   }
 
-  // Helper to fetch single quote from Finnhub
-  async function fetchQuote(symbol) {
+  if (!key) {
+    container.innerHTML = `<i><b class="dn">!</b> KEY MISSING — PASTE FINNHUB KEY TO LOAD TICKERS</i>`;
+    return;
+  }
+
+  const validQuotes = [];
+  
+  // Helper to pause execution to respect Finnhub's 60 req/min free-tier rate limits
+  const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+  // Loop through asset listings sequentially with a small network pause throttle layout
+  for (const symbol of tickers) {
     try {
       const res = await fetch(`https://finnhub.io/api/v1/quote?symbol=${symbol}&token=${key}`);
-      if (!res.ok) return null;
+      
+      if (res.status === 429) {
+        console.warn(`Rate limit warning hit on ${symbol}. Delaying queries...`);
+        await delay(1000); // Wait out the window constraint if hitting rate bounds
+        continue;
+      }
+      
+      if (!res.ok) continue;
+      
       const data = await res.json();
-      // c = Current price, pc = Previous close
-      if (data.c === 0 && data.pc === 0) return null; 
-      return {
+      if (data.c === 0 && data.pc === 0) continue; // Bypass un-returned market listings
+
+      validQuotes.push({
         symbol,
         current: data.c,
         changePercent: ((data.c - data.pc) / data.pc) * 100
-      };
+      });
+      
+      // Safety throttle delay padding to preserve client data allocation bands cleanly
+      await delay(150);
     } catch (e) {
-      return null;
+      console.error(`Error fetching ticker data for ${symbol}:`, e);
     }
   }
 
-  // Fetch all tickers in parallel
-  const results = await Promise.all(tickers.map(ticker => fetchQuote(ticker)));
-  const validQuotes = results.filter(q => q !== null);
-
   if (validQuotes.length === 0) {
-    $('#tapeTrack').innerHTML = `<i><b class="dn">ERR</b> COULD NOT RETRIEVE REFRESH DATA</i>`;
+    container.innerHTML = `<i><b class="dn">ERR</b> COULD NOT RETRIEVE TICKER DATA</i>`;
     return;
   }
 
-  // Map the JSON payloads to styled ticker HTML components
+  // Structure layout elements dynamically 
   const half = validQuotes.map(q => {
     const isUp = q.changePercent >= 0;
     const sign = isUp ? '▲' : '▼';
@@ -852,11 +871,11 @@ async function loadTickerTape() {
     return `<i><b class="${colorClass}">${sign} ${q.changePercent.toFixed(2)}%</b> ${q.symbol} $${q.current.toFixed(2)}</i>`;
   }).join('');
 
-  // Duplicate the string track elements to maintain the infinite loop seamless animation scroll
-  $('#tapeTrack').innerHTML = half + half;
+  // Duplicate the output sequence onto the track block to complete the infinite scrolling marquee layout loop
+  container.innerHTML = half + half;
 }
 
-// Fire data pull immediately on page load initialization
+// Instantiate immediately upon initialization
 loadTickerTape();
 
 /* ===== nav ===== */
@@ -985,7 +1004,7 @@ $('#toolGrid').innerHTML=TOOLS.map(t=>`
   <button class="tool" onclick="openModal('${t.id}')">
     <span class="t-top"><span class="t-ic"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="${t.ic}"/></svg></span><span class="t-kind">${t.kind}</span></span>
     <h4>${t.name}</h4><p>${t.desc}</p>
-    <span class="t-go">Open tool →</span>
+    <span class="t-go">Open tool ?</span>
   </button>`).join('');
 
 /* ===== tool: position size ===== */
@@ -1086,7 +1105,7 @@ function renderPsy(){
       <div class="score-big"><div class="sv" style="color:${col}">${pct}</div><div class="sl" style="color:${col}">${label}</div></div>
       <div class="fb-box">${fb}</div>
       <button class="mbtn ghost" onclick="startPsy()">Retake</button>
-      <button class="mbtn" onclick="closeModal('m-psy');location.hash='sessions'">Put structure under it →</button>`;
+      <button class="mbtn" onclick="closeModal('m-psy');location.hash='sessions'">Put structure under it ?</button>`;
   }
 }
 function answerPsy(i){
@@ -1202,14 +1221,14 @@ async function loadCrypto(){
       const c=d[id]; if(!c)return'';
       const ch=c.usd_24h_change||0, up=ch>=0;
       return `<div class="crypto-row"><span class="cn">${name}<small>${sym}</small></span>
-        <span class="cp"><div class="v">$${c.usd.toLocaleString()}</div><div class="c ${up?'up':'dn'}">${up?'▲':'▼'} ${Math.abs(ch).toFixed(2)}% / 24h</div></span></div>`;
+        <span class="cp"><div class="v">$${c.usd.toLocaleString()}</div><div class="c ${up?'up':'dn'}">${up?'?':'?'} ${Math.abs(ch).toFixed(2)}% / 24h</div></span></div>`;
     }).join('');
   }catch(e){
     out.innerHTML='<p class="mnote" style="color:var(--red)">Live feed unavailable right now — likely a rate limit. Try again in a minute.</p>';
   }
 }
 /* ===== tool: market pulse (live, Finnhub) ===== */
-// ▼ Paste your free finnhub.io key between the quotes (or leave blank and use the in-tool field).
+// ? Paste your free finnhub.io key between the quotes (or leave blank and use the in-tool field).
 const FINNHUB_KEY='d8mhpk1r01qkisoa50a0d8mhpk1r01qkisoa50ag';
 function mktKey(){ return (FINNHUB_KEY||'').trim() || (localStorage.getItem('tdesk_finnhub')||'').trim(); }
 function saveMktKey(){
@@ -1241,7 +1260,7 @@ async function loadMarket(){
       any=true;
       const ch=q.dp||0, up=ch>=0;
       return `<div class="crypto-row"><span class="cn">${name}<small>${sym}</small></span>
-        <span class="cp"><div class="v">$${q.c.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</div><div class="c ${up?'up':'dn'}">${up?'▲':'▼'} ${Math.abs(ch).toFixed(2)}% / day</div></span></div>`;
+        <span class="cp"><div class="v">$${q.c.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</div><div class="c ${up?'up':'dn'}">${up?'?':'?'} ${Math.abs(ch).toFixed(2)}% / day</div></span></div>`;
     }).join('');
     if(!any)out.innerHTML='<p class="mnote" style="color:var(--red)">No quotes returned — markets may be closed or those symbols aren\u2019t on your plan.</p>';
   }catch(e){
@@ -1614,7 +1633,7 @@ function updateCurriculumProgress(){
     const btn = d.querySelector('button');
     if(!btn) return;
     const isDone = completed.includes(i);
-    btn.textContent = isDone ? '✓ Completed' : 'Mark Complete';
+    btn.textContent = isDone ? '? Completed' : 'Mark Complete';
     btn.style.borderColor = isDone ? 'var(--green)' : 'var(--line)';
     btn.style.color = isDone ? 'var(--green)' : 'var(--text)';
   });
