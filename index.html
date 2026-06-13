@@ -806,77 +806,16 @@ const GREEN='#00FF5E', RED='#FF1E3C', ACCENT='#00FF5E', DIM='#B8B2A4', FAINT='#7
 const reduceMotion=matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /* ===== ticker tape ===== */
-async function loadTickerTape() {
-  // Configured with SPY, QQQ, IWM, Magnificent 7, AMD, and SPCX
-  const tickers = ['SPY', 'QQQ', 'IWM', 'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'META', 'TSLA', 'AMD', 'SPCX'];
-  const key = (FINNHUB_KEY || '').trim() || (localStorage.getItem('tdesk_finnhub') || '').trim();
-  
-  // Targets your file's exact CSS layout element selector rule
-  const container = $('.tape-track');
-  
-  if (!container) {
-    console.error("Layout error: CSS track element '.tape-track' was not found on the active DOM page layout.");
-    return;
-  }
-
-  if (!key) {
-    container.innerHTML = `<i><b class="dn">!</b> KEY MISSING — PASTE FINNHUB KEY TO LOAD TICKERS</i>`;
-    return;
-  }
-
-  const validQuotes = [];
-  
-  // Helper to pause execution to respect Finnhub's 60 req/min free-tier rate limits
-  const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-
-  // Loop through asset listings sequentially with a small network pause throttle layout
-  for (const symbol of tickers) {
-    try {
-      const res = await fetch(`https://finnhub.io/api/v1/quote?symbol=${symbol}&token=${key}`);
-      
-      if (res.status === 429) {
-        console.warn(`Rate limit warning hit on ${symbol}. Delaying queries...`);
-        await delay(1000); // Wait out the window constraint if hitting rate bounds
-        continue;
-      }
-      
-      if (!res.ok) continue;
-      
-      const data = await res.json();
-      if (data.c === 0 && data.pc === 0) continue; // Bypass un-returned market listings
-
-      validQuotes.push({
-        symbol,
-        current: data.c,
-        changePercent: ((data.c - data.pc) / data.pc) * 100
-      });
-      
-      // Safety throttle delay padding to preserve client data allocation bands cleanly
-      await delay(150);
-    } catch (e) {
-      console.error(`Error fetching ticker data for ${symbol}:`, e);
-    }
-  }
-
-  if (validQuotes.length === 0) {
-    container.innerHTML = `<i><b class="dn">ERR</b> COULD NOT RETRIEVE TICKER DATA</i>`;
-    return;
-  }
-
-  // Structure layout elements dynamically 
-  const half = validQuotes.map(q => {
-    const isUp = q.changePercent >= 0;
-    const sign = isUp ? '▲' : '▼';
-    const colorClass = isUp ? 'up' : 'dn';
-    return `<i><b class="${colorClass}">${sign} ${q.changePercent.toFixed(2)}%</b> ${q.symbol} $${q.current.toFixed(2)}</i>`;
-  }).join('');
-
-  // Duplicate the output sequence onto the track block to complete the infinite scrolling marquee layout loop
-  container.innerHTML = half + half;
-}
-
-// Instantiate immediately upon initialization
-loadTickerTape();
+(function(){
+  const items=[
+    ['SURVIVE FIRST','?'],['FOMO ENTRIES','?'],['RISK DEFINED BEFORE ENTRY','?'],['REVENGE TRADES','?'],
+    ['SIZE SMALL, THINK LONG','?'],['HYPE','?'],['THE BEST TRADE IS OFTEN NO TRADE','?'],['GUESSING','?'],
+    ['WRITTEN RULES','?'],['MOVING YOUR STOP','?'],['JOURNAL EVERY TRADE','?'],['"CAN\'T LOSE" SETUPS','?'],
+    ['PATIENCE PAYS THE BILLS','?'],['OVERTRADING','?']
+  ];
+  const half=items.map(([t,d])=>`<i><b class="${d==='?'?'up':'dn'}">${d}</b> ${t}</i>`).join('');
+  $('#tapeTrack').innerHTML=half+half;
+})();
 
 /* ===== nav ===== */
 const menuBtn=$('#menuBtn'), navLinks=$('#navLinks');
