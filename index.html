@@ -11,22 +11,23 @@
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 :root{
-  --bg:#050505;
-  --bg-2:#0F0F0F;
-  --card:#161616;
-  --card-2:#1F1F1F;
-  --line:rgba(245,240,232,.09);
-  --line-2:rgba(245,240,232,.05);
+  --bg:#040705;
+  --bg-2:#0B0F0C;
+  --card:#121613;
+  --card-2:#1B201C;
+  --line:rgba(220,255,235,.10);
+  --line-2:rgba(220,255,235,.05);
   --text:#F5F0E8;
   --dim:#B8B2A4;
   --faint:#746E60;
-  --accent:#00FF9F;
-  --accent-2:#7CFFCB;
-  --accent-glow:rgba(0,255,159,.22);
-  --green:#00FF9F;
-  --green-bg:rgba(0,255,159,.1);
-  --red:#FF3366;
-  --red-bg:rgba(255,51,102,.1);
+  --accent:#00FF5E;
+  --accent-2:#7BFF9E;
+  --accent-glow:rgba(0,255,94,.28);
+  --green:#00FF5E;
+  --green-bg:rgba(0,255,94,.12);
+  --red:#FF1E3C;
+  --red-bg:rgba(255,30,60,.12);
+  --red-glow:rgba(255,30,60,.28);
   --disp:'Archivo',sans-serif;
   --body:'IBM Plex Sans',sans-serif;
   --mono:'IBM Plex Mono',monospace;
@@ -34,6 +35,15 @@
 *{margin:0;padding:0;box-sizing:border-box}
 html{scroll-behavior:smooth}
 body{font-family:var(--body);background:var(--bg);color:var(--text);line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+/* living background — sits behind everything; opaque sections cover it */
+.bg-fx{position:fixed;inset:0;z-index:-1;pointer-events:none;overflow:hidden}
+.bg-fx .bg-grid{position:absolute;inset:-50%;background-image:linear-gradient(var(--line-2) 1px,transparent 1px),linear-gradient(90deg,var(--line-2) 1px,transparent 1px);background-size:64px 64px;opacity:.5;animation:gridDrift 26s linear infinite}
+.bg-fx .bg-glow{position:absolute;width:62vmax;height:62vmax;border-radius:50%;filter:blur(120px);opacity:.16;will-change:transform,opacity}
+.bg-fx .g-green{background:radial-gradient(circle,var(--accent) 0%,transparent 70%);top:-22vmax;left:-16vmax;animation:glowA 30s ease-in-out infinite}
+.bg-fx .g-red{background:radial-gradient(circle,var(--red) 0%,transparent 70%);bottom:-26vmax;right:-18vmax;animation:glowB 36s ease-in-out infinite}
+@keyframes gridDrift{from{transform:translate(0,0)}to{transform:translate(64px,64px)}}
+@keyframes glowA{0%,100%{transform:translate(0,0) scale(1);opacity:.13}50%{transform:translate(8vmax,5vmax) scale(1.12);opacity:.2}}
+@keyframes glowB{0%,100%{transform:translate(0,0) scale(1);opacity:.12}50%{transform:translate(-7vmax,-6vmax) scale(1.14);opacity:.18}}
 ::selection{background:var(--accent);color:var(--bg)}
 a{color:inherit}
 .wrap{width:min(1240px,92%);margin:0 auto}
@@ -50,6 +60,7 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,te
   .reveal{opacity:1;transform:none;transition:none}
   .tape-track{animation:none !important}
   #heroChart{display:none}
+  .bg-fx{display:none}
   *{animation-duration:.001s !important;transition-duration:.001s !important}
 }
 
@@ -65,7 +76,7 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,te
 #nav{position:sticky;top:0;z-index:80;background:rgba(5,5,5,.88);backdrop-filter:blur(14px) saturate(1.2);border-bottom:1px solid var(--line)}
 .nav-in{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 0}
 .brand{display:flex;align-items:center;gap:12px;text-decoration:none}
-.brand .bx{width:38px;height:38px;border:1px solid var(--accent);border-radius:8px;display:grid;place-items:center;position:relative;background:var(--accent-glow)}
+.brand .bx{width:38px;height:38px;border:1px solid var(--accent);border-radius:8px;display:grid;place-items:center;position:relative;background:var(--accent-glow);box-shadow:0 0 18px var(--accent-glow)}
 .brand .bx svg{display:block}
 .brand .bt{font-family:var(--disp);font-variation-settings:'wdth' 120;font-weight:900;text-transform:uppercase;font-size:1.02rem;letter-spacing:.02em;line-height:1}
 .brand .bt small{display:block;font-family:var(--mono);font-weight:400;font-size:.55rem;letter-spacing:.3em;color:var(--faint);margin-top:3px;text-transform:uppercase}
@@ -95,7 +106,7 @@ header::after{content:"";position:absolute;inset:0;pointer-events:none;backgroun
 .hero .badge b{color:var(--green);font-weight:600}
 .hero h1{font-size:clamp(2.9rem,8.4vw,7rem)}
 .hero h1 .ln{display:block}
-.hero h1 .amber{color:var(--accent)}
+.hero h1 .amber{color:var(--accent);text-shadow:0 0 28px var(--accent-glow),0 0 6px var(--accent-glow)}
 .hero .sub{font-size:clamp(1.05rem,2.2vw,1.3rem);color:var(--dim);max-width:640px;margin:28px 0 12px}
 .hero .sub b{color:var(--text);font-weight:600}
 .hero .sub em{color:var(--accent);font-style:normal}
@@ -103,8 +114,8 @@ header::after{content:"";position:absolute;inset:0;pointer-events:none;backgroun
 .cta-row{display:flex;gap:14px;flex-wrap:wrap}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;text-decoration:none;font-family:var(--mono);font-weight:600;font-size:.8rem;letter-spacing:.1em;text-transform:uppercase;padding:16px 28px;border-radius:10px;border:1px solid transparent;transition:transform .12s,background .25s,border-color .25s,color .25s}
 .btn:active{transform:scale(.97)}
-.btn-amber{background:var(--accent);color:var(--bg)}
-.btn-amber:hover{background:var(--accent-2)}
+.btn-amber{background:var(--accent);color:var(--bg);box-shadow:0 0 24px var(--accent-glow)}
+.btn-amber:hover{background:var(--accent-2);box-shadow:0 0 34px var(--accent-glow)}
 .btn-ghost{border-color:var(--line);color:var(--text);background:rgba(21,19,12,.5)}
 .btn-ghost:hover{border-color:var(--accent);color:var(--accent)}
 .kbd-hint{font-family:var(--mono);font-size:.68rem;color:var(--faint);margin-top:22px}
@@ -154,7 +165,7 @@ header::after{content:"";position:absolute;inset:0;pointer-events:none;backgroun
 /* ============ DIFF CARDS ============ */
 .diff{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:54px}
 .diff .d{border:1px solid var(--line);border-radius:14px;padding:28px;background:var(--card);transition:border-color .25s,transform .25s}
-.diff .d:hover{border-color:rgba(0,229,255,.4);transform:translateY(-4px)}
+.diff .d:hover{border-color:rgba(0,255,94,.4);transform:translateY(-4px)}
 .diff .d .di{font-family:var(--mono);font-size:.66rem;letter-spacing:.2em;color:var(--accent);margin-bottom:16px}
 .diff .d h4{font-family:var(--disp);font-variation-settings:'wdth' 110;font-weight:900;text-transform:uppercase;font-size:1.22rem;line-height:1.05;margin-bottom:10px}
 .diff .d p{color:var(--dim);font-size:.95rem}
@@ -165,7 +176,7 @@ header::after{content:"";position:absolute;inset:0;pointer-events:none;backgroun
 .tools{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
 .tool{border:1px solid var(--line);border-radius:14px;background:var(--card);padding:24px;text-align:left;display:flex;flex-direction:column;gap:0;transition:border-color .25s,transform .25s;position:relative;overflow:hidden}
 .tool::after{content:"";position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--accent),transparent);opacity:0;transition:opacity .3s}
-.tool:hover{border-color:rgba(0,229,255,.45);transform:translateY(-4px)}
+.tool:hover{border-color:rgba(0,255,94,.45);transform:translateY(-4px)}
 .tool:hover::after{opacity:1}
 .tool .t-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
 .tool .t-ic{width:40px;height:40px;border:1px solid var(--line);border-radius:10px;display:grid;place-items:center;color:var(--accent)}
@@ -203,10 +214,10 @@ header::after{content:"";position:absolute;inset:0;pointer-events:none;backgroun
 /* ============ CURRICULUM ============ */
 .curr{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .sess{border:1px solid var(--line);border-radius:12px;background:var(--card);overflow:hidden;transition:border-color .2s}
-.sess[open]{border-color:rgba(0,229,255,.45)}
+.sess[open]{border-color:rgba(0,255,94,.45)}
 .sess summary{padding:20px 22px;cursor:pointer;display:flex;align-items:center;gap:16px;list-style:none}
 .sess summary::-webkit-details-marker{display:none}
-.sess .snum{font-family:var(--mono);font-size:.72rem;font-weight:600;color:var(--accent);border:1px solid rgba(0,229,255,.35);border-radius:6px;padding:5px 9px;background:var(--accent-glow)}
+.sess .snum{font-family:var(--mono);font-size:.72rem;font-weight:600;color:var(--accent);border:1px solid rgba(0,255,94,.35);border-radius:6px;padding:5px 9px;background:var(--accent-glow)}
 .sess .stitle{font-family:var(--disp);font-variation-settings:'wdth' 108;font-weight:900;text-transform:uppercase;font-size:1.02rem;flex:1;line-height:1.15}
 .sess .chev{color:var(--faint);transition:transform .25s;font-family:var(--mono)}
 .sess[open] .chev{transform:rotate(90deg)}
@@ -219,8 +230,8 @@ header::after{content:"";position:absolute;inset:0;pointer-events:none;backgroun
 .tiers{display:grid;grid-template-columns:1fr 1fr;gap:18px;max-width:920px;margin:0 auto}
 .tier{border:1px solid var(--line);border-radius:16px;background:var(--card);padding:36px 32px;position:relative;overflow:hidden;transition:transform .25s,border-color .25s}
 .tier:hover{transform:translateY(-5px)}
-.tier.t1:hover{border-color:rgba(0,229,255,.5)}
-.tier.t2{border-color:rgba(0,229,255,.55);background:linear-gradient(170deg,var(--card-2),var(--card))}
+.tier.t1:hover{border-color:rgba(0,255,94,.5)}
+.tier.t2{border-color:rgba(0,255,94,.55);background:linear-gradient(170deg,var(--card-2),var(--card))}
 .tier .ribbon{position:absolute;top:20px;right:20px;font-family:var(--mono);font-size:.58rem;letter-spacing:.16em;text-transform:uppercase;color:var(--bg);background:var(--accent);padding:6px 12px;border-radius:100px;font-weight:600}
 .tier .tname{font-family:var(--disp);font-variation-settings:'wdth' 112;font-weight:900;text-transform:uppercase;font-size:1.5rem}
 .tier .tdur{font-family:var(--mono);font-size:.7rem;color:var(--faint);letter-spacing:.1em;margin-top:6px}
@@ -292,7 +303,7 @@ footer.site{border-top:1px solid var(--line);padding:44px 0;margin-top:90px;back
 .mbtn:hover{background:var(--accent-2)}
 .mbtn.ghost{background:none;border:1px solid var(--line);color:var(--text)}
 .mbtn.ghost:hover{border-color:var(--accent);color:var(--accent)}
-.mres{margin-top:20px;border:1px solid rgba(43,217,124,.3);background:var(--green-bg);border-radius:12px;padding:20px;display:none}
+.mres{margin-top:20px;border:1px solid rgba(0,255,94,.30);background:var(--green-bg);border-radius:12px;padding:20px;display:none}
 .mres.show{display:block}
 .mres .rk{font-family:var(--mono);font-size:.62rem;letter-spacing:.16em;text-transform:uppercase;color:var(--green);margin-bottom:6px}
 .mres .rv{font-family:var(--disp);font-variation-settings:'wdth' 115;font-weight:900;font-size:2.5rem;line-height:1}
@@ -309,7 +320,7 @@ footer.site{border-top:1px solid var(--line);padding:44px 0;margin-top:90px;back
 .fb-box{margin-top:20px;border:1px solid var(--line);border-radius:12px;padding:18px;font-size:.92rem;color:var(--dim)}
 .check-list{display:flex;flex-direction:column;gap:8px}
 .check-item{display:flex;align-items:flex-start;gap:12px;border:1px solid var(--line);border-radius:10px;padding:13px 15px;cursor:pointer;transition:border-color .15s}
-.check-item:hover{border-color:rgba(0,229,255,.4)}
+.check-item:hover{border-color:rgba(0,255,94,.4)}
 .check-item input{accent-color:var(--accent);width:16px;height:16px;margin-top:3px;flex:0 0 auto}
 .check-item span{font-size:.9rem}
 .check-score{display:flex;justify-content:space-between;align-items:center;margin-top:18px;font-family:var(--mono)}
@@ -362,6 +373,13 @@ body.locked{overflow:hidden}
 </head>
 <body>
 
+<!-- LIVING BACKGROUND -->
+<div class="bg-fx" aria-hidden="true">
+  <div class="bg-grid"></div>
+  <div class="bg-glow g-green"></div>
+  <div class="bg-glow g-red"></div>
+</div>
+
 <!-- TICKER TAPE -->
 <div class="tape" aria-hidden="true">
   <div class="tape-track" id="tapeTrack"></div>
@@ -373,10 +391,10 @@ body.locked{overflow:hidden}
     <a class="brand" href="#top">
       <span class="bx">
         <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-          <line x1="5" y1="2" x2="5" y2="18" stroke="#FF4A5E" stroke-width="1.6"/>
-          <rect x="2.5" y="6" width="5" height="6" fill="#FF4A5E"/>
-          <line x1="14" y1="2" x2="14" y2="18" stroke="#2BD97C" stroke-width="1.6"/>
-          <rect x="11.5" y="7" width="5" height="7" fill="#2BD97C"/>
+          <line x1="5" y1="2" x2="5" y2="18" stroke="#FF1E3C" stroke-width="1.6"/>
+          <rect x="2.5" y="6" width="5" height="6" fill="#FF1E3C"/>
+          <line x1="14" y1="2" x2="14" y2="18" stroke="#00FF5E" stroke-width="1.6"/>
+          <rect x="11.5" y="7" width="5" height="7" fill="#00FF5E"/>
         </svg>
       </span>
       <span class="bt">The Trading Desk<small>Structure over signals</small></span>
@@ -583,10 +601,10 @@ body.locked{overflow:hidden}
     <a class="brand" href="#top">
       <span class="bx">
         <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-          <line x1="5" y1="2" x2="5" y2="18" stroke="#FF4A5E" stroke-width="1.6"/>
-          <rect x="2.5" y="6" width="5" height="6" fill="#FF4A5E"/>
-          <line x1="14" y1="2" x2="14" y2="18" stroke="#2BD97C" stroke-width="1.6"/>
-          <rect x="11.5" y="7" width="5" height="7" fill="#2BD97C"/>
+          <line x1="5" y1="2" x2="5" y2="18" stroke="#FF1E3C" stroke-width="1.6"/>
+          <rect x="2.5" y="6" width="5" height="6" fill="#FF1E3C"/>
+          <line x1="14" y1="2" x2="14" y2="18" stroke="#00FF5E" stroke-width="1.6"/>
+          <rect x="11.5" y="7" width="5" height="7" fill="#00FF5E"/>
         </svg>
       </span>
       <span class="bt">The Trading Desk<small>thetradingdesk.org</small></span>
@@ -741,6 +759,24 @@ body.locked{overflow:hidden}
   </div>
 </div>
 
+<div class="modal" id="m-market" role="dialog" aria-modal="true" aria-label="Market pulse">
+  <div class="mwin">
+    <div class="mbar"><span class="dots"><s></s><s></s><s></s></span><span class="mt">TOOL // MARKET PULSE (LIVE)</span><button class="mx" onclick="closeModal('m-market')" aria-label="Close">×</button></div>
+    <div class="mbody">
+      <h3>Market Pulse</h3>
+      <p class="msub">Live SPY / QQQ / volatility via Finnhub — real quotes, clearly labeled.</p>
+      <div id="mktKeyWrap" class="mf" style="margin-bottom:16px;display:none">
+        <label for="mktKey">Finnhub API key</label>
+        <input id="mktKey" type="text" placeholder="paste your free finnhub.io key" autocomplete="off" spellcheck="false">
+        <button class="mbtn" onclick="saveMktKey()" style="margin-top:10px">Save key &amp; load</button>
+      </div>
+      <div id="marketOut"><p class="mnote">Loading live quotes…</p></div>
+      <button class="mbtn ghost" onclick="loadMarket()">Refresh</button>
+      <p class="mnote">Context only — never a call to act. SPY &amp; QQQ are live ETF quotes. Volatility is shown via <b>VIXY</b> (ProShares VIX Short-Term Futures ETF) — a tradable proxy, since spot <b>^VIX</b> isn't carried on Finnhub's free tier. Grab a free key at <a href="https://finnhub.io/register" target="_blank" rel="noopener" style="color:var(--accent)">finnhub.io</a> · 60 calls/min.</p>
+    </div>
+  </div>
+</div>
+
 <div class="modal" id="m-pattern" role="dialog" aria-modal="true" aria-label="Pattern detail">
   <div class="mwin">
     <div class="mbar"><span class="dots"><s></s><s></s><s></s></span><span class="mt" id="pd-bar">PATTERN</span><button class="mx" onclick="closeModal('m-pattern')" aria-label="Close">×</button></div>
@@ -752,7 +788,7 @@ body.locked{overflow:hidden}
 <div id="cmdk" role="dialog" aria-modal="true" aria-label="Quick launcher">
   <div class="cmdk-win">
     <div class="cmdk-in">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FFAD1F" stroke-width="2.4" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4-4"/></svg>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#00FF5E" stroke-width="2.4" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4-4"/></svg>
       <input id="cmdkInput" type="text" placeholder="Jump to a tool, pattern, or section…" autocomplete="off">
     </div>
     <div class="cmdk-list" id="cmdkList"></div>
@@ -766,7 +802,7 @@ body.locked{overflow:hidden}
 'use strict';
 const $=(s,el=document)=>el.querySelector(s);
 const $$=(s,el=document)=>[...el.querySelectorAll(s)];
-const GREEN='#00FF9F', RED='#FF3366', ACCENT='#00FF9F', DIM='#B8B2A4', FAINT='#746E60';
+const GREEN='#00FF5E', RED='#FF1E3C', ACCENT='#00FF5E', DIM='#B8B2A4', FAINT='#746E60';
 const reduceMotion=matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /* ===== ticker tape ===== */
@@ -813,7 +849,7 @@ $$('.reveal').forEach(el=>io.observe(el));
     off=(t%26)/26;
     ctx.clearRect(0,0,w,h);
     // grid
-    ctx.strokeStyle='rgba(235,220,185,.05)';ctx.lineWidth=1;
+    ctx.strokeStyle='rgba(0,255,94,.045)';ctx.lineWidth=1;
     for(let y=0;y<h;y+=Math.max(40,h/9)){ctx.beginPath();ctx.moveTo(0,y+.5);ctx.lineTo(w,y+.5);ctx.stroke();}
     const cw=Math.max(7,w/110), gap=cw*.45, step=cw+gap;
     const n=Math.ceil(w/step)+2;
@@ -822,7 +858,7 @@ $$('.reveal').forEach(el=>io.observe(el));
       const cd=candles[start+i]; if(!cd)continue;
       const x=i*step-off*step;
       const yo=h-(cd.o/100)*h, yc=h-(cd.c/100)*h, yh=h-(cd.h/100)*h, yl=h-(cd.l/100)*h;
-      const up=cd.c>=cd.o, col=up?'rgba(43,217,124,.34)':'rgba(255,74,94,.32)';
+      const up=cd.c>=cd.o, col=up?'rgba(0,255,94,.40)':'rgba(255,30,60,.38)';
       ctx.strokeStyle=col;ctx.lineWidth=1;
       ctx.beginPath();ctx.moveTo(x+cw/2,yh);ctx.lineTo(x+cw/2,yl);ctx.stroke();
       ctx.fillStyle=col;
@@ -873,6 +909,7 @@ function openModal(id){
   if(id==='m-psy')startPsy();
   if(id==='m-valid')startValid();
   if(id==='m-crypto')loadCrypto();
+  if(id==='m-market')loadMarket();
   if(id==='m-sim')setTimeout(runSim,80);
   const f=m.querySelector('input,select,button.mx'); if(f)f.focus({preventScroll:true});
 }
@@ -898,7 +935,8 @@ const TOOLS=[
   {id:'m-valid',kind:'validator',name:'Setup Validator',desc:'Grade any trade idea against seven structure criteria. Know exactly what\u2019s missing before you commit.',ic:'M5 13l4 4L19 7'},
   {id:'m-rules',kind:'generator',name:'Rulebook Builder',desc:'Risk, psychology, execution — written down and downloadable. If it isn\u2019t on paper, it doesn\u2019t exist.',ic:'M6 3h9l4 4v14H6zM14 3v5h5'},
   {id:'m-levels',kind:'workbench',name:'Key Levels',desc:'Your previous-day numbers in, the classic pivot map out. The shared reference points the whole floor watches.',ic:'M4 6h16M4 12h10M4 18h16'},
-  {id:'m-crypto',kind:'live data',name:'Crypto Pulse',desc:'Real prices via CoinGecko — the one live feed here, clearly labeled. Context, never calls.',ic:'M12 2v20M8 6h6a3 3 0 0 1 0 6H8h7a3 3 0 0 1 0 6H8'},
+  {id:'m-crypto',kind:'live data',name:'Crypto Pulse',desc:'Real prices via CoinGecko — a live feed, clearly labeled. Context, never calls.',ic:'M12 2v20M8 6h6a3 3 0 0 1 0 6H8h7a3 3 0 0 1 0 6H8'},
+  {id:'m-market',kind:'live data',name:'Market Pulse',desc:'Live SPY, QQQ &amp; a VIX-futures proxy via Finnhub. The shared tape the whole floor watches — context, never calls.',ic:'M3 17l5-6 4 3 3-5 6 5M3 21h18'},
   {id:'m-journal',kind:'daily ritual',name:'Trade Journal',desc:'Log every trade with emotion, rules followed, and P&L. Review your leaks. The single highest-ROI habit in trading.',ic:'M19 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2zM9 17v-6m4 6v-4m4 4v-2'}
 ];
 $('#toolGrid').innerHTML=TOOLS.map(t=>`
@@ -945,7 +983,7 @@ function runSim(){
   cv.width=w*dpr;cv.height=h*dpr;ctx.setTransform(dpr,0,0,dpr,0,0);
   ctx.clearRect(0,0,w,h);
   const wr=+$('#sim-wr').value/100, rr=+$('#sim-rr').value, n=+$('#sim-n').value, riskPct=+$('#sim-riskpct').value/100;
-  const cols=[ACCENT,GREEN,'#7FB6FF','#FF9CDA',DIM];
+  const cols=[ACCENT,'#7BFF9E','#CFFF6A','#FF8FA0',RED];
   let finals=[], allMin=1e9, allMax=-1e9, runs=[];
   for(let r=0;r<5;r++){
     let eq=100, path=[eq];
@@ -1126,6 +1164,48 @@ async function loadCrypto(){
     }).join('');
   }catch(e){
     out.innerHTML='<p class="mnote" style="color:var(--red)">Live feed unavailable right now — likely a rate limit. Try again in a minute.</p>';
+  }
+}
+/* ===== tool: market pulse (live, Finnhub) ===== */
+// ▼ Paste your free finnhub.io key between the quotes (or leave blank and use the in-tool field).
+const FINNHUB_KEY='';
+function mktKey(){ return (FINNHUB_KEY||'').trim() || (localStorage.getItem('tdesk_finnhub')||'').trim(); }
+function saveMktKey(){
+  const v=$('#mktKey').value.trim();
+  if(v)localStorage.setItem('tdesk_finnhub',v);
+  loadMarket();
+}
+async function loadMarket(){
+  const out=$('#marketOut'), keyWrap=$('#mktKeyWrap'), key=mktKey();
+  if(!key){
+    keyWrap.style.display='flex';
+    $('#mktKey').value=localStorage.getItem('tdesk_finnhub')||'';
+    out.innerHTML='<p class="mnote">Add a free Finnhub key above to pull live SPY / QQQ / VIXY quotes.</p>';
+    return;
+  }
+  keyWrap.style.display='none';
+  out.innerHTML='<p class="mnote">Loading live quotes…</p>';
+  const syms=[['SPY','S&amp;P 500 ETF','SPY'],['QQQ','Nasdaq 100 ETF','QQQ'],['VIXY','Volatility · VIX futures proxy','VIXY']];
+  try{
+    const data=await Promise.all(syms.map(async([s])=>{
+      const r=await fetch(`https://finnhub.io/api/v1/quote?symbol=${s}&token=${encodeURIComponent(key)}`);
+      if(r.status===429)throw{rate:true};
+      if(r.status===401||r.status===403)throw{auth:true};
+      return r.json();
+    }));
+    let any=false;
+    out.innerHTML=syms.map(([s,name,sym],i)=>{
+      const q=data[i]; if(!q||typeof q.c!=='number'||q.c===0)return'';
+      any=true;
+      const ch=q.dp||0, up=ch>=0;
+      return `<div class="crypto-row"><span class="cn">${name}<small>${sym}</small></span>
+        <span class="cp"><div class="v">$${q.c.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</div><div class="c ${up?'up':'dn'}">${up?'▲':'▼'} ${Math.abs(ch).toFixed(2)}% / day</div></span></div>`;
+    }).join('');
+    if(!any)out.innerHTML='<p class="mnote" style="color:var(--red)">No quotes returned — markets may be closed or those symbols aren\u2019t on your plan.</p>';
+  }catch(e){
+    if(e&&e.rate){out.innerHTML='<p class="mnote" style="color:var(--red)">Rate limit hit (60/min on the free tier). Try again in a moment.</p>';}
+    else if(e&&e.auth){localStorage.removeItem('tdesk_finnhub');keyWrap.style.display='flex';$('#mktKey').value='';out.innerHTML='<p class="mnote" style="color:var(--red)">That key was rejected. Paste a valid free Finnhub key above.</p>';}
+    else{out.innerHTML='<p class="mnote" style="color:var(--red)">Live feed unavailable right now. Try again in a minute.</p>';}
   }
 }
 /* ============================================================
@@ -1333,18 +1413,41 @@ const P=[
 
 /* ===== SVG renderers ===== */
 function candleSVG(c,W,H,big){
-  const pad=big?14:8;
+  const pad=big?16:8;
   const hi=Math.max(...c.map(k=>Math.max(k[0],k[1],k[2])));
   const lo=Math.min(...c.map(k=>Math.min(k[0],k[1],k[3])));
   const y=v=>pad+(hi-v)/((hi-lo)||1)*(H-2*pad);
-  const n=c.length, slot=W/n, cw=Math.min(slot*.5,big?30:16);
+  const n=c.length;
+  // Tight, centered cluster (no more full-width spread / big gaps)
+  let cw=big?26:13, gap=big?16:7;
+  let clusterW=n*cw+(n-1)*gap;
+  const maxW=W-2*pad;
+  if(clusterW>maxW){ const sc=maxW/clusterW; cw*=sc; gap*=sc; clusterW=maxW; }
+  const pitch=cw+gap, startX=(W-clusterW)/2;
+  const cx=i=>startX+cw/2+i*pitch;
   let s='';
+  // Detail view only: shade the price gap between adjacent candles (windows / kickers / star gaps)
+  if(big){
+    for(let i=0;i<n-1;i++){
+      const cur=c[i], nxt=c[i+1];
+      let gy1,gy2,gcol;
+      if(nxt[3]>cur[2]){ gy1=y(nxt[3]); gy2=y(cur[2]); gcol=GREEN; }      // gap up
+      else if(nxt[2]<cur[3]){ gy1=y(cur[3]); gy2=y(nxt[2]); gcol=RED; }   // gap down
+      else continue;
+      const gx=cx(i)+cw/2, gw=cx(i+1)-cw/2-gx;
+      if(gw>0 && gy2>gy1){
+        s+=`<rect x="${gx.toFixed(1)}" y="${gy1.toFixed(1)}" width="${gw.toFixed(1)}" height="${(gy2-gy1).toFixed(1)}" fill="${gcol}" opacity=".12"/>`;
+        s+=`<line x1="${gx.toFixed(1)}" y1="${gy1.toFixed(1)}" x2="${(gx+gw).toFixed(1)}" y2="${gy1.toFixed(1)}" stroke="${gcol}" stroke-width="1" stroke-dasharray="3 3" opacity=".55"/>`;
+        s+=`<line x1="${gx.toFixed(1)}" y1="${gy2.toFixed(1)}" x2="${(gx+gw).toFixed(1)}" y2="${gy2.toFixed(1)}" stroke="${gcol}" stroke-width="1" stroke-dasharray="3 3" opacity=".55"/>`;
+      }
+    }
+  }
   c.forEach((k,i)=>{
     const [o,cl,h,l]=k;
     const col = cl>o?GREEN : cl<o?RED : ACCENT;
-    const x=slot*(i+.5);
+    const x=cx(i);
     const bt=Math.min(y(o),y(cl)), bh=Math.max(big?2.5:1.8,Math.abs(y(cl)-y(o)));
-    s+=`<line x1="${x}" y1="${y(h).toFixed(1)}" x2="${x}" y2="${y(l).toFixed(1)}" stroke="${col}" stroke-width="${big?2:1.4}"/>`;
+    s+=`<line x1="${x.toFixed(1)}" y1="${y(h).toFixed(1)}" x2="${x.toFixed(1)}" y2="${y(l).toFixed(1)}" stroke="${col}" stroke-width="${big?2:1.4}"/>`;
     s+=`<rect x="${(x-cw/2).toFixed(1)}" y="${bt.toFixed(1)}" width="${cw.toFixed(1)}" height="${bh.toFixed(1)}" fill="${col}" rx="1"/>`;
   });
   return `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" aria-hidden="true">${s}</svg>`;
