@@ -805,16 +805,52 @@ const $$=(s,el=document)=>[...el.querySelectorAll(s)];
 const GREEN='#00FF5E', RED='#FF1E3C', ACCENT='#00FF5E', DIM='#B8B2A4', FAINT='#746E60';
 const reduceMotion=matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-/* ===== ticker tape ===== */
+// Finnhub key (free tier) — shared with live ticker tape + Market Pulse tool
+const FINNHUB_KEY='d8mhpk1r01qkisoa50a0d8mhpk1r01qkisoa50ag';
+function mktKey(){ return (FINNHUB_KEY||'').trim() || (localStorage.getItem('tdesk_finnhub')||'').trim(); }
+
+/* ===== live ticker tape (SPY / QQQ / IWM / AAPL / NVDA / TSLA — live via Finnhub) ===== */
 (function(){
-  const items=[
-    ['SURVIVE FIRST','?'],['FOMO ENTRIES','?'],['RISK DEFINED BEFORE ENTRY','?'],['REVENGE TRADES','?'],
-    ['SIZE SMALL, THINK LONG','?'],['HYPE','?'],['THE BEST TRADE IS OFTEN NO TRADE','?'],['GUESSING','?'],
-    ['WRITTEN RULES','?'],['MOVING YOUR STOP','?'],['JOURNAL EVERY TRADE','?'],['"CAN\'T LOSE" SETUPS','?'],
-    ['PATIENCE PAYS THE BILLS','?'],['OVERTRADING','?']
-  ];
-  const half=items.map(([t,d])=>`<i><b class="${d==='?'?'up':'dn'}">${d}</b> ${t}</i>`).join('');
-  $('#tapeTrack').innerHTML=half+half;
+  const track = $('#tapeTrack');
+  const symbols = ['SPY','QQQ','IWM','AAPL','NVDA','TSLA'];
+
+  async function updateLiveTicker(){
+    const key = mktKey();
+    if(!key){
+      const fallback = symbols.map(s => `<i><span style="color:var(--text);font-weight:600;letter-spacing:.06em">${s}</span> <b style="color:var(--faint)">—</b> <span style="font-size:.62rem;letter-spacing:.06em;color:var(--faint)">KEY NEEDED</span></i>`).join('');
+      track.innerHTML = fallback + fallback;
+      return;
+    }
+    try{
+      const results = await Promise.all(symbols.map(async (sym) => {
+        const r = await fetch(`https://finnhub.io/api/v1/quote?symbol=${sym}&token=${encodeURIComponent(key)}`);
+        if(r.status === 429) throw {rate:true};
+        if(!r.ok) throw new Error('bad');
+        const q = await r.json();
+        return {sym, q};
+      }));
+      let htmlParts = [];
+      results.forEach(({sym, q}) => {
+        if(typeof q.c !== 'number' || q.c === 0) return;
+        const price = q.c.toFixed(2);
+        const chg = (q.dp != null ? q.dp : 0);
+        const up = chg >= 0;
+        const cls = up ? 'up' : 'dn';
+        const arrow = up ? '▲' : '▼';
+        htmlParts.push(`<i><span style="color:var(--text);font-weight:600;letter-spacing:.06em">${sym}</span> <b class="${cls}">${price}</b> <span class="${cls}" style="font-size:.62rem;letter-spacing:.06em;opacity:.85">${arrow} ${Math.abs(chg).toFixed(2)}%</span></i>`);
+      });
+      if(htmlParts.length > 0){
+        const full = htmlParts.join('') + htmlParts.join('');
+        track.innerHTML = full;
+      }
+    }catch(e){
+      if(e && e.rate){ console.warn('Ticker rate limited'); }
+      else { console.warn('Ticker update error', e); }
+    }
+  }
+
+  updateLiveTicker();
+  setInterval(updateLiveTicker, 50000);
 })();
 
 /* ===== nav ===== */
@@ -1167,9 +1203,7 @@ async function loadCrypto(){
   }
 }
 /* ===== tool: market pulse (live, Finnhub) ===== */
-// ? Paste your free finnhub.io key between the quotes (or leave blank and use the in-tool field).
-const FINNHUB_KEY='d8mhpk1r01qkisoa50a0d8mhpk1r01qkisoa50ag';
-function mktKey(){ return (FINNHUB_KEY||'').trim() || (localStorage.getItem('tdesk_finnhub')||'').trim(); }
+// Free Finnhub key is defined once near the top of the script (shared with the live ticker tape).
 function saveMktKey(){
   const v=$('#mktKey').value.trim();
   if(v)localStorage.setItem('tdesk_finnhub',v);
