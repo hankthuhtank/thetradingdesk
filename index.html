@@ -20,11 +20,11 @@
   --text:#F5F0E8;
   --dim:#B8B2A4;
   --faint:#746E60;
-  --accent:#00FF5E;
-  --accent-2:#7BFF9E;
-  --accent-glow:rgba(0,255,94,.28);
-  --green:#00FF5E;
-  --green-bg:rgba(0,255,94,.12);
+  --accent:#34E36B;
+  --accent-2:#74EE9A;
+  --accent-glow:rgba(52,227,107,.28);
+  --green:#34E36B;
+  --green-bg:rgba(52,227,107,.12);
   --red:#FF1E3C;
   --red-bg:rgba(255,30,60,.12);
   --red-glow:rgba(255,30,60,.28);
@@ -165,7 +165,7 @@ header::after{content:"";position:absolute;inset:0;pointer-events:none;backgroun
 /* ============ DIFF CARDS ============ */
 .diff{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:54px}
 .diff .d{border:1px solid var(--line);border-radius:14px;padding:28px;background:var(--card);transition:border-color .25s,transform .25s}
-.diff .d:hover{border-color:rgba(0,255,94,.4);transform:translateY(-4px)}
+.diff .d:hover{border-color:rgba(52,227,107,.4);transform:translateY(-4px)}
 .diff .d .di{font-family:var(--mono);font-size:.66rem;letter-spacing:.2em;color:var(--accent);margin-bottom:16px}
 .diff .d h4{font-family:var(--disp);font-variation-settings:'wdth' 110;font-weight:900;text-transform:uppercase;font-size:1.22rem;line-height:1.05;margin-bottom:10px}
 .diff .d p{color:var(--dim);font-size:.95rem}
@@ -176,7 +176,7 @@ header::after{content:"";position:absolute;inset:0;pointer-events:none;backgroun
 .tools{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
 .tool{border:1px solid var(--line);border-radius:14px;background:var(--card);padding:24px;text-align:left;display:flex;flex-direction:column;gap:0;transition:border-color .25s,transform .25s;position:relative;overflow:hidden}
 .tool::after{content:"";position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--accent),transparent);opacity:0;transition:opacity .3s}
-.tool:hover{border-color:rgba(0,255,94,.45);transform:translateY(-4px)}
+.tool:hover{border-color:rgba(52,227,107,.45);transform:translateY(-4px)}
 .tool:hover::after{opacity:1}
 .tool .t-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
 .tool .t-ic{width:40px;height:40px;border:1px solid var(--line);border-radius:10px;display:grid;place-items:center;color:var(--accent)}
@@ -214,10 +214,10 @@ header::after{content:"";position:absolute;inset:0;pointer-events:none;backgroun
 /* ============ CURRICULUM ============ */
 .curr{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .sess{border:1px solid var(--line);border-radius:12px;background:var(--card);overflow:hidden;transition:border-color .2s}
-.sess[open]{border-color:rgba(0,255,94,.45)}
+.sess[open]{border-color:rgba(52,227,107,.45)}
 .sess summary{padding:20px 22px;cursor:pointer;display:flex;align-items:center;gap:16px;list-style:none}
 .sess summary::-webkit-details-marker{display:none}
-.sess .snum{font-family:var(--mono);font-size:.72rem;font-weight:600;color:var(--accent);border:1px solid rgba(0,255,94,.35);border-radius:6px;padding:5px 9px;background:var(--accent-glow)}
+.sess .snum{font-family:var(--mono);font-size:.72rem;font-weight:600;color:var(--accent);border:1px solid rgba(52,227,107,.35);border-radius:6px;padding:5px 9px;background:var(--accent-glow)}
 .sess .stitle{font-family:var(--disp);font-variation-settings:'wdth' 108;font-weight:900;text-transform:uppercase;font-size:1.02rem;flex:1;line-height:1.15}
 .sess .chev{color:var(--faint);transition:transform .25s;font-family:var(--mono)}
 .sess[open] .chev{transform:rotate(90deg)}
@@ -230,8 +230,8 @@ header::after{content:"";position:absolute;inset:0;pointer-events:none;backgroun
 .tiers{display:grid;grid-template-columns:1fr 1fr;gap:18px;max-width:920px;margin:0 auto}
 .tier{border:1px solid var(--line);border-radius:16px;background:var(--card);padding:36px 32px;position:relative;overflow:hidden;transition:transform .25s,border-color .25s}
 .tier:hover{transform:translateY(-5px)}
-.tier.t1:hover{border-color:rgba(0,255,94,.5)}
-.tier.t2{border-color:rgba(0,255,94,.55);background:linear-gradient(170deg,var(--card-2),var(--card))}
+.tier.t1:hover{border-color:rgba(52,227,107,.5)}
+.tier.t2{border-color:rgba(52,227,107,.55);background:linear-gradient(170deg,var(--card-2),var(--card))}
 .tier .ribbon{position:absolute;top:20px;right:20px;font-family:var(--mono);font-size:.58rem;letter-spacing:.16em;text-transform:uppercase;color:var(--bg);background:var(--accent);padding:6px 12px;border-radius:100px;font-weight:600}
 .tier .tname{font-family:var(--disp);font-variation-settings:'wdth' 112;font-weight:900;text-transform:uppercase;font-size:1.5rem}
 .tier .tdur{font-family:var(--mono);font-size:.7rem;color:var(--faint);letter-spacing:.1em;margin-top:6px}
@@ -303,7 +303,7 @@ footer.site{border-top:1px solid var(--line);padding:44px 0;margin-top:90px;back
 .mbtn:hover{background:var(--accent-2)}
 .mbtn.ghost{background:none;border:1px solid var(--line);color:var(--text)}
 .mbtn.ghost:hover{border-color:var(--accent);color:var(--accent)}
-.mres{margin-top:20px;border:1px solid rgba(0,255,94,.30);background:var(--green-bg);border-radius:12px;padding:20px;display:none}
+.mres{margin-top:20px;border:1px solid rgba(52,227,107,.30);background:var(--green-bg);border-radius:12px;padding:20px;display:none}
 .mres.show{display:block}
 .mres .rk{font-family:var(--mono);font-size:.62rem;letter-spacing:.16em;text-transform:uppercase;color:var(--green);margin-bottom:6px}
 .mres .rv{font-family:var(--disp);font-variation-settings:'wdth' 115;font-weight:900;font-size:2.5rem;line-height:1}
@@ -320,7 +320,7 @@ footer.site{border-top:1px solid var(--line);padding:44px 0;margin-top:90px;back
 .fb-box{margin-top:20px;border:1px solid var(--line);border-radius:12px;padding:18px;font-size:.92rem;color:var(--dim)}
 .check-list{display:flex;flex-direction:column;gap:8px}
 .check-item{display:flex;align-items:flex-start;gap:12px;border:1px solid var(--line);border-radius:10px;padding:13px 15px;cursor:pointer;transition:border-color .15s}
-.check-item:hover{border-color:rgba(0,255,94,.4)}
+.check-item:hover{border-color:rgba(52,227,107,.4)}
 .check-item input{accent-color:var(--accent);width:16px;height:16px;margin-top:3px;flex:0 0 auto}
 .check-item span{font-size:.9rem}
 .check-score{display:flex;justify-content:space-between;align-items:center;margin-top:18px;font-family:var(--mono)}
@@ -393,8 +393,8 @@ body.locked{overflow:hidden}
         <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
           <line x1="5" y1="2" x2="5" y2="18" stroke="#FF1E3C" stroke-width="1.6"/>
           <rect x="2.5" y="6" width="5" height="6" fill="#FF1E3C"/>
-          <line x1="14" y1="2" x2="14" y2="18" stroke="#00FF5E" stroke-width="1.6"/>
-          <rect x="11.5" y="7" width="5" height="7" fill="#00FF5E"/>
+          <line x1="14" y1="2" x2="14" y2="18" stroke="#34E36B" stroke-width="1.6"/>
+          <rect x="11.5" y="7" width="5" height="7" fill="#34E36B"/>
         </svg>
       </span>
       <span class="bt">The Trading Desk<small>Structure over signals</small></span>
@@ -415,14 +415,14 @@ body.locked{overflow:hidden}
 <header id="top">
   <canvas id="heroChart" aria-hidden="true"></canvas>
   <div class="wrap hero">
-    <div class="badge"><b>?</b> EDUCATIONAL ONLY — NO SIGNALS, NO HYPE, NO "GET RICH BY FRIDAY"</div>
+    <div class="badge"><b>⚠</b> EDUCATIONAL ONLY — NO SIGNALS, NO HYPE, NO "GET RICH BY FRIDAY"</div>
     <h1 class="disp">
       <span class="ln">The market</span>
       <span class="ln">charges tuition.</span>
       <span class="ln amber">Class is cheaper.</span>
     </h1>
     <p class="sub">Free trader tools, a full pattern library, and one-on-one education built from the structure I had to learn the slow, expensive way — so the market makes sense <em>before</em> your money's on the line. <b>No signals. Ever.</b></p>
-    <p class="micro">// free tools · pattern reference · risk math · 1:1 sessions · paris, tx ? nationwide</p>
+    <p class="micro">// free tools · pattern reference · risk math · 1:1 sessions · paris, tx → nationwide</p>
     <div class="cta-row">
       <a class="btn btn-amber" href="#armory">Open the free tools</a>
       <a class="btn btn-ghost" href="#patterns">Browse the pattern library</a>
@@ -459,7 +459,7 @@ body.locked{overflow:hidden}
       <div class="term">
         <div class="term-bar"><span class="dots"><s></s><s></s><s></s></span>EQUITY.LOG — THE HONEST VERSION<span class="tag">+STRUCTURE</span></div>
         <div class="term-body"><svg id="eqSvg" viewBox="0 0 460 210" preserveAspectRatio="xMidYMid meet" aria-label="Equity curve: losses early, consistency after structure"></svg></div>
-        <div class="term-foot"><span class="r">? the tuition years</span><span class="g">structure ? consistency ?</span></div>
+        <div class="term-foot"><span class="r">↓ the tuition years</span><span class="g">structure → consistency ↗</span></div>
       </div>
     </div>
     <div class="diff reveal">
@@ -583,14 +583,14 @@ body.locked{overflow:hidden}
           </select>
         </div>
         <div class="bf full"><label for="bk-msg">What do you want to work on? (optional)</label><textarea id="bk-msg" name="message" placeholder="Where you're stuck, what keeps costing you, what you want to understand…"></textarea></div>
-        <button class="btn btn-amber" type="submit">Send my request ?</button>
+        <button class="btn btn-amber" type="submit">Send my request →</button>
         <p class="book-foot">Goes directly to <b>The Trading Desk</b> · no spam, no mailing lists </p>
       </form>
     </div>
 
     <div class="disc reveal">
-      <div class="dh">? Educational purposes only — not financial advice</div>
-      <p>The Trading Desk and all associated content, tools, sessions, and materials are strictly for educational and informational purposes. Nothing on this site constitutes financial, investment, trading, or professional advice of any kind, and no tool output is a recommendation to buy or sell anything. Trading and investing involve substantial risk of loss and are not suitable for every person. Past performance is not indicative of future results. Consult a qualified financial advisor, attorney, or tax professional before making financial decisions. Only risk capital you can afford to lose. The Trading Desk and Safi Solutions L.L.C. assume no liability for losses or damages of any kind.</p>
+      <div class="dh">⚠ Educational purposes only — not financial advice</div>
+      <p>The Trading Desk and all associated content, tools, sessions, and materials are strictly for educational and informational purposes. Nothing on this site constitutes financial, investment, trading, or professional advice of any kind, and no tool output is a recommendation to buy or sell anything. Trading and investing involve substantial risk of loss and are not suitable for every person. Past performance is not indicative of future results. Consult a qualified financial advisor, attorney, or tax professional before making financial decisions. Only risk capital you can afford to lose. The Trading Desk and Safi Solutions assume no liability for losses or damages of any kind.</p>
     </div>
   </div>
 </section>
@@ -603,15 +603,15 @@ body.locked{overflow:hidden}
         <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
           <line x1="5" y1="2" x2="5" y2="18" stroke="#FF1E3C" stroke-width="1.6"/>
           <rect x="2.5" y="6" width="5" height="6" fill="#FF1E3C"/>
-          <line x1="14" y1="2" x2="14" y2="18" stroke="#00FF5E" stroke-width="1.6"/>
-          <rect x="11.5" y="7" width="5" height="7" fill="#00FF5E"/>
+          <line x1="14" y1="2" x2="14" y2="18" stroke="#34E36B" stroke-width="1.6"/>
+          <rect x="11.5" y="7" width="5" height="7" fill="#34E36B"/>
         </svg>
       </span>
       <span class="bt">The Trading Desk<small>thetradingdesk.org</small></span>
     </a>
     <div class="fr">
       A <a href="https://safisolutions.org" target="_blank" rel="noopener">Safi Solutions</a> project · Paris, Texas · <a href="mailto:safihelal@gmail.com">safihelal@gmail.com</a><br>
-      © <span id="yr"></span> Safi Solutions L.L.C. — structure over signals, always.
+      © <span id="yr"></span> Safi Solutions — structure over signals, always.
     </div>
   </div>
 </footer>
@@ -659,7 +659,7 @@ body.locked{overflow:hidden}
         </div>
         <div class="rs" id="rr-note"></div>
       </div>
-      <p class="mnote">Breakeven win rate = 1 ÷ (1 + R). Expectancy = (win% × reward) ? (loss% × risk). A positive expectancy repeated with discipline is the entire game — everything else is decoration.</p>
+      <p class="mnote">Breakeven win rate = 1 ÷ (1 + R). Expectancy = (win% × reward) − (loss% × risk). A positive expectancy repeated with discipline is the entire game — everything else is decoration.</p>
     </div>
   </div>
 </div>
@@ -788,11 +788,11 @@ body.locked{overflow:hidden}
 <div id="cmdk" role="dialog" aria-modal="true" aria-label="Quick launcher">
   <div class="cmdk-win">
     <div class="cmdk-in">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#00FF5E" stroke-width="2.4" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4-4"/></svg>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#34E36B" stroke-width="2.4" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4-4"/></svg>
       <input id="cmdkInput" type="text" placeholder="Jump to a tool, pattern, or section…" autocomplete="off">
     </div>
     <div class="cmdk-list" id="cmdkList"></div>
-    <div class="cmdk-foot"><span>? open · esc close</span><span>THE DESK</span></div>
+    <div class="cmdk-foot"><span>/ open · esc close</span><span>THE DESK</span></div>
   </div>
 </div>
 <script>
@@ -802,7 +802,7 @@ body.locked{overflow:hidden}
 'use strict';
 const $=(s,el=document)=>el.querySelector(s);
 const $$=(s,el=document)=>[...el.querySelectorAll(s)];
-const GREEN='#00FF5E', RED='#FF1E3C', ACCENT='#00FF5E', DIM='#B8B2A4', FAINT='#746E60';
+const GREEN='#34E36B', RED='#FF1E3C', ACCENT='#34E36B', DIM='#B8B2A4', FAINT='#746E60';
 const reduceMotion=matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 // Finnhub key (free tier) — shared with live ticker + Market Pulse
@@ -893,7 +893,7 @@ $$('.reveal').forEach(el=>io.observe(el));
     off=(t%26)/26;
     ctx.clearRect(0,0,w,h);
     // grid
-    ctx.strokeStyle='rgba(0,255,94,.045)';ctx.lineWidth=1;
+    ctx.strokeStyle='rgba(52,227,107,.045)';ctx.lineWidth=1;
     for(let y=0;y<h;y+=Math.max(40,h/9)){ctx.beginPath();ctx.moveTo(0,y+.5);ctx.lineTo(w,y+.5);ctx.stroke();}
     const cw=Math.max(7,w/110), gap=cw*.45, step=cw+gap;
     const n=Math.ceil(w/step)+2;
@@ -902,7 +902,7 @@ $$('.reveal').forEach(el=>io.observe(el));
       const cd=candles[start+i]; if(!cd)continue;
       const x=i*step-off*step;
       const yo=h-(cd.o/100)*h, yc=h-(cd.c/100)*h, yh=h-(cd.h/100)*h, yl=h-(cd.l/100)*h;
-      const up=cd.c>=cd.o, col=up?'rgba(0,255,94,.40)':'rgba(255,30,60,.38)';
+      const up=cd.c>=cd.o, col=up?'rgba(52,227,107,.40)':'rgba(255,30,60,.38)';
       ctx.strokeStyle=col;ctx.lineWidth=1;
       ctx.beginPath();ctx.moveTo(x+cw/2,yh);ctx.lineTo(x+cw/2,yl);ctx.stroke();
       ctx.fillStyle=col;
@@ -1027,7 +1027,7 @@ function runSim(){
   cv.width=w*dpr;cv.height=h*dpr;ctx.setTransform(dpr,0,0,dpr,0,0);
   ctx.clearRect(0,0,w,h);
   const wr=+$('#sim-wr').value/100, rr=+$('#sim-rr').value, n=+$('#sim-n').value, riskPct=+$('#sim-riskpct').value/100;
-  const cols=[ACCENT,'#7BFF9E','#CFFF6A','#FF8FA0',RED];
+  const cols=[ACCENT,'#74EE9A','#CFFF6A','#FF8FA0',RED];
   let finals=[], allMin=1e9, allMax=-1e9, runs=[];
   for(let r=0;r<5;r++){
     let eq=100, path=[eq];
@@ -1088,7 +1088,7 @@ function renderPsy(){
       <div class="score-big"><div class="sv" style="color:${col}">${pct}</div><div class="sl" style="color:${col}">${label}</div></div>
       <div class="fb-box">${fb}</div>
       <button class="mbtn ghost" onclick="startPsy()">Retake</button>
-      <button class="mbtn" onclick="closeModal('m-psy');location.hash='sessions'">Put structure under it ?</button>`;
+      <button class="mbtn" onclick="closeModal('m-psy');location.hash='sessions'">Put structure under it →</button>`;
   }
 }
 function answerPsy(i){
@@ -1204,7 +1204,7 @@ async function loadCrypto(){
       const c=d[id]; if(!c)return'';
       const ch=c.usd_24h_change||0, up=ch>=0;
       return `<div class="crypto-row"><span class="cn">${name}<small>${sym}</small></span>
-        <span class="cp"><div class="v">$${c.usd.toLocaleString()}</div><div class="c ${up?'up':'dn'}">${up?'?':'?'} ${Math.abs(ch).toFixed(2)}% / 24h</div></span></div>`;
+        <span class="cp"><div class="v">$${c.usd.toLocaleString()}</div><div class="c ${up?'up':'dn'}"> ${Math.abs(ch).toFixed(2)}% / 24h</div></span></div>`;
     }).join('');
   }catch(e){
     out.innerHTML='<p class="mnote" style="color:var(--red)">Live feed unavailable right now — likely a rate limit. Try again in a minute.</p>';
@@ -1241,7 +1241,7 @@ async function loadMarket(){
       any=true;
       const ch=q.dp||0, up=ch>=0;
       return `<div class="crypto-row"><span class="cn">${name}<small>${sym}</small></span>
-        <span class="cp"><div class="v">$${q.c.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</div><div class="c ${up?'up':'dn'}">${up?'?':'?'} ${Math.abs(ch).toFixed(2)}% / day</div></span></div>`;
+        <span class="cp"><div class="v">$${q.c.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</div><div class="c ${up?'up':'dn'}">${up?'▲':'▼'} ${Math.abs(ch).toFixed(2)}% / day</div></span></div>`;
     }).join('');
     if(!any)out.innerHTML='<p class="mnote" style="color:var(--red)">No quotes returned — markets may be closed or those symbols aren\u2019t on your plan.</p>';
   }catch(e){
@@ -1614,7 +1614,7 @@ function updateCurriculumProgress(){
     const btn = d.querySelector('button');
     if(!btn) return;
     const isDone = completed.includes(i);
-    btn.textContent = isDone ? '? Completed' : 'Mark Complete';
+    btn.textContent = isDone ? '✓ Completed' : 'Mark Complete';
     btn.style.borderColor = isDone ? 'var(--green)' : 'var(--line)';
     btn.style.color = isDone ? 'var(--green)' : 'var(--text)';
   });
