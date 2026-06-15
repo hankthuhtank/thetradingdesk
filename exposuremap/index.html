@@ -1,0 +1,1105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Exposure Map</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#090c10;
+  --bg-panel:#0f141b;
+  --bg-elevated:#161d27;
+  --bg-inset:#0c1016;
+  --border:#1e2733;
+  --border-bright:#2c3a4a;
+  --text:#e7edf3;
+  --text-dim:#8b9bb0;
+  --text-faint:#4c5a6b;
+  --pos:#36f2b0;
+  --pos-dim:#1c5c46;
+  --neg:#ff4d7a;
+  --neg-dim:#6e2336;
+  --spot:#5ec8ff;
+  --flip:#c98bff;
+  --warn:#ffc857;
+  --mono:'JetBrains Mono', ui-monospace, 'SF Mono', monospace;
+  --sans:'Inter', system-ui, -apple-system, sans-serif;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;height:100%;}
+body{
+  background:var(--bg);
+  background-image:
+    radial-gradient(circle at 15% 0%, rgba(54,242,176,0.05), transparent 40%),
+    radial-gradient(circle at 85% 100%, rgba(255,77,122,0.05), transparent 40%);
+  color:var(--text);
+  font-family:var(--sans);
+  font-size:14px;
+  line-height:1.45;
+  -webkit-font-smoothing:antialiased;
+}
+.app{max-width:1320px;margin:0 auto;padding:20px 20px 40px;}
+
+/* ---------- Top bar ---------- */
+.topbar{
+  display:flex;justify-content:space-between;align-items:center;
+  padding-bottom:18px;border-bottom:1px solid var(--border);margin-bottom:18px;
+  flex-wrap:wrap;gap:12px;
+}
+.brand{display:flex;align-items:center;gap:12px;}
+.brand-mark{
+  width:38px;height:38px;border-radius:9px;
+  background:linear-gradient(135deg, var(--pos-dim), var(--neg-dim));
+  border:1px solid var(--border-bright);
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--mono);font-weight:700;font-size:16px;color:var(--text);
+  flex-shrink:0;
+}
+.brand h1{
+  font-family:var(--mono);font-size:16px;letter-spacing:0.18em;font-weight:700;margin:0;
+  color:var(--text);
+}
+.brand .subtitle{margin:2px 0 0;color:var(--text-dim);font-size:12px;}
+.topbar-controls{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+
+.status-pill{
+  font-family:var(--mono);font-size:11px;letter-spacing:0.05em;
+  padding:6px 11px;border-radius:100px;border:1px solid var(--border-bright);
+  color:var(--text-dim);background:var(--bg-elevated);
+  display:flex;align-items:center;gap:7px;white-space:nowrap;
+}
+.status-dot{width:7px;height:7px;border-radius:50%;background:var(--text-faint);transition:background .2s;}
+.status-pill.busy .status-dot{background:var(--warn);box-shadow:0 0 8px var(--warn);animation:pulse 1s infinite;}
+.status-pill.ok .status-dot{background:var(--pos);box-shadow:0 0 8px var(--pos);}
+.status-pill.err .status-dot{background:var(--neg);box-shadow:0 0 8px var(--neg);}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.35;}}
+
+.btn-ghost, .btn-primary, .btn-warn{
+  font-family:var(--mono);font-size:11.5px;letter-spacing:0.04em;font-weight:600;
+  padding:7px 13px;border-radius:7px;cursor:pointer;border:1px solid var(--border-bright);
+  background:var(--bg-elevated);color:var(--text);transition:all .15s;white-space:nowrap;
+}
+.btn-ghost:hover{border-color:var(--text-dim);}
+.btn-primary{background:linear-gradient(135deg, rgba(54,242,176,0.18), rgba(54,242,176,0.06));border-color:var(--pos-dim);color:var(--pos);}
+.btn-primary:hover{border-color:var(--pos);box-shadow:0 0 14px rgba(54,242,176,0.18);}
+.btn-warn{background:linear-gradient(135deg, rgba(255,77,122,0.18), rgba(255,77,122,0.06));border-color:var(--neg-dim);color:var(--neg);}
+.btn-warn:hover{border-color:var(--neg);}
+.btn-ghost:disabled,.btn-primary:disabled,.btn-warn:disabled{opacity:.4;cursor:not-allowed;}
+.btn-ghost.active{border-color:var(--spot);color:var(--spot);}
+
+/* ---------- Layout ---------- */
+.layout{display:grid;grid-template-columns:240px 1fr;gap:18px;align-items:start;}
+@media (max-width:880px){.layout{grid-template-columns:1fr;}}
+
+.sidebar{
+  background:var(--bg-panel);border:1px solid var(--border);border-radius:12px;
+  padding:14px;display:flex;flex-direction:column;gap:12px;
+  position:sticky;top:20px;
+}
+@media (max-width:880px){.sidebar{position:static;}}
+
+.group-tabs{display:flex;flex-direction:column;gap:4px;}
+.group-tab{
+  font-family:var(--mono);font-size:11px;letter-spacing:0.05em;text-align:left;
+  padding:8px 10px;border-radius:7px;border:1px solid transparent;
+  background:transparent;color:var(--text-dim);cursor:pointer;
+  display:flex;justify-content:space-between;align-items:center;
+}
+.group-tab:hover{background:var(--bg-elevated);color:var(--text);}
+.group-tab.active{background:var(--bg-elevated);border-color:var(--border-bright);color:var(--text);}
+.group-tab .count{font-size:10px;color:var(--text-faint);}
+.group-tab.active .count{color:var(--text-dim);}
+
+.ticker-list{
+  list-style:none;margin:0;padding:0;max-height:340px;overflow-y:auto;
+  border-top:1px solid var(--border);padding-top:8px;display:flex;flex-direction:column;gap:2px;
+}
+.ticker-list::-webkit-scrollbar{width:6px;}
+.ticker-list::-webkit-scrollbar-thumb{background:var(--border-bright);border-radius:3px;}
+.ticker-item{
+  font-family:var(--mono);font-size:12.5px;font-weight:500;
+  padding:7px 10px;border-radius:6px;cursor:pointer;color:var(--text-dim);
+  display:flex;justify-content:space-between;align-items:center;gap:8px;
+}
+.ticker-item:hover{background:var(--bg-elevated);color:var(--text);}
+.ticker-item.active{background:var(--bg-elevated);color:var(--text);box-shadow:inset 2px 0 0 var(--spot);}
+.ticker-item .badge{
+  font-size:9px;padding:2px 5px;border-radius:4px;font-weight:700;letter-spacing:.04em;
+  border:1px solid currentColor;
+}
+.ticker-item .badge.pos{color:var(--pos);}
+.ticker-item .badge.neg{color:var(--neg);}
+.ticker-item .badge.flag{color:var(--warn);}
+
+.scan-controls{border-top:1px solid var(--border);padding-top:12px;display:flex;flex-direction:column;gap:8px;}
+.scan-progress{font-family:var(--mono);font-size:10.5px;color:var(--text-dim);}
+.scan-bar{height:4px;background:var(--bg-inset);border-radius:3px;overflow:hidden;margin-top:6px;}
+.scan-bar-fill{height:100%;background:linear-gradient(90deg,var(--pos),var(--spot));width:0%;transition:width .3s;}
+
+/* ---------- Main content ---------- */
+.content{display:flex;flex-direction:column;gap:18px;}
+.panel{background:var(--bg-panel);border:1px solid var(--border);border-radius:12px;padding:18px;}
+
+.ticker-header{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;margin-bottom:14px;}
+.ticker-header h2{font-family:var(--mono);font-size:26px;margin:0;letter-spacing:.02em;}
+.ticker-header .spot-readout{font-family:var(--mono);font-size:15px;color:var(--text-dim);}
+.ticker-header .spot-readout b{color:var(--text);font-weight:600;}
+.ticker-header .spacer{flex:1;}
+.ticker-header .updated{font-family:var(--mono);font-size:10.5px;color:var(--text-faint);}
+
+.regime-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px;}
+@media (max-width:760px){.regime-row{grid-template-columns:repeat(2,1fr);}}
+.regime-card{
+  background:var(--bg-inset);border:1px solid var(--border);border-radius:10px;
+  padding:12px 14px;
+}
+.regime-card .label{font-family:var(--mono);font-size:10px;letter-spacing:.12em;color:var(--text-faint);text-transform:uppercase;}
+.regime-card .value{font-family:var(--mono);font-size:18px;font-weight:700;margin-top:5px;}
+.regime-card .sub{font-size:11px;color:var(--text-dim);margin-top:3px;}
+.regime-card .value.pos{color:var(--pos);}
+.regime-card .value.neg{color:var(--neg);}
+.regime-card .value.flip{color:var(--flip);}
+.regime-card .value.spot{color:var(--spot);}
+
+/* ---------- Spine chart ---------- */
+.spine-wrap{display:flex;gap:0;align-items:stretch;background:var(--bg-inset);border:1px solid var(--border);border-radius:10px;padding:14px;}
+.spine-side-label{
+  font-family:var(--mono);font-size:10px;letter-spacing:.14em;color:var(--text-faint);
+  text-transform:uppercase;writing-mode:vertical-rl;text-orientation:mixed;
+  display:flex;align-items:center;justify-content:center;padding:6px 4px;
+}
+.spine-side-label.right{transform:rotate(180deg);}
+.spine-side-label b{color:var(--text-dim);}
+.spine-svg-wrap{flex:1;overflow-x:auto;}
+.empty-spine{
+  display:flex;align-items:center;justify-content:center;height:240px;
+  color:var(--text-faint);font-family:var(--mono);font-size:12px;text-align:center;padding:0 20px;
+}
+
+.context-blurb{
+  margin-top:14px;padding:14px 16px;border-radius:10px;background:var(--bg-inset);
+  border:1px solid var(--border);font-size:13px;color:var(--text-dim);
+}
+.context-blurb b{color:var(--text);}
+.context-blurb .archetype{
+  margin-top:8px;padding-top:8px;border-top:1px dashed var(--border-bright);
+  font-size:12.5px;
+}
+.context-blurb .archetype b{color:var(--warn);}
+
+/* ---------- Scan table ---------- */
+.scan-meta{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px;flex-wrap:wrap;gap:8px;}
+.scan-meta h3{font-family:var(--mono);font-size:13px;letter-spacing:.08em;margin:0;color:var(--text-dim);text-transform:uppercase;}
+table.scan-table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:12px;}
+table.scan-table th{
+  text-align:left;font-size:10px;letter-spacing:.1em;color:var(--text-faint);text-transform:uppercase;
+  padding:8px 10px;border-bottom:1px solid var(--border-bright);font-weight:600;
+}
+table.scan-table td{padding:9px 10px;border-bottom:1px solid var(--border);color:var(--text-dim);}
+table.scan-table tr{cursor:pointer;}
+table.scan-table tr:hover td{background:var(--bg-elevated);color:var(--text);}
+table.scan-table td.sym{color:var(--text);font-weight:600;}
+table.scan-table td.pos{color:var(--pos);font-weight:600;}
+table.scan-table td.neg{color:var(--neg);font-weight:600;}
+table.scan-table td.warn{color:var(--warn);font-weight:600;}
+.align-badge{
+  font-size:10px;padding:2px 7px;border-radius:5px;border:1px solid currentColor;letter-spacing:.06em;
+}
+.align-badge.aligned{color:var(--pos);}
+.align-badge.misaligned{color:var(--neg);}
+.row-error td{color:var(--text-faint);font-style:italic;}
+
+/* ---------- Footer ---------- */
+.disclaimer{
+  margin-top:22px;padding-top:14px;border-top:1px solid var(--border);
+  font-size:11.5px;color:var(--text-faint);line-height:1.6;
+}
+.disclaimer b{color:var(--text-dim);}
+
+/* ---------- Settings panel ---------- */
+.settings-panel{
+  position:absolute;top:62px;right:20px;background:var(--bg-elevated);
+  border:1px solid var(--border-bright);border-radius:10px;padding:14px;width:280px;
+  box-shadow:0 12px 30px rgba(0,0,0,0.5);z-index:50;font-size:12px;
+}
+.settings-panel h4{margin:0 0 8px;font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:var(--text-dim);text-transform:uppercase;}
+.settings-panel p{margin:0 0 10px;color:var(--text-dim);font-size:11.5px;}
+.settings-panel .row{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+.settings-panel label{color:var(--text-dim);}
+.hidden{display:none !important;}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="topbar" style="position:relative;">
+    <div class="brand">
+      <div class="brand-mark">X</div>
+      <div>
+        <h1>EXPOSURE MAP</h1>
+        <p class="subtitle">GEX / VEX positioning, recomputed live from your Robinhood chain data</p>
+      </div>
+    </div>
+    <div class="topbar-controls">
+      <div class="status-pill" id="apiStatus"><span class="status-dot"></span><span id="apiStatusText">idle</span></div>
+      <button class="btn-ghost" id="settingsBtn">⚙ settings</button>
+    </div>
+    <div class="settings-panel hidden" id="settingsPanel">
+      <h4>Sign convention</h4>
+      <p>Both conventions use the same OI &amp; IV. They differ only in which side (calls vs. puts) is treated as the dealer's long-gamma side. There's no universal truth here — flip this and watch which one tracks price reactions better.</p>
+      <div class="row">
+        <label>Calls = dealer long gamma</label>
+        <button class="btn-ghost active" id="convStandard" style="font-size:10px;">Standard</button>
+      </div>
+      <div class="row">
+        <label>Puts = dealer long gamma</label>
+        <button class="btn-ghost" id="convInverted" style="font-size:10px;">Inverted</button>
+      </div>
+      <h4 style="margin-top:14px;">Swing target</h4>
+      <p>How far out (days) to look for the VEX expiration.</p>
+      <div class="row">
+        <label for="swingDays">Target DTE</label>
+        <input type="number" id="swingDays" value="30" min="14" max="60" style="width:60px;background:var(--bg-inset);border:1px solid var(--border-bright);color:var(--text);border-radius:5px;padding:4px 6px;font-family:var(--mono);">
+      </div>
+    </div>
+  </header>
+
+  <div class="layout">
+    <nav class="sidebar">
+      <div class="group-tabs" id="groupTabs"></div>
+      <ul class="ticker-list" id="tickerList"></ul>
+      <div class="scan-controls">
+        <button class="btn-primary" id="runScan">Scan this group</button>
+        <button class="btn-warn hidden" id="stopScan">Stop scan</button>
+        <div class="scan-progress hidden" id="scanProgress">
+          <span id="scanProgressText">0 / 0</span>
+          <div class="scan-bar"><div class="scan-bar-fill" id="scanBarFill"></div></div>
+        </div>
+      </div>
+    </nav>
+
+    <main class="content">
+      <section class="panel">
+        <div class="ticker-header">
+          <h2 id="ddSymbol">SPY</h2>
+          <div class="spot-readout" id="ddSpot">spot —</div>
+          <div class="spacer"></div>
+          <span class="updated" id="ddUpdated"></span>
+          <button class="btn-ghost" id="ddRefresh">refresh ⟳</button>
+        </div>
+
+        <div class="regime-row" id="regimeCards">
+          <div class="regime-card"><div class="label">Net GEX</div><div class="value" id="cardGex">—</div><div class="sub" id="cardGexSub">no data yet</div></div>
+          <div class="regime-card"><div class="label">Net VEX</div><div class="value" id="cardVex">—</div><div class="sub" id="cardVexSub">no data yet</div></div>
+          <div class="regime-card"><div class="label">Alignment</div><div class="value" id="cardAlign">—</div><div class="sub" id="cardAlignSub">&nbsp;</div></div>
+          <div class="regime-card"><div class="label">Gamma flip</div><div class="value flip" id="cardFlip">—</div><div class="sub" id="cardFlipSub">&nbsp;</div></div>
+        </div>
+
+        <div class="spine-wrap">
+          <div class="spine-side-label">◀ <b>GEX</b> · near-term</div>
+          <div class="spine-svg-wrap" id="spineWrap">
+            <div class="empty-spine" id="spineEmpty">Select a ticker, then hit refresh to pull live chain data.</div>
+          </div>
+          <div class="spine-side-label right">◀ <b>VEX</b> · swing</div>
+        </div>
+
+        <div class="context-blurb" id="contextBlurb">
+          Pick a ticker on the left and refresh to see its current dealer-positioning regime.
+        </div>
+      </section>
+
+      <section class="panel hidden" id="scanResults">
+        <div class="scan-meta">
+          <h3>Group scan — <span id="scanGroupName"></span></h3>
+          <span class="updated" id="scanUpdated"></span>
+        </div>
+        <table class="scan-table">
+          <thead>
+            <tr><th>Ticker</th><th>Spot</th><th>Net GEX</th><th>Net VEX</th><th>Alignment</th><th>Flip dist.</th><th>Flag</th></tr>
+          </thead>
+          <tbody id="scanTbody"></tbody>
+        </table>
+      </section>
+    </main>
+  </div>
+
+  <footer class="disclaimer">
+    <b>What this is:</b> an exposure model recomputed from open interest and implied volatility pulled live from your Robinhood connection via Black-Scholes gamma &amp; vanna. <b>What this isn't:</b> Skylit's Heatseeker calc (proprietary, not reproduced here), a price prediction, or trade advice. King nodes and flip levels describe where dealer hedging flows are concentrated under this model's assumptions — treat them as context for your own read of price action, not entries or exits. Sign conventions are a modeling choice (see settings) and can flip which side is labeled "stabilizing" vs "trending."
+  </footer>
+</div>
+<script>
+/* =====================================================================
+   CONSTANTS — watchlist groups (seeded from your Robinhood lists)
+   ===================================================================== */
+const GROUPS = {
+  "Options Watchlist": ["TSLA","RIVN","SPXW","QQQ","SPY","IWM","QS"],
+  "Mainzies": ["SPCX","OXY","DELL","INTC","SOFI","HOOD","MU","SNDK","DRAM","NOW","CBRS","VCX","IREN","IONQ","CRWV","UNH","OSCR","HIMS","MSTR","COIN","PLTR","BABA","GME","GOOG","AAPL","MSFT","AMZN","NVDA","META","AMD","TSLA"],
+  "My First List": ["SMCI","LUNR","ASTS","UBER","RIVN","DJT","CHWY","AMC","GME","MARA"],
+  "Sectors": ["XLRE","XLP","XLU","XLY","XLC","XLF","IWM","XLB","ARKK","XLI","DIA","SPY","XLV","QQQ","XLK","XLE","SMH","SOXL"]
+};
+const INDEX_SYMBOLS = new Set(["SPXW","SPX","NDX","RUT","VIX"]);
+
+// Mirrors the CSS palette — used inside generated SVG strings, where
+// var(--token) support for presentation attributes is inconsistent.
+const COLORS = {
+  pos: "#36f2b0",
+  neg: "#ff4d7a",
+  spot: "#5ec8ff",
+  flip: "#c98bff",
+  borderBright: "#2c3a4a",
+  textFaint: "#4c5a6b",
+  mono: "'JetBrains Mono', ui-monospace, 'SF Mono', monospace"
+};
+
+/* =====================================================================
+   STATE
+   ===================================================================== */
+const state = {
+  activeGroup: "Options Watchlist",
+  activeTicker: "SPY",
+  signConvention: "standard", // "standard" = calls positive | "inverted" = puts positive
+  swingTargetDays: 30,
+  cache: {},       // symbol -> { near:{...}, swing:{...}, computed:{...}, ts }
+  scanResults: {}, // symbol -> scan row data
+  scanAbort: false,
+  scanning: false
+};
+
+/* =====================================================================
+   MATH — Black-Scholes gamma & vanna from strike, spot, IV, time-to-expiry
+   Only normPDF is needed: both gamma and vanna are expressed via d1/d2
+   without requiring an inverse-normal step.
+   ===================================================================== */
+function normPDF(x){
+  return Math.exp(-0.5 * x * x) / Math.sqrt(2 * Math.PI);
+}
+
+// d1, d2 for a European option, r and q assumed 0 (close enough for
+// short-dated equity/index options and irrelevant to sign/structure here)
+function d1d2(S, K, T, sigma){
+  const sqrtT = Math.sqrt(T);
+  const d1 = (Math.log(S / K) + 0.5 * sigma * sigma * T) / (sigma * sqrtT);
+  const d2 = d1 - sigma * sqrtT;
+  return [d1, d2];
+}
+
+// Gamma is identical for calls and puts at the same strike/expiry/IV
+function bsGamma(S, K, T, sigma){
+  if (T <= 0 || sigma <= 0 || S <= 0 || K <= 0) return 0;
+  const [d1] = d1d2(S, K, T, sigma);
+  const sqrtT = Math.sqrt(T);
+  return normPDF(d1) / (S * sigma * sqrtT);
+}
+
+// Vanna (dDelta/dVol) is also identical for calls and puts at the same strike
+function bsVanna(S, K, T, sigma){
+  if (T <= 0 || sigma <= 0 || S <= 0 || K <= 0) return 0;
+  const [d1, d2] = d1d2(S, K, T, sigma);
+  return -normPDF(d1) * d2 / sigma;
+}
+
+// Minimum time-to-expiry floor (avoids div-by-zero on 0DTE after the close)
+const T_FLOOR = 1 / (365 * 24 * 12); // ~5 minutes in years
+
+// Years between now and an expiration date, assumed to settle at 21:00 UTC
+function yearsToExpiry(expirationDateStr){
+  const exp = new Date(expirationDateStr + "T21:00:00Z").getTime();
+  const now = Date.now();
+  const years = (exp - now) / (1000 * 60 * 60 * 24 * 365);
+  return Math.max(years, T_FLOOR);
+}
+
+/* =====================================================================
+   EXPOSURE CALCS
+   chainData shape: { symbol, spot, expiration, calls:[[k,oi,iv],...], puts:[[k,oi,iv],...] }
+   sign: +1 (standard: calls positive) or -1 (inverted: puts positive)
+   GEX_k  = sign * gamma(S,K,T,iv) * OI * 100 * S^2 * 0.01     [per strike, calls minus puts net]
+   VEX_k  = sign * vanna(S,K,T,iv) * OI * 100 * S  * 0.01      [same convention]
+   ===================================================================== */
+function signMult(){ return state.signConvention === "standard" ? 1 : -1; }
+
+// Net exposure (GEX or VEX) at a hypothetical spot S2, using each contract's
+// own IV held fixed (standard simplification — recompute d1/d2 at S2)
+function netExposureAt(chainData, S2, kind){
+  const T = yearsToExpiry(chainData.expiration);
+  const sign = signMult();
+  let total = 0;
+  for (const [k, oi, iv] of chainData.calls || []){
+    if (!oi || !iv) continue;
+    const g = kind === "gex" ? bsGamma(S2, k, T, iv) : bsVanna(S2, k, T, iv);
+    total += sign * g * oi * 100 * (kind === "gex" ? S2 * S2 * 0.01 : S2 * 0.01);
+  }
+  for (const [k, oi, iv] of chainData.puts || []){
+    if (!oi || !iv) continue;
+    const g = kind === "gex" ? bsGamma(S2, k, T, iv) : bsVanna(S2, k, T, iv);
+    total += -sign * g * oi * 100 * (kind === "gex" ? S2 * S2 * 0.01 : S2 * 0.01);
+  }
+  return total;
+}
+
+// Per-strike net exposure at the current spot, returns Map<strike, {gex/vex}>
+function perStrikeExposure(chainData, kind){
+  const T = yearsToExpiry(chainData.expiration);
+  const S = chainData.spot;
+  const sign = signMult();
+  const map = new Map();
+  const add = (k, oi, iv, side) => {
+    if (!oi || !iv) return;
+    const g = kind === "gex" ? bsGamma(S, k, T, iv) : bsVanna(S, k, T, iv);
+    const scale = kind === "gex" ? S * S * 0.01 : S * 0.01;
+    const val = (side === "call" ? sign : -sign) * g * oi * 100 * scale;
+    map.set(k, (map.get(k) || 0) + val);
+  };
+  for (const [k, oi, iv] of chainData.calls || []) add(k, oi, iv, "call");
+  for (const [k, oi, iv] of chainData.puts || []) add(k, oi, iv, "put");
+  return map;
+}
+
+// Find the spot level nearest current spot where net exposure crosses zero
+function findFlip(chainData, kind){
+  const S = chainData.spot;
+  if (!S) return null;
+  const lo = S * 0.80, hi = S * 1.20;
+  const steps = 240;
+  const dx = (hi - lo) / steps;
+  let prevX = lo, prevV = netExposureAt(chainData, lo, kind);
+  let best = null, bestDist = Infinity;
+  for (let i = 1; i <= steps; i++){
+    const x = lo + i * dx;
+    const v = netExposureAt(chainData, x, kind);
+    if (prevV === 0 || (prevV < 0) !== (v < 0)){
+      // crossing between prevX and x — linear interpolation
+      const t = prevV === v ? 0 : prevV / (prevV - v);
+      const cross = prevX + t * (x - prevX);
+      const dist = Math.abs(cross - S);
+      if (dist < bestDist){ bestDist = dist; best = cross; }
+    }
+    prevX = x; prevV = v;
+  }
+  return best;
+}
+
+// Top N strikes by |exposure| ("king nodes")
+function kingNodes(chainData, kind, n = 2){
+  const map = perStrikeExposure(chainData, kind);
+  return [...map.entries()]
+    .sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]))
+    .slice(0, n)
+    .map(([k, v]) => ({ strike: k, value: v }));
+}
+
+// Full computed bundle for a ticker given near/swing chain data
+function computeAll(near, swing){
+  const result = {};
+  if (near && !near.error){
+    result.netGex = netExposureAt(near, near.spot, "gex");
+    result.gexFlip = findFlip(near, "gex");
+    result.gexKings = kingNodes(near, "gex", 2);
+    result.gexPerStrike = perStrikeExposure(near, "gex");
+    result.nearSpot = near.spot;
+    result.nearExpiry = near.expiration;
+  }
+  if (swing && !swing.error){
+    result.netVex = netExposureAt(swing, swing.spot, "vex");
+    result.vexFlip = findFlip(swing, "vex");
+    result.vexKings = kingNodes(swing, "vex", 2);
+    result.vexPerStrike = perStrikeExposure(swing, "vex");
+    result.swingSpot = swing.spot;
+    result.swingExpiry = swing.expiration;
+  }
+  result.spot = result.nearSpot || result.swingSpot || null;
+  return result;
+}
+
+/* =====================================================================
+   API BRIDGE — Claude (Sonnet) + Robinhood MCP, called from the artifact
+   ===================================================================== */
+async function callClaude(prompt){
+  const resp = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: "claude-sonnet-4-6",
+      max_tokens: 1000,
+      messages: [{ role: "user", content: prompt }],
+      mcp_servers: [
+        { type: "url", url: "https://agent.robinhood.com/mcp/trading", name: "robinhood" }
+      ]
+    })
+  });
+  if (!resp.ok){
+    const t = await resp.text().catch(() => "");
+    throw new Error("API " + resp.status + ": " + t.slice(0, 200));
+  }
+  const data = await resp.json();
+  const textBlocks = (data.content || []).filter(b => b.type === "text").map(b => b.text);
+  return textBlocks.join("\n").trim();
+}
+
+function todayStr(){
+  return new Date().toISOString().slice(0, 10);
+}
+
+// bucket: "near" (nearest expiry >= today, for GEX) or "swing" (closest to
+// swingTargetDays out, at least 14 days, for VEX)
+function buildPrompt(symbol, bucket){
+  const isIndex = INDEX_SYMBOLS.has(symbol);
+  const chainSymbol = symbol === "SPX" ? "SPXW" : symbol;
+  const today = todayStr();
+  const swingDays = state.swingTargetDays;
+
+  const priceStep = isIndex
+    ? `Resolve the index id with Robinhood:search (query="${symbol === "SPXW" ? "S&P 500" : symbol}", asset_type="market_index"), then call Robinhood:get_index_quotes for the current value.`
+    : `Call Robinhood:get_equity_quotes for symbol "${symbol}" to get the current price.`;
+
+  const expiryRule = bucket === "near"
+    ? `Pick the EARLIEST date in expiration_dates that is on or after ${today} (today). This may be 0DTE.`
+    : `Pick the date in expiration_dates closest to ${swingDays} days after ${today}, but never less than 14 days after ${today}. If no date is >=14 days out, pick the latest available date.`;
+
+  return `You have Robinhood MCP tools available (get_equity_quotes, get_index_quotes, search, get_option_chains, get_option_instruments, get_option_quotes).
+
+Task for underlying "${symbol}" (chain symbol "${chainSymbol}"):
+1. ${priceStep}
+2. Call Robinhood:get_option_chains with underlying_symbol="${chainSymbol}" to list expiration_dates.
+3. ${expiryRule} Call this chosen date EXP.
+4. Call Robinhood:get_option_instruments with chain_symbol="${chainSymbol}", expiration_dates=EXP, type="call" and separately type="put" (state="active"). From each result set, keep only contracts whose strike_price is within 15% of the current price. If more than 22 remain on a side, keep the 22 closest to the current price.
+5. Batch the kept instrument ids (max 20 per call) into Robinhood:get_option_quotes and read implied_volatility and open_interest for each.
+6. Respond with ONLY raw JSON (no markdown fences, no commentary, no explanation) in EXACTLY this shape:
+{"symbol":"${symbol}","spot":<number>,"expiration":"EXP","calls":[[strike,open_interest,implied_volatility],...],"puts":[[strike,open_interest,implied_volatility],...]}
+Round spot to 2 decimals and implied_volatility to 4 decimals. Omit any contract where open_interest or implied_volatility is missing or zero-IV. If ${symbol} has no tradable options chain, respond with exactly {"symbol":"${symbol}","error":"no_options"}. If you cannot determine the current price, respond with exactly {"symbol":"${symbol}","error":"no_price"}.`;
+}
+
+function parseChainResponse(text, symbol){
+  let cleaned = text.trim();
+  // strip markdown fences if present
+  cleaned = cleaned.replace(/^```(?:json)?/i, "").replace(/```$/, "").trim();
+  // grab the first {...} block in case of stray text
+  const start = cleaned.indexOf("{");
+  const end = cleaned.lastIndexOf("}");
+  if (start === -1 || end === -1) throw new Error("no JSON found in response");
+  cleaned = cleaned.slice(start, end + 1);
+  const obj = JSON.parse(cleaned);
+  if (obj.error) return obj;
+  if (typeof obj.spot !== "number" || !obj.expiration) throw new Error("malformed chain payload");
+  obj.calls = obj.calls || [];
+  obj.puts = obj.puts || [];
+  return obj;
+}
+
+// Fetch + parse one bucket ("near" or "swing") for a symbol, with one retry
+async function fetchBucket(symbol, bucket){
+  const prompt = buildPrompt(symbol, bucket);
+  let lastErr;
+  for (let attempt = 0; attempt < 2; attempt++){
+    try {
+      const text = await callClaude(prompt);
+      return parseChainResponse(text, symbol);
+    } catch (e){
+      lastErr = e;
+    }
+  }
+  return { symbol, error: "fetch_failed", detail: String(lastErr) };
+}
+
+// Fetch both buckets for deep-dive
+async function fetchTicker(symbol){
+  const [near, swing] = await Promise.all([
+    fetchBucket(symbol, "near"),
+    fetchBucket(symbol, "swing")
+  ]);
+  return { near, swing, ts: Date.now() };
+}
+
+/* =====================================================================
+   FORMATTING HELPERS
+   ===================================================================== */
+function fmtAbbrev(n){
+  const sign = n < 0 ? "-" : "";
+  const a = Math.abs(n);
+  if (a >= 1e9) return sign + (a / 1e9).toFixed(2) + "B";
+  if (a >= 1e6) return sign + (a / 1e6).toFixed(2) + "M";
+  if (a >= 1e3) return sign + (a / 1e3).toFixed(1) + "K";
+  return sign + a.toFixed(0);
+}
+function fmtPrice(n){
+  if (n == null || !isFinite(n)) return "—";
+  return "$" + n.toFixed(n >= 1000 ? 1 : 2);
+}
+function fmtPct(n){
+  if (n == null || !isFinite(n)) return "—";
+  return (n >= 0 ? "+" : "") + (n * 100).toFixed(2) + "%";
+}
+
+/* =====================================================================
+   SPINE CHART — SVG generation
+   Left side  = GEX (near-term bucket), solid bars
+   Right side = VEX (swing bucket), hatched bars
+   Shared vertical price axis in the middle.
+   ===================================================================== */
+function buildSpineSVG(computed){
+  const W = 680, H = 460, M = 28, AX = W / 2;
+  const sideW = AX - M - 10; // max bar length each side
+
+  // Determine unified price range across both strike sets + spot(s) + flips
+  let prices = [];
+  if (computed.gexPerStrike) for (const k of computed.gexPerStrike.keys()) prices.push(k);
+  if (computed.vexPerStrike) for (const k of computed.vexPerStrike.keys()) prices.push(k);
+  if (computed.spot) prices.push(computed.spot);
+  if (computed.gexFlip) prices.push(computed.gexFlip);
+  if (computed.vexFlip) prices.push(computed.vexFlip);
+  if (!prices.length) return "";
+
+  let minP = Math.min(...prices), maxP = Math.max(...prices);
+  const pad = (maxP - minP) * 0.04 || maxP * 0.01 || 1;
+  minP -= pad; maxP += pad;
+  const span = maxP - minP || 1;
+
+  const yOf = (price) => M + (1 - (price - minP) / span) * (H - 2 * M);
+
+  // normalize bar lengths independently per side
+  const gexVals = computed.gexPerStrike ? [...computed.gexPerStrike.values()].map(Math.abs) : [];
+  const vexVals = computed.vexPerStrike ? [...computed.vexPerStrike.values()].map(Math.abs) : [];
+  const gexMax = Math.max(...gexVals, 1e-9);
+  const vexMax = Math.max(...vexVals, 1e-9);
+
+  let bars = "";
+  const barH = 3.5;
+
+  if (computed.gexPerStrike){
+    for (const [k, v] of computed.gexPerStrike.entries()){
+      const len = (Math.abs(v) / gexMax) * sideW;
+      if (len < 0.6) continue;
+      const y = yOf(k) - barH / 2;
+      const color = v >= 0 ? COLORS.pos : COLORS.neg;
+      bars += `<rect x="${(AX - len).toFixed(1)}" y="${y.toFixed(1)}" width="${len.toFixed(1)}" height="${barH}" fill="${color}" opacity="0.85" rx="1"/>`;
+    }
+  }
+  if (computed.vexPerStrike){
+    for (const [k, v] of computed.vexPerStrike.entries()){
+      const len = (Math.abs(v) / vexMax) * sideW;
+      if (len < 0.6) continue;
+      const y = yOf(k) - barH / 2;
+      const color = v >= 0 ? COLORS.pos : COLORS.neg;
+      const fill = v >= 0 ? "url(#hatchPos)" : "url(#hatchNeg)";
+      bars += `<rect x="${AX.toFixed(1)}" y="${y.toFixed(1)}" width="${len.toFixed(1)}" height="${barH}" fill="${fill}" stroke="${color}" stroke-width="0.5" opacity="0.9" rx="1"/>`;
+    }
+  }
+
+  // center axis line
+  let axis = `<line x1="${AX}" y1="${M}" x2="${AX}" y2="${H - M}" stroke="${COLORS.borderBright}" stroke-width="1"/>`;
+
+  // spot line
+  let spotLine = "";
+  if (computed.spot){
+    const y = yOf(computed.spot);
+    spotLine = `<line x1="${M}" y1="${y.toFixed(1)}" x2="${W - M}" y2="${y.toFixed(1)}" stroke="${COLORS.spot}" stroke-width="1.2" stroke-dasharray="4 3"/>
+      <text x="${W - M}" y="${(y - 4).toFixed(1)}" text-anchor="end" font-family="${COLORS.mono}" font-size="10.5" fill="${COLORS.spot}">SPOT ${fmtPrice(computed.spot)}</text>`;
+  }
+
+  // gamma flip (left side)
+  let gexFlipLine = "";
+  if (computed.gexFlip){
+    const y = yOf(computed.gexFlip);
+    gexFlipLine = `<line x1="${M}" y1="${y.toFixed(1)}" x2="${AX}" y2="${y.toFixed(1)}" stroke="${COLORS.flip}" stroke-width="1.2" stroke-dasharray="2 3"/>
+      <text x="${M}" y="${(y - 4).toFixed(1)}" font-family="${COLORS.mono}" font-size="10.5" fill="${COLORS.flip}">FLIP ${fmtPrice(computed.gexFlip)}</text>`;
+  }
+  // vanna flip (right side)
+  let vexFlipLine = "";
+  if (computed.vexFlip){
+    const y = yOf(computed.vexFlip);
+    vexFlipLine = `<line x1="${AX}" y1="${y.toFixed(1)}" x2="${W - M}" y2="${y.toFixed(1)}" stroke="${COLORS.flip}" stroke-width="1.2" stroke-dasharray="2 3"/>
+      <text x="${W - M}" y="${(y - 4).toFixed(1)}" text-anchor="end" font-family="${COLORS.mono}" font-size="10.5" fill="${COLORS.flip}">V-FLIP ${fmtPrice(computed.vexFlip)}</text>`;
+  }
+
+  // king node labels
+  let kingLabels = "";
+  const labelKing = (node, side) => {
+    if (!node) return "";
+    const y = yOf(node.strike);
+    const x = side === "left" ? M : W - M;
+    const anchor = side === "left" ? "start" : "end";
+    const color = node.value >= 0 ? COLORS.pos : COLORS.neg;
+    return `<text x="${x}" y="${(y + 12).toFixed(1)}" text-anchor="${anchor}" font-family="${COLORS.mono}" font-size="10" fill="${color}">${fmtPrice(node.strike)} · ${fmtAbbrev(node.value)}</text>`;
+  };
+  if (computed.gexKings) computed.gexKings.forEach((n, i) => { if (i < 2) kingLabels += labelKing(n, "left"); });
+  if (computed.vexKings) computed.vexKings.forEach((n, i) => { if (i < 2) kingLabels += labelKing(n, "right"); });
+
+  // axis price labels (top/bottom)
+  const axisLabels = `
+    <text x="${AX}" y="${M - 10}" text-anchor="middle" font-family="${COLORS.mono}" font-size="10" fill="${COLORS.textFaint}">${fmtPrice(maxP)}</text>
+    <text x="${AX}" y="${H - M + 16}" text-anchor="middle" font-family="${COLORS.mono}" font-size="10" fill="${COLORS.textFaint}">${fmtPrice(minP)}</text>
+    <text x="${M}" y="${H - 6}" text-anchor="start" font-family="${COLORS.mono}" font-size="9.5" fill="${COLORS.textFaint}" letter-spacing="0.08em">${(computed.nearExpiry || "—")} · GEX</text>
+    <text x="${W - M}" y="${H - 6}" text-anchor="end" font-family="${COLORS.mono}" font-size="9.5" fill="${COLORS.textFaint}" letter-spacing="0.08em">VEX · ${(computed.swingExpiry || "—")}</text>
+  `;
+
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" style="display:block;min-width:560px;">
+    <defs>
+      <pattern id="hatchPos" patternUnits="userSpaceOnUse" width="6" height="6" patternTransform="rotate(45)">
+        <rect width="6" height="6" fill="rgba(54,242,176,0.12)"/>
+        <line x1="0" y1="0" x2="0" y2="6" stroke="${COLORS.pos}" stroke-width="2"/>
+      </pattern>
+      <pattern id="hatchNeg" patternUnits="userSpaceOnUse" width="6" height="6" patternTransform="rotate(45)">
+        <rect width="6" height="6" fill="rgba(255,77,122,0.12)"/>
+        <line x1="0" y1="0" x2="0" y2="6" stroke="${COLORS.neg}" stroke-width="2"/>
+      </pattern>
+    </defs>
+    ${axis}
+    ${bars}
+    ${spotLine}
+    ${gexFlipLine}
+    ${vexFlipLine}
+    ${kingLabels}
+    ${axisLabels}
+  </svg>`;
+}
+
+/* =====================================================================
+   REGIME CLASSIFICATION & CONTEXT TEXT
+   ===================================================================== */
+function regimeText(computed){
+  if (computed.netGex == null && computed.netVex == null){
+    return "No data yet — refresh to pull a live chain.";
+  }
+  const gexSign = computed.netGex == null ? null : computed.netGex >= 0;
+  const vexSign = computed.netVex == null ? null : computed.netVex >= 0;
+  let lines = [];
+
+  if (gexSign != null){
+    lines.push(gexSign
+      ? `<b>+GEX (near-term):</b> in this model, dealer hedging flow leans against the move — dips tend to get bought and rallies tend to get sold, favoring range/pin behavior into the ${computed.nearExpiry} expiry.`
+      : `<b>-GEX (near-term):</b> dealer hedging flow leans with the move — breaks in either direction can extend faster than usual into the ${computed.nearExpiry} expiry.`);
+  }
+  if (vexSign != null){
+    lines.push(vexSign
+      ? `<b>+VEX (swing, ${computed.swingExpiry}):</b> as IV moves, vanna flow leans supportive — vol expansion would tend to add a tailwind to the move already in progress.`
+      : `<b>-VEX (swing, ${computed.swingExpiry}):</b> as IV moves, vanna flow leans against the move — vol expansion would tend to cap or fade extensions over multi-day horizons.`);
+  }
+
+  let archetype = "";
+  if (gexSign != null && vexSign != null){
+    if (gexSign && vexSign){
+      archetype = "Both forces lean stabilizing/aligned — historically the kind of setup where range-bound, premium-selling structures (credit spreads, iron condors near the flagged levels) have more room to work, with the flip/king-node levels as the range boundaries to respect.";
+    } else if (!gexSign && !vexSign){
+      archetype = "Both forces lean trending/aligned — historically the kind of setup where directional debit spreads or long premium in the direction of the break have more room to run, especially once price clears a flip level with volume.";
+    } else if (gexSign && !vexSign){
+      archetype = "Mixed: near-term gamma dampens chop while vanna leans against follow-through over the next few weeks — short-term mean reversion inside the range, but be cautious extrapolating any breakout into a multi-day swing.";
+    } else {
+      archetype = "Mixed: near-term gamma can amplify the immediate move while vanna offers some multi-day support underneath — short bursts can extend, but the longer-dated cushion argues against chasing the move too far.";
+    }
+  }
+
+  let html = "<p>" + lines.join("</p><p>") + "</p>";
+  if (archetype) html += `<div class="archetype"><b>Context, not a signal:</b> ${archetype}</div>`;
+  return html;
+}
+
+function alignmentLabel(computed){
+  if (computed.netGex == null || computed.netVex == null) return { text: "—", cls: "" };
+  const same = (computed.netGex >= 0) === (computed.netVex >= 0);
+  return same
+    ? { text: "ALIGNED", cls: "pos" }
+    : { text: "MIXED", cls: "neg" };
+}
+
+/* =====================================================================
+   STATUS PILL
+   ===================================================================== */
+const apiStatusEl = document.getElementById("apiStatus");
+const apiStatusTextEl = document.getElementById("apiStatusText");
+function setStatus(mode, text){
+  apiStatusEl.className = "status-pill" + (mode ? " " + mode : "");
+  apiStatusTextEl.textContent = text;
+}
+
+/* =====================================================================
+   RAW DATA CACHES (kept separate from computed values so toggling the
+   sign convention or swing-target can recompute without refetching)
+   ===================================================================== */
+const rawNear = {};   // symbol -> chain payload (near-term bucket)
+const rawSwing = {};  // symbol -> chain payload (swing bucket)
+const lastUpdated = {}; // symbol -> timestamp
+
+/* =====================================================================
+   DEEP DIVE RENDERING
+   ===================================================================== */
+function renderDeepDive(symbol){
+  document.getElementById("ddSymbol").textContent = symbol;
+  const near = rawNear[symbol], swing = rawSwing[symbol];
+  const has = (near && !near.error) || (swing && !swing.error);
+
+  if (!has){
+    document.getElementById("ddSpot").textContent = "spot —";
+    document.getElementById("ddUpdated").textContent = "";
+    document.getElementById("spineWrap").innerHTML = `<div class="empty-spine" id="spineEmpty">No data yet for ${symbol} — hit refresh to pull a live chain.</div>`;
+    document.getElementById("contextBlurb").innerHTML = "Pick a ticker, then refresh to pull live chain data and see its current dealer-positioning regime.";
+    resetCards();
+    return;
+  }
+
+  const errs = [];
+  if (near && near.error) errs.push("near-term: " + near.error);
+  if (swing && swing.error) errs.push("swing: " + swing.error);
+
+  const computed = computeAll(
+    near && !near.error ? near : null,
+    swing && !swing.error ? swing : null
+  );
+
+  document.getElementById("ddSpot").innerHTML = `spot <b>${fmtPrice(computed.spot)}</b>`;
+  const ts = lastUpdated[symbol];
+  document.getElementById("ddUpdated").textContent = ts ? "updated " + new Date(ts).toLocaleTimeString() : "";
+
+  // regime cards
+  const cardGex = document.getElementById("cardGex"), cardGexSub = document.getElementById("cardGexSub");
+  if (computed.netGex != null){
+    cardGex.textContent = (computed.netGex >= 0 ? "+" : "") + fmtAbbrev(computed.netGex);
+    cardGex.className = "value " + (computed.netGex >= 0 ? "pos" : "neg");
+    cardGexSub.textContent = computed.nearExpiry || "";
+  } else { cardGex.textContent = "—"; cardGex.className = "value"; cardGexSub.textContent = errs.join(" · ") || "no data"; }
+
+  const cardVex = document.getElementById("cardVex"), cardVexSub = document.getElementById("cardVexSub");
+  if (computed.netVex != null){
+    cardVex.textContent = (computed.netVex >= 0 ? "+" : "") + fmtAbbrev(computed.netVex);
+    cardVex.className = "value " + (computed.netVex >= 0 ? "pos" : "neg");
+    cardVexSub.textContent = computed.swingExpiry || "";
+  } else { cardVex.textContent = "—"; cardVex.className = "value"; cardVexSub.textContent = "no data"; }
+
+  const cardAlign = document.getElementById("cardAlign"), cardAlignSub = document.getElementById("cardAlignSub");
+  const al = alignmentLabel(computed);
+  cardAlign.textContent = al.text;
+  cardAlign.className = "value " + al.cls;
+  cardAlignSub.innerHTML = "&nbsp;";
+  if (al.cls === "pos") cardAlignSub.textContent = "GEX & VEX reinforcing";
+  else if (al.cls === "neg") cardAlignSub.textContent = "GEX & VEX disagree";
+
+  const cardFlip = document.getElementById("cardFlip"), cardFlipSub = document.getElementById("cardFlipSub");
+  if (computed.gexFlip != null){
+    const dist = (computed.gexFlip - computed.spot) / computed.spot;
+    cardFlip.textContent = fmtPrice(computed.gexFlip);
+    cardFlipSub.textContent = (dist >= 0 ? "+" : "") + (dist * 100).toFixed(2) + "% from spot";
+  } else { cardFlip.textContent = "—"; cardFlipSub.textContent = "no crossing within ±20%"; }
+
+  // spine chart
+  const svg = buildSpineSVG(computed);
+  document.getElementById("spineWrap").innerHTML = svg || `<div class="empty-spine">Not enough strikes with open interest to chart.</div>`;
+
+  // context blurb
+  let blurb = regimeText(computed);
+  if (errs.length) blurb += `<div class="archetype" style="border-top:none;color:var(--text-faint);">Note: ${errs.join(" · ")}</div>`;
+  document.getElementById("contextBlurb").innerHTML = blurb;
+}
+
+function resetCards(){
+  for (const id of ["cardGex","cardVex","cardAlign","cardFlip"]) {
+    const el = document.getElementById(id);
+    el.textContent = "—"; el.className = "value" + (id === "cardFlip" ? " flip" : "");
+  }
+  document.getElementById("cardGexSub").textContent = "no data yet";
+  document.getElementById("cardVexSub").textContent = "no data yet";
+  document.getElementById("cardAlignSub").innerHTML = "&nbsp;";
+  document.getElementById("cardFlipSub").innerHTML = "&nbsp;";
+}
+
+async function refreshTicker(symbol){
+  setStatus("busy", "fetching " + symbol + "…");
+  try {
+    const { near, swing, ts } = await fetchTicker(symbol);
+    rawNear[symbol] = near;
+    rawSwing[symbol] = swing;
+    lastUpdated[symbol] = ts;
+    if (symbol === state.activeTicker) renderDeepDive(symbol);
+    if (near.error || swing.error){
+      setStatus("err", symbol + ": " + (near.error || swing.error));
+    } else {
+      setStatus("ok", symbol + " updated");
+    }
+  } catch (e){
+    setStatus("err", "fetch failed: " + String(e).slice(0, 60));
+  }
+}
+
+function selectTicker(symbol){
+  state.activeTicker = symbol;
+  renderTickerList();
+  renderDeepDive(symbol);
+}
+
+/* =====================================================================
+   SIDEBAR — group tabs + ticker list
+   ===================================================================== */
+function renderGroupTabs(){
+  const el = document.getElementById("groupTabs");
+  el.innerHTML = "";
+  for (const name of Object.keys(GROUPS)){
+    const tickers = [...new Set(GROUPS[name])];
+    const btn = document.createElement("button");
+    btn.className = "group-tab" + (name === state.activeGroup ? " active" : "");
+    btn.innerHTML = `<span>${name}</span><span class="count">${tickers.length}</span>`;
+    btn.onclick = () => { state.activeGroup = name; renderGroupTabs(); renderTickerList(); hideScan(); };
+    el.appendChild(btn);
+  }
+}
+
+function renderTickerList(){
+  const el = document.getElementById("tickerList");
+  el.innerHTML = "";
+  const tickers = [...new Set(GROUPS[state.activeGroup])];
+  for (const sym of tickers){
+    const li = document.createElement("li");
+    li.className = "ticker-item" + (sym === state.activeTicker ? " active" : "");
+    let badge = "";
+    const sr = state.scanResults[sym];
+    if (sr && !sr.error){
+      if (sr.flagged) badge = `<span class="badge flag">FLIP</span>`;
+      else badge = `<span class="badge ${sr.netGex >= 0 ? 'pos' : 'neg'}">${sr.netGex >= 0 ? 'G+' : 'G-'}</span>`;
+    } else if (sr && sr.error){
+      badge = `<span class="badge" style="color:var(--text-faint);">!</span>`;
+    }
+    li.innerHTML = `<span>${sym}</span>${badge}`;
+    li.onclick = () => selectTicker(sym);
+    el.appendChild(li);
+  }
+}
+
+/* =====================================================================
+   SCAN
+   ===================================================================== */
+function hideScan(){ document.getElementById("scanResults").classList.add("hidden"); }
+
+function showScanUI(group, total){
+  document.getElementById("scanResults").classList.remove("hidden");
+  document.getElementById("scanGroupName").textContent = group;
+  document.getElementById("scanProgress").classList.remove("hidden");
+  document.getElementById("stopScan").classList.remove("hidden");
+  document.getElementById("runScan").disabled = true;
+  updateScanProgress(0, total, "");
+}
+function updateScanProgress(i, total, sym){
+  document.getElementById("scanProgressText").textContent = `${i} / ${total}` + (sym ? ` — ${sym}` : "");
+  document.getElementById("scanBarFill").style.width = (total ? (i / total * 100) : 0) + "%";
+}
+function finishScanUI(){
+  document.getElementById("scanProgress").classList.add("hidden");
+  document.getElementById("stopScan").classList.add("hidden");
+  document.getElementById("runScan").disabled = false;
+  document.getElementById("scanUpdated").textContent = "updated " + new Date().toLocaleTimeString();
+}
+
+function computeScanRow(symbol){
+  const near = rawNear[symbol];
+  if (!near || near.error) return { error: near ? near.error : "no_data" };
+  const netGex = netExposureAt(near, near.spot, "gex");
+  const netVex = netExposureAt(near, near.spot, "vex"); // near-term VEX proxy
+  const gexFlip = findFlip(near, "gex");
+  const flipDist = gexFlip != null ? (gexFlip - near.spot) / near.spot : null;
+  const flagged = flipDist != null && Math.abs(flipDist) < 0.015;
+  return { spot: near.spot, netGex, netVex, gexFlip, flipDist, flagged, aligned: (netGex >= 0) === (netVex >= 0) };
+}
+
+function renderScanTable(group){
+  const tbody = document.getElementById("scanTbody");
+  tbody.innerHTML = "";
+  const tickers = [...new Set(GROUPS[group])];
+  const rows = tickers.map(sym => ({ sym, r: state.scanResults[sym] })).filter(x => x.r);
+  rows.sort((a, b) => {
+    if (a.r.error && !b.r.error) return 1;
+    if (!a.r.error && b.r.error) return -1;
+    if (a.r.error && b.r.error) return 0;
+    return Math.abs(b.r.netGex) - Math.abs(a.r.netGex);
+  });
+  for (const { sym, r } of rows){
+    const tr = document.createElement("tr");
+    if (r.error){
+      tr.className = "row-error";
+      tr.innerHTML = `<td class="sym">${sym}</td><td colspan="6">— ${r.error} —</td>`;
+    } else {
+      const al = r.aligned ? `<span class="align-badge aligned">ALIGNED</span>` : `<span class="align-badge misaligned">MIXED</span>`;
+      const flag = r.flagged ? `<span class="badge flag" style="color:var(--warn);border:1px solid var(--warn);border-radius:4px;padding:2px 6px;">NEAR FLIP</span>` : "—";
+      tr.innerHTML = `
+        <td class="sym">${sym}</td>
+        <td>${fmtPrice(r.spot)}</td>
+        <td class="${r.netGex >= 0 ? 'pos' : 'neg'}">${r.netGex >= 0 ? '+' : ''}${fmtAbbrev(r.netGex)}</td>
+        <td class="${r.netVex >= 0 ? 'pos' : 'neg'}">${r.netVex >= 0 ? '+' : ''}${fmtAbbrev(r.netVex)}</td>
+        <td>${al}</td>
+        <td>${fmtPct(r.flipDist)}</td>
+        <td>${flag}</td>`;
+    }
+    tr.onclick = () => { selectTicker(sym); if (!rawSwing[sym]) refreshTicker(sym); };
+    tbody.appendChild(tr);
+  }
+}
+
+async function runScan(){
+  if (state.scanning) return;
+  state.scanning = true;
+  state.scanAbort = false;
+  const group = state.activeGroup;
+  const tickers = [...new Set(GROUPS[group])];
+  showScanUI(group, tickers.length);
+  for (let i = 0; i < tickers.length; i++){
+    if (state.scanAbort) break;
+    const sym = tickers[i];
+    updateScanProgress(i, tickers.length, sym);
+    setStatus("busy", "scanning " + sym + "…");
+    try {
+      const near = await fetchBucket(sym, "near");
+      rawNear[sym] = near;
+      lastUpdated[sym] = Date.now();
+      state.scanResults[sym] = computeScanRow(sym);
+    } catch (e){
+      state.scanResults[sym] = { error: "fetch_failed" };
+    }
+    renderScanTable(group);
+    renderTickerList();
+  }
+  updateScanProgress(tickers.length, tickers.length, "done");
+  setStatus(state.scanAbort ? "" : "ok", state.scanAbort ? "scan stopped" : "scan complete");
+  state.scanning = false;
+  finishScanUI();
+}
+
+/* =====================================================================
+   EVENT WIRING
+   ===================================================================== */
+document.getElementById("ddRefresh").onclick = () => refreshTicker(state.activeTicker);
+document.getElementById("runScan").onclick = runScan;
+document.getElementById("stopScan").onclick = () => { state.scanAbort = true; };
+
+document.getElementById("settingsBtn").onclick = () => {
+  document.getElementById("settingsPanel").classList.toggle("hidden");
+};
+document.getElementById("convStandard").onclick = () => setConvention("standard");
+document.getElementById("convInverted").onclick = () => setConvention("inverted");
+document.getElementById("swingDays").onchange = (e) => {
+  const v = parseInt(e.target.value, 10);
+  if (v >= 14 && v <= 60) state.swingTargetDays = v;
+};
+
+function setConvention(mode){
+  state.signConvention = mode;
+  document.getElementById("convStandard").classList.toggle("active", mode === "standard");
+  document.getElementById("convInverted").classList.toggle("active", mode === "inverted");
+  // recompute everything from cached raw data, no refetch
+  renderDeepDive(state.activeTicker);
+  for (const sym of Object.keys(state.scanResults)){
+    if (rawNear[sym] && !rawNear[sym].error) state.scanResults[sym] = computeScanRow(sym);
+  }
+  if (!document.getElementById("scanResults").classList.contains("hidden")){
+    renderScanTable(state.activeGroup);
+  }
+  renderTickerList();
+}
+
+/* =====================================================================
+   INIT
+   ===================================================================== */
+renderGroupTabs();
+renderTickerList();
+renderDeepDive(state.activeTicker);
+setStatus("", "idle — refresh to pull live data");
+// ===== SCRIPT_MARKER =====
+</script>
+</body>
+</html>
