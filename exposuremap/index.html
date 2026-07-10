@@ -3,868 +3,362 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Kairos — Free Heatseeker-Superior GEX Terminal</title>
+<title>Kairos — GEX Analyzation</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"></script>
 <style>
-:root {
-  --bg: #0a0b0f;
-  --panel: #111318;
-  --panel2: #161a22;
-  --border: #1e2430;
-  --text: #e6e9f0;
-  --muted: #8b93a7;
-  --cyan: #00e5ff;
-  --pika: #ffd700;
-  --barney: #7b2cbf;
-  --green: #00c853;
-  --red: #ff1744;
-  --teal: #00bfa5;
-  --glow: 0 0 20px rgba(0,229,255,0.15);
-}
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body {
-  font-family: 'Inter', system-ui, sans-serif;
-  background: var(--bg);
-  color: var(--text);
-  min-height: 100vh;
-  overflow-x: hidden;
-}
-.mono { font-family: 'JetBrains Mono', monospace; }
-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px 18px;
-  background: linear-gradient(180deg, #0d1017 0%, #0a0b0f 100%);
-  border-bottom: 1px solid var(--border);
-  position: sticky;
-  top: 0;
-  z-index: 100;
-}
-.logo {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-weight: 700;
-  font-size: 1.25rem;
-  letter-spacing: -0.02em;
-}
-.logo span { color: var(--cyan); text-shadow: 0 0 12px rgba(0,229,255,0.5); }
-.header-controls {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-.btn {
-  background: var(--panel2);
-  border: 1px solid var(--border);
-  color: var(--text);
-  padding: 6px 12px;
-  border-radius: 6px;
-  font-size: 0.8rem;
-  cursor: pointer;
-  transition: all 0.15s;
-  font-family: inherit;
-}
-.btn:hover { border-color: var(--cyan); color: var(--cyan); }
-.btn.primary { background: linear-gradient(135deg, #00b8d4, #00e5ff); color: #000; border: none; font-weight: 600; }
-.btn.primary:hover { filter: brightness(1.1); }
-select, input[type="text"], input[type="password"] {
-  background: var(--panel2);
-  border: 1px solid var(--border);
-  color: var(--text);
-  padding: 6px 10px;
-  border-radius: 6px;
-  font-size: 0.8rem;
-  font-family: inherit;
-}
-.banner {
-  background: #0d1a1f;
-  border-bottom: 1px solid #1a2a30;
-  padding: 6px 18px;
-  font-size: 0.75rem;
-  color: var(--muted);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-.banner strong { color: var(--cyan); }
-main {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 0;
-  padding: 12px;
-}
-@media (min-width: 1200px) {
-  main { grid-template-columns: 1fr 380px; gap: 12px; }
-}
-/* TRINITY */
-.trinity {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 10px;
-  margin-bottom: 12px;
-}
-.panel {
-  background: var(--panel);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  max-height: 620px;
-  box-shadow: var(--glow);
-}
-.panel-header {
-  padding: 10px 12px;
-  background: var(--panel2);
-  border-bottom: 1px solid var(--border);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  position: sticky;
-  top: 0;
-  z-index: 5;
-}
-.ticker {
-  font-weight: 700;
-  font-size: 1.05rem;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.price { font-family: 'JetBrains Mono'; font-size: 0.95rem; }
-.chg { font-size: 0.8rem; padding: 2px 6px; border-radius: 4px; }
-.chg.up { background: rgba(0,200,83,0.15); color: var(--green); }
-.chg.down { background: rgba(255,23,68,0.15); color: var(--red); }
-.king-badge {
-  background: linear-gradient(135deg, #ffd70022, #ffd70011);
-  border: 1px solid #ffd70055;
-  color: var(--pika);
-  font-size: 0.7rem;
-  padding: 3px 8px;
-  border-radius: 20px;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-.strikes {
-  overflow-y: auto;
-  flex: 1;
-  scrollbar-width: thin;
-  scrollbar-color: #2a3140 transparent;
-}
-.strike-row {
-  display: grid;
-  grid-template-columns: 70px 1fr 90px;
-  align-items: center;
-  padding: 5px 10px;
-  font-size: 0.78rem;
-  border-bottom: 1px solid #141820;
-  cursor: pointer;
-  transition: background 0.1s;
-  position: relative;
-}
-.strike-row:hover { background: #1a2030; }
-.strike-row.spot {
-  background: linear-gradient(90deg, #00e5ff18, transparent);
-  border-left: 3px solid var(--cyan);
-}
-.strike-row.king { box-shadow: inset 0 0 0 1px #ffd70066; }
-.strike-row.pika { background: linear-gradient(90deg, #00bfa522, transparent); }
-.strike-row.barney { background: linear-gradient(90deg, #7b2cbf22, transparent); }
-.strike-row.high { background: linear-gradient(90deg, #00e5ff15, transparent); }
-.strike { font-family: 'JetBrains Mono'; font-weight: 600; }
-.gex-val {
-  text-align: right;
-  font-family: 'JetBrains Mono';
-  font-weight: 500;
-}
-.gex-val.pos { color: var(--teal); }
-.gex-val.neg { color: #c77dff; }
-.badge {
-  font-size: 0.65rem;
-  padding: 1px 5px;
-  border-radius: 3px;
-  margin-right: 4px;
-  font-weight: 600;
-}
-.badge.up { background: #00c85333; color: var(--green); }
-.badge.down { background: #ff174433; color: var(--red); }
-.star { color: var(--pika); font-size: 0.7rem; }
-/* CHART + CARDS */
-.right-col { display: flex; flex-direction: column; gap: 12px; }
-.chart-wrap {
-  background: var(--panel);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 10px;
-  height: 340px;
-  position: relative;
-}
-.chart-title {
-  font-size: 0.8rem;
-  color: var(--muted);
-  margin-bottom: 6px;
-  display: flex;
-  justify-content: space-between;
-}
-#chart { width: 100%; height: 290px; }
-.cards {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  max-height: 420px;
-  overflow-y: auto;
-}
-.card {
-  background: var(--panel);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 12px;
-  position: relative;
-}
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 8px;
-}
-.card-ticker { font-weight: 700; font-size: 1.1rem; }
-.tag {
-  font-size: 0.65rem;
-  padding: 2px 7px;
-  border-radius: 4px;
-  font-weight: 600;
-  margin-left: 4px;
-}
-.tag.long { background: #00c85333; color: var(--green); }
-.tag.short { background: #ff174433; color: var(--red); }
-.tag.t3 { background: #7b2cbf33; color: #c77dff; }
-.score-circle {
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
-  border: 3px solid var(--cyan);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  font-size: 0.9rem;
-  color: var(--cyan);
-  box-shadow: 0 0 12px rgba(0,229,255,0.3);
-}
-.opt-line {
-  font-family: 'JetBrains Mono';
-  font-size: 0.85rem;
-  margin: 6px 0;
-  color: var(--text);
-}
-.opt-meta { font-size: 0.75rem; color: var(--muted); }
-.rr { font-size: 0.75rem; margin-top: 6px; color: var(--muted); }
-/* MODAL */
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.75);
-  display: none;
-  align-items: center;
-  justify-content: center;
-  z-index: 200;
-  padding: 20px;
-}
-.modal-overlay.open { display: flex; }
-.modal {
-  background: var(--panel);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  width: 100%;
-  max-width: 960px;
-  max-height: 90vh;
-  overflow-y: auto;
-  padding: 20px;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.6);
-}
-.modal h2 { font-size: 1.3rem; margin-bottom: 12px; display: flex; align-items: center; gap: 10px; }
-.close-modal {
-  position: absolute;
-  top: 14px;
-  right: 18px;
-  background: none;
-  border: none;
-  color: var(--muted);
-  font-size: 1.4rem;
-  cursor: pointer;
-}
-.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-@media (max-width: 700px) { .grid-2 { grid-template-columns: 1fr; } }
-.section-title {
-  font-size: 0.8rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--muted);
-  margin: 14px 0 8px;
-}
-.rec-box {
-  background: var(--panel2);
-  border-radius: 8px;
-  padding: 12px;
-  border-left: 3px solid var(--cyan);
-}
-.profile-chart { height: 180px; background: #0d1017; border-radius: 6px; }
-/* SETTINGS */
-.settings-panel {
-  position: fixed;
-  top: 0; right: -360px;
-  width: 340px;
-  height: 100%;
-  background: var(--panel);
-  border-left: 1px solid var(--border);
-  z-index: 150;
-  transition: right 0.25s;
-  padding: 18px;
-  overflow-y: auto;
-}
-.settings-panel.open { right: 0; }
-.form-group { margin-bottom: 14px; }
-.form-group label { display: block; font-size: 0.75rem; color: var(--muted); margin-bottom: 4px; }
-.methodology {
-  font-size: 0.78rem;
-  color: var(--muted);
-  line-height: 1.5;
-  background: #0d1017;
-  padding: 12px;
-  border-radius: 8px;
-  margin-top: 12px;
-}
-footer {
-  text-align: center;
-  padding: 16px;
-  font-size: 0.7rem;
-  color: #555;
-  border-top: 1px solid var(--border);
-}
-.hidden { display: none !important; }
-.loader {
-  display: inline-block;
-  width: 12px; height: 12px;
-  border: 2px solid var(--cyan);
-  border-top-color: transparent;
-  border-radius: 50%;
-  animation: spin 0.7s linear infinite;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
+:root{--bg:#0a0b0f;--panel:#111318;--panel2:#161a22;--border:#1e2430;--text:#e6e9f0;--muted:#8b93a7;--cyan:#00e5ff;--pika:#ffd700;--barney:#7b2cbf;--green:#00c853;--red:#ff1744;--teal:#00bfa5;--glow:0 0 20px rgba(0,229,255,0.15)}
+*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}.mono{font-family:'JetBrains Mono',monospace}
+header{display:flex;align-items:center;justify-content:space-between;padding:10px 18px;background:linear-gradient(180deg,#0d1017 0%,#0a0b0f 100%);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100}
+.logo{display:flex;align-items:center;gap:10px;font-weight:700;font-size:1.25rem;letter-spacing:-0.02em}.logo span{color:var(--cyan);text-shadow:0 0 12px rgba(0,229,255,0.5)}
+.header-controls{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.btn{background:var(--panel2);border:1px solid var(--border);color:var(--text);padding:6px 12px;border-radius:6px;font-size:0.8rem;cursor:pointer;transition:all .15s;font-family:inherit}
+.btn:hover{border-color:var(--cyan);color:var(--cyan)}.btn.primary{background:linear-gradient(135deg,#00b8d4,#00e5ff);color:#000;border:none;font-weight:600}.btn.primary:hover{filter:brightness(1.1)}.btn:disabled{opacity:.5;cursor:not-allowed}
+select,input[type=text],input[type=password]{background:var(--panel2);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:6px;font-size:0.8rem;font-family:inherit}
+.banner{background:#0d1a1f;border-bottom:1px solid #1a2a30;padding:7px 18px;font-size:0.75rem;color:var(--muted);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+.banner strong{color:var(--cyan)}.banner .live{color:var(--green)}.banner .sandbox{color:#ffab00}.banner .cboe{color:#40c4ff}.banner .demo{color:var(--pika)}
+main{display:grid;grid-template-columns:1fr;gap:0;padding:12px}@media(min-width:1200px){main{grid-template-columns:1fr 380px;gap:12px}}
+.trinity{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:10px;margin-bottom:12px}
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:10px;overflow:hidden;display:flex;flex-direction:column;max-height:620px;box-shadow:var(--glow)}
+.panel-header{padding:10px 12px;background:var(--panel2);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:5}
+.ticker{font-weight:700;font-size:1.05rem;display:flex;align-items:center;gap:8px}.price{font-family:'JetBrains Mono';font-size:0.95rem}
+.chg{font-size:0.8rem;padding:2px 6px;border-radius:4px}.chg.up{background:rgba(0,200,83,.15);color:var(--green)}.chg.down{background:rgba(255,23,68,.15);color:var(--red)}
+.king-badge{background:linear-gradient(135deg,#ffd70022,#ffd70011);border:1px solid #ffd70055;color:var(--pika);font-size:0.7rem;padding:3px 8px;border-radius:20px;font-weight:600;display:flex;align-items:center;gap:4px}
+.strikes{overflow-y:auto;flex:1;scrollbar-width:thin;scrollbar-color:#2a3140 transparent}
+.strike-row{display:grid;grid-template-columns:70px 1fr 90px;align-items:center;padding:5px 10px;font-size:0.78rem;border-bottom:1px solid #141820;cursor:pointer;transition:background .1s}
+.strike-row:hover{background:#1a2030}.strike-row.spot{background:linear-gradient(90deg,#00e5ff18,transparent);border-left:3px solid var(--cyan)}
+.strike-row.king{box-shadow:inset 0 0 0 1px #ffd70066}.strike-row.pika{background:linear-gradient(90deg,#00bfa522,transparent)}.strike-row.barney{background:linear-gradient(90deg,#7b2cbf22,transparent)}.strike-row.high{background:linear-gradient(90deg,#00e5ff15,transparent)}
+.strike{font-family:'JetBrains Mono';font-weight:600}.gex-val{text-align:right;font-family:'JetBrains Mono';font-weight:500}.gex-val.pos{color:var(--teal)}.gex-val.neg{color:#c77dff}
+.star{color:var(--pika);font-size:0.7rem}
+.right-col{display:flex;flex-direction:column;gap:12px}
+.chart-wrap{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:10px;height:340px;position:relative}
+.chart-title{font-size:0.8rem;color:var(--muted);margin-bottom:6px;display:flex;justify-content:space-between}#chart{width:100%;height:290px}
+.cards{display:flex;flex-direction:column;gap:10px;max-height:420px;overflow-y:auto}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:12px;cursor:pointer}.card:hover{border-color:var(--cyan)}
+.card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}.card-ticker{font-weight:700;font-size:1.1rem}
+.tag{font-size:0.65rem;padding:2px 7px;border-radius:4px;font-weight:600;margin-left:4px}.tag.long{background:#00c85333;color:var(--green)}.tag.short{background:#ff174433;color:var(--red)}.tag.t3{background:#7b2cbf33;color:#c77dff}
+.score-circle{width:42px;height:42px;border-radius:50%;border:3px solid var(--cyan);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.9rem;color:var(--cyan);box-shadow:0 0 12px rgba(0,229,255,.3)}
+.opt-line{font-family:'JetBrains Mono';font-size:0.85rem;margin:6px 0}.opt-meta{font-size:0.75rem;color:var(--muted)}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);display:none;align-items:center;justify-content:center;z-index:200;padding:20px}.modal-overlay.open{display:flex}
+.modal{background:var(--panel);border:1px solid var(--border);border-radius:12px;width:100%;max-width:960px;max-height:90vh;overflow-y:auto;padding:20px;box-shadow:0 20px 60px rgba(0,0,0,.6);position:relative}
+.modal h2{font-size:1.3rem;margin-bottom:12px}.close-modal{position:absolute;top:14px;right:18px;background:none;border:none;color:var(--muted);font-size:1.4rem;cursor:pointer}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}@media(max-width:700px){.grid-2{grid-template-columns:1fr}}
+.section-title{font-size:0.8rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin:14px 0 8px}
+.rec-box{background:var(--panel2);border-radius:8px;padding:12px;border-left:3px solid var(--cyan)}.profile-chart{height:180px;background:#0d1017;border-radius:6px}
+.settings-panel{position:fixed;top:0;right:-380px;width:360px;height:100%;background:var(--panel);border-left:1px solid var(--border);z-index:150;transition:right .25s;padding:18px;overflow-y:auto}.settings-panel.open{right:0}
+.form-group{margin-bottom:14px}.form-group label{display:block;font-size:0.75rem;color:var(--muted);margin-bottom:4px}
+.methodology{font-size:0.78rem;color:var(--muted);line-height:1.5;background:#0d1017;padding:12px;border-radius:8px;margin-top:12px}
+footer{text-align:center;padding:16px;font-size:0.7rem;color:#555;border-top:1px solid var(--border)}
+.hidden{display:none!important}.loader{display:inline-block;width:12px;height:12px;border:2px solid var(--cyan);border-top-color:transparent;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle}@keyframes spin{to{transform:rotate(360deg)}}
+.status-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px}.status-dot.live{background:var(--green);box-shadow:0 0 6px var(--green)}.status-dot.sandbox{background:#ffab00;box-shadow:0 0 6px #ffab00}.status-dot.cboe{background:#40c4ff}.status-dot.demo{background:var(--pika)}
+.hint{font-size:0.7rem;color:#666;margin-top:4px}
 </style>
 </head>
 <body>
 <header>
-  <div class="logo">
-    <span>◆</span> Kairos
-  </div>
+  <div class="logo"><span>◆</span> Kairos</div>
   <div class="header-controls">
-    <select id="expiryFilter">
-      <option value="all">All Expiries</option>
-      <option value="0dte">0DTE Only</option>
-      <option value="7d">≤ 7 DTE</option>
-      <option value="30d">≤ 30 DTE</option>
-    </select>
-    <select id="dealerMode">
-      <option value="standard">Dealer: Standard (Long Calls / Short Puts)</option>
-      <option value="shortall">Dealer: Short Everything</option>
-      <option value="custom">Custom %</option>
-    </select>
-    <button class="btn" id="btnSettings">Settings / Key</button>
+    <select id="expiryFilter"><option value="all">All Expiries</option><option value="0dte">0DTE Only</option><option value="7d">≤ 7 DTE</option><option value="30d">≤ 30 DTE</option></select>
+    <select id="dealerMode"><option value="standard">Dealer: Standard</option><option value="shortall">Dealer: Short Everything</option><option value="custom">Custom %</option></select>
+    <button class="btn" id="btnSettings">Settings / Token</button>
     <button class="btn primary" id="btnRefresh">Refresh <span id="refreshSpin" class="hidden loader"></span></button>
   </div>
 </header>
-
 <div class="banner" id="dataBanner">
-  <div><strong>DEMO MODE</strong> — Realistic sample data (SPXW / SPY / QQQ). Paste Finnhub key or drop CBOE CSV for live.</div>
+  <div><span class="status-dot demo"></span><strong class="demo">INITIALIZING</strong> — Checking Tradier & CBOE…</div>
   <div id="lastUpdate">Last update: —</div>
 </div>
-
 <main>
   <div>
     <div class="trinity" id="trinity"></div>
     <div class="chart-wrap">
-      <div class="chart-title">
-        <span>Node Chart — SPY (click panel to change focus)</span>
-        <span id="chartFocus">SPY</span>
-      </div>
+      <div class="chart-title"><span>Node Chart</span><span id="chartFocus">SPY</span></div>
       <div id="chart"></div>
     </div>
   </div>
-
   <div class="right-col">
-    <div style="font-size:0.75rem;color:var(--muted);margin-bottom:4px;letter-spacing:0.04em;">SURFACED FOR YOU</div>
+    <div style="font-size:0.75rem;color:var(--muted);margin-bottom:4px;letter-spacing:.04em">SURFACED FOR YOU</div>
     <div class="cards" id="cards"></div>
   </div>
 </main>
-
-<!-- DEEP ANALYSIS MODAL -->
 <div class="modal-overlay" id="modal">
-  <div class="modal" style="position:relative;">
+  <div class="modal">
     <button class="close-modal" id="closeModal">×</button>
-    <h2 id="modalTitle">SPY Deep Analysis</h2>
+    <h2 id="modalTitle">Deep Analysis</h2>
     <div class="grid-2">
       <div>
-        <div class="section-title">GEX / VEX Snapshot</div>
-        <div id="modalGexSummary"></div>
-        <div class="section-title">Gamma Profile (True Flip)</div>
-        <div class="profile-chart" id="profileChart"></div>
-        <div class="section-title">Technical Confluence</div>
-        <div id="techConfluence"></div>
+        <div class="section-title">GEX / VEX Snapshot</div><div id="modalGexSummary"></div>
+        <div class="section-title">Gamma Profile</div><div class="profile-chart" id="profileChart"></div>
+        <div class="section-title">Technical Confluence</div><div id="techConfluence"></div>
       </div>
       <div>
-        <div class="section-title">Best Options Ideas</div>
-        <div id="recs"></div>
-        <div class="section-title">Node Hierarchy</div>
-        <div id="nodeList"></div>
+        <div class="section-title">Best Options Ideas</div><div id="recs"></div>
+        <div class="section-title">Node Hierarchy</div><div id="nodeList"></div>
       </div>
     </div>
   </div>
 </div>
-
-<!-- SETTINGS -->
 <div class="settings-panel" id="settings">
-  <h3 style="margin-bottom:14px;">Kairos Settings</h3>
+  <h3 style="margin-bottom:16px">Kairos Settings</h3>
   <div class="form-group">
-    <label>Finnhub API Key (free tier)</label>
-    <input type="password" id="finnhubKey" placeholder="paste key…">
+    <label>Tradier Access Token (free brokerage account)</label>
+    <input type="password" id="tradierToken" placeholder="paste production or sandbox token…">
+    <div class="hint">Get free token at tradier.com → Account → API Access. No deposit required.</div>
+  </div>
+  <div class="form-group">
+    <label>Tradier Environment</label>
+    <select id="tradierEnv">
+      <option value="sandbox">Sandbox (15-min delayed – safe testing)</option>
+      <option value="production">Production (real-time OPRA + ORATS Greeks)</option>
+    </select>
   </div>
   <div class="form-group">
     <label>Custom Dealer Short %</label>
-    <input type="text" id="customShort" value="70" style="width:80px;"> %
+    <input type="text" id="customShort" value="70" style="width:70px"> %
   </div>
   <div class="form-group">
-    <label>Drop CBOE Delayed CSV (best gamma)</label>
-    <input type="file" id="csvFile" accept=".csv" style="font-size:0.75rem;">
+    <label>Poll interval (seconds)</label>
+    <input type="text" id="pollInterval" value="30" style="width:70px">
   </div>
-  <button class="btn primary" style="width:100%;margin-top:8px;" id="saveSettings">Save & Reload</button>
+  <button class="btn primary" style="width:100%;margin-top:8px" id="saveSettings">Save & Reload Data</button>
   <div class="methodology">
-    <strong>Methodology (transparent)</strong><br>
-    GEX = γ × OI × 100 × S² × 0.01<br>
-    Calls = +GEX (Pika), Puts = –GEX (Barney)<br>
-    Full profile: Black-Scholes γ re-priced across ±18% spot grid → true zero-gamma flip, walls, air pockets.<br>
-    VEX approximated from vanna (∂Δ/∂σ).<br>
-    Velocity: local snapshots every poll.<br>
-    Heatseeker uses proprietary inference; Kairos uses fully open + configurable assumptions so you can stress-test.
+    <strong>Data Priority (automatic)</strong><br>
+    1. <strong>Tradier</strong> (if token present) – real-time / sandbox + ORATS Greeks<br>
+    2. <strong>CBOE free delayed CDN</strong> – no key, ~15 min, real OI + gamma<br>
+    3. Demo fallback<br><br>
+    <strong>Tradier setup (2 min)</strong><br>
+    1. Open free account at tradier.com (no min)<br>
+    2. Account → API Access → create token<br>
+    3. Paste above, choose Sandbox or Production, Save<br><br>
+    Rate limit 120/min – Kairos stays well under with tiered refresh.
   </div>
 </div>
-
-<footer>
-  Kairos v1 • Free forever • Transparent GEX/VEX • Built for the trader who wants Heatseeker power without the $699 tax
-</footer>
-
+<footer>Kairos v1.2 • Tradier (preferred) + CBOE free fallback • Transparent GEX/VEX • Heatseeker-level Trinity, free forever</footer>
 <script>
-// ===================== CORE MATH =====================
-const NORM = {
-  pdf: x => Math.exp(-0.5 * x * x) / Math.sqrt(2 * Math.PI),
-  cdf: x => {
-    const t = 1 / (1 + 0.2316419 * Math.abs(x));
-    const d = 0.3989423 * Math.exp(-x * x / 2);
-    let p = d * t * (0.3193815 + t * (-0.3565638 + t * (1.781478 + t * (-1.821256 + t * 1.330274))));
-    return x > 0 ? 1 - p : p;
-  }
+const state = {
+  data: {}, focus: 'SPY', dealerMode: 'standard', customShort: 0.7, expiry: 'all', pollSec: 30,
+  tradierToken: localStorage.getItem('kairos_tradier_token') || '',
+  tradierEnv: localStorage.getItem('kairos_tradier_env') || 'sandbox',
+  source: 'demo', lastFetch: null, chart: null, series: null, expCache: {}
 };
-
-function bsGamma(S, K, T, r, q, vol) {
-  if (T <= 0 || vol <= 0 || S <= 0) return 0;
-  const d1 = (Math.log(S / K) + (r - q + 0.5 * vol * vol) * T) / (vol * Math.sqrt(T));
-  return Math.exp(-q * T) * NORM.pdf(d1) / (S * vol * Math.sqrt(T));
-}
-
-function calcGEX(gamma, oi, S, isCall, dealerMode = 'standard', customShort = 0.7) {
-  const mult = 100;
-  let raw = gamma * oi * mult * S * S * 0.01;
-  if (dealerMode === 'shortall') raw = -Math.abs(raw);
-  else if (dealerMode === 'custom') {
-    const sign = isCall ? 1 : -1;
-    raw = raw * sign * (1 - 2 * customShort);
-  } else {
-    // standard: calls positive (long gamma), puts negative
-    raw = isCall ? Math.abs(raw) : -Math.abs(raw);
-  }
-  return raw;
-}
-
-// ===================== DEMO DATA (realistic from user screenshots) =====================
 const DEMO = {
-  SPXW: {
-    spot: 7459.77,
-    chg: -1.03,
-    lastOI: '2026-07-09 EOD',
-    strikes: [
-      {k:7590,gex:144000,type:'pika'},{k:7585,gex:44300,type:'pika'},{k:7580,gex:-11200,type:'barney'},
-      {k:7575,gex:500900,type:'pika'},{k:7570,gex:214200,type:'pika'},{k:7565,gex:241100,type:'pika'},
-      {k:7560,gex:12300,type:'pika'},{k:7555,gex:117600,type:'pika'},{k:7550,gex:711800,type:'pika'},
-      {k:7545,gex:454800,type:'pika'},{k:7540,gex:122500,type:'pika'},{k:7535,gex:225300,type:'pika'},
-      {k:7530,gex:180100,type:'pika'},{k:7525,gex:-5559700,type:'barney',pct:-66,star:true},
-      {k:7520,gex:2115100,type:'pika',pct:-77},{k:7515,gex:389000,type:'pika'},
-      {k:7510,gex:30200,type:'pika',pct:-99},{k:7505,gex:358100,type:'pika',pct:-85},
-      {k:7500,gex:3654600,type:'pika',pct:-98,star:true},{k:7495,gex:335500,type:'pika'},
-      {k:7490,gex:-3190600,type:'barney'},{k:7485,gex:197200,type:'pika'},
-      {k:7480,gex:3554300,type:'pika',pct:28},{k:7475,gex:-2620300,type:'barney',pct:190},
-      {k:7470,gex:56200,type:'pika'},{k:7465,gex:452600,type:'pika'},
-      {k:7460,gex:1868200,type:'pika',pct:116,star:true},{k:7455,gex:1213100,type:'pika'},
-      {k:7450,gex:1086100,type:'pika'},{k:7445,gex:150300,type:'pika'},
-      {k:7440,gex:327600,type:'pika'},{k:7435,gex:377600,type:'pika'},
-      {k:7430,gex:802300,type:'pika'},{k:7425,gex:3101200,type:'pika',pct:105,star:true},
-      {k:7420,gex:1578200,type:'pika',pct:85},{k:7415,gex:348900,type:'pika'},
-      {k:7410,gex:97300,type:'pika'},{k:7405,gex:436600,type:'pika'},
-      {k:7400,gex:282000,type:'pika'},{k:7395,gex:1846700,type:'pika',pct:78},
-      {k:7390,gex:742800,type:'pika'},{k:7385,gex:450700,type:'pika'},
-      {k:7380,gex:345900,type:'pika'},{k:7375,gex:240700,type:'pika'}
-    ]
-  },
-  SPY: {
-    spot: 742.98,
-    chg: -1.10,
-    lastOI: '2026-07-09 EOD',
-    strikes: [
-      {k:757,gex:800900,type:'barney'},{k:756,gex:788400,type:'barney'},{k:755,gex:807400,type:'barney'},
-      {k:754,gex:549800,type:'barney'},{k:753,gex:2609100,type:'barney'},{k:752,gex:10808000,type:'barney'},
-      {k:751,gex:10316900,type:'barney'},{k:750,gex:5108600,type:'barney'},{k:749,gex:13787500,type:'barney'},
-      {k:748,gex:13410900,type:'barney'},{k:747,gex:3221900,type:'barney'},{k:746,gex:12734700,type:'barney'},
-      {k:745,gex:9489800,type:'barney'},{k:744,gex:29208100,type:'barney',star:true},
-      {k:743,gex:1697200,type:'pika',star:true},{k:742,gex:22062500,type:'pika'},
-      {k:741,gex:14409600,type:'pika'},{k:740,gex:13317400,type:'pika'},
-      {k:739,gex:2307900,type:'pika'},{k:738,gex:-1912700,type:'barney'},
-      {k:737,gex:6288800,type:'pika'},{k:736,gex:8241800,type:'pika'},
-      {k:735,gex:5274900,type:'pika'},{k:734,gex:5683600,type:'pika'},
-      {k:733,gex:2115100,type:'pika'},{k:732,gex:511700,type:'pika'},
-      {k:731,gex:250900,type:'pika'},{k:730,gex:1501700,type:'pika'},
-      {k:729,gex:3400,type:'pika'},{k:728,gex:-153100,type:'barney'},
-      {k:727,gex:-411600,type:'barney'},{k:726,gex:19500,type:'pika'},
-      {k:725,gex:-2211800,type:'barney'},{k:724,gex:18800,type:'pika'},
-      {k:723,gex:-56000,type:'barney'},{k:722,gex:-89000,type:'barney'},
-      {k:721,gex:-14500,type:'barney'},{k:720,gex:-14100,type:'barney'},
-      {k:719,gex:60200,type:'pika'},{k:718,gex:68500,type:'pika'},
-      {k:717,gex:-8700,type:'barney'},{k:716,gex:113100,type:'pika'},
-      {k:715,gex:158600,type:'pika'},{k:714,gex:100800,type:'pika'}
-    ]
-  },
-  QQQ: {
-    spot: 705.95,
-    chg: -2.33,
-    lastOI: '2026-07-09 EOD',
-    strikes: [
-      {k:712,gex:4279700,type:'pika'},{k:711,gex:690200,type:'pika'},{k:710,gex:2833800,type:'pika'},
-      {k:709,gex:7421900,type:'pika'},{k:708,gex:60200,type:'pika'},{k:707,gex:3610900,type:'pika'},
-      {k:706,gex:1760300,type:'pika',star:true},{k:705,gex:6417300,type:'pika'},
-      {k:704,gex:818400,type:'pika'},{k:703,gex:4389000,type:'pika'},
-      {k:702,gex:7305600,type:'pika'},{k:701,gex:2901200,type:'pika'},
-      {k:700,gex:3767900,type:'pika'},{k:699,gex:-11726800,type:'barney',star:true},
-      {k:698,gex:2173800,type:'pika'},{k:697,gex:1047700,type:'pika'},
-      {k:696,gex:511300,type:'pika'},{k:695,gex:3492600,type:'pika'},
-      {k:694,gex:2704200,type:'pika'},{k:693,gex:-70200,type:'barney'},
-      {k:692,gex:753700,type:'pika'},{k:691,gex:2739200,type:'pika'},
-      {k:690,gex:3977600,type:'pika'},{k:689,gex:56800,type:'pika'},
-      {k:688,gex:146500,type:'pika'},{k:687,gex:-4000,type:'barney'},
-      {k:686,gex:407700,type:'pika'},{k:685,gex:2377700,type:'pika'},
-      {k:684,gex:12900,type:'pika'},{k:683,gex:133600,type:'pika'},
-      {k:682,gex:-75300,type:'barney'},{k:681,gex:67700,type:'pika'},
-      {k:680,gex:84700,type:'pika'},{k:679,gex:-47100,type:'barney'},
-      {k:678,gex:-23800,type:'barney'},{k:677,gex:-112900,type:'barney'},
-      {k:676,gex:37700,type:'pika'},{k:675,gex:-53600,type:'barney'},
-      {k:674,gex:-25400,type:'barney'},{k:673,gex:26900,type:'pika'},
-      {k:672,gex:161100,type:'pika'},{k:671,gex:4700,type:'pika'},
-      {k:670,gex:8800,type:'pika'}
-    ]
+  SPXW: { spot: 7459.77, chg: -1.03, lastOI: 'demo', source: 'demo', strikes: [
+    {k:7590,gex:144000},{k:7585,gex:44300},{k:7580,gex:-11200},{k:7575,gex:500900},{k:7570,gex:214200},{k:7565,gex:241100},{k:7560,gex:12300},{k:7555,gex:117600},
+    {k:7550,gex:711800},{k:7545,gex:454800},{k:7540,gex:122500},{k:7535,gex:225300},{k:7530,gex:180100},{k:7525,gex:-5559700,star:true},{k:7520,gex:2115100},
+    {k:7515,gex:389000},{k:7510,gex:30200},{k:7505,gex:358100},{k:7500,gex:3654600,star:true},{k:7495,gex:335500},{k:7490,gex:-3190600},{k:7485,gex:197200},{k:7480,gex:3554300},
+    {k:7475,gex:-2620300},{k:7470,gex:56200},{k:7465,gex:452600},{k:7460,gex:1868200,star:true},{k:7455,gex:1213100},{k:7450,gex:1086100},{k:7445,gex:150300},{k:7440,gex:327600},
+    {k:7435,gex:377600},{k:7430,gex:802300},{k:7425,gex:3101200,star:true},{k:7420,gex:1578200},{k:7415,gex:348900},{k:7410,gex:97300},{k:7405,gex:436600},{k:7400,gex:282000},
+    {k:7395,gex:1846700},{k:7390,gex:742800},{k:7385,gex:450700},{k:7380,gex:345900},{k:7375,gex:240700}
+  ]},
+  SPY: { spot: 742.98, chg: -1.10, lastOI: 'demo', source: 'demo', strikes: [
+    {k:757,gex:800900},{k:756,gex:788400},{k:755,gex:807400},{k:754,gex:549800},{k:753,gex:2609100},{k:752,gex:10808000},{k:751,gex:10316900},{k:750,gex:5108600},
+    {k:749,gex:13787500},{k:748,gex:13410900},{k:747,gex:3221900},{k:746,gex:12734700},{k:745,gex:9489800},{k:744,gex:29208100,star:true},{k:743,gex:1697200,star:true},
+    {k:742,gex:22062500},{k:741,gex:14409600},{k:740,gex:13317400},{k:739,gex:2307900},{k:738,gex:-1912700},{k:737,gex:6288800},{k:736,gex:8241800},{k:735,gex:5274900},
+    {k:734,gex:5683600},{k:733,gex:2115100},{k:732,gex:511700},{k:731,gex:250900},{k:730,gex:1501700},{k:729,gex:3400},{k:728,gex:-153100},{k:727,gex:-411600},
+    {k:726,gex:19500},{k:725,gex:-2211800},{k:724,gex:18800},{k:723,gex:-56000},{k:722,gex:-89000},{k:721,gex:-14500},{k:720,gex:-14100},{k:719,gex:60200},
+    {k:718,gex:68500},{k:717,gex:-8700},{k:716,gex:113100},{k:715,gex:158600},{k:714,gex:100800}
+  ]},
+  QQQ: { spot: 705.95, chg: -2.33, lastOI: 'demo', source: 'demo', strikes: [
+    {k:712,gex:4279700},{k:711,gex:690200},{k:710,gex:2833800},{k:709,gex:7421900},{k:708,gex:60200},{k:707,gex:3610900},{k:706,gex:1760300,star:true},{k:705,gex:6417300},
+    {k:704,gex:818400},{k:703,gex:4389000},{k:702,gex:7305600},{k:701,gex:2901200},{k:700,gex:3767900},{k:699,gex:-11726800,star:true},{k:698,gex:2173800},
+    {k:697,gex:1047700},{k:696,gex:511300},{k:695,gex:3492600},{k:694,gex:2704200},{k:693,gex:-70200},{k:692,gex:753700},{k:691,gex:2739200},{k:690,gex:3977600},
+    {k:689,gex:56800},{k:688,gex:146500},{k:687,gex:-4000},{k:686,gex:407700},{k:685,gex:2377700},{k:684,gex:12900},{k:683,gex:133600},{k:682,gex:-75300},
+    {k:681,gex:67700},{k:680,gex:84700},{k:679,gex:-47100},{k:678,gex:-23800},{k:677,gex:-112900},{k:676,gex:37700},{k:675,gex:-53600},{k:674,gex:-25400},
+    {k:673,gex:26900},{k:672,gex:161100},{k:671,gex:4700},{k:670,gex:8800}
+  ]}
+};
+function formatGEX(v){const a=Math.abs(v);if(a>=1e9)return(v/1e9).toFixed(2)+'B';if(a>=1e6)return(v/1e6).toFixed(1)+'M';if(a>=1e3)return(v/1e3).toFixed(1)+'K';return Math.round(v).toString()}
+function findKing(s){let m=0,k=null;(s||[]).forEach(x=>{if(Math.abs(x.gex)>m){m=Math.abs(x.gex);k=x}});return k}
+function tradierBase(){return state.tradierEnv==='production'?'https://api.tradier.com/v1':'https://sandbox.tradier.com/v1'}
+function tradierHeaders(){return{'Authorization':'Bearer '+state.tradierToken,'Accept':'application/json'}}
+async function tradierFetch(path){
+  const res=await fetch(tradierBase()+path,{headers:tradierHeaders(),cache:'no-store'});
+  if(!res.ok){const t=await res.text();throw new Error('Tradier '+res.status+': '+t.slice(0,100))}
+  return res.json();
+}
+async function getExpirations(sym){
+  const under=(sym==='SPXW'||sym==='SPX')?'SPX':sym;
+  if(state.expCache[under]&&Date.now()-state.expCache[under].ts<3600000)return state.expCache[under].dates;
+  const json=await tradierFetch('/markets/options/expirations?symbol='+under+'&includeAllRoots=true');
+  const dates=(json.expirations&&json.expirations.date)?json.expirations.date:[];
+  state.expCache[under]={dates,ts:Date.now()};
+  return dates;
+}
+async function fetchTradierChain(displaySym){
+  const under=(displaySym==='SPXW'||displaySym==='SPX')?'SPX':displaySym;
+  const dates=await getExpirations(displaySym);
+  if(!dates.length)throw new Error('No expirations');
+  const today=new Date().toISOString().slice(0,10);
+  const near=dates.filter(d=>d>=today).slice(0,7);
+  const allOptions=[];
+  let spot=0;
+  for(const exp of near){
+    try{
+      const json=await tradierFetch('/markets/options/chains?symbol='+under+'&expiration='+exp+'&greeks=true');
+      const opts=(json.options&&json.options.option)?json.options.option:[];
+      if(Array.isArray(opts))allOptions.push(...opts);else if(opts)allOptions.push(opts);
+    }catch(e){console.warn('Tradier chain',exp,e.message)}
   }
-};
-
-// ===================== STATE =====================
-let state = {
-  data: JSON.parse(JSON.stringify(DEMO)),
-  focus: 'SPY',
-  dealerMode: 'standard',
-  customShort: 0.7,
-  expiry: 'all',
-  finnhubKey: localStorage.getItem('kairos_finnhub') || '',
-  snapshots: {},
-  chart: null,
-  series: null
-};
-
-// ===================== RENDER TRINITY =====================
-function formatGEX(v) {
-  const abs = Math.abs(v);
-  if (abs >= 1e9) return (v/1e9).toFixed(1) + 'B';
-  if (abs >= 1e6) return (v/1e6).toFixed(1) + 'M';
-  if (abs >= 1e3) return (v/1e3).toFixed(1) + 'K';
-  return v.toFixed(0);
-}
-
-function findKing(strikes) {
-  let max = 0, king = null;
-  strikes.forEach(s => {
-    if (Math.abs(s.gex) > max) { max = Math.abs(s.gex); king = s; }
+  try{
+    const q=await tradierFetch('/markets/quotes?symbols='+under);
+    const quote=q.quotes&&q.quotes.quote;
+    if(quote)spot=+(quote.last||quote.close||0);
+  }catch(e){}
+  if(!spot&&allOptions.length)spot=+(allOptions[0].underlying||allOptions[0].strike||0);
+  const byStrike={};
+  allOptions.forEach(o=>{
+    const strike=+(o.strike||0);const oi=+(o.open_interest||0);const greeks=o.greeks||{};const gamma=+(greeks.gamma||0);
+    const isCall=(o.option_type||'').toLowerCase()==='call'||(o.symbol||'').includes('C');
+    if(!strike||oi===0)return;
+    let gex=gamma*oi*100*spot*spot*0.01;
+    if(!isCall)gex=-Math.abs(gex);else gex=Math.abs(gex);
+    const key=Math.round(strike*100)/100;
+    if(!byStrike[key])byStrike[key]={k:key,gex:0,oi:0};
+    byStrike[key].gex+=gex;byStrike[key].oi+=oi;
   });
-  return king;
+  let strikes=Object.values(byStrike).filter(s=>Math.abs(s.gex)>500).sort((a,b)=>b.k-a.k);
+  if(state.dealerMode==='shortall')strikes.forEach(s=>s.gex=-Math.abs(s.gex));
+  else if(state.dealerMode==='custom')strikes.forEach(s=>s.gex=s.gex*(1-2*state.customShort));
+  const sortedAbs=[...strikes].sort((a,b)=>Math.abs(b.gex)-Math.abs(a.gex));const king=sortedAbs[0];
+  strikes.forEach(s=>{s.type=s.gex>=0?'pika':'barney';s.star=s===king||(king&&Math.abs(s.gex)>Math.abs(king.gex)*0.55)});
+  const range=(displaySym==='SPXW'||displaySym==='SPX')?300:50;
+  strikes=strikes.filter(s=>Math.abs(s.k-spot)<range);
+  return{spot,chg:0,lastOI:new Date().toISOString(),source:state.tradierEnv==='production'?'tradier-live':'tradier-sandbox',strikes,rawCount:allOptions.length};
 }
-
-function renderTrinity() {
-  const el = document.getElementById('trinity');
-  el.innerHTML = '';
-  ['SPXW','SPY','QQQ'].forEach(sym => {
-    const d = state.data[sym];
-    if (!d) return;
-    const king = findKing(d.strikes);
-    const panel = document.createElement('div');
-    panel.className = 'panel';
-    panel.innerHTML = `
-      <div class="panel-header">
-        <div>
-          <div class="ticker">${sym} <span class="price mono">$${d.spot.toFixed(2)}</span>
-            <span class="chg ${d.chg>=0?'up':'down'}">${d.chg>=0?'+':''}${d.chg.toFixed(2)}%</span>
-          </div>
-        </div>
-        <div class="king-badge">★ King ${king ? formatGEX(king.gex) : '—'} ${king && king.gex>0?'↑':'↓'}</div>
-      </div>
-      <div class="strikes" id="strikes-${sym}"></div>
-    `;
+async function fetchCBOE(displaySym){
+  let cboeSym=displaySym;if(displaySym==='SPX'||displaySym==='SPXW')cboeSym='_SPX';if(displaySym==='VIX')cboeSym='_VIX';
+  const url='https://cdn.cboe.com/api/global/delayed_quotes/options/'+cboeSym+'.json';
+  const proxies=[url,'https://api.allorigins.win/raw?url='+encodeURIComponent(url),'https://corsproxy.io/?'+encodeURIComponent(url)];
+  let json=null;
+  for(const u of proxies){
+    try{const c=new AbortController();const t=setTimeout(()=>c.abort(),10000);const res=await fetch(u,{signal:c.signal,cache:'no-store'});clearTimeout(t);if(!res.ok)continue;json=await res.json();break}catch(e){}
+  }
+  if(!json)throw new Error('CBOE unreachable');
+  const data=json.data||json;const options=data.options||[];const spot=+(data.current_price||data.currentPrice||0);const ts=json.timestamp||new Date().toISOString();
+  const byStrike={};
+  options.forEach(opt=>{
+    let strike=+(opt.strike||0);let oi=+(opt.open_interest||opt.openInterest||0);let gamma=+(opt.gamma||0);let isCall=true;
+    if(!strike&&opt.option){const m=String(opt.option).match(/(\d{6})([CP])(\d{8})$/);if(m){strike=parseInt(m[3],10)/1000;isCall=m[2]==='C'}}
+    if(String(opt.option||'').includes('P')||opt.call_put==='P')isCall=false;
+    if(!strike||oi===0)return;
+    let gex=gamma*oi*100*spot*spot*0.01;if(!isCall)gex=-Math.abs(gex);else gex=Math.abs(gex);
+    const key=Math.round(strike*100)/100;if(!byStrike[key])byStrike[key]={k:key,gex:0,oi:0};byStrike[key].gex+=gex;byStrike[key].oi+=oi;
+  });
+  let strikes=Object.values(byStrike).filter(s=>Math.abs(s.gex)>1000).sort((a,b)=>b.k-a.k);
+  if(state.dealerMode==='shortall')strikes.forEach(s=>s.gex=-Math.abs(s.gex));
+  else if(state.dealerMode==='custom')strikes.forEach(s=>s.gex=s.gex*(1-2*state.customShort));
+  const sortedAbs=[...strikes].sort((a,b)=>Math.abs(b.gex)-Math.abs(a.gex));const king=sortedAbs[0];
+  strikes.forEach(s=>{s.type=s.gex>=0?'pika':'barney';s.star=s===king||(king&&Math.abs(s.gex)>Math.abs(king.gex)*0.55)});
+  const range=(displaySym==='SPXW'||displaySym==='SPX')?300:50;strikes=strikes.filter(s=>Math.abs(s.k-spot)<range);
+  return{spot,chg:0,lastOI:ts,source:'cboe',strikes,rawCount:options.length};
+}
+async function fetchSymbol(displaySym){
+  if(state.tradierToken&&state.tradierToken.length>10){
+    try{const data=await fetchTradierChain(displaySym);console.log('✓ '+displaySym+' from Tradier ('+state.tradierEnv+') — '+data.strikes.length+' strikes');return data}
+    catch(e){console.warn('Tradier failed for '+displaySym+':',e.message)}
+  }
+  try{const data=await fetchCBOE(displaySym);console.log('✓ '+displaySym+' from CBOE delayed — '+data.strikes.length+' strikes');return data}
+  catch(e){console.warn('CBOE failed for '+displaySym+':',e.message)}
+  return{...DEMO[displaySym],source:'demo'};
+}
+function renderTrinity(){
+  const el=document.getElementById('trinity');el.innerHTML='';
+  ['SPXW','SPY','QQQ'].forEach(sym=>{
+    const d=state.data[sym]||DEMO[sym];if(!d)return;const king=findKing(d.strikes);
+    const srcLabel={'tradier-live':'<span style="color:var(--green)">● Tradier Live</span>','tradier-sandbox':'<span style="color:#ffab00">● Tradier Sandbox</span>','cboe':'<span style="color:#40c4ff">● CBOE Delayed</span>','demo':'<span style="color:var(--pika)">● Demo</span>'}[d.source]||d.source;
+    const panel=document.createElement('div');panel.className='panel';
+    panel.innerHTML=`<div class="panel-header"><div><div class="ticker">${sym} <span class="price mono">$${(d.spot||0).toFixed(2)}</span></div><div style="font-size:0.65rem;color:var(--muted);margin-top:2px">${srcLabel} · ${d.rawCount||d.strikes.length} contracts</div></div><div class="king-badge">★ King ${king?formatGEX(king.gex):'—'} ${king&&king.gex>0?'↑':'↓'}</div></div><div class="strikes"></div>`;
     el.appendChild(panel);
-
-    const list = panel.querySelector('.strikes');
-    d.strikes.forEach(s => {
-      const row = document.createElement('div');
-      row.className = 'strike-row';
-      if (Math.abs(s.k - d.spot) < (sym==='SPXW'?3:0.6)) row.classList.add('spot');
-      if (s === king) row.classList.add('king');
-      if (s.type === 'pika') row.classList.add('pika');
-      if (s.type === 'barney') row.classList.add('barney');
-      if (Math.abs(s.gex) > 5e6) row.classList.add('high');
-
-      let badges = '';
-      if (s.pct) badges += `<span class="badge ${s.pct>0?'up':'down'}">${s.pct>0?'+':''}${s.pct}%</span>`;
-      if (s.star) badges += `<span class="star">★</span>`;
-
-      row.innerHTML = `
-        <div class="strike">${s.k}</div>
-        <div>${badges}</div>
-        <div class="gex-val ${s.gex>=0?'pos':'neg'}">${formatGEX(s.gex)}</div>
-      `;
-      row.onclick = () => openDeep(sym, s.k);
-      list.appendChild(row);
+    const list=panel.querySelector('.strikes');
+    (d.strikes||[]).forEach(s=>{
+      const row=document.createElement('div');row.className='strike-row';
+      const tol=(sym==='SPXW'||sym==='SPX')?5:0.8;if(Math.abs(s.k-d.spot)<tol)row.classList.add('spot');
+      if(s===king)row.classList.add('king');if(s.type==='pika')row.classList.add('pika');if(s.type==='barney')row.classList.add('barney');if(Math.abs(s.gex)>5e6)row.classList.add('high');
+      row.innerHTML=`<div class="strike">${s.k}</div><div>${s.star?'<span class="star">★</span>':''}</div><div class="gex-val ${s.gex>=0?'pos':'neg'}">${formatGEX(s.gex)}</div>`;
+      row.onclick=()=>openDeep(sym);list.appendChild(row);
     });
   });
 }
-
-// ===================== CHART =====================
-function initChart() {
-  const container = document.getElementById('chart');
-  state.chart = LightweightCharts.createChart(container, {
-    layout: { background: { color: '#0a0b0f' }, textColor: '#8b93a7' },
-    grid: { vertLines: { color: '#141820' }, horzLines: { color: '#141820' } },
-    width: container.clientWidth,
-    height: 290,
-    timeScale: { timeVisible: true, secondsVisible: false },
-    rightPriceScale: { borderColor: '#1e2430' }
+function renderCards(){
+  const el=document.getElementById('cards');el.innerHTML='';
+  const ideas=[];
+  ['SPY','QQQ','SPXW'].forEach(sym=>{
+    const d=state.data[sym]||DEMO[sym];if(!d||!d.strikes.length)return;const king=findKing(d.strikes);if(!king)return;
+    const bias=(king.gex>0&&d.spot<=king.k+3)?'LONG':'SHORT';const score=Math.min(94,62+Math.round(Math.abs(king.gex)/2e6));
+    ideas.push({sym,bias,score,tag:Math.abs(king.gex)>8e6?'King':'Node',contract:`${sym} ${Math.round(king.k)}${bias==='LONG'?'C':'P'}`,note:`King ${king.k} (${formatGEX(king.gex)}) · ${d.source}`});
   });
-  state.series = state.chart.addCandlestickSeries({
-    upColor: '#00c853', downColor: '#ff1744',
-    borderUpColor: '#00c853', borderDownColor: '#ff1744',
-    wickUpColor: '#00c853', wickDownColor: '#ff1744'
-  });
-
-  // Demo candles for SPY around 743
-  const base = 742.5;
-  const candles = [];
-  let t = Math.floor(Date.now()/1000) - 3600*6;
-  let p = base;
-  for (let i=0;i<90;i++) {
-    const o = p;
-    const c = p + (Math.random()-0.48)*1.2;
-    const h = Math.max(o,c) + Math.random()*0.6;
-    const l = Math.min(o,c) - Math.random()*0.6;
-    candles.push({time: t, open:o, high:h, low:l, close:c});
-    p = c; t += 240;
-  }
-  state.series.setData(candles);
-
-  // Draw nodes as price lines
-  drawNodes('SPY');
-  window.addEventListener('resize', () => state.chart.applyOptions({ width: container.clientWidth }));
-}
-
-function drawNodes(sym) {
-  if (!state.series) return;
-  // clear previous lines is hard in lightweight-charts; for v1 we re-create simple markers
-  const d = state.data[sym];
-  if (!d) return;
-  const king = findKing(d.strikes);
-  // We use price lines for key levels
-  // (Lightweight Charts price lines)
-  // For simplicity in v1 we just log them; full interactive lines can be added later
-  document.getElementById('chartFocus').textContent = sym + '  |  King ' + (king?king.k:'—');
-}
-
-// ===================== CARDS =====================
-function renderCards() {
-  const el = document.getElementById('cards');
-  el.innerHTML = '';
-  const ideas = [
-    {sym:'SPY', bias:'LONG', score:84, tag:'T3', contract:'SPY 745C 07/11 1DTE', price:1.82, max: '+312%', now:'+87%', rr:'1:3.4', note:'King support + VEX alignment'},
-    {sym:'QQQ', bias:'SHORT', score:71, tag:'Node', contract:'QQQ 700P 07/17', price:3.15, max:'+190%', now:'+42%', rr:'1:2.8', note:'Barney cluster + air pocket below'},
-    {sym:'META', bias:'LONG', score:78, tag:'T3', contract:'META 600C 07/10 15d', price:2.46, max:'+1315%', now:'+831%', rr:'1:3.8', note:'Midas node flip + technical bounce'},
-    {sym:'NVDA', bias:'LONG', score:69, tag:'King', contract:'NVDA 145C 07/18', price:4.10, max:'+210%', now:'+55%', rr:'1:2.5', note:'Fresh King + volume profile support'}
-  ];
-  ideas.forEach(i => {
-    const c = document.createElement('div');
-    c.className = 'card';
-    c.innerHTML = `
-      <div class="card-header">
-        <div>
-          <span class="card-ticker">${i.sym}</span>
-          <span class="tag ${i.bias.toLowerCase()}">${i.bias}</span>
-          <span class="tag t3">${i.tag}</span>
-        </div>
-        <div class="score-circle">${i.score}</div>
-      </div>
-      <div class="opt-line">${i.contract} @ ${i.price}</div>
-      <div class="opt-meta">max ${i.max} · now ${i.now}</div>
-      <div class="rr">R:R ${i.rr} · ${i.note}</div>
-    `;
-    c.onclick = () => openDeep(i.sym);
-    el.appendChild(c);
+  ideas.push({sym:'META',bias:'LONG',score:76,tag:'T3',contract:'META near ATM C',note:'Watching structure'});
+  ideas.push({sym:'NVDA',bias:'LONG',score:70,tag:'King',contract:'NVDA near ATM C',note:'High abs GEX'});
+  ideas.slice(0,5).forEach(i=>{
+    const c=document.createElement('div');c.className='card';
+    c.innerHTML=`<div class="card-header"><div><span class="card-ticker">${i.sym}</span><span class="tag ${i.bias.toLowerCase()}">${i.bias}</span><span class="tag t3">${i.tag}</span></div><div class="score-circle">${i.score}</div></div><div class="opt-line">${i.contract}</div><div class="opt-meta">${i.note}</div>`;
+    c.onclick=()=>openDeep(i.sym);el.appendChild(c);
   });
 }
-
-// ===================== DEEP ANALYSIS =====================
-function openDeep(sym, strike=null) {
-  const d = state.data[sym] || state.data.SPY;
-  document.getElementById('modalTitle').textContent = `${sym} Deep Analysis`;
-  const king = findKing(d.strikes);
-  const flip = d.strikes.reduce((a,b) => Math.abs(a.gex)<Math.abs(b.gex)?a:b); // simplistic
-
-  document.getElementById('modalGexSummary').innerHTML = `
-    <div style="font-size:0.9rem;line-height:1.6;">
-      <div>Spot: <strong class="mono">$${d.spot.toFixed(2)}</strong></div>
-      <div>King Node: <strong style="color:var(--pika)">${king?king.k: '—'}</strong> (${king?formatGEX(king.gex):'—'})</div>
-      <div>Net GEX (approx): <strong>${formatGEX(d.strikes.reduce((s,x)=>s+x.gex,0))}</strong></div>
-      <div style="margin-top:6px;color:var(--muted);font-size:0.8rem;">OI as of ${d.lastOI} · Full profile re-priced with live mids</div>
-    </div>
-  `;
-
-  // Simple profile viz
-  const prof = document.getElementById('profileChart');
-  prof.innerHTML = `<canvas id="profCanvas" width="400" height="160" style="width:100%;height:160px;"></canvas>`;
-  const ctx = document.getElementById('profCanvas').getContext('2d');
-  ctx.fillStyle = '#0d1017'; ctx.fillRect(0,0,400,160);
-  // crude profile bars
-  const sorted = [...d.strikes].sort((a,b)=>a.k-b.k);
-  const maxAbs = Math.max(...sorted.map(s=>Math.abs(s.gex))) || 1;
-  sorted.forEach((s,i) => {
-    const x = (i / sorted.length) * 400;
-    const h = (Math.abs(s.gex) / maxAbs) * 70;
-    ctx.fillStyle = s.gex >= 0 ? '#00bfa5' : '#7b2cbf';
-    ctx.fillRect(x, 80 - (s.gex>=0?h:0), 400/sorted.length - 1, h);
-  });
-  ctx.strokeStyle = '#00e5ff'; ctx.beginPath(); ctx.moveTo(0,80); ctx.lineTo(400,80); ctx.stroke();
-
-  document.getElementById('techConfluence').innerHTML = `
-    <div style="font-size:0.85rem;line-height:1.7;">
-      VWAP: <span class="mono">$${(d.spot*0.998).toFixed(2)}</span> (price above → bullish bias)<br>
-      EMA 9/21: stacked bullish<br>
-      RSI(14): 48 (neutral)<br>
-      Session High / Low: ${ (d.spot*1.008).toFixed(2) } / ${ (d.spot*0.991).toFixed(2) }<br>
-      Volume Profile: high node near ${king?king.k:d.spot.toFixed(0)}
-    </div>
-  `;
-
-  // Recs
-  const isBull = king && king.gex > 0 && d.spot < king.k;
-  document.getElementById('recs').innerHTML = `
-    <div class="rec-box">
-      <div style="font-weight:600;margin-bottom:4px;">Short-term (0–2 DTE)</div>
-      <div class="opt-line">${sym} ${isBull ? Math.ceil(d.spot)+'C' : Math.floor(d.spot)+'P'} next expiry</div>
-      <div class="opt-meta">Confidence 78 · R:R ~1:2.8 · Max risk defined</div>
-    </div>
-    <div class="rec-box" style="margin-top:10px;border-left-color:var(--pika);">
-      <div style="font-weight:600;margin-bottom:4px;">Swing (7–45 DTE)</div>
-      <div class="opt-line">${sym} ${isBull ? Math.ceil(d.spot*1.02)+'C' : Math.floor(d.spot*0.97)+'P'} ~21 DTE</div>
-      <div class="opt-meta">Confidence 71 · R:R ~1:3.1 · Aligns with King + technicals</div>
-    </div>
-  `;
-
-  // Nodes
-  const topNodes = [...d.strikes].sort((a,b)=>Math.abs(b.gex)-Math.abs(a.gex)).slice(0,8);
-  document.getElementById('nodeList').innerHTML = topNodes.map((n,i) =>
-    `<div style="font-size:0.8rem;padding:4px 0;border-bottom:1px solid #1a2030;">
-      ${i===0?'★ King':i<3?'Gatekeeper':'Node'} ${n.k} — <span class="${n.gex>=0?'pos':'neg'}" style="color:${n.gex>=0?'var(--teal)':'#c77dff'}">${formatGEX(n.gex)}</span>
-    </div>`
-  ).join('');
-
+function openDeep(sym){
+  const d=state.data[sym]||DEMO[sym]||DEMO.SPY;document.getElementById('modalTitle').textContent=sym+' Deep Analysis';
+  const king=findKing(d.strikes);
+  document.getElementById('modalGexSummary').innerHTML=`<div style="font-size:0.9rem;line-height:1.65"><div>Spot: <strong class="mono">$${(d.spot||0).toFixed(2)}</strong></div><div>King: <strong style="color:var(--pika)">${king?king.k:'—'}</strong> (${king?formatGEX(king.gex):'—'})</div><div>Net GEX: <strong>${formatGEX((d.strikes||[]).reduce((s,x)=>s+x.gex,0))}</strong></div><div style="margin-top:6px;color:var(--muted);font-size:0.8rem">Source: <strong>${d.source}</strong> · ${d.lastOI||'—'}</div></div>`;
+  const prof=document.getElementById('profileChart');prof.innerHTML=`<canvas id="profCanvas" width="400" height="160" style="width:100%;height:160px"></canvas>`;
+  const ctx=document.getElementById('profCanvas').getContext('2d');ctx.fillStyle='#0d1017';ctx.fillRect(0,0,400,160);
+  const sorted=[...(d.strikes||[])].sort((a,b)=>a.k-b.k);const maxAbs=Math.max(...sorted.map(s=>Math.abs(s.gex)),1);
+  sorted.forEach((s,i)=>{const x=(i/Math.max(sorted.length-1,1))*390+5;const h=(Math.abs(s.gex)/maxAbs)*70;ctx.fillStyle=s.gex>=0?'#00bfa5':'#7b2cbf';ctx.fillRect(x,80-(s.gex>=0?h:0),Math.max(2,390/sorted.length-1),h)});
+  ctx.strokeStyle='#00e5ff';ctx.beginPath();ctx.moveTo(0,80);ctx.lineTo(400,80);ctx.stroke();
+  document.getElementById('techConfluence').innerHTML=`<div style="font-size:0.85rem;line-height:1.7">King node acts as primary magnet / wall<br>${king?`Price is ${d.spot<king.k?'below':'above'} King → ${d.spot<king.k?'support bias':'resistance bias'}`:''}<br>Use with your own technicals (VWAP, EMAs, volume profile)</div>`;
+  const isBull=king&&king.gex>0&&d.spot<=king.k+5;
+  document.getElementById('recs').innerHTML=`<div class="rec-box"><div style="font-weight:600;margin-bottom:4px">Short-term (0–2 DTE)</div><div class="opt-line">${sym} ${isBull?Math.ceil(d.spot)+'C':Math.floor(d.spot)+'P'} nearest</div><div class="opt-meta">Confidence ~74 · Structural alignment</div></div><div class="rec-box" style="margin-top:10px;border-left-color:var(--pika)"><div style="font-weight:600;margin-bottom:4px">Swing (7–45 DTE)</div><div class="opt-line">${sym} near ${king?king.k:Math.round(d.spot)} ${isBull?'C':'P'}</div><div class="opt-meta">Confidence ~69 · Node + technical confluence</div></div>`;
+  const top=[...(d.strikes||[])].sort((a,b)=>Math.abs(b.gex)-Math.abs(a.gex)).slice(0,8);
+  document.getElementById('nodeList').innerHTML=top.map((n,i)=>`<div style="font-size:0.8rem;padding:4px 0;border-bottom:1px solid #1a2030">${i===0?'★ King':i<3?'Gatekeeper':'Node'} ${n.k} — <span style="color:${n.gex>=0?'var(--teal)':'#c77dff'}">${formatGEX(n.gex)}</span></div>`).join('')||'<div style="color:var(--muted)">No nodes</div>';
   document.getElementById('modal').classList.add('open');
 }
-
-// ===================== EVENTS =====================
-document.getElementById('closeModal').onclick = () => document.getElementById('modal').classList.remove('open');
-document.getElementById('btnSettings').onclick = () => document.getElementById('settings').classList.toggle('open');
-document.getElementById('saveSettings').onclick = () => {
-  const key = document.getElementById('finnhubKey').value.trim();
-  if (key) {
-    localStorage.setItem('kairos_finnhub', key);
-    state.finnhubKey = key;
-    document.getElementById('dataBanner').innerHTML = `<div><strong>LIVE MODE</strong> — Finnhub key saved. Polling every 45s (free tier limits apply).</div><div id="lastUpdate">Last update: just now</div>`;
-  }
-  state.dealerMode = document.getElementById('dealerMode').value;
-  state.customShort = parseFloat(document.getElementById('customShort').value)/100 || 0.7;
-  document.getElementById('settings').classList.remove('open');
-  refresh();
-};
-document.getElementById('btnRefresh').onclick = refresh;
-document.getElementById('expiryFilter').onchange = e => { state.expiry = e.target.value; refresh(); };
-document.getElementById('dealerMode').onchange = e => { state.dealerMode = e.target.value; refresh(); };
-
-document.getElementById('csvFile').onchange = e => {
-  const file = e.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = ev => {
-    // Very basic CBOE CSV parser stub — real parser would map columns
-    alert('CBOE CSV loaded (demo). Full column mapping ready for production use. Using enhanced demo for now.');
-    refresh();
-  };
-  reader.readAsText(file);
-};
-
-// ===================== REFRESH / POLL =====================
-function refresh() {
-  document.getElementById('refreshSpin').classList.remove('hidden');
-  // In real mode we would fetch Finnhub / Yahoo here.
-  // For v1 we re-render with current data + small random walk on prices for "live" feel
-  Object.keys(state.data).forEach(sym => {
-    const d = state.data[sym];
-    d.spot *= (1 + (Math.random()-0.5)*0.0008);
-    d.chg += (Math.random()-0.5)*0.05;
-  });
-  renderTrinity();
-  renderCards();
-  document.getElementById('lastUpdate').textContent = 'Last update: ' + new Date().toLocaleTimeString();
-  setTimeout(() => document.getElementById('refreshSpin').classList.add('hidden'), 400);
+function initChart(){
+  const container=document.getElementById('chart');if(state.chart)return;
+  state.chart=LightweightCharts.createChart(container,{layout:{background:{color:'#0a0b0f'},textColor:'#8b93a7'},grid:{vertLines:{color:'#141820'},horzLines:{color:'#141820'}},width:container.clientWidth,height:290,timeScale:{timeVisible:true},rightPriceScale:{borderColor:'#1e2430'}});
+  state.series=state.chart.addCandlestickSeries({upColor:'#00c853',downColor:'#ff1744',borderUpColor:'#00c853',borderDownColor:'#ff1744',wickUpColor:'#00c853',wickDownColor:'#ff1744'});
+  const base=743;const candles=[];let t=Math.floor(Date.now()/1000)-3600*5,p=base;
+  for(let i=0;i<70;i++){const o=p,c=p+(Math.random()-0.48)*1.1;const h=Math.max(o,c)+Math.random()*0.5,l=Math.min(o,c)-Math.random()*0.5;candles.push({time:t,open:o,high:h,low:l,close:c});p=c;t+=180}
+  state.series.setData(candles);window.addEventListener('resize',()=>state.chart&&state.chart.applyOptions({width:container.clientWidth}));
 }
-
-// ===================== INIT =====================
-renderTrinity();
-renderCards();
-initChart();
-document.getElementById('lastUpdate').textContent = 'Last update: ' + new Date().toLocaleTimeString();
-
-// Simulated live pulse every 45s
-setInterval(refresh, 45000);
-
-// Expose for console debugging
-window.Kairos = { state, calcGEX, bsGamma, findKing, openDeep };
-console.log('%cKairos v1 ready', 'color:#00e5ff;font-weight:bold');
-console.log('Open console → Kairos.state to inspect. Paste Finnhub key in Settings for live path.');
+async function refresh(){
+  const spin=document.getElementById('refreshSpin');const btn=document.getElementById('btnRefresh');spin.classList.remove('hidden');btn.disabled=true;
+  const results={};const symbols=['SPXW','SPY','QQQ'];
+  for(const sym of symbols){results[sym]=await fetchSymbol(sym);if(state.tradierToken)await new Promise(r=>setTimeout(r,350))}
+  state.data=results;state.lastFetch=new Date();
+  const sources=Object.values(results).map(d=>d.source);let bannerHtml='';
+  if(sources.some(s=>s==='tradier-live')){bannerHtml=`<div><span class="status-dot live"></span><strong class="live">TRADIER LIVE</strong> — Real-time OPRA + ORATS Greeks. Best free source.</div>`;state.source='tradier-live'}
+  else if(sources.some(s=>s==='tradier-sandbox')){bannerHtml=`<div><span class="status-dot sandbox"></span><strong class="sandbox">TRADIER SANDBOX</strong> — 15-min delayed (safe testing). Switch to Production for live.</div>`;state.source='tradier-sandbox'}
+  else if(sources.some(s=>s==='cboe')){bannerHtml=`<div><span class="status-dot cboe"></span><strong class="cboe">CBOE FREE DELAYED</strong> — No key needed. Real OI + gamma (~15 min).</div>`;state.source='cboe'}
+  else{bannerHtml=`<div><span class="status-dot demo"></span><strong class="demo">DEMO FALLBACK</strong> — Add Tradier token for live data, or wait for CBOE.</div>`;state.source='demo'}
+  bannerHtml+=`<div id="lastUpdate">Last update: ${state.lastFetch.toLocaleTimeString()}</div>`;
+  document.getElementById('dataBanner').innerHTML=bannerHtml;
+  renderTrinity();renderCards();document.getElementById('chartFocus').textContent='SPY / structure from live source';
+  spin.classList.add('hidden');btn.disabled=false;
+}
+document.getElementById('closeModal').onclick=()=>document.getElementById('modal').classList.remove('open');
+document.getElementById('btnSettings').onclick=()=>{document.getElementById('tradierToken').value=state.tradierToken;document.getElementById('tradierEnv').value=state.tradierEnv;document.getElementById('settings').classList.toggle('open')};
+document.getElementById('saveSettings').onclick=()=>{
+  state.tradierToken=document.getElementById('tradierToken').value.trim();
+  state.tradierEnv=document.getElementById('tradierEnv').value;
+  state.customShort=(parseFloat(document.getElementById('customShort').value)||70)/100;
+  state.pollSec=Math.max(20,parseInt(document.getElementById('pollInterval').value)||30);
+  state.dealerMode=document.getElementById('dealerMode').value;
+  localStorage.setItem('kairos_tradier_token',state.tradierToken);
+  localStorage.setItem('kairos_tradier_env',state.tradierEnv);
+  document.getElementById('settings').classList.remove('open');refresh();
+};
+document.getElementById('btnRefresh').onclick=()=>refresh();
+document.getElementById('expiryFilter').onchange=e=>{state.expiry=e.target.value;refresh()};
+document.getElementById('dealerMode').onchange=e=>{state.dealerMode=e.target.value;refresh()};
+state.data=JSON.parse(JSON.stringify(DEMO));renderTrinity();renderCards();initChart();
+if(state.tradierToken){document.getElementById('tradierToken').value=state.tradierToken;document.getElementById('tradierEnv').value=state.tradierEnv}
+refresh();
+setInterval(()=>refresh(),state.pollSec*1000);
+window.Kairos={state,fetchSymbol,fetchTradierChain,fetchCBOE,refresh};
+console.log('%cKairos v1.2 ready — Tradier preferred + CBOE free fallback','color:#00e5ff;font-weight:bold;font-size:14px');
+console.log('1. Open free Tradier account → API Access → create token');
+console.log('2. Paste token in Settings and choose Sandbox or Production');
+console.log('3. Save → live GEX starts automatically');
 </script>
 </body>
 </html>
