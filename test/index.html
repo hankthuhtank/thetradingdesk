@@ -29,7 +29,7 @@ select,input{background:var(--panel2);border:1px solid var(--border);color:var(-
 .banner{background:#0a1218;border-bottom:1px solid #152028;padding:5px 14px;font-size:.7rem;color:var(--muted);display:flex;justify-content:space-between}
 .banner .live{color:var(--green);font-weight:600}
 main{padding:10px;display:flex;flex-direction:column;gap:10px}
-.trinity{display:grid;grid-template-columns:repeat(3,1fr);gap:3px}
+.trinity{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}@media(max-width:1000px){.trinity{grid-template-columns:1fr}}
 .panel{background:var(--panel);border:1px solid var(--border);border-radius:12px;display:flex;flex-direction:column;height:calc(100vh - 172px);min-height:540px;overflow:hidden}
 .panel.single-mode{max-height:none;min-height:580px}
 .p-head{padding:8px 10px;background:var(--panel2);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:6px;flex-shrink:0}
@@ -43,7 +43,10 @@ main{padding:10px;display:flex;flex-direction:column;gap:10px}
 .strikes{overflow-y:auto;flex:1;scrollbar-width:thin;scrollbar-color:#2a3140 transparent}
 .srow{display:grid;grid-template-columns:56px 1fr 76px;align-items:center;padding:3px 8px;font-size:.74rem;border-bottom:1px solid #0c0f16;cursor:pointer}
 .srow:hover{filter:brightness(1.18)}
-.srow.spot{border-left:3px solid var(--cyan)}
+.srow.spot{outline:1.5px solid #e9edf5b8;outline-offset:-1.5px;border-radius:4px}
+.spotpx{font-size:.58rem;font-family:'JetBrains Mono';font-weight:700;color:#e9edf5;background:#e9edf51a;border:1px solid #e9edf540;border-radius:4px;padding:0 5px;margin-left:4px}
+.dpill{font-size:.58rem;font-family:'JetBrains Mono';font-weight:700;padding:0 5px;border-radius:4px;margin-right:2px}
+.dpill.up{background:#34d39922;color:#34d399}.dpill.dn{background:#f8717126;color:#f87171}
 .srow.king{background:#f2c14e!important}
 .srow.king .strike,.srow.king .gex{color:#000!important;font-weight:700!important}
 .srow.king .star{color:#000}
@@ -55,6 +58,22 @@ main{padding:10px;display:flex;flex-direction:column;gap:10px}
 
 .dchip{font-size:.58rem;font-family:'JetBrains Mono';margin-left:2px}
 .drv{font-size:.62rem;padding:1px 7px;border-radius:9px;border:1px solid #2a3140;color:var(--teal);background:#2dd4bf10}
+/* imbalance view */
+.imb{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:12px}
+.imb-top{display:flex;gap:10px;align-items:center;margin-bottom:10px}
+.imb-stats{display:grid;grid-template-columns:repeat(7,1fr);gap:8px}
+@media(max-width:900px){.imb-stats{grid-template-columns:repeat(2,1fr)}}
+.stat{background:var(--panel2);border:1px solid var(--border);border-radius:9px;padding:8px 10px}
+.sl{font-size:.58rem;color:var(--muted);letter-spacing:.07em;margin-bottom:3px}
+.sv{font-size:1.02rem;font-weight:700;font-family:'JetBrains Mono'}
+.imb-row{display:grid;grid-template-columns:1fr 118px 1fr;align-items:center;gap:6px;padding:2px 0}
+.imb-row .side{position:relative;height:13px;background:#10141d;border-radius:3px;overflow:hidden}
+.imb-row .side i,.imb-row .side b{position:absolute;top:0;height:100%;display:block}
+.side.l i,.side.l b{right:0}.side.r i,.side.r b{left:0}
+.side.l i{background:#34d3991c}.side.l b{background:#34d399c9}
+.side.r i{background:#f871711c}.side.r b{background:#f87171c9}
+.klabel{text-align:center;font-size:.7rem;font-weight:700;display:flex;align-items:center;justify-content:center;gap:4px;flex-wrap:wrap}
+.imb-row.spotrow2{outline:1.5px solid #e9edf5b8;outline-offset:-1px;border-radius:4px}
 /* single view: price-aligned expiry board */
 .sgrid-wrap{overflow:auto;flex:1;scrollbar-width:thin;scrollbar-color:#2a3140 transparent}
 table.sgrid{border-collapse:collapse;width:auto;margin:0 auto}
@@ -63,7 +82,7 @@ table.sgrid{border-collapse:collapse;width:auto;margin:0 auto}
 .sgrid th.sk{z-index:6}
 .sgrid td{font-family:'JetBrains Mono';font-size:.68rem;font-weight:600;text-align:right;padding:2px 9px;border-bottom:1px solid #0c0f16;white-space:nowrap;min-width:92px;max-width:118px}
 .sgrid tr.spotrow td.sk{color:var(--cyan)}
-.sgrid tr.spotrow{outline:1px solid #00e5ff55;outline-offset:-1px}
+.sgrid tr.spotrow{outline:1.5px solid #e9edf5b8;outline-offset:-1.5px}
 .sgrid td.kcell{background:#f2c14e!important;color:#000!important;font-weight:700!important}
 .sgrid td.zero{color:#3a4254}
 @media(max-width:760px){.sgrid td,.sgrid th{padding:2px 6px;font-size:.6rem}.sgrid td{min-width:70px}}
@@ -142,14 +161,6 @@ footer{text-align:center;padding:12px;font-size:.65rem;color:#3f4656;border-top:
   .cards{grid-template-columns:1fr 1fr}
   .modal{padding:14px}
   .pstats{gap:7px}
-  .srow { grid-template-columns: 36px 1fr 52px; padding: 2px; font-size: 0.6rem; }
-  .srow .strike { font-size: 0.6rem; }
-  .srow .gex { font-size: 0.6rem; }
-  .p-head { padding: 4px; gap: 2px; }
-  .ticker-sel { max-width: 55px; font-size: 0.75rem; padding: 2px; }
-  .price { font-size: 0.7rem; }
-  .king-pill { font-size: 0.55rem; padding: 1px 4px; }
-  .pstats { padding: 3px; gap: 4px; font-size: 0.55rem; }
 }
 .hidden{display:none!important}
 .loader{display:inline-block;width:10px;height:10px;border:2px solid var(--cyan);border-top-color:transparent;border-radius:50%;animation:spin .65s linear infinite}
@@ -164,6 +175,7 @@ footer{text-align:center;padding:12px;font-size:.65rem;color:#3f4656;border-top:
     <button class="btn" id="btnSingle">Single</button>
     <button class="btn" id="btnChart">Chart</button>
     <button class="btn" id="btnIdeas">Ideas</button>
+    <button class="btn" id="btnImb">Imbalance</button>
     <select id="expiryFilter" data-tip="Which expirations feed the map. 0DTE = today only (day-trading structure); All = first 5 expirations stacked."><option value="all">All</option><option value="0dte">0DTE</option><option value="7d">≤7D</option><option value="30d">≤30D</option></select>
     <button class="btn" id="btnHelp" data-tip="How to read and use Kairos — nodes, flips, units, workflow">?</button>
     <button class="btn" id="btnSettings">Settings</button>
@@ -188,6 +200,16 @@ footer{text-align:center;padding:12px;font-size:.65rem;color:#3f4656;border-top:
       <div class="rail-h" style="margin-top:12px" data-tip="Biggest node changes since the last refresh — where exposure is building or unwinding right now">TOP MOVERS · Δ LAST REFRESH</div>
       <div id="movers"></div>
     </div>
+  </div>
+  <div class="imb hidden" id="imbSec">
+    <div class="imb-top">
+      <input id="imbTicker" class="ticker-sel" list="tickList" value="SPY" style="width:92px" data-tip="Type any optionable ticker">
+      <span id="imbMeta" style="font-size:.68rem;color:var(--muted)"></span>
+    </div>
+    <div class="imb-stats" id="imbStats"></div>
+    <div style="text-align:center;font-size:.62rem;color:var(--muted);margin:10px 0 5px;letter-spacing:.08em">CALLS ← → PUTS · bright = today's volume · faint = open interest</div>
+    <div id="imbBars"></div>
+    <div id="imbNote" style="font-size:.62rem;color:var(--muted);margin-top:9px;line-height:1.5"></div>
   </div>
   <div class="surfaced hidden" id="ideasSec">
     <h3>Surfaced Ideas</h3>
@@ -327,10 +349,9 @@ function deltaOf(sym,k,cur){
   return (cur-p)/Math.abs(p)*100;
 }
 function deltaChip(dl){
-  if(dl===null||!isFinite(dl)||Math.abs(dl)<0.5)return '';
-  const big=Math.abs(dl)>=8;
-  const c=dl>=0?'var(--teal)':'#e879f9';
-  return `<span class="dchip" style="color:${c};${big?'font-weight:700':''}" data-tip="Change vs previous refresh \u2014 growing nodes are being built (fresh dealer inventory), shrinking nodes are unwinding">${dl>=0?'\u25b2':'\u25bc'}${Math.abs(dl)>=100?Math.round(Math.abs(dl)):Math.abs(dl).toFixed(1)}%</span>`;
+  if(dl===null||!isFinite(dl)||Math.abs(dl)<1)return '';
+  const v=Math.abs(dl)>=100?Math.round(Math.abs(dl)):Math.abs(dl).toFixed(Math.abs(dl)>=10?0:1);
+  return `<span class="dpill ${dl>=0?'up':'dn'}" data-tip="Node change vs previous refresh \u2014 building or unwinding">${dl>=0?'+':'\u2212'}${v}%</span>`;
 }
 // ---- daily technicals (Tradier history, cached 10 min) ----
 async function getTech(sym){
@@ -550,12 +571,16 @@ async function fetchTradier(sym,maxExp){
         if(!g)return;
         const dl=Math.abs(+(gr.delta||0));
         if(call&&oi&&Math.abs(dl-0.5)<bestD){bestD=Math.abs(dl-0.5);spotEst=k;} // ATM fallback spot
-        if(!by[k])by[k]={k,u:0,a:0,uv:0,av:0,oi:0};
+        if(!by[k])by[k]={k,u:0,a:0,uv:0,av:0,oi:0,cv:0,pv:0,coi:0,poi:0,cpr:0,ppr:0,wc:0,wp:0};
         by[k].u+=(call?1:-1)*g*oi;   // positioning basis (OI)
         by[k].a+=g*oi;
         by[k].uv+=(call?1:-1)*g*vol; // flow basis (today's volume)
         by[k].av+=g*vol;
         by[k].oi+=oi;
+        const mid=((+(opt.bid||0))+(+(opt.ask||0)))/2||+(opt.last||0);
+        const wk=T<=7.6/365;
+        if(call){by[k].cv+=vol;by[k].coi+=oi;by[k].cpr+=vol*mid*100;if(wk)by[k].wc+=oi;}
+        else{by[k].pv+=vol;by[k].poi+=oi;by[k].ppr+=vol*mid*100;if(wk)by[k].wp+=oi;}
         if(oi&&iv>0.01&&iv<5){
           const ck=k+'|'+(call?'C':'P');
           if(!cAgg[e])cAgg[e]={};
@@ -581,11 +606,13 @@ async function fetchTradier(sym,maxExp){
     list.forEach(s=>{s.star=(s===ek);s.type=s.gex>=0?'pika':'barney';});
     byExp[e]=list;
     Object.values(byExpRaw[e]).forEach(s=>{
-      if(!allBy[s.k])allBy[s.k]={k:s.k,u:0,a:0,uv:0,av:0,oi:0};
+      if(!allBy[s.k])allBy[s.k]={k:s.k,u:0,a:0,uv:0,av:0,oi:0,cv:0,pv:0,coi:0,poi:0,cpr:0,ppr:0,wc:0,wp:0};
       allBy[s.k].u+=s.u;allBy[s.k].a+=s.a;allBy[s.k].uv+=s.uv;allBy[s.k].av+=s.av;allBy[s.k].oi+=s.oi;
+      allBy[s.k].cv+=s.cv;allBy[s.k].pv+=s.pv;allBy[s.k].coi+=s.coi;allBy[s.k].poi+=s.poi;
+      allBy[s.k].cpr+=s.cpr;allBy[s.k].ppr+=s.ppr;allBy[s.k].wc+=s.wc;allBy[s.k].wp+=s.wp;
     });
   });
-  let strikes=Object.values(allBy).map(s=>({k:s.k,gex:val(s),oi:s.oi})).sort((a,b)=>b.k-a.k);
+  let strikes=Object.values(allBy).map(s=>({k:s.k,gex:val(s),oi:s.oi,cv:s.cv,pv:s.pv,coi:s.coi,poi:s.poi,cpr:s.cpr,ppr:s.ppr,wc:s.wc,wp:s.wp})).sort((a,b)=>b.k-a.k);
   const kg=kingOf(strikes);
   strikes.forEach(s=>{s.type=s.gex>=0?'pika':'barney';s.star=(s===kg);});
   const range=(sym==='SPXW'||sym==='SPX')?280:45;
@@ -627,12 +654,16 @@ async function fetchCBOE(sym){
     if(!oi&&!vol)return;
     if(state.calcMode==='live'&&spot&&iv0>0.01&&iv0<5&&T>0){const gb=bsGamma(spot,k,iv0,T);if(gb>0)g=gb;}
     if(!g)return;
-    if(!by[k])by[k]={k,u:0,a:0,uv:0,av:0,oi:0};
+    if(!by[k])by[k]={k,u:0,a:0,uv:0,av:0,oi:0,cv:0,pv:0,coi:0,poi:0,cpr:0,ppr:0,wc:0,wp:0};
     by[k].u+=(call?1:-1)*g*oi;
     by[k].a+=g*oi;
     by[k].uv+=(call?1:-1)*g*vol;
     by[k].av+=g*vol;
     by[k].oi+=oi;
+    const mid2=((+(o.bid||0))+(+(o.ask||0)))/2||+(o.last_trade_price||0);
+    const wk2=T>0&&T<=7.6/365;
+    if(call){by[k].cv+=vol;by[k].coi+=oi;by[k].cpr+=vol*mid2*100;if(wk2)by[k].wc+=oi;}
+    else{by[k].pv+=vol;by[k].poi+=oi;by[k].ppr+=vol*mid2*100;if(wk2)by[k].wp+=oi;}
     const iv=+(o.iv||0);
     if(iv>0.01&&iv<5&&T>0){
       const ck=k+'|'+T.toFixed(5)+(call?'C':'P');
@@ -643,7 +674,7 @@ async function fetchCBOE(sym){
   const contracts=[];Object.values(cAgg).forEach(c=>contracts.push({k:c.k,oi:c.oi,iv:c.ivw/c.oi,T:c.T,call:c.call}));
   const pick=s=>state.sizeBasis==='vol'?{u:s.uv||0,a:s.av||0}:{u:s.u,a:s.a};
   const val=s=>{const q=pick(s);return state.dealerMode==='shortall'?-q.a*mult:state.dealerMode==='custom'?q.a*mult*(1-2*state.customShort):q.u*mult;};
-  let strikes=Object.values(by).map(s=>({k:s.k,gex:val(s),oi:s.oi})).sort((a,b)=>b.k-a.k);
+  let strikes=Object.values(by).map(s=>({k:s.k,gex:val(s),oi:s.oi,cv:s.cv,pv:s.pv,coi:s.coi,poi:s.poi,cpr:s.cpr,ppr:s.ppr,wc:s.wc,wp:s.wp})).sort((a,b)=>b.k-a.k);
   const kg=kingOf(strikes);
   strikes.forEach(s=>{s.type=s.gex>=0?'pika':'barney';s.star=(s===kg);});
   const range=(sym==='SPXW'||sym==='SPX')?280:45;
@@ -740,8 +771,8 @@ function renderTrinity(){
       ladder.forEach(k=>{
         const rowSum=m.dates.reduce((a,e2)=>a+(cell[e2][k]||0),0);
         const dlR=deltaOf(sym,k,rowSum);
-        const arrow=(dlR!==null&&isFinite(dlR)&&Math.abs(dlR)>=2)?(dlR>=0?' <span style="color:var(--teal)">\u25b4</span>':' <span style="color:#e879f9">\u25be</span>'):'';
-        h+=`<tr class="${k===spotK?'spotrow':''}"><td class="sk" title="${dlR!==null&&isFinite(dlR)?'\u0394 '+dlR.toFixed(1)+'% vs last refresh (net across shown expiries)':''}">${k}${k===spotK?' \u25b6':''}${arrow}</td>`;
+        const arrow=deltaChip(dlR);
+        h+=`<tr class="${k===spotK?'spotrow':''}"><td class="sk" title="${dlR!==null&&isFinite(dlR)?'\u0394 '+dlR.toFixed(1)+'% vs last refresh (net across shown expiries)':''}">${k}${k===spotK?` <span class="spotpx">\u25c0 $${(m.spot||0).toFixed(2)}</span>`:''} ${arrow}</td>`;
         m.dates.forEach(e2=>{
           const v=cell[e2][k];
           if(v===undefined||Math.abs(v)<1){h+='<td class="zero">\u2014</td>';return;}
@@ -789,13 +820,16 @@ function renderTrinity(){
 
     const listEl=p.querySelector('.strikes');
     let kingRow=null;
+    let spotK=null,_bs=1e18;
+    (d.strikes||[]).forEach(s=>{const dd=Math.abs(s.k-d.spot);if(dd<_bs){_bs=dd;spotK=s.k;}});
     (d.strikes||[]).forEach(s=>{
       const row=document.createElement('div');row.className='srow';
-      const tol=(sym==='SPXW'||sym==='SPX')?5:0.9;
-      if(Math.abs(s.k-d.spot)<tol)row.classList.add('spot');
+      const isSpot=(s.k===spotK);
+      if(isSpot)row.classList.add('spot');
       if(s===kg){row.classList.add('king');kingRow=row;}
       else row.style.cssText=rowStyle(s,maxAbs);
       let mid=s.star?'<span class="star">★</span>':'';
+      if(isSpot)mid+=`<span class="spotpx">\u25c0 $${(d.spot||0).toFixed(2)}</span>`;
       row.title=`${sym} ${s.k} \u2014 GEX ${fmtG(s.gex,d.spot)} (${s.gex>=0?'Pika: dealers fade moves here':'Barney: dealers chase moves here'}) \u00b7 OI ${(s.oi||0).toLocaleString()} \u00b7 ${(Math.abs(s.gex)/ (maxAbs||1)*100).toFixed(0)}% of King`;
       const dl=deltaOf(sym,s.k,s.gex);
       row.innerHTML=`
@@ -1000,7 +1034,7 @@ async function refresh(){
   spin.classList.remove('hidden');btn.disabled=true;
   const results={};
   // fetch only what the current view needs — frees budget for the idea sweep
-  const ticks=(state.view==='single'||state.view==='chart')
+  const ticks=(state.view==='single'||state.view==='chart'||state.view==='imb')
     ?[state.focus]
     :[...new Set([...state.trinityTickers.slice(0,3),state.focus])];
   state.dataAge=state.dataAge||{};
@@ -1029,6 +1063,7 @@ async function refresh(){
   if(state.view==='trinity'||state.view==='single')renderTrinity();
   if(state.view==='ideas')renderCards();
   if(state.view==='chart')updateChart(state.focus);
+  if(state.view==='imb')renderImb(state.focus);
   spin.classList.add('hidden');btn.disabled=false;
 }
 
@@ -1053,21 +1088,94 @@ document.getElementById('save').onclick=()=>{
 };
 document.getElementById('btnRefresh').onclick=()=>refresh();
 document.getElementById('expiryFilter').onchange=e=>{state.expiry=e.target.value;refresh();};
+function renderImb(sym){
+  const d=state.data[sym];
+  const bars=document.getElementById('imbBars'),stats=document.getElementById('imbStats');
+  const ti=document.getElementById('imbTicker');if(ti&&ti.value!==sym&&document.activeElement!==ti)ti.value=sym;
+  document.getElementById('imbMeta').textContent=d?`$${(d.spot||0).toFixed(2)} \u00b7 ${d.source}`:'';
+  if(!d||!d.strikes||!d.strikes.length){
+    stats.innerHTML='';
+    bars.innerHTML=`<div class="err-chip">No data yet for ${sym} \u2014 it loads on the next refresh (or check the ticker).</div>`;
+    document.getElementById('imbNote').textContent='';
+    return;
+  }
+  const rows=[...d.strikes].filter(s=>(s.cv||0)+(s.pv||0)+(s.coi||0)+(s.poi||0)>0).sort((a,b)=>b.k-a.k);
+  if(!rows.length){bars.innerHTML='<div class="err-chip">Chain loaded but no volume/OI fields \u2014 refresh once to repopulate with flow data.</div>';stats.innerHTML='';return;}
+  const tot=f=>rows.reduce((a,s)=>a+(s[f]||0),0);
+  const cv=tot('cv'),pv=tot('pv'),cpr=tot('cpr'),ppr=tot('ppr');
+  const ratio=pv?cv/pv:null,prr=ppr?cpr/ppr:null;
+  const blend=((ratio||1)+(prr||1))/2;
+  const sent=blend>1.15?'Bullish':blend<0.87?'Bearish':'Neutral';
+  const sc=sent==='Bullish'?'var(--green)':sent==='Bearish'?'var(--red)':'var(--muted)';
+  let ceil=null,flr=null,mc=0,mp=0;
+  rows.forEach(s=>{
+    if(s.k>=d.spot&&(s.wc||0)>mc){mc=s.wc;ceil=s.k;}
+    if(s.k<=d.spot&&(s.wp||0)>mp){mp=s.wp;flr=s.k;}
+  });
+  stats.innerHTML=`
+    <div class="stat"><div class="sl">CALL VOL</div><div class="sv" style="color:var(--green)">${cv.toLocaleString()}</div></div>
+    <div class="stat"><div class="sl">PUT VOL</div><div class="sv" style="color:var(--red)">${pv.toLocaleString()}</div></div>
+    <div class="stat"><div class="sl" data-tip="Call volume \u00f7 put volume across the loaded chain. Above 1 = call-dominant tape.">C/P RATIO</div><div class="sv" style="color:var(--gold)">${ratio?ratio.toFixed(2):'\u2014'}</div></div>
+    <div class="stat"><div class="sl" data-tip="Blend of the volume ratio and the premium ratio (call dollars vs put dollars traded). Premium weighting matters: 1,000 cheap lottos \u2260 1,000 expensive contracts.">SENTIMENT</div><div class="sv" style="color:${sc}">${sent}</div></div>
+    <div class="stat"><div class="sl" data-tip="Call premium traded minus put premium traded today">NET PREMIUM</div><div class="sv" style="color:${cpr-ppr>=0?'var(--green)':'var(--red)'}">${fmt(cpr-ppr)}</div></div>
+    <div class="stat"><div class="sl" data-tip="Biggest weekly-expiry call OI at/above spot \u2014 the strike MMs are most paid to cap price under into the weekly settlement">WK CEILING</div><div class="sv mono" style="color:var(--gold)">${ceil??'\u2014'}</div></div>
+    <div class="stat"><div class="sl" data-tip="Biggest weekly-expiry put OI at/below spot \u2014 the weekly floor where max put decay pays MMs">WK FLOOR</div><div class="sv mono" style="color:var(--cyan)">${flr??'\u2014'}</div></div>`;
+  // window: 14 above / 14 below spot
+  let idx=0,bs=1e18;rows.forEach((s,i)=>{const dd=Math.abs(s.k-d.spot);if(dd<bs){bs=dd;idx=i;}});
+  const win=rows.slice(Math.max(0,idx-14),idx+15);
+  const mx=Math.max(...win.map(s=>Math.max(s.cv||0,s.pv||0)),1);
+  const mo=Math.max(...win.map(s=>Math.max(s.coi||0,s.poi||0)),1);
+  const spotK2=rows[idx].k;
+  bars.innerHTML=win.map(s=>{
+    const cw=Math.round((s.cv||0)/mx*100),pw=Math.round((s.pv||0)/mx*100);
+    const co=Math.round((s.coi||0)/mo*100),po=Math.round((s.poi||0)/mo*100);
+    const mark=s.k===ceil?' <span class="dpill up">CEIL</span>':s.k===flr?' <span class="dpill dn">FLR</span>':'';
+    return `<div class="imb-row ${s.k===spotK2?'spotrow2':''}" title="${sym} ${s.k} \u00b7 calls ${((s.cv||0)).toLocaleString()} vol / ${((s.coi||0)).toLocaleString()} OI \u00b7 puts ${((s.pv||0)).toLocaleString()} vol / ${((s.poi||0)).toLocaleString()} OI">
+      <div class="side l"><i style="width:${co}%"></i><b style="width:${cw}%"></b></div>
+      <div class="klabel mono">${s.k}${s.k===spotK2?`<span class="spotpx">$${d.spot.toFixed(2)}</span>`:''}${mark}</div>
+      <div class="side r"><i style="width:${po}%"></i><b style="width:${pw}%"></b></div>
+    </div>`;
+  }).join('');
+  document.getElementById('imbNote').textContent='Feed note: Tradier reports total volume per contract, not buy-vs-sell aggressor side \u2014 so the green/red buy-sell split from tick-level tools can\u2019t be derived here. Premium weighting and volume-vs-OI carry the same signal transparently.';
+}
 function setView(v){
   state.view=v;
-  ['btnTrinity','btnSingle','btnChart','btnIdeas'].forEach(id=>document.getElementById(id).classList.remove('active'));
-  document.getElementById(v==='trinity'?'btnTrinity':v==='single'?'btnSingle':v==='chart'?'btnChart':'btnIdeas').classList.add('active');
+  ['btnTrinity','btnSingle','btnChart','btnIdeas','btnImb'].forEach(id=>document.getElementById(id).classList.remove('active'));
+  document.getElementById(v==='trinity'?'btnTrinity':v==='single'?'btnSingle':v==='chart'?'btnChart':v==='imb'?'btnImb':'btnIdeas').classList.add('active');
   document.getElementById('trinityWrap').classList.toggle('hidden',v!=='trinity'&&v!=='single');
   document.getElementById('chartSec').classList.toggle('hidden',v!=='chart');
+  document.getElementById('imbSec').classList.toggle('hidden',v!=='imb');
   document.getElementById('ideasSec').classList.toggle('hidden',v!=='ideas');
   if(v==='trinity'||v==='single')renderTrinity();
+  if(v==='single'){const m=state.multi[state.focus];if(!m||(m.dates||[]).length<8)refresh();}
   if(v==='ideas'){renderCards();ideasSweep(false);}
   if(v==='chart'){loadTV(state.focus);updateChart(state.focus);}
+  if(v==='imb')renderImb(state.focus);
 }
+document.addEventListener('focusin',e=>{
+  const t=e.target;
+  if(t&&t.tagName==='INPUT'&&t.classList.contains('ticker-sel')){t.dataset.keep=t.value;t.value='';}
+});
+document.addEventListener('focusout',e=>{
+  const t=e.target;
+  if(t&&t.tagName==='INPUT'&&t.classList.contains('ticker-sel')&&!t.value)t.value=t.dataset.keep||'';
+});
 document.getElementById('btnTrinity').onclick=()=>setView('trinity');
 document.getElementById('btnSingle').onclick=()=>setView('single');
 document.getElementById('btnChart').onclick=()=>setView('chart');
 document.getElementById('btnIdeas').onclick=()=>setView('ideas');
+document.getElementById('btnImb').onclick=()=>setView('imb');
+document.getElementById('imbTicker').onchange=async()=>{
+  const el=document.getElementById('imbTicker');
+  const v=el.value.trim().toUpperCase();if(!v)return;
+  el.value=v;state.focus=v;
+  if(!state.data[v]){
+    document.getElementById('spin').classList.remove('hidden');
+    try{const r=await getSym(v);if(r){state.data[v]=r;(state.dataAge=state.dataAge||{})[v]=Date.now();}}catch(e){}
+    document.getElementById('spin').classList.add('hidden');
+  }
+  renderImb(v);
+};
 // interchangeable chart ticker
 document.getElementById('tickList').innerHTML=TICKS.map(t=>`<option value="${t}">`).join('');
 const chartSel=document.getElementById('chartTicker');
@@ -1112,7 +1220,7 @@ refresh();
 function schedule(){clearTimeout(state._t);state._t=setTimeout(async()=>{await refresh();schedule();},state.pollSec*1000);}
 schedule();
 window.Kairos={state,refresh,getSym,kingOf};
-console.log('%cKairos v4.0 — fleet idea engine (GEX x trend), 9-expiry board, free ticker entry','color:#f2c14e;font-weight:bold');
+console.log('%cKairos v4.1 — Imbalance view, weekly ceiling/floor, spot markers, \u0394 pills','color:#f2c14e;font-weight:bold');
 </script>
 </body>
 </html>
