@@ -204,6 +204,27 @@ footer{text-align:center;padding:12px;font-size:.65rem;color:#3f4656;border-top:
 .hidden{display:none!important}
 .loader{display:inline-block;width:10px;height:10px;border:2px solid var(--cyan);border-top-color:transparent;border-radius:50%;animation:spin .65s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
+
+/* --- v7.2 patches: center toggle, single tabs, louder spot --- */
+.ctoggle{display:inline-flex;border:1px solid var(--border);border-radius:7px;overflow:hidden;margin-left:2px}
+.ctoggle button{background:transparent;border:none;color:var(--muted);padding:5px 8px;font-size:.7rem;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:.02em;transition:background .15s,color .15s}
+.ctoggle button:hover{color:var(--text)}
+.ctoggle button.on{background:#22d3ee22;color:var(--cyan)}
+.single-tabs{display:flex;gap:4px;padding:6px 8px 2px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;flex-wrap:nowrap}
+.single-tabs::-webkit-scrollbar{display:none}
+.single-tabs .tab{background:var(--panel2);border:1px solid var(--border);color:var(--muted);padding:5px 11px;border-radius:6px;font-size:.72rem;font-weight:700;cursor:pointer;font-family:'JetBrains Mono',monospace;white-space:nowrap;transition:all .15s;flex:0 0 auto}
+.single-tabs .tab:hover{color:var(--text);border-color:#2a3140}
+.single-tabs .tab.active{background:var(--gold);color:#0a0a08;border-color:var(--gold);box-shadow:0 0 12px #f2c14e44}
+.lvl.spot-lvl{background:linear-gradient(90deg,#0c1e27,#0a1218);border:1px solid #22d3ee66;border-radius:7px;padding:8px 10px;margin-bottom:4px}
+.lvl.spot-lvl .lvl-l{font-weight:700;color:var(--cyan)}
+.lvl.spot-lvl .lvl-v{color:#fff !important;font-size:1.05rem;font-weight:800;text-shadow:0 0 12px #22d3eecc;background:#22d3ee33;padding:2px 8px;border-radius:5px;border:1px solid #22d3ee88}
+.spotpx{font-size:.62rem !important;padding:1px 6px !important;color:#fff !important;background:#22d3ee44 !important;border:1px solid #22d3ee !important;box-shadow:0 0 10px #22d3ee66 !important;text-shadow:0 0 6px #22d3ee}
+@media(max-width:760px){
+  .ctoggle{order:5}
+  .single-tabs{padding:4px 4px 0}
+  .single-tabs .tab{padding:4px 8px;font-size:.65rem}
+}
+
 </style>
 </head>
 <body>
@@ -220,6 +241,10 @@ footer{text-align:center;padding:12px;font-size:.65rem;color:#3f4656;border-top:
       <button data-m="gex" class="on">GEX</button>
       <button data-m="vex">VEX</button>
     </div>
+    <div class="ctoggle" id="ctoggle" data-tip="Center the strike ladder on live spot price or on the King (biggest |exposure|) node.">
+      <button data-c="spot">Spot</button>
+      <button data-c="king" class="on">King</button>
+    </div>
     <select id="expiryFilter" data-tip="Which expirations feed the map. 0DTE = today only; All = first 5 expirations stacked. Switching re-filters cached chains instantly."><option value="all">All</option><option value="0dte">0DTE</option><option value="7d">≤7D</option><option value="30d">≤30D</option></select>
     <button class="btn" id="btnHelp" data-tip="How to read and use Kairos">?</button>
     <button class="btn" id="btnSettings">Settings</button>
@@ -232,11 +257,13 @@ footer{text-align:center;padding:12px;font-size:.65rem;color:#3f4656;border-top:
   <div id="lastUp">—</div>
 </div>
 <main>
+  <div id="singleTabs" class="single-tabs hidden"></div>
+  <datalist id="tickerList"></datalist>
   <div id="trinityWrap"><div class="trinity" id="trinity"></div></div>
   <div class="chart-area hidden" id="chartSec">
     <div class="chart-col">
       <div class="chart-top">
-        <input id="chartTicker" class="ticker-sel" value="SPY" style="width:92px" autocomplete="off" data-tip="Type any symbol — pulls its chain on the fly">
+        <input id="chartTicker" class="ticker-sel" list="tickerList" value="SPY" style="width:92px" autocomplete="off" data-tip="Type any symbol — pulls its chain on the fly">
         <span id="chartFocus"></span>
         <button class="btn" id="btnPine" style="border-color:var(--border);color:var(--text)" data-tip="Copies the ACTIVE metric's levels (GEX/VEX) as a Pine v5 indicator. Line thickness = node strength. Paste into TradingView.">Copy Pine</button>
       </div>
@@ -251,7 +278,7 @@ footer{text-align:center;padding:12px;font-size:.65rem;color:#3f4656;border-top:
   </div>
   <div class="imb hidden" id="imbSec">
     <div class="imb-top">
-      <input id="imbTicker" class="ticker-sel" value="SPY" style="width:92px" autocomplete="off" data-tip="Type any optionable ticker">
+      <input id="imbTicker" class="ticker-sel" list="tickerList" value="SPY" style="width:92px" autocomplete="off" data-tip="Type any optionable ticker">
       <span id="imbMeta" style="font-size:.68rem;color:var(--muted)"></span>
     </div>
     <div class="imb-stats" id="imbStats"></div>
@@ -261,7 +288,7 @@ footer{text-align:center;padding:12px;font-size:.65rem;color:#3f4656;border-top:
   </div>
   <div class="tape hidden" id="tapeSec">
     <div class="imb-top">
-      <input id="tapeTicker" class="ticker-sel" value="SPY" style="width:92px" autocomplete="off" data-tip="Type any optionable ticker">
+      <input id="tapeTicker" class="ticker-sel" list="tickerList" value="SPY" style="width:92px" autocomplete="off" data-tip="Type any optionable ticker">
       <span id="tapeMeta" style="font-size:.68rem;color:var(--muted)"></span>
     </div>
     <div class="imb-stats" id="tapeStats"></div>
@@ -300,6 +327,8 @@ footer{text-align:center;padding:12px;font-size:.65rem;color:#3f4656;border-top:
     <p>Per-strike call vs put pressure — bright bars are today's volume, faint bars are standing OI. WK Ceiling/Floor are the biggest weekly call OI above spot and put OI below. Sentiment blends volume ratio with premium ratio.</p>
     <h3>Workflow (Skylit doctrine)</h3>
     <p>Chart first, map second. Build your thesis from price, then use the map to confirm or deny. Full Triad alignment = highest conviction; divergence = size down or pass. Structure is context, not a signal.</p>
+    <h3>Center toggle</h3>
+    <p>The <b>Spot / King</b> toggle (next to GEX/VEX) decides what the strike ladder scrolls to by default. Spot = live price frame. King = biggest |exposure| magnet. Your choice is remembered.</p>
     <h3>Units &amp; honesty</h3>
     <p>GEX is <strong>$ per 1-pt move</strong> (Heatseeker scale). VEX is <strong>$ delta per vol-point</strong>. OI updates daily pre-market; Greeks/IV refresh ~hourly; quotes are real-time. Chains cache ~90s and every metric is re-priced from live spot on each tick. Signs assume the standard dealer position (long calls / short puts).</p>
   </div>
@@ -334,13 +363,13 @@ footer{text-align:center;padding:12px;font-size:.65rem;color:#3f4656;border-top:
   <button class="btn primary" style="width:100%;margin-top:8px" id="save">Save</button>
   <div class="method">Everything else is locked to the most accurate setup: live spot quotes, exposure re-priced from spot + IV on every tick, standard dealer convention. Chains/OI/IV cache ~90s, keeping request volume ~80% lower and the UI smooth. Full explanation under <b>?</b>.</div>
 </div>
-<footer>Kairos v7.1 · GEX · VEX · Flow · structure is context, not a signal</footer>
+<footer>Kairos v7.2 · GEX · VEX · Flow · structure is context, not a signal</footer>
 
 <script>
 /* =====================================================================
-   Kairos v7.1 — dealer exposure terminal (GEX + VEX + Flow). Single file.
+   Kairos v7.2 — dealer exposure terminal (GEX + VEX + Flow). Single file.
 
-   v7.1 — smoothness + focus pass (no calculation changes to GEX/VEX):
+   v7.2 — center toggle · balanced Imbalance · louder Spot · single tabs + datalist (no calculation changes to GEX/VEX):
    • CEX removed end-to-end: toggle, per-strike math, profile grid,
      history snapshots, modal, help. ~33% less Black-Scholes work/rebuild.
    • ⚡ flow tags dropped from map rows — Δ% chips (vs ~12 min ago) stay.
@@ -375,6 +404,7 @@ function underOf(sym){return (sym==='SPXW'||sym==='SPX')?'SPX':sym;}
 const state={
   data:{}, chains:{}, spot:{}, multi:{}, focus:'SPY', view:'trinity',
   metric:(localStorage.getItem('kairos_metric')||'gex'),
+  centerMode:(localStorage.getItem('kairos_center')||'king'),
   dealerMode:'standard', customShort:0.7, expiry:'all',
   pollSec:Math.max(10,parseInt(localStorage.getItem('kairos_poll'))||10),
   calcMode:'live', unit:'pt',
@@ -394,6 +424,7 @@ if(state.trinityTickers.length<3){
 }
 state.trinityTickers=state.trinityTickers.slice(0,3);
 if(!['gex','vex'].includes(state.metric))state.metric='gex';
+if(!['spot','king'].includes(state.centerMode))state.centerMode='king';
 try{
   const h=JSON.parse(localStorage.getItem('kairos_hist')||'null');
   if(h&&h.v===6&&h.d===new Date().toDateString())state.history=h.h||{};
@@ -910,6 +941,7 @@ function renderTrinity(){
   // never yank the DOM out from under a typing user
   const ae=document.activeElement;
   if(comboFor||(ae&&ae.classList&&ae.classList.contains('ticker-sel')&&el.contains(ae)))return;
+  if(state.view==='single')updateSingleTabsActive();
   const prevScroll={};
   el.querySelectorAll('.panel[data-key]').forEach(pn=>{
     const w=pn.querySelector('.strikes,.sgrid-wrap');
@@ -952,7 +984,7 @@ function renderTrinity(){
       p.innerHTML=`
         <div class="p-head">
           <div class="p-left">
-            <input class="ticker-sel" data-old="${sym}" value="${sym}" style="width:86px" autocomplete="off" data-tip="Type any optionable ticker and press Enter">
+            <input class="ticker-sel" list="tickerList" data-old="${sym}" value="${sym}" style="width:86px" autocomplete="off" data-tip="Type any optionable ticker · pick from list or type freely">
             <span class="price mono">$${(d.spot||0).toFixed(2)}</span>
             <span class="badge-src ${srcMap[d.source]||'demo'}">${srcTxt[d.source]||d.source}</span>${staleB}
           </div>
@@ -999,7 +1031,19 @@ function renderTrinity(){
       h+='</tbody></table>';
       wrap.innerHTML=h;
       if(state.scrolled[key]&&prevScroll[key]){wrap.scrollTop=prevScroll[key].top;wrap.scrollLeft=prevScroll[key].left||0;}
-      else{const sr=wrap.querySelector('.spotrow');if(sr)centerIn(wrap,sr);state.scrolled[key]=true;}
+      else{
+        let target=null;
+        if(state.centerMode==='spot'){
+          target=wrap.querySelector('.spotrow');
+        }else{
+          // king cell is the one with kcell class
+          target=wrap.querySelector('td.kcell');
+          if(target) target=target.closest('tr');
+          if(!target) target=wrap.querySelector('.spotrow');
+        }
+        if(target)centerIn(wrap,target);
+        state.scrolled[key]=true;
+      }
       return;
     }
 
@@ -1007,7 +1051,7 @@ function renderTrinity(){
     p.innerHTML=`
       <div class="p-head">
         <div class="p-left">
-          <input class="ticker-sel" data-old="${sym}" value="${sym}" style="width:86px" autocomplete="off" data-tip="Type any optionable ticker and press Enter">
+          <input class="ticker-sel" list="tickerList" data-old="${sym}" value="${sym}" style="width:86px" autocomplete="off" data-tip="Type any optionable ticker · pick from list or type freely">
           <span class="price mono">$${(d.spot||0).toFixed(2)}</span>
           <span class="badge-src ${srcMap[d.source]||'demo'}">${srcTxt[d.source]||d.source}</span>${staleB}
         </div>
@@ -1063,7 +1107,16 @@ function renderTrinity(){
       listEl.appendChild(row);
     });
     if(state.scrolled[key]&&prevScroll[key])listEl.scrollTop=prevScroll[key].top;
-    else{if(kingRow)centerIn(listEl,kingRow);state.scrolled[key]=true;}
+    else{
+      let target=null;
+      if(state.centerMode==='spot'){
+        target=listEl.querySelector('.srow.spot');
+      }else{
+        target=kingRow || listEl.querySelector('.srow.spot');
+      }
+      if(target)centerIn(listEl,target);
+      state.scrolled[key]=true;
+    }
   });
 }
 
@@ -1131,7 +1184,8 @@ function updateChart(sym){
   if(state.view==='chart')loadTV(sym);
   const kg=kingOf(d.strikes), cw=callWall(d.strikes), pw=putWall(d.strikes), fl=flipFor(sym,d);
   const used=new Set();
-  let html=lvl('spot','Spot',(d.spot||0).toFixed(2),'live');
+  // Spot is deliberately the loudest row in the rail
+  let html=`<div class="lvl spot-lvl"><div class="lvl-l"><div class="dot spot"></div>SPOT</div><div><span class="lvl-v">$${(d.spot||0).toFixed(2)}</span> <span style="color:var(--cyan);font-size:.68rem;font-weight:700">live</span></div></div>`;
   const add=(type,label,s,val)=>{if(!s||used.has(s.k))return;used.add(s.k);html+=lvl(type,label,s.k,val);};
   add('king',metricLabel(state.metric)+' King',kg,kg?mdisp(mval(kg),d.spot):'');
   add('call','Call Wall',cw,cw?mdisp(mval(cw),d.spot):'');
@@ -1222,11 +1276,16 @@ function renderImb(sym){
     <div class="stat"><div class="sl" data-tip="Biggest weekly-expiry call OI at/above spot \u2014 where MMs are most paid to cap price under into weekly settlement">WK CEILING</div><div class="sv mono" style="color:var(--gold)">${ceil??'\u2014'}</div></div>
     <div class="stat"><div class="sl" data-tip="Biggest weekly-expiry put OI at/below spot \u2014 the weekly floor where max put decay pays MMs">WK FLOOR</div><div class="sv mono" style="color:var(--cyan)">${flr??'\u2014'}</div></div>`;
   let idx=0,bs=1e18;rows.forEach((s,i)=>{const dd=Math.abs(s.k-spot);if(dd<bs){bs=dd;idx=i;}});
-  const spread=16;
+  // Balanced window: aim for ~35 strikes each side of spot (was 16 → felt lopsided when more put strikes exist)
+  const spread=35;
   const upIdx=Math.max(0,idx-spread), dnIdx=Math.min(rows.length-1,idx+spread);
   let hiK=rows[upIdx].k, loK=rows[dnIdx].k;
   if(ceil!=null)hiK=Math.max(hiK,ceil);
   if(flr!=null)loK=Math.min(loK,flr);
+  // Also guarantee at least a small % band so very sparse chains still show structure
+  const minBand = Math.max(spot*0.008, 8);
+  hiK = Math.max(hiK, spot + minBand);
+  loK = Math.min(loK, spot - minBand);
   const win=rows.filter(s=>s.k>=loK&&s.k<=hiK);
   const mx=Math.max(...win.map(s=>Math.max(s.cv||0,s.pv||0)),1);
   const mo=Math.max(...win.map(s=>Math.max(s.coi||0,s.poi||0)),1);
@@ -1461,6 +1520,60 @@ function setMetric(m){
 document.querySelectorAll('#mtoggle button').forEach(b=>{b.dataset.m=b.textContent.toLowerCase();b.onclick=()=>setMetric(b.dataset.m);});
 document.querySelectorAll('#mtoggle button').forEach(b=>b.classList.toggle('on',b.dataset.m===state.metric));
 
+/* ---- center-mode toggle (spot vs king) ---- */
+function setCenter(c){
+  if(state.centerMode===c)return;
+  state.centerMode=c;localStorage.setItem('kairos_center',c);
+  document.querySelectorAll('#ctoggle button').forEach(b=>b.classList.toggle('on',b.dataset.c===c));
+  // re-render current map so scroll jumps immediately
+  if(state.view==='trinity'||state.view==='single'){
+    // force re-center by clearing scrolled flags for visible panels
+    Object.keys(state.scrolled).forEach(k=>{if(k.endsWith('|t')||k.endsWith('|s'))delete state.scrolled[k];});
+    renderTrinity();
+  }
+}
+document.querySelectorAll('#ctoggle button').forEach(b=>{
+  b.dataset.c=b.dataset.c||b.textContent.toLowerCase();
+  b.onclick=()=>setCenter(b.dataset.c);
+  b.classList.toggle('on',b.dataset.c===state.centerMode);
+});
+
+/* ---- single-view ticker tabs ---- */
+function buildSingleTabs(){
+  const el=document.getElementById('singleTabs');
+  if(!el)return;
+  const mains=['SPXW','SPY','QQQ','IWM','NVDA','TSLA','AAPL','MSFT','META','AMZN','GOOGL'];
+  el.innerHTML=mains.map(t=>`<button class="tab ${t===state.focus?'active':''}" data-sym="${t}">${t}</button>`).join('');
+  el.querySelectorAll('.tab').forEach(btn=>{
+    btn.onclick=()=>{
+      const sym=btn.dataset.sym;
+      if(sym===state.focus)return;
+      state.focus=sym;
+      state.singleLoading=true;
+      // mark active
+      el.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b.dataset.sym===sym));
+      refresh(false);
+    };
+  });
+}
+function updateSingleTabsActive(){
+  const el=document.getElementById('singleTabs');
+  if(!el)return;
+  el.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b.dataset.sym===state.focus));
+}
+
+/* populate native datalist once so typeahead always works (fixes "dropdowns never populate") */
+(function fillDatalist(){
+  const dl=document.getElementById('tickerList');
+  if(!dl)return;
+  TICKS.forEach(t=>{
+    const o=document.createElement('option');
+    o.value=t;
+    dl.appendChild(o);
+  });
+})();
+
+
 function setView(v){
   state.view=v;
   ['btnTrinity','btnSingle','btnChart','btnIdeas','btnImb','btnTape'].forEach(id=>document.getElementById(id).classList.remove('active'));
@@ -1472,6 +1585,12 @@ function setView(v){
   document.getElementById('imbSec').classList.toggle('hidden',v!=='imb');
   document.getElementById('tapeSec').classList.toggle('hidden',v!=='tape');
   document.getElementById('mtoggle').classList.toggle('dim',v==='ideas'||v==='imb'||v==='tape');
+  // show/hide single tabs
+  const tabsEl=document.getElementById('singleTabs');
+  if(tabsEl){
+    tabsEl.classList.toggle('hidden',v!=='single');
+    if(v==='single'){buildSingleTabs();updateSingleTabsActive();}
+  }
   if(v==='single'){
     const m=state.multi[state.focus];
     state.singleLoading=!(m&&m.dates&&m.dates.length>=8);
@@ -1623,7 +1742,7 @@ renderTrinity();renderCards();
 refresh(false).finally(schedule);
 function schedule(){clearTimeout(state._t);if(document.hidden)return;state._t=setTimeout(async()=>{await refresh(false);schedule();},state.pollSec*1000);}
 window.Kairos={state,refresh,getSym,kingOf,buildFromChains,buildImbalance,flowLean,exposureProfile};
-console.log('%cKairos v7.1 \u2014 GEX/VEX, Flow Tape, smoothness pass: pending-refresh queue, Triad-wipe fix, spot glow, 3-across mobile','color:#f2c14e;font-weight:bold');
+console.log('%cKairos v7.2 \u2014 center toggle (Spot/King), Imbalance 35ea side, louder Spot rail, Single tabs + native datalist','color:#f2c14e;font-weight:bold');
 </script>
 </body>
 </html>
