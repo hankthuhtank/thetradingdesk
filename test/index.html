@@ -234,7 +234,7 @@ footer{text-align:center;padding:12px;font-size:.65rem;color:#3f4656;border-top:
     <button class="btn active" id="btnTrinity" data-tip="Three lenses in balance — SPXW · SPY · QQQ. Alignment = conviction, divergence = size down or pass.">Triad</button>
     <button class="btn" id="btnSingle">Single</button>
     <button class="btn" id="btnChart">Chart</button>
-    <button class="btn" id="btnIdeas">Ideas</button>
+    <button class="btn" id="btnAether">Aether</button>
     <button class="btn" id="btnImb">Imbalance</button>
     <button class="btn" id="btnTape" data-tip="Opening-flow tape — where fresh option dollars are hitting today, ranked by premium.">Tape</button>
     <div class="mtoggle" id="mtoggle" data-tip="Which exposure the map shows. GEX=gamma (pin/momentum). VEX=vanna (how walls move when IV moves).">
@@ -295,8 +295,8 @@ footer{text-align:center;padding:12px;font-size:.65rem;color:#3f4656;border-top:
     <div id="tapeBody"></div>
     <div id="tapeNote" style="font-size:.62rem;color:var(--muted);margin-top:10px;line-height:1.55"></div>
   </div>
-  <div class="surfaced hidden" id="ideasSec">
-    <h3>Surfaced Ideas</h3>
+  <div class="surfaced hidden" id="AetherSec">
+    <h3>Surfaced Aether</h3>
     <div class="cards" id="cards"></div>
   </div>
 </main>
@@ -320,7 +320,7 @@ footer{text-align:center;padding:12px;font-size:.65rem;color:#3f4656;border-top:
       <li><strong>Spot row</strong> — the cyan-framed row with the live price pill. That's where price is trading right now; everything above it is overhead structure, everything below is support.</li>
     </ul>
     <h3>Flow Tape</h3>
-    <p>Ranks today's <strong>opening premium</strong> — contracts where volume is running ≥70% of open interest (new positioning, not churn), sized by real dollars (mid × volume × 100). <strong>Honest limits:</strong> Tradier's REST feed reports total contract volume, not per-trade aggressor side, so this is <em>not</em> tick-level buy/sell or sweep detection, and puts may be hedges. What it does capture cleanly: where fresh option dollars are opening, which walls are being built vs. stale, and a directional dollar lean that feeds the Ideas score.</p>
+    <p>Ranks today's <strong>opening premium</strong> — contracts where volume is running ≥70% of open interest (new positioning, not churn), sized by real dollars (mid × volume × 100). <strong>Honest limits:</strong> Tradier's REST feed reports total contract volume, not per-trade aggressor side, so this is <em>not</em> tick-level buy/sell or sweep detection, and puts may be hedges. What it does capture cleanly: where fresh option dollars are opening, which walls are being built vs. stale, and a directional dollar lean that feeds the Aether score.</p>
     <h3>The Δ chips</h3>
     <p>The ▲/▼ percentages flag nodes building or unwinding vs. <strong>~12 minutes ago</strong>. A node must be ≥8% of the King and have moved ≥8% to earn one — that kills the far-OTM tail noise. Chips track whichever metric is active.</p>
     <h3>Imbalance</h3>
@@ -373,7 +373,7 @@ footer{text-align:center;padding:12px;font-size:.65rem;color:#3f4656;border-top:
    • CEX removed end-to-end: toggle, per-strike math, profile grid,
      history snapshots, modal, help. ~33% less Black-Scholes work/rebuild.
    • ⚡ flow tags dropped from map rows — Δ% chips (vs ~12 min ago) stay.
-     Flow Tape view and flow-into-Ideas scoring are unchanged.
+     Flow Tape view and flow-into-Aether scoring are unchanged.
    • Spot visibility: exactly one spot row (nearest strike), cyan glow
      frame, cyan strike text, live price pill in Triad + Single grid,
      Spot line added to the Chart key-levels rail.
@@ -386,7 +386,7 @@ footer{text-align:center;padding:12px;font-size:.65rem;color:#3f4656;border-top:
      only when its chain actually changes (~90s), scroll preserved.
    • Mobile: Triad stays 3-across (skinny by design); the nav row is now
      one clean horizontal scroll instead of wrapping into a jumble.
-   • Background Ideas sweep: 5 min unless the Ideas view is open (110s),
+   • Background Aether sweep: 5 min unless the Aether view is open (110s),
      and it never runs while a visible-panel refresh is in flight.
    ===================================================================== */
 const TICKS=['SPXW','SPY','QQQ','IWM','NVDA','AAPL','MSFT','META','TSLA','AMZN','GOOGL'];
@@ -412,7 +412,7 @@ const state={
   tradierToken:(localStorage.getItem('kairos_tok')||'').trim(),
   tradierEnv:localStorage.getItem('kairos_env')||'production',
   trinityTickers:(localStorage.getItem('kairos_ticks')||'SPXW,SPY,QQQ').split(',').map(cleanSym).filter(Boolean),
-  expCache:{}, history:{}, prevG:{}, dataAge:{}, ideas:{}, tech:{},
+  expCache:{}, history:{}, prevG:{}, dataAge:{}, Aether:{}, tech:{},
   scrolled:{}, refreshing:false, pendingRefresh:false, pendingForce:false,
   lastHistSave:0, firstLoadFailed:false, singleLoading:false
 };
@@ -654,10 +654,10 @@ function scoreIdea(sym,d,tech){
   };
 }
 let sweeping=false;
-async function ideasSweep(force){
+async function AetherSweep(force){
   if(sweeping||document.hidden||state.refreshing)return; // never compete with a visible-panel refresh
   const now=Date.now();
-  const gap=state.view==='ideas'?110000:300000; // full-watchlist sweep every 5 min unless Ideas is open
+  const gap=state.view==='Aether'?110000:300000; // full-watchlist sweep every 5 min unless Aether is open
   if(!force&&state.lastSweep&&now-state.lastSweep<gap)return;
   sweeping=true;state.lastSweep=now;
   try{
@@ -677,15 +677,15 @@ async function ideasSweep(force){
         }
         if(!d)continue;
         const tech=await getTech(sym);
-        state.ideas[sym]=scoreIdea(sym,d,tech);
+        state.Aether[sym]=scoreIdea(sym,d,tech);
       }catch(e){}
       await new Promise(r2=>setTimeout(r2,60));
     }
   }finally{sweeping=false;}
-  if(state.view==='ideas')renderCards();
+  if(state.view==='Aether')renderCards();
 }
-setInterval(()=>ideasSweep(false),30000);
-setTimeout(()=>ideasSweep(true),15000); // let the visible panels land first
+setInterval(()=>AetherSweep(false),30000);
+setTimeout(()=>AetherSweep(true),15000); // let the visible panels land first
 
 /* ---- per-metric exposure profile across ±7% spot grid ---- */
 function exposureProfile(contracts,spot){
@@ -1214,13 +1214,13 @@ function lvl(type,label,price,gex){
 
 function renderCards(){
   const el=document.getElementById('cards');el.innerHTML='';
-  const ideas=Object.values(state.ideas||{}).filter(Boolean).sort((a,b)=>b.score-a.score);
-  const scanned=Object.keys(state.ideas||{}).length;
-  if(!ideas.length){
+  const Aether=Object.values(state.Aether||{}).filter(Boolean).sort((a,b)=>b.score-a.score);
+  const scanned=Object.keys(state.Aether||{}).length;
+  if(!Aether.length){
     el.innerHTML=`<div style="color:var(--muted);font-size:.78rem;line-height:1.6">${scanned?`Scanned ${scanned} tickers \u2014 nothing clears the 55-score bar right now. A play needs GEX structure and the daily trend pointing the same way.`:'Scanning the full watchlist\u2026 first pass takes about a minute.'}</div>`;
     return;
   }
-  ideas.forEach(i=>{
+  Aether.forEach(i=>{
     const c=document.createElement('div');c.className='card';
     const flowTag=i.flow==='confirms'?'<span class="drv">flow \u2713</span>':i.flow==='diverges'?'<span class="drv warn">flow \u2717</span>':'';
     c.innerHTML=`
@@ -1237,7 +1237,7 @@ function renderCards(){
   });
   const note=document.createElement('div');
   note.style.cssText='grid-column:1/-1;color:var(--muted);font-size:.68rem;margin-top:2px';
-  note.textContent=`${ideas.length} of ${scanned} scanned tickers qualify \u00b7 GEX \u00d7 trend \u00d7 opening flow \u00b7 re-scans every ~2 min \u00b7 context, not signals`;
+  note.textContent=`${Aether.length} of ${scanned} scanned tickers qualify \u00b7 GEX \u00d7 trend \u00d7 opening flow \u00b7 re-scans every ~2 min \u00b7 context, not signals`;
   el.appendChild(note);
 }
 
@@ -1337,7 +1337,7 @@ function renderTape(sym){
     }).join('')+
     '</tbody></table></div>';
   const newWrap=body.querySelector('.tape-wrap');if(newWrap&&keepScroll)newWrap.scrollTop=keepScroll;
-  document.getElementById('tapeNote').innerHTML='Opening = today\u2019s volume \u2265 '+Math.round(FLOW_OPEN*100)+'% of standing OI (new positioning, not churn). Premium = mid \u00d7 volume \u00d7 100 (real dollars). <b>Honest limits:</b> Tradier REST gives total contract volume, not per-trade aggressor side \u2014 so this is <b>not</b> tick-level buy/sell or sweep detection, and puts may be hedges rather than bearish bets. What it captures cleanly: where fresh option dollars are opening today, which walls are being built vs. stale, and a directional lean that feeds the Ideas score.';
+  document.getElementById('tapeNote').innerHTML='Opening = today\u2019s volume \u2265 '+Math.round(FLOW_OPEN*100)+'% of standing OI (new positioning, not churn). Premium = mid \u00d7 volume \u00d7 100 (real dollars). <b>Honest limits:</b> Tradier REST gives total contract volume, not per-trade aggressor side \u2014 so this is <b>not</b> tick-level buy/sell or sweep detection, and puts may be hedges rather than bearish bets. What it captures cleanly: where fresh option dollars are opening today, which walls are being built vs. stale, and a directional lean that feeds the Aether score.';
 }
 
 function openDeep(sym){
@@ -1397,7 +1397,7 @@ function openDeep(sym){
     if(flipVal){ctx.strokeStyle='#f2c14e';ctx.beginPath();ctx.moveTo(xOf(flipVal),0);ctx.lineTo(xOf(flipVal),130);ctx.stroke();}
     ctx.setLineDash([]);
   }
-  const idea=(state.ideas||{})[sym];
+  const idea=(state.Aether||{})[sym];
   document.getElementById('mRecs').innerHTML=idea
     ?`<div class="rec" style="border-left-color:${idea.bias==='LONG'?'var(--green)':'var(--red)'}">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
@@ -1408,7 +1408,7 @@ function openDeep(sym){
         ${idea.target||idea.invalid?`<div style="font-size:.72rem;color:var(--muted);margin-top:3px">${idea.target?`target <b style="color:var(--gold)">${idea.target}</b>`:''}${idea.invalid?` \u00b7 invalid ${idea.bias==='LONG'?'below':'above'} <b style="color:var(--cyan)">${idea.invalid}</b>`:''}</div>`:''}
         <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:5px">${(idea.drivers||[]).map(x=>`<span class="drv">${x}</span>`).join('')}</div>
       </div>`
-    :`<div class="rec"><div style="font-size:.78rem;color:var(--muted);line-height:1.55">No edge right now \u2014 GEX structure and the daily trend don\u2019t agree. Ideas always score off gamma + trend + flow; the metric toggle only changes the map you\u2019re reading.</div></div>`;
+    :`<div class="rec"><div style="font-size:.78rem;color:var(--muted);line-height:1.55">No edge right now \u2014 GEX structure and the daily trend don\u2019t agree. Aether always score off gamma + trend + flow; the metric toggle only changes the map you\u2019re reading.</div></div>`;
   const top=[...(d.strikes||[])].sort((a,b)=>Math.abs(mval(b))-Math.abs(mval(a))).slice(0,5);
   const mxA=top.length?Math.abs(mval(top[0])):1;
   document.getElementById('mNodes').innerHTML=top.map((n,i)=>{
@@ -1458,7 +1458,7 @@ async function refresh(force){
     document.getElementById('lastUp').textContent='Last: '+new Date().toLocaleTimeString();
     if(state.view==='single')state.singleLoading=false;
     if(state.view==='trinity'||state.view==='single')renderTrinity();
-    if(state.view==='ideas')renderCards();
+    if(state.view==='Aether')renderCards();
     if(state.view==='chart')updateChart(state.focus);
     if(state.view==='imb')renderImb(state.focus);
     if(state.view==='tape')renderTape(state.focus);
@@ -1576,15 +1576,15 @@ function updateSingleTabsActive(){
 
 function setView(v){
   state.view=v;
-  ['btnTrinity','btnSingle','btnChart','btnIdeas','btnImb','btnTape'].forEach(id=>document.getElementById(id).classList.remove('active'));
-  const bmap={trinity:'btnTrinity',single:'btnSingle',chart:'btnChart',ideas:'btnIdeas',imb:'btnImb',tape:'btnTape'};
+  ['btnTrinity','btnSingle','btnChart','btnAether','btnImb','btnTape'].forEach(id=>document.getElementById(id).classList.remove('active'));
+  const bmap={trinity:'btnTrinity',single:'btnSingle',chart:'btnChart',Aether:'btnAether',imb:'btnImb',tape:'btnTape'};
   document.getElementById(bmap[v]).classList.add('active');
   document.getElementById('trinityWrap').classList.toggle('hidden',v!=='trinity'&&v!=='single');
   document.getElementById('chartSec').classList.toggle('hidden',v!=='chart');
-  document.getElementById('ideasSec').classList.toggle('hidden',v!=='ideas');
+  document.getElementById('AetherSec').classList.toggle('hidden',v!=='Aether');
   document.getElementById('imbSec').classList.toggle('hidden',v!=='imb');
   document.getElementById('tapeSec').classList.toggle('hidden',v!=='tape');
-  document.getElementById('mtoggle').classList.toggle('dim',v==='ideas'||v==='imb'||v==='tape');
+  document.getElementById('mtoggle').classList.toggle('dim',v==='Aether'||v==='imb'||v==='tape');
   // show/hide single tabs
   const tabsEl=document.getElementById('singleTabs');
   if(tabsEl){
@@ -1602,7 +1602,7 @@ function setView(v){
     if(stale)refresh(false);
   }
   if(v==='single'&&state.singleLoading)refresh(false);
-  if(v==='ideas'){renderCards();ideasSweep(false);}
+  if(v==='Aether'){renderCards();AetherSweep(false);}
   if(v==='chart'){loadTV(state.focus);updateChart(state.focus);if(!state.data[state.focus])refresh(false);}
   if(v==='imb'){renderImb(state.focus);if(!state.chains[state.focus]||Date.now()-(state.chains[state.focus].t||0)>CHAIN_TTL)refresh(false);}
   if(v==='tape'){renderTape(state.focus);if(!state.chains[state.focus]||Date.now()-(state.chains[state.focus].t||0)>CHAIN_TTL)refresh(false);}
@@ -1610,7 +1610,7 @@ function setView(v){
 document.getElementById('btnTrinity').onclick=()=>setView('trinity');
 document.getElementById('btnSingle').onclick=()=>setView('single');
 document.getElementById('btnChart').onclick=()=>setView('chart');
-document.getElementById('btnIdeas').onclick=()=>setView('ideas');
+document.getElementById('btnAether').onclick=()=>setView('Aether');
 document.getElementById('btnImb').onclick=()=>setView('imb');
 document.getElementById('btnTape').onclick=()=>setView('tape');
 
