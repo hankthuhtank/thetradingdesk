@@ -27,13 +27,12 @@ header{display:flex;align-items:center;justify-content:space-between;padding:9px
 }
 .btn.active{border-color:var(--cyan);background:#00e5ff18;color:var(--cyan)}
 select,input{background:var(--panel2);border:1px solid var(--border);color:var(--text);padding:5px 8px;border-radius:5px;font-size:.76rem;font-family:inherit}
-/* metric toggle — GEX / VEX / CEX */
+/* metric toggle — GEX / VEX */
 .mtoggle{display:inline-flex;border:1px solid var(--border);border-radius:7px;overflow:hidden}
 .mtoggle button{background:transparent;border:none;color:var(--muted);padding:5px 9px;font-size:.72rem;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:.03em;transition:background .15s,color .15s}
 .mtoggle button:hover{color:var(--text)}
 .mtoggle button[data-m="gex"].on{background:var(--gold);color:#0a0a08}
 .mtoggle button[data-m="vex"].on{background:var(--cyan);color:#04121a}
-.mtoggle button[data-m="cex"].on{background:var(--barney);color:#160726}
 .mtoggle.dim{opacity:.35;pointer-events:none}
 .banner{background:#0a1218;border-bottom:1px solid #152028;padding:5px 14px;font-size:.7rem;color:var(--muted);display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
 .banner .live{color:var(--green);font-weight:600}
@@ -52,18 +51,16 @@ main{padding:10px;display:flex;flex-direction:column;gap:10px}
 .badge-src.stale{background:#f8717122;color:#f87171}
 .king-pill{background:linear-gradient(135deg,#f2c14e30,#f2c14e12);border:1px solid #f2c14e77;color:var(--pika);font-size:.66rem;padding:2px 8px;border-radius:12px;font-weight:700;white-space:nowrap}
 .king-pill.vex{background:linear-gradient(135deg,#22d3ee30,#22d3ee12);border-color:#22d3ee77;color:var(--cyan)}
-.king-pill.cex{background:linear-gradient(135deg,#a855f733,#a855f712);border-color:#a855f777;color:#c99bff}
 .strikes{overflow-y:auto;flex:1;scrollbar-width:thin;scrollbar-color:#2a3140 transparent}
 .srow{display:grid;grid-template-columns:56px 1fr 76px;align-items:center;padding:3px 8px;font-size:.74rem;border-bottom:1px solid #0c0f16;cursor:pointer}
 .srow:hover{filter:brightness(1.18)}
-.srow.spot{border-left:3px solid var(--cyan)}
+/* spot row — deliberately loud: cyan glow frame + cyan strike + live price pill */
+.srow.spot{border-left:3px solid var(--cyan);outline:2px solid #22d3eeb3;outline-offset:-2px;position:relative;z-index:1;box-shadow:inset 0 0 12px #22d3ee22}
+.srow.spot .strike{color:var(--cyan);text-shadow:0 0 8px #22d3ee88}
 .srow.king{background:#f2c14e!important}
 .srow.king.vexk{background:var(--cyan)!important}
-.srow.king.cexk{background:var(--barney)!important}
-.srow.king .strike,.srow.king .gex{color:#000!important;font-weight:700!important}
-.srow.king.cexk .strike,.srow.king.cexk .gex{color:#fff!important}
+.srow.king .strike,.srow.king .gex{color:#000!important;font-weight:700!important;text-shadow:none}
 .srow.king .star{color:#000}
-.srow.king.cexk .star{color:#fff}
 .srow.wall .gex{font-weight:700}
 .srow .strike{font-family:'JetBrains Mono';font-weight:600}
 .srow .gex{font-family:'JetBrains Mono';text-align:right;font-weight:600;font-size:.72rem}
@@ -72,7 +69,6 @@ main{padding:10px;display:flex;flex-direction:column;gap:10px}
 .wtag{font-size:.54rem;padding:0 4px;border-radius:3px;font-weight:700;letter-spacing:.03em}
 .wtag.cw{background:#2dd4bf26;color:var(--teal)}
 .wtag.pw{background:#a855f733;color:#c99bff}
-.wtag.flow{background:#f59e0b26;color:#fbbf24}
 .dchip{font-size:.58rem;font-family:'JetBrains Mono';margin-left:2px}
 .drv{font-size:.62rem;padding:1px 7px;border-radius:9px;border:1px solid #2a3140;color:var(--teal);background:#2dd4bf10}
 .drv.warn{color:#fca5a5;border-color:#7f1d1d;background:#f871710d}
@@ -86,17 +82,17 @@ table.sgrid{border-collapse:collapse;width:auto;margin:0 auto}
 .sgrid th.sk,.sgrid td.sk{position:sticky;left:0;z-index:4;background:var(--panel);text-align:left;font-family:'JetBrains Mono';font-weight:700;font-size:.7rem;padding:2px 8px;border-right:1px solid var(--border);white-space:nowrap}
 .sgrid th.sk{z-index:6}
 .sgrid td{font-family:'JetBrains Mono';font-size:.68rem;font-weight:600;text-align:right;padding:2px 9px;border-bottom:1px solid #0c0f16;white-space:nowrap;min-width:92px;max-width:118px}
-.sgrid tr.spotrow td.sk{color:var(--cyan)}
-.sgrid tr.spotrow{outline:1px solid #00e5ff55;outline-offset:-1px}
+.sgrid tr.spotrow td.sk{color:var(--cyan);text-shadow:0 0 8px #22d3ee88;background:#0c1e27}
+.sgrid tr.spotrow{outline:2px solid #22d3eeb3;outline-offset:-2px}
 .sgrid td.kcell{background:#f2c14e!important;color:#000!important;font-weight:700!important}
 .sgrid td.kcell.vexk{background:var(--cyan)!important}
-.sgrid td.kcell.cexk{background:var(--barney)!important;color:#fff!important}
 .sgrid td.zero{color:#3a4254}
 @media(max-width:760px){.sgrid td,.sgrid th{padding:2px 6px;font-size:.6rem}.sgrid td{min-width:70px}}
 .imb,.tape{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:12px}
 .imb-top{display:flex;gap:10px;align-items:center;margin-bottom:10px}
 .imb-stats{display:grid;grid-template-columns:repeat(7,1fr);gap:8px}
-@media(max-width:900px){.imb-stats{grid-template-columns:repeat(2,1fr)}}
+#tapeStats{grid-template-columns:repeat(4,1fr)}
+@media(max-width:900px){.imb-stats,#tapeStats{grid-template-columns:repeat(2,1fr)}}
 .stat{background:var(--panel2);border:1px solid var(--border);border-radius:9px;padding:8px 10px}
 .sl{font-size:.58rem;color:var(--muted);letter-spacing:.07em;margin-bottom:3px}
 .sv{font-size:1.02rem;font-weight:700;font-family:'JetBrains Mono'}
@@ -107,8 +103,8 @@ table.sgrid{border-collapse:collapse;width:auto;margin:0 auto}
 .side.l i{background:#34d3991c}.side.l b{background:#34d399c9}
 .side.r i{background:#f871711c}.side.r b{background:#f87171c9}
 .klabel{text-align:center;font-size:.72rem;font-weight:700;display:flex;align-items:center;justify-content:center;gap:5px;flex-wrap:wrap;font-family:'JetBrains Mono';white-space:nowrap}
-.imb-row.spotrow2{outline:1px solid #00e5ff55;outline-offset:-1px;border-radius:4px}
-.spotpx{font-size:.58rem;font-family:'JetBrains Mono';font-weight:700;color:#e9edf5;background:#e9edf51a;border:1px solid #e9edf540;border-radius:4px;padding:0 5px}
+.imb-row.spotrow2{outline:2px solid #22d3eeb3;outline-offset:-2px;border-radius:4px}
+.spotpx{font-size:.58rem;font-family:'JetBrains Mono';font-weight:700;color:#dffaff;background:#22d3ee26;border:1px solid #22d3ee88;border-radius:4px;padding:0 5px;box-shadow:0 0 8px #22d3ee40}
 .dpill{font-size:.56rem;font-family:'JetBrains Mono';font-weight:700;padding:0 5px;border-radius:4px}
 .dpill.up{background:#34d39922;color:#34d399}.dpill.dn{background:#f8717126;color:#f87171}
 /* flow tape */
@@ -133,6 +129,7 @@ table.sgrid{border-collapse:collapse;width:auto;margin:0 auto}
 .lvl-l{display:flex;align-items:center;gap:6px}
 .dot{width:8px;height:8px;border-radius:50%}
 .dot.king{background:var(--pika);box-shadow:0 0 6px var(--pika)}.dot.call{background:var(--teal)}.dot.put{background:var(--barney)}.dot.flip{background:var(--cyan)}.dot.gate{background:#f59e0b}
+.dot.spot{background:#e9edf5;box-shadow:0 0 6px #e9edf5}
 .lvl-v{font-family:'JetBrains Mono';font-weight:600}
 .surfaced{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:10px}
 .surfaced h3{font-size:.72rem;color:var(--muted);letter-spacing:.05em;margin-bottom:8px;text-transform:uppercase}
@@ -176,25 +173,33 @@ footer{text-align:center;padding:12px;font-size:.65rem;color:#3f4656;border-top:
 .help .kbd{background:#161a24;border:1px solid #2a3140;border-radius:4px;padding:0 5px;font-family:'JetBrains Mono';font-size:.72rem}
 @media(max-width:760px){
   header{flex-wrap:wrap;row-gap:6px;padding:8px 10px}
-  .hdr-right{width:100%;overflow-x:auto;flex-wrap:nowrap;padding-bottom:2px;scrollbar-width:none}
-  .banner{font-size:.62rem;gap:8px}
-  main{padding:7px}
-  .panel{height:auto;min-height:0;max-height:64vh}
+  /* one clean horizontally-scrollable nav row — no wrapping, no squished buttons */
+  .hdr-right{width:100%;overflow-x:auto;flex-wrap:nowrap;padding-bottom:2px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+  .hdr-right::-webkit-scrollbar{display:none}
+  .hdr-right>*{flex:0 0 auto}
+  .hdr-right .btn{white-space:nowrap;padding:5px 9px;font-size:.7rem}
+  #lastUp{display:none}
+  .banner{font-size:.6rem;gap:8px;padding:4px 10px}
+  main{padding:5px}
+  /* keep all three Triad panels side by side — skinny is intentional */
+  .trinity{grid-template-columns:repeat(3,1fr);gap:2px}
+  .panel{height:auto;min-height:0;max-height:70vh}
   .chart-area{grid-template-columns:1fr}
   .levels{max-height:180px}
   .settings{width:100%;right:-100%}
   .cards{grid-template-columns:1fr 1fr}
   .modal{padding:14px}
-  .pstats{gap:7px}
-  .srow{grid-template-columns:36px 1fr 52px;padding:2px;font-size:.6rem}
+  .srow{grid-template-columns:34px 1fr 50px;padding:2px;font-size:.6rem}
   .srow .strike{font-size:.6rem}
   .srow .gex{font-size:.6rem}
-  .p-head{padding:4px;gap:2px}
-  .ticker-sel{max-width:55px;font-size:.75rem;padding:2px}
-  .price{font-size:.7rem}
-  .king-pill{font-size:.55rem;padding:1px 4px}
+  .p-head{padding:4px 3px;gap:2px;flex-wrap:wrap}
+  .ticker-sel{max-width:52px;font-size:.72rem;padding:2px}
+  .price{font-size:.68rem}
+  .king-pill{font-size:.52rem;padding:1px 4px}
+  .badge-src{font-size:.5rem}
   .pstats{padding:3px;gap:4px;font-size:.55rem}
   .imb-row{grid-template-columns:1fr 120px 1fr}
+  .spotpx{font-size:.5rem;padding:0 3px}
 }
 .hidden{display:none!important}
 .loader{display:inline-block;width:10px;height:10px;border:2px solid var(--cyan);border-top-color:transparent;border-radius:50%;animation:spin .65s linear infinite}
@@ -211,10 +216,9 @@ footer{text-align:center;padding:12px;font-size:.65rem;color:#3f4656;border-top:
     <button class="btn" id="btnIdeas">Ideas</button>
     <button class="btn" id="btnImb">Imbalance</button>
     <button class="btn" id="btnTape" data-tip="Opening-flow tape — where fresh option dollars are hitting today, ranked by premium.">Tape</button>
-    <div class="mtoggle" id="mtoggle" data-tip="Which exposure the map shows. GEX=gamma (pin/momentum). VEX=vanna (how walls move when IV moves). CEX=charm (into-expiry pin drift).">
+    <div class="mtoggle" id="mtoggle" data-tip="Which exposure the map shows. GEX=gamma (pin/momentum). VEX=vanna (how walls move when IV moves).">
       <button data-m="gex" class="on">GEX</button>
       <button data-m="vex">VEX</button>
-      <button data-m="cex">CEX</button>
     </div>
     <select id="expiryFilter" data-tip="Which expirations feed the map. 0DTE = today only; All = first 5 expirations stacked. Switching re-filters cached chains instantly."><option value="all">All</option><option value="0dte">0DTE</option><option value="7d">≤7D</option><option value="30d">≤30D</option></select>
     <button class="btn" id="btnHelp" data-tip="How to read and use Kairos">?</button>
@@ -234,7 +238,7 @@ footer{text-align:center;padding:12px;font-size:.65rem;color:#3f4656;border-top:
       <div class="chart-top">
         <input id="chartTicker" class="ticker-sel" value="SPY" style="width:92px" autocomplete="off" data-tip="Type any symbol — pulls its chain on the fly">
         <span id="chartFocus"></span>
-        <button class="btn" id="btnPine" style="border-color:var(--border);color:var(--text)" data-tip="Copies the ACTIVE metric's levels (GEX/VEX/CEX) as a Pine v5 indicator. Line thickness = node strength. Paste into TradingView.">Copy Pine</button>
+        <button class="btn" id="btnPine" style="border-color:var(--border);color:var(--text)" data-tip="Copies the ACTIVE metric's levels (GEX/VEX) as a Pine v5 indicator. Line thickness = node strength. Paste into TradingView.">Copy Pine</button>
       </div>
       <div id="tvChart"></div>
     </div>
@@ -260,7 +264,7 @@ footer{text-align:center;padding:12px;font-size:.65rem;color:#3f4656;border-top:
       <input id="tapeTicker" class="ticker-sel" value="SPY" style="width:92px" autocomplete="off" data-tip="Type any optionable ticker">
       <span id="tapeMeta" style="font-size:.68rem;color:var(--muted)"></span>
     </div>
-    <div class="imb-stats" id="tapeStats" style="grid-template-columns:repeat(4,1fr)"></div>
+    <div class="imb-stats" id="tapeStats"></div>
     <div id="tapeBody"></div>
     <div id="tapeNote" style="font-size:.62rem;color:var(--muted);margin-top:10px;line-height:1.55"></div>
   </div>
@@ -274,20 +278,19 @@ footer{text-align:center;padding:12px;font-size:.65rem;color:#3f4656;border-top:
   <div class="modal help">
     <button class="close" id="closeHelp">×</button>
     <h2>How to use Kairos</h2>
-    <h3>The three lenses — GEX / VEX / CEX</h3>
-    <p>The <b>GEX / VEX / CEX</b> toggle up top swaps what every map shows. They are three different Greek exposures, and their walls sit in <em>different strikes</em> — that's the whole point.</p>
+    <h3>The two lenses — GEX / VEX</h3>
+    <p>The <b>GEX / VEX</b> toggle up top swaps what every map shows. They are two different Greek exposures, and their walls sit in <em>different strikes</em> — that's the whole point.</p>
     <ul>
       <li><strong>GEX (gamma)</strong> — the dollar hedging load at each strike. Positive (teal) = dealers fade the move (pin/range); negative (purple) = dealers chase it (momentum). Gamma peaks near the money. This is the classic map.</li>
       <li><strong>VEX (vanna)</strong> — how dealer delta shifts when <em>IV</em> moves. Vanna peaks out in the wings (~15–25Δ), so the vanna King is usually nowhere near the gamma King. +VEX near spot: rising IV makes dealers sell into strength / falling IV hands the market a bid — the "vanna tailwind" that quietly lifts grinding, low-vol tape and caps vol spikes. −VEX: dealers chase IV, moves amplify on a vol expansion.</li>
-      <li><strong>CEX (charm)</strong> — how dealer delta <em>decays as time passes</em>. Charm explodes into expiry, so the charm King is the sharpest into-the-close / into-OPEX pin. When price is near a big charm node late in the day, drift toward it is mechanical.</li>
     </ul>
-    <p>Read them together: when the gamma King, vanna King and charm King <strong>cluster at the same strike</strong>, that strike is a super-magnet. The deep-dive modal shows all three and flags tight confluence.</p>
+    <p>Read them together: when the gamma King and vanna King <strong>cluster at the same strike</strong>, that strike is a super-magnet. The deep-dive modal shows both and flags tight confluence.</p>
     <h3>Node taxonomy</h3>
     <ul>
       <li><strong>King</strong> — largest |exposure| for the active metric. The market's primary magnet for that force.</li>
       <li><strong>Call / Put Wall</strong> — largest positive node above and largest negative node below spot, tagged <span class="wtag cw">CW</span> / <span class="wtag pw">PW</span>.</li>
       <li><strong>Zero Flip</strong> — where net exposure crosses zero (from the Black-Scholes re-priced profile). Computed per metric.</li>
-      <li><strong>⚡ Flow tag</strong> — a node where <em>today's volume ≥ 70% of standing OI</em>. It means the wall is being actively rebuilt right now, not just yesterday's book. This is the one variable most GEX tools miss.</li>
+      <li><strong>Spot row</strong> — the cyan-framed row with the live price pill. That's where price is trading right now; everything above it is overhead structure, everything below is support.</li>
     </ul>
     <h3>Flow Tape</h3>
     <p>Ranks today's <strong>opening premium</strong> — contracts where volume is running ≥70% of open interest (new positioning, not churn), sized by real dollars (mid × volume × 100). <strong>Honest limits:</strong> Tradier's REST feed reports total contract volume, not per-trade aggressor side, so this is <em>not</em> tick-level buy/sell or sweep detection, and puts may be hedges. What it does capture cleanly: where fresh option dollars are opening, which walls are being built vs. stale, and a directional dollar lean that feeds the Ideas score.</p>
@@ -298,7 +301,7 @@ footer{text-align:center;padding:12px;font-size:.65rem;color:#3f4656;border-top:
     <h3>Workflow (Skylit doctrine)</h3>
     <p>Chart first, map second. Build your thesis from price, then use the map to confirm or deny. Full Triad alignment = highest conviction; divergence = size down or pass. Structure is context, not a signal.</p>
     <h3>Units &amp; honesty</h3>
-    <p>GEX is <strong>$ per 1-pt move</strong> (Heatseeker scale). VEX is <strong>$ delta per vol-point</strong>. CEX is <strong>$ delta drift per day</strong>. OI updates daily pre-market; Greeks/IV refresh ~hourly; quotes are real-time. Chains cache ~90s and every metric is re-priced from live spot on each tick. Signs assume the standard dealer position (long calls / short puts).</p>
+    <p>GEX is <strong>$ per 1-pt move</strong> (Heatseeker scale). VEX is <strong>$ delta per vol-point</strong>. OI updates daily pre-market; Greeks/IV refresh ~hourly; quotes are real-time. Chains cache ~90s and every metric is re-priced from live spot on each tick. Signs assume the standard dealer position (long calls / short puts).</p>
   </div>
 </div>
 <div class="modal-bg" id="modal">
@@ -331,30 +334,31 @@ footer{text-align:center;padding:12px;font-size:.65rem;color:#3f4656;border-top:
   <button class="btn primary" style="width:100%;margin-top:8px" id="save">Save</button>
   <div class="method">Everything else is locked to the most accurate setup: live spot quotes, exposure re-priced from spot + IV on every tick, standard dealer convention. Chains/OI/IV cache ~90s, keeping request volume ~80% lower and the UI smooth. Full explanation under <b>?</b>.</div>
 </div>
-<footer>Kairos v7 · GEX · VEX · CEX · Flow · structure is context, not a signal</footer>
+<footer>Kairos v7.1 · GEX · VEX · Flow · structure is context, not a signal</footer>
 
 <script>
 /* =====================================================================
-   Kairos v7 — dealer exposure terminal (GEX + VEX + CEX + Flow). Single file.
+   Kairos v7.1 — dealer exposure terminal (GEX + VEX + Flow). Single file.
 
-   v7 changes (built on v6's cached-chains + live-reprice architecture):
-   • VEX (vanna) and CEX (charm) added as first-class metrics alongside GEX.
-     GEX/VEX/CEX toggle in the header swaps every map, King, wall, flip,
-     profile and the Pine export. Same layout — one extra dimension of data.
-     Vanna walls sit in the wings, charm walls explode into expiry, so these
-     surface structure the gamma map physically can't show.
-   • Flow Tape: ranks today's OPENING premium (vol >= 70% of standing OI =
-     new positioning, sized by real dollars). Honest about limits — no
-     aggressor side or sweeps from Tradier REST, but it captures where fresh
-     option $ is hitting and which walls are being rebuilt vs. stale.
-   • ⚡ flow tag on the map: any material node where today's vol >= 70% of OI
-     gets a bolt — the wall is being rebuilt right now.
-   • Flow feeds Ideas: net opening lean confirms or fades the GEX+trend bias
-     as a scored driver ("flow confirms" / "flow diverges").
-   • Confluence readout in the deep modal: Γ King / Vanna King / Charm King;
-     tight clustering flags a super-magnet.
-   • Δ chips and snapshot history are now per-metric, so chips stay honest
-     when you switch lenses.
+   v7.1 — smoothness + focus pass (no calculation changes to GEX/VEX):
+   • CEX removed end-to-end: toggle, per-strike math, profile grid,
+     history snapshots, modal, help. ~33% less Black-Scholes work/rebuild.
+   • ⚡ flow tags dropped from map rows — Δ% chips (vs ~12 min ago) stay.
+     Flow Tape view and flow-into-Ideas scoring are unchanged.
+   • Spot visibility: exactly one spot row (nearest strike), cyan glow
+     frame, cyan strike text, live price pill in Triad + Single grid,
+     Spot line added to the Chart key-levels rail.
+   • Triad-wipe bug fixed: changing the ticker in Single view no longer
+     rewrites the saved Triad; loader self-heals any collapsed saved list.
+   • Pending-refresh queue: refreshes requested mid-flight run right after
+     instead of being dropped — tab hops always load.
+   • Panels never rebuild while a ticker box has focus / combobox is open.
+   • Scroll restore is synchronous (no 40ms flash-to-top). Tape repaints
+     only when its chain actually changes (~90s), scroll preserved.
+   • Mobile: Triad stays 3-across (skinny by design); the nav row is now
+     one clean horizontal scroll instead of wrapping into a jumble.
+   • Background Ideas sweep: 5 min unless the Ideas view is open (110s),
+     and it never runs while a visible-panel refresh is in flight.
    ===================================================================== */
 const TICKS=['SPXW','SPY','QQQ','IWM','NVDA','AAPL','MSFT','META','TSLA','AMZN','GOOGL'];
 const CHAIN_TTL=90000;
@@ -379,19 +383,26 @@ const state={
   tradierEnv:localStorage.getItem('kairos_env')||'production',
   trinityTickers:(localStorage.getItem('kairos_ticks')||'SPXW,SPY,QQQ').split(',').map(cleanSym).filter(Boolean),
   expCache:{}, history:{}, prevG:{}, dataAge:{}, ideas:{}, tech:{},
-  scrolled:{}, refreshing:false, lastHistSave:0, firstLoadFailed:false, singleLoading:false
+  scrolled:{}, refreshing:false, pendingRefresh:false, pendingForce:false,
+  lastHistSave:0, firstLoadFailed:false, singleLoading:false
 };
 if(!state.trinityTickers.length)state.trinityTickers=['SPXW','SPY','QQQ'];
-if(!['gex','vex','cex'].includes(state.metric))state.metric='gex';
+// self-heal: an older bug could collapse the saved Triad to one ticker — pad back to 3
+if(state.trinityTickers.length<3){
+  ['SPXW','SPY','QQQ'].forEach(t=>{if(state.trinityTickers.length<3&&!state.trinityTickers.includes(t))state.trinityTickers.push(t);});
+  localStorage.setItem('kairos_ticks',state.trinityTickers.join(','));
+}
+state.trinityTickers=state.trinityTickers.slice(0,3);
+if(!['gex','vex'].includes(state.metric))state.metric='gex';
 try{
   const h=JSON.parse(localStorage.getItem('kairos_hist')||'null');
   if(h&&h.v===6&&h.d===new Date().toDateString())state.history=h.h||{};
 }catch(e){}
 
 /* ---- metric plumbing ---- */
-function metricKey(m){return m==='vex'?'v':m==='cex'?'c':'g';}
-function metricLabel(m){return m==='vex'?'Vanna':m==='cex'?'Charm':'Gamma';}
-function mval(s,metric){metric=metric||state.metric;return metric==='vex'?(s.vex||0):metric==='cex'?(s.cex||0):(s.gex||0);}
+function metricKey(m){return m==='vex'?'v':'g';}
+function metricLabel(m){return m==='vex'?'Vanna':'Gamma';}
+function mval(s,metric){metric=metric||state.metric;return metric==='vex'?(s.vex||0):(s.gex||0);}
 function fmtG(v,spot){return fmt(state.unit==='pt'&&spot?v/(spot*0.01):v);}
 function mdisp(v,spot){return state.metric==='gex'?fmtG(v,spot):fmt(v);}
 function fmt(v){const a=Math.abs(v);if(a>=1e9)return(v/1e9).toFixed(2)+'B';if(a>=1e6)return(v/1e6).toFixed(1)+'M';if(a>=1e3)return(v/1e3).toFixed(1)+'K';return Math.round(v)+'';}
@@ -427,11 +438,10 @@ function sessionInfo(){
   const sess=(dow===0||dow===6)?prevBiz(new Date(nyDate.getTime()+86400000)):nyDate;
   return {sess:fmtNY(sess),oi:fmtNY(prevBiz(sess))};
 }
-/* Black-Scholes second-order Greeks (r=q=0). Raw gamma/vanna/charm are identical
+/* Black-Scholes second-order Greeks (r=q=0). Raw gamma/vanna are identical
    for calls and puts at a strike — dealer SIGN comes from position only. */
 function bsGamma(S,K,iv,T){if(T<=0||iv<=0||S<=0||K<=0)return 0;const st=iv*Math.sqrt(T);const d1=(Math.log(S/K)+0.5*iv*iv*T)/st;return Math.exp(-0.5*d1*d1)/(S*st*Math.sqrt(2*Math.PI));}
 function bsVanna(S,K,iv,T){if(T<=0||iv<=0||S<=0||K<=0)return 0;const st=iv*Math.sqrt(T);const d1=(Math.log(S/K)+0.5*iv*iv*T)/st;const d2=d1-st;return -Math.exp(-0.5*d1*d1)/Math.sqrt(2*Math.PI)*d2/iv;}
-function bsCharm(S,K,iv,T){if(T<=0||iv<=0||S<=0||K<=0)return 0;const st=iv*Math.sqrt(T);const d1=(Math.log(S/K)+0.5*iv*iv*T)/st;const d2=d1-st;return (Math.exp(-0.5*d1*d1)/Math.sqrt(2*Math.PI))*d2/(2*T)/365;} // per-day dDelta/dt
 
 function ensureProfile(sym,d){
   if(!d)return null;
@@ -458,7 +468,7 @@ function panelStats(sym,d,metric){
     if(best)em=d.spot*best.iv*Math.sqrt(best.T);
   }
   const prof=ensureProfile(sym,d);
-  const fl=prof?(metric==='vex'?prof.flipV:metric==='cex'?prof.flipC:prof.flipG):null;
+  const fl=prof?(metric==='vex'?prof.flipV:prof.flipG):null;
   let vel=null;
   const hist=state.history[sym]||[];
   if(hist.length>1){
@@ -614,9 +624,10 @@ function scoreIdea(sym,d,tech){
 }
 let sweeping=false;
 async function ideasSweep(force){
-  if(sweeping||document.hidden)return;
+  if(sweeping||document.hidden||state.refreshing)return; // never compete with a visible-panel refresh
   const now=Date.now();
-  if(!force&&state.lastSweep&&now-state.lastSweep<110000)return;
+  const gap=state.view==='ideas'?110000:300000; // full-watchlist sweep every 5 min unless Ideas is open
+  if(!force&&state.lastSweep&&now-state.lastSweep<gap)return;
   sweeping=true;state.lastSweep=now;
   try{
     if(state.tradierToken.length>8){
@@ -643,7 +654,7 @@ async function ideasSweep(force){
   if(state.view==='ideas')renderCards();
 }
 setInterval(()=>ideasSweep(false),30000);
-setTimeout(()=>ideasSweep(true),4000);
+setTimeout(()=>ideasSweep(true),15000); // let the visible panels land first
 
 /* ---- per-metric exposure profile across ±7% spot grid ---- */
 function exposureProfile(contracts,spot){
@@ -651,24 +662,22 @@ function exposureProfile(contracts,spot){
   const n=48,lo=spot*0.93,hi=spot*1.07,pts=[];
   for(let i=0;i<=n;i++){
     const s=lo+(hi-lo)*i/n;
-    let gu=0,ga=0,vu=0,va=0,cu=0,ca=0;
+    let gu=0,ga=0,vu=0,va=0;
     for(const c of contracts){
       const sg=c.call?1:-1;
       const gg=bsGamma(s,c.k,c.iv,c.T)*c.oi;
       const vv=bsVanna(s,c.k,c.iv,c.T)*c.oi;
-      const cc=bsCharm(s,c.k,c.iv,c.T)*c.oi;
-      gu+=sg*gg;ga+=gg;vu+=sg*vv;va+=vv;cu+=sg*cc;ca+=cc;
+      gu+=sg*gg;ga+=gg;vu+=sg*vv;va+=vv;
     }
     pts.push({s,
       g:dealerAdj(gu,ga)*100*s*s*0.01,
-      v:dealerAdj(vu,va)*100*s*0.01,
-      c:dealerAdj(cu,ca)*100*s*0.01});
+      v:dealerAdj(vu,va)*100*s*0.01});
   }
   const flipFor=key=>{let f=null,b=1e18;for(let i=0;i<pts.length-1;i++){if(pts[i][key]*pts[i+1][key]<0){const x=pts[i].s+(pts[i+1].s-pts[i].s)*(-pts[i][key])/(pts[i+1][key]-pts[i][key]);if(Math.abs(x-spot)<b){b=Math.abs(x-spot);f=x;}}}return f;};
   const idx=Math.max(0,Math.min(n,Math.round((spot-lo)/(hi-lo)*n)));
   return{pts,
-    flipG:flipFor('g'),flipV:flipFor('v'),flipC:flipFor('c'),
-    netG:pts[idx]?pts[idx].g:0,netV:pts[idx]?pts[idx].v:0,netC:pts[idx]?pts[idx].c:0};
+    flipG:flipFor('g'),flipV:flipFor('v'),
+    netG:pts[idx]?pts[idx].g:0,netV:pts[idx]?pts[idx].v:0};
 }
 function base(){return state.tradierEnv==='production'?'https://api.tradier.com/v1':'https://sandbox.tradier.com/v1';}
 function hdr(){return{'Authorization':'Bearer '+state.tradierToken,'Accept':'application/json'};}
@@ -782,7 +791,7 @@ function expiryFilt(c){
   return true;
 }
 
-/* ---- shared aggregator: builds GEX + VEX + CEX per strike in one pass ---- */
+/* ---- shared aggregator: builds GEX + VEX per strike in one pass ---- */
 function buildFromChains(sym){
   const ch=state.chains[sym];
   if(!ch||!ch.list||!ch.list.length)return null;
@@ -790,40 +799,38 @@ function buildFromChains(sym){
   if(!spot)return null;
   const cs=ch.list.filter(expiryFilt);
   if(!cs.length)return null;
-  const gmult=100*spot*spot*0.01, vmult=100*spot*0.01, cmult=100*spot*0.01;
+  const gmult=100*spot*spot*0.01, vmult=100*spot*0.01;
   const per={};const contracts=[];
   for(const c of cs){
     let g=c.g0;
     if(state.calcMode==='live'&&c.iv>0.01&&c.iv<5){const gb=bsGamma(spot,c.k,c.iv,c.T);if(gb>0)g=gb;}
-    let van=0,cha=0;
-    if(c.iv>0.01&&c.iv<5){van=bsVanna(spot,c.k,c.iv,c.T);cha=bsCharm(spot,c.k,c.iv,c.T);}
-    if(!g&&!van&&!cha)continue;
+    let van=0;
+    if(c.iv>0.01&&c.iv<5)van=bsVanna(spot,c.k,c.iv,c.T);
+    if(!g&&!van)continue;
     const sgn=c.call?1:-1;
     const pe=per[c.e]||(per[c.e]={});
-    const b=pe[c.k]||(pe[c.k]={k:c.k,gu:0,ga:0,guv:0,gav:0,vu:0,va:0,vuv:0,vva:0,cu:0,ca:0,cuv:0,cva:0,oi:0,vol:0});
+    const b=pe[c.k]||(pe[c.k]={k:c.k,gu:0,ga:0,guv:0,gav:0,vu:0,va:0,vuv:0,vva:0,oi:0,vol:0});
     b.gu+=sgn*g*c.oi;  b.ga+=g*c.oi;    b.guv+=sgn*g*c.vol;   b.gav+=g*c.vol;
     b.vu+=sgn*van*c.oi;b.va+=van*c.oi;  b.vuv+=sgn*van*c.vol; b.vva+=van*c.vol;
-    b.cu+=sgn*cha*c.oi;b.ca+=cha*c.oi;  b.cuv+=sgn*cha*c.vol; b.cva+=cha*c.vol;
     b.oi+=c.oi;b.vol+=c.vol;
     if(c.oi&&c.iv>0.01&&c.iv<5)contracts.push({k:c.k,oi:c.oi,iv:c.iv,T:c.T,call:c.call});
   }
   const bv=state.sizeBasis==='vol';
   const gval=s=>dealerAdj(bv?s.guv:s.gu, bv?s.gav:s.ga)*gmult;
   const vval=s=>dealerAdj(bv?s.vuv:s.vu, bv?s.vva:s.va)*vmult;
-  const cval=s=>dealerAdj(bv?s.cuv:s.cu, bv?s.cva:s.ca)*cmult;
   const byExp={},allBy={};
   const dates=Object.keys(per).sort();
-  const FIELDS=['gu','ga','guv','gav','vu','va','vuv','vva','cu','ca','cuv','cva','oi','vol'];
+  const FIELDS=['gu','ga','guv','gav','vu','va','vuv','vva','oi','vol'];
   dates.forEach(e=>{
-    const listE=Object.values(per[e]).map(s=>({k:s.k,gex:gval(s),vex:vval(s),cex:cval(s),oi:s.oi,vol:s.vol}))
-      .filter(s=>s.gex!==0||s.vex!==0||s.cex!==0).sort((a,b)=>b.k-a.k);
+    const listE=Object.values(per[e]).map(s=>({k:s.k,gex:gval(s),vex:vval(s),oi:s.oi,vol:s.vol}))
+      .filter(s=>s.gex!==0||s.vex!==0).sort((a,b)=>b.k-a.k);
     byExp[e]=listE;
     Object.values(per[e]).forEach(s=>{
-      const t=allBy[s.k]||(allBy[s.k]={k:s.k,gu:0,ga:0,guv:0,gav:0,vu:0,va:0,vuv:0,vva:0,cu:0,ca:0,cuv:0,cva:0,oi:0,vol:0});
+      const t=allBy[s.k]||(allBy[s.k]={k:s.k,gu:0,ga:0,guv:0,gav:0,vu:0,va:0,vuv:0,vva:0,oi:0,vol:0});
       FIELDS.forEach(f=>t[f]+=s[f]);
     });
   });
-  let strikes=Object.values(allBy).map(s=>({k:s.k,gex:gval(s),vex:vval(s),cex:cval(s),oi:s.oi,vol:s.vol})).sort((a,b)=>b.k-a.k);
+  let strikes=Object.values(allBy).map(s=>({k:s.k,gex:gval(s),vex:vval(s),oi:s.oi,vol:s.vol})).sort((a,b)=>b.k-a.k);
   const range=(sym==='SPXW'||sym==='SPX')?280:45;
   strikes=strikes.filter(s=>Math.abs(s.k-spot)<range);
   state.multi[sym]={byExp,spot,dates:dates.filter(e=>byExp[e]&&byExp[e].length)};
@@ -895,11 +902,14 @@ function skeletonPanel(sym,label){
   p.innerHTML=`<div class="p-head"><div class="p-left"><span style="font-weight:700">${sym}</span><span class="badge-src demo">${label||'loading'}</span></div></div><div class="strikes">${rows}</div>`;
   return p;
 }
-function kingCls(){return state.metric==='vex'?'vexk':state.metric==='cex'?'cexk':'';}
-function pillCls(){return state.metric==='vex'?'vex':state.metric==='cex'?'cex':'';}
+function kingCls(){return state.metric==='vex'?'vexk':'';}
+function pillCls(){return state.metric==='vex'?'vex':'';}
 
 function renderTrinity(){
   const el=document.getElementById('trinity');
+  // never yank the DOM out from under a typing user
+  const ae=document.activeElement;
+  if(comboFor||(ae&&ae.classList&&ae.classList.contains('ticker-sel')&&el.contains(ae)))return;
   const prevScroll={};
   el.querySelectorAll('.panel[data-key]').forEach(pn=>{
     const w=pn.querySelector('.strikes,.sgrid-wrap');
@@ -908,7 +918,7 @@ function renderTrinity(){
   el.innerHTML='';
   el.style.gridTemplateColumns=state.view==='single'?'1fr':'';
   const list=state.view==='single'?[state.focus]:state.trinityTickers;
-  const mlab=state.metric==='vex'?'Vanna King':state.metric==='cex'?'Charm King':'King';
+  const mlab=state.metric==='vex'?'Vanna King':'King';
 
   list.forEach(sym=>{
     const key=sym+'|'+(state.view==='single'?'s':'t');
@@ -954,9 +964,7 @@ function renderTrinity(){
         const old=e.target.dataset.old,neu=cleanSym(e.target.value);
         if(!neu){e.target.value=old;return;}
         if(neu===old)return;
-        const i=state.trinityTickers.indexOf(old);
-        if(i>=0)state.trinityTickers[i]=neu;else state.trinityTickers=[neu];
-        localStorage.setItem('kairos_ticks',state.trinityTickers.join(','));
+        // single view: change focus only — never touch the saved Triad set
         state.focus=neu;state.singleLoading=true;refresh(false);
       };
       const wrap=p.querySelector('.sgrid-wrap');
@@ -979,7 +987,7 @@ function renderTrinity(){
         const rowSum=m.dates.reduce((a,e2)=>a+(cell[e2][k]||0),0);
         const dlR=deltaOf(sym,k,rowSum,gMax);
         const arrow=(dlR!==null&&isFinite(dlR)&&Math.abs(dlR)>=DELTA_MIN)?(dlR>=0?' <span style="color:var(--teal)">\u25b4'+Math.abs(dlR).toFixed(0)+'%</span>':' <span style="color:#e879f9">\u25be'+Math.abs(dlR).toFixed(0)+'%</span>'):'';
-        h+=`<tr class="${k===spotK?'spotrow':''}"><td class="sk" title="${dlR!==null&&isFinite(dlR)?'\u0394 '+dlR.toFixed(1)+'% vs ~12 min ago (net across shown expiries)':''}">${k}${k===spotK?' \u25b6':''}${arrow}</td>`;
+        h+=`<tr class="${k===spotK?'spotrow':''}"><td class="sk" title="${dlR!==null&&isFinite(dlR)?'\u0394 '+dlR.toFixed(1)+'% vs ~12 min ago (net across shown expiries)':''}">${k}${k===spotK?' \u25b6 <span class="spotpx">$'+m.spot.toFixed(2)+'</span>':''}${arrow}</td>`;
         m.dates.forEach(e2=>{
           const v=cell[e2][k];
           if(v===undefined||Math.abs(v)<1){h+='<td class="zero">\u2014</td>';return;}
@@ -990,10 +998,8 @@ function renderTrinity(){
       });
       h+='</tbody></table>';
       wrap.innerHTML=h;
-      setTimeout(()=>{
-        if(state.scrolled[key]&&prevScroll[key]){wrap.scrollTop=prevScroll[key].top;wrap.scrollLeft=prevScroll[key].left||0;}
-        else{const sr=wrap.querySelector('.spotrow');if(sr)centerIn(wrap,sr);state.scrolled[key]=true;}
-      },40);
+      if(state.scrolled[key]&&prevScroll[key]){wrap.scrollTop=prevScroll[key].top;wrap.scrollLeft=prevScroll[key].left||0;}
+      else{const sr=wrap.querySelector('.spotrow');if(sr)centerIn(wrap,sr);state.scrolled[key]=true;}
       return;
     }
 
@@ -1015,15 +1021,14 @@ function renderTrinity(){
       if(!neu){e.target.value=old;return;}
       if(neu===old)return;
       const i=state.trinityTickers.indexOf(old);
-      if(i>=0)state.trinityTickers[i]=neu;else state.trinityTickers=[neu];
+      if(i>=0)state.trinityTickers[i]=neu; // swap that slot only — never collapse the Triad
       localStorage.setItem('kairos_ticks',state.trinityTickers.join(','));
       state.focus=neu;refresh(false);
     };
     const ps=panelStats(sym,d);
     let regimeChip;
     if(state.metric==='gex')regimeChip=`<span class="regime ${ps.net1>=0?'pos':'neg'}" data-tip="Net dealer gamma within 1% of spot. + = dealers fade moves (range/pin). − = dealers chase (trend/momentum).">${ps.net1>=0?'+GEX pin':'\u2212GEX momo'}</span>`;
-    else if(state.metric==='vex')regimeChip=`<span class="regime ${ps.net1>=0?'pos':'neg'}" data-tip="Net dealer vanna near spot. +VEX: rising IV → dealers sell into strength / falling IV → dealer bid (supports low-vol drift, caps vol spikes). −VEX: dealers chase IV, moves amplify on vol expansion.">${ps.net1>=0?'+VEX bid':'\u2212VEX chase'}</span>`;
-    else regimeChip=`<span class="regime ${ps.net1>=0?'pos':'neg'}" data-tip="Net dealer charm near spot — into-expiry delta drift. Larger |CEX| = stronger mechanical pull toward the charm King as time passes.">${ps.net1>=0?'+CEX drift':'\u2212CEX drift'}</span>`;
+    else regimeChip=`<span class="regime ${ps.net1>=0?'pos':'neg'}" data-tip="Net dealer vanna near spot. +VEX: rising IV → dealers sell into strength / falling IV → dealer bid (supports low-vol drift, caps vol spikes). −VEX: dealers chase IV, moves amplify on vol expansion.">${ps.net1>=0?'+VEX bid':'\u2212VEX chase'}</span>`;
     p.querySelector('.pstats').innerHTML=`
       ${regimeChip}
       <span data-tip="Net exposure within \u00b11% of spot">Net\u00b11% <b style="color:${ps.net1>=0?'var(--teal)':'#e879f9'}">${mdisp(ps.net1,d.spot)}</b></span>
@@ -1034,19 +1039,20 @@ function renderTrinity(){
     const listEl=p.querySelector('.strikes');
     const kcls=kingCls();
     let kingRow=null;
+    // exactly one spot row: the strike nearest to live price
+    let spotK3=null,bd3=1e18;
+    (d.strikes||[]).forEach(s=>{const dd3=Math.abs(s.k-d.spot);if(dd3<bd3){bd3=dd3;spotK3=s.k;}});
     (d.strikes||[]).forEach(s=>{
       const v=mval(s);
       const row=document.createElement('div');row.className='srow';
-      const tol=(sym==='SPXW'||sym==='SPX')?5:0.9;
-      if(Math.abs(s.k-d.spot)<tol)row.classList.add('spot');
+      const isSpot=s.k===spotK3;
+      if(isSpot)row.classList.add('spot');
       if(s===kg){row.classList.add('king');if(kcls)row.classList.add(kcls);kingRow=row;}
       else{row.style.cssText=rowStyle(s,maxAbs);if(s===cw||s===pw)row.classList.add('wall');}
       let mid=s.star||s===kg?'<span class="star">★</span>':'';
+      if(isSpot)mid+=`<span class="spotpx">$${(d.spot||0).toFixed(2)}</span>`;
       if(s===cw&&s!==kg)mid+='<span class="wtag cw" data-tip="Largest positive node above spot (ceiling)">CW</span>';
       if(s===pw&&s!==kg)mid+='<span class="wtag pw" data-tip="Largest negative node below spot (support)">PW</span>';
-      const flowI=s.oi?s.vol/s.oi:0;
-      if(Math.abs(v)>=DELTA_MATERIAL*maxAbs&&flowI>=FLOW_OPEN)
-        mid+=`<span class="wtag flow" data-tip="Today's volume is ${Math.round(flowI*100)}% of standing OI — this wall is being actively rebuilt right now, not just yesterday's book">\u26a1${Math.round(Math.min(flowI,9.9)*100)}%</span>`;
       row.title=`${sym} ${s.k} \u2014 ${metricLabel(state.metric)} ${mdisp(v,d.spot)} \u00b7 OI ${(s.oi||0).toLocaleString()} \u00b7 vol ${(s.vol||0).toLocaleString()} \u00b7 ${(Math.abs(v)/(maxAbs||1)*100).toFixed(0)}% of King`;
       const dl=deltaOf(sym,s.k,v,maxAbs);
       row.innerHTML=`
@@ -1056,10 +1062,8 @@ function renderTrinity(){
       row.onclick=()=>{state.focus=sym;openDeep(sym);updateChart(sym);};
       listEl.appendChild(row);
     });
-    setTimeout(()=>{
-      if(state.scrolled[key]&&prevScroll[key])listEl.scrollTop=prevScroll[key].top;
-      else{if(kingRow)centerIn(listEl,kingRow);state.scrolled[key]=true;}
-    },40);
+    if(state.scrolled[key]&&prevScroll[key])listEl.scrollTop=prevScroll[key].top;
+    else{if(kingRow)centerIn(listEl,kingRow);state.scrolled[key]=true;}
   });
 }
 
@@ -1068,7 +1072,7 @@ function recordSnapshots(){
   Object.keys(state.data).forEach(sym=>{
     const d=state.data[sym];if(!d||!d.strikes||!d.strikes.length)return;
     const topFor=metric=>[...d.strikes].sort((a,b)=>Math.abs(mval(b,metric))-Math.abs(mval(a,metric))).slice(0,12).map(s=>({k:s.k,val:Math.round(mval(s,metric))}));
-    (state.history[sym]=state.history[sym]||[]).push({t,g:topFor('gex'),v:topFor('vex'),c:topFor('cex')});
+    (state.history[sym]=state.history[sym]||[]).push({t,g:topFor('gex'),v:topFor('vex')});
     if(state.history[sym].length>260)state.history[sym].shift();
   });
   persistHistory(false);
@@ -1099,7 +1103,7 @@ function airPockets(d){
 }
 function flipFor(sym,d){
   const p=ensureProfile(sym,d);
-  const fl=p?(state.metric==='vex'?p.flipV:state.metric==='cex'?p.flipC:p.flipG):null;
+  const fl=p?(state.metric==='vex'?p.flipV:p.flipG):null;
   if(fl)return{price:fl,how:'BS profile'};
   const f=flipOf(d.strikes,d.spot);
   return f?{price:f.k,how:'approx'}:null;
@@ -1122,12 +1126,12 @@ function loadTV(sym){
 function updateChart(sym){
   const d=state.data[sym]; if(!d) return;
   const ct=document.getElementById('chartTicker');
-  if(ct&&ct.value!==sym)ct.value=sym;
+  if(ct&&ct.value!==sym&&document.activeElement!==ct)ct.value=sym;
   document.getElementById('chartFocus').textContent=metricLabel(state.metric).toUpperCase()+' levels';
   if(state.view==='chart')loadTV(sym);
   const kg=kingOf(d.strikes), cw=callWall(d.strikes), pw=putWall(d.strikes), fl=flipFor(sym,d);
   const used=new Set();
-  let html='';
+  let html=lvl('spot','Spot',(d.spot||0).toFixed(2),'live');
   const add=(type,label,s,val)=>{if(!s||used.has(s.k))return;used.add(s.k);html+=lvl(type,label,s.k,val);};
   add('king',metricLabel(state.metric)+' King',kg,kg?mdisp(mval(kg),d.spot):'');
   add('call','Call Wall',cw,cw?mdisp(mval(cw),d.spot):'');
@@ -1183,7 +1187,7 @@ function renderCards(){
   el.appendChild(note);
 }
 
-/* ---- Imbalance view (unchanged) ---- */
+/* ---- Imbalance view (re-renders every tick on purpose: spot pill tracks live price; ~35 rows is negligible) ---- */
 function renderImb(sym){
   const d=buildImbalance(sym);
   const bars=document.getElementById('imbBars'),stats=document.getElementById('imbStats');
@@ -1240,13 +1244,17 @@ function renderImb(sym){
   document.getElementById('imbNote').textContent='Feed note: Tradier reports total volume per contract, not buy-vs-sell aggressor side \u2014 so the green/red buy-sell split from tick-level tools can\u2019t be derived here. Premium weighting and volume-vs-OI carry the same signal transparently.';
 }
 
-/* ---- Flow Tape view ---- */
+/* ---- Flow Tape view — repaints only when its chain actually changes (~90s) or filter/symbol switches ---- */
 function renderTape(sym){
   const fl=flowLean(sym);
   const ti=document.getElementById('tapeTicker');if(ti&&ti.value!==sym&&document.activeElement!==ti)ti.value=sym;
   const stats=document.getElementById('tapeStats'),body=document.getElementById('tapeBody'),meta=document.getElementById('tapeMeta');
   const spot=fl?fl.spot:(state.spot[sym]||0);
   meta.textContent=spot?`$${spot.toFixed(2)}`:'';
+  const ch=state.chains[sym];
+  const stamp=sym+'|'+((ch&&ch.t)||0)+'|'+state.expiry;
+  if(state._tapeStamp===stamp)return;
+  state._tapeStamp=stamp;
   if(!fl||!fl.prints.length){
     stats.innerHTML='';
     body.innerHTML=`<div class="err-chip">No qualifying opening prints for ${sym} yet \u2014 needs a contract's volume today to run \u2265${Math.round(FLOW_OPEN*100)}% of its open interest with \u2265$${(FLOW_MIN_PREM/1000)}k premium. Loads on refresh; quietest early in the session.</div>`;
@@ -1262,12 +1270,14 @@ function renderTape(sym){
     <div class="stat"><div class="sl" data-tip="Premium in put contracts opening today">PUT OPENING $</div><div class="sv" style="color:var(--red)">${fmt(fl.putPrem)}</div></div>
     <div class="stat"><div class="sl" data-tip="Call opening $ minus put opening $. Puts can be hedges, so read directionally, not literally.">NET LEAN</div><div class="sv" style="color:${sc}">${sTxt}</div></div>
     <div class="stat"><div class="sl">OPENING PRINTS</div><div class="sv">${fl.prints.length}</div></div>`;
+  const oldWrap=body.querySelector('.tape-wrap');const keepScroll=oldWrap?oldWrap.scrollTop:0;
   body.innerHTML='<div class="tape-wrap"><table><thead><tr><th>Contract</th><th>Exp</th><th>Vol</th><th>OI</th><th>Vol/OI</th><th>IV</th><th>Premium</th></tr></thead><tbody>'+
     fl.prints.map(p=>{
       const otm=(p.call&&p.k>spot)||(!p.call&&p.k<spot);
       return `<tr><td><span class="cbadge ${p.call?'c':'p'}">${p.call?'C':'P'}</span> ${p.k}${otm?'':' <span style="color:var(--muted)">itm</span>'}</td><td>${p.e.slice(5)}</td><td>${p.vol.toLocaleString()}</td><td>${p.oi.toLocaleString()}</td><td style="color:${p.voi>=1?'var(--gold)':'var(--muted)'}">${p.voi.toFixed(1)}\u00d7</td><td>${p.iv?(p.iv*100).toFixed(0)+'%':'\u2014'}</td><td style="color:var(--gold)">${fmt(p.prem)}</td></tr>`;
     }).join('')+
     '</tbody></table></div>';
+  const newWrap=body.querySelector('.tape-wrap');if(newWrap&&keepScroll)newWrap.scrollTop=keepScroll;
   document.getElementById('tapeNote').innerHTML='Opening = today\u2019s volume \u2265 '+Math.round(FLOW_OPEN*100)+'% of standing OI (new positioning, not churn). Premium = mid \u00d7 volume \u00d7 100 (real dollars). <b>Honest limits:</b> Tradier REST gives total contract volume, not per-trade aggressor side \u2014 so this is <b>not</b> tick-level buy/sell or sweep detection, and puts may be hedges rather than bearish bets. What it captures cleanly: where fresh option dollars are opening today, which walls are being built vs. stale, and a directional lean that feeds the Ideas score.';
 }
 
@@ -1280,13 +1290,12 @@ function openDeep(sym){
   const dp=d.spot>2000?0:1;
   const distK=kg?((kg.k-d.spot)/d.spot*100):null;
   const above=fl?d.spot>+fl.price:null;
-  const net=pr?(state.metric==='vex'?pr.netV:state.metric==='cex'?pr.netC:pr.netG):null;
+  const net=pr?(state.metric==='vex'?pr.netV:pr.netG):null;
   const regTxt=state.metric==='gex'?(net>=0?'+GEX \u00b7 pinning':'\u2212GEX \u00b7 momentum')
-    :state.metric==='vex'?(net>=0?'+VEX \u00b7 vol-drift bid':'\u2212VEX \u00b7 vol-chase')
-    :(net>=0?'+CEX \u00b7 pin drift':'\u2212CEX \u00b7 pin drift');
+    :(net>=0?'+VEX \u00b7 vol-drift bid':'\u2212VEX \u00b7 vol-chase');
   // confluence across metrics
-  const gk=kingOf(d.strikes,'gex'),vk=kingOf(d.strikes,'vex'),ck=kingOf(d.strikes,'cex');
-  const ksArr=[gk,vk,ck].filter(Boolean).map(x=>x.k);
+  const gk=kingOf(d.strikes,'gex'),vk=kingOf(d.strikes,'vex');
+  const ksArr=[gk,vk].filter(Boolean).map(x=>x.k);
   let confLine='';
   if(ksArr.length>=2){
     const spread=Math.max(...ksArr)-Math.min(...ksArr);
@@ -1306,7 +1315,6 @@ function openDeep(sym){
     <div class="conf-box" style="margin-top:8px">
       <div style="display:flex;justify-content:space-between"><span>\u0393 Gamma King</span><b style="color:var(--gold)">${gk?gk.k:'\u2014'}</b></div>
       <div style="display:flex;justify-content:space-between"><span>Vanna King</span><b style="color:var(--cyan)">${vk?vk.k:'\u2014'}</b></div>
-      <div style="display:flex;justify-content:space-between"><span>Charm King</span><b style="color:#c99bff">${ck?ck.k:'\u2014'}</b></div>
       <div style="text-align:center;margin-top:4px;font-size:.7rem">${confLine}</div>
     </div>`;
   const prof=document.getElementById('prof');
@@ -1317,14 +1325,14 @@ function openDeep(sym){
   const ctx=cvn.getContext('2d');ctx.scale(dpr,dpr);
   ctx.fillStyle='#0a0c12';ctx.fillRect(0,0,400,130);
   const key=metricKey(state.metric);
-  const flipVal=state.metric==='vex'?pr&&pr.flipV:state.metric==='cex'?pr&&pr.flipC:pr&&pr.flipG;
+  const flipVal=state.metric==='vex'?pr&&pr.flipV:pr&&pr.flipG;
   if(pr&&pr.pts&&pr.pts.length){
     const mx=Math.max(...pr.pts.map(p=>Math.abs(p[key])),1);
     ctx.strokeStyle='#2a3140';ctx.beginPath();ctx.moveTo(0,65);ctx.lineTo(400,65);ctx.stroke();
     const lo=pr.pts[0].s,hi=pr.pts[pr.pts.length-1].s,xOf=s=>((s-lo)/(hi-lo)*390+5);
     ctx.beginPath();
     pr.pts.forEach((p,i)=>{const x=xOf(p.s),y=65-(p[key]/mx)*55;i?ctx.lineTo(x,y):ctx.moveTo(x,y);});
-    ctx.strokeStyle=state.metric==='vex'?'#22d3ee':state.metric==='cex'?'#a855f7':'#00e5ff';ctx.lineWidth=1.6;ctx.stroke();ctx.lineWidth=1;
+    ctx.strokeStyle=state.metric==='vex'?'#22d3ee':'#00e5ff';ctx.lineWidth=1.6;ctx.stroke();ctx.lineWidth=1;
     ctx.setLineDash([3,3]);
     ctx.strokeStyle='#e8ecf4';ctx.beginPath();ctx.moveTo(xOf(d.spot),0);ctx.lineTo(xOf(d.spot),130);ctx.stroke();
     if(flipVal){ctx.strokeStyle='#f2c14e';ctx.beginPath();ctx.moveTo(xOf(flipVal),0);ctx.lineTo(xOf(flipVal),130);ctx.stroke();}
@@ -1356,7 +1364,7 @@ function openDeep(sym){
 }
 
 async function refresh(force){
-  if(state.refreshing)return;
+  if(state.refreshing){state.pendingRefresh=true;if(force)state.pendingForce=true;return;} // queue it — never drop a tab-hop refresh
   state.refreshing=true;
   const spin=document.getElementById('spin');const btn=document.getElementById('btnRefresh');
   spin.classList.remove('hidden');btn.disabled=true;
@@ -1397,6 +1405,10 @@ async function refresh(force){
     if(state.view==='tape')renderTape(state.focus);
   }finally{
     spin.classList.add('hidden');btn.disabled=false;state.refreshing=false;
+    if(state.pendingRefresh){
+      state.pendingRefresh=false;const f=!!state.pendingForce;state.pendingForce=false;
+      setTimeout(()=>refresh(f),60);
+    }
   }
 }
 
@@ -1465,9 +1477,14 @@ function setView(v){
     state.singleLoading=!(m&&m.dates&&m.dates.length>=8);
   }
   if(v==='trinity'||v==='single')renderTrinity();
+  if(v==='trinity'){
+    // coming back to Triad: the poll only fed the focused ticker while you were away — refetch stale panels now
+    const stale=state.trinityTickers.some(s=>!state.dataAge[s]||Date.now()-state.dataAge[s]>state.pollSec*1500);
+    if(stale)refresh(false);
+  }
   if(v==='single'&&state.singleLoading)refresh(false);
   if(v==='ideas'){renderCards();ideasSweep(false);}
-  if(v==='chart'){loadTV(state.focus);updateChart(state.focus);}
+  if(v==='chart'){loadTV(state.focus);updateChart(state.focus);if(!state.data[state.focus])refresh(false);}
   if(v==='imb'){renderImb(state.focus);if(!state.chains[state.focus]||Date.now()-(state.chains[state.focus].t||0)>CHAIN_TTL)refresh(false);}
   if(v==='tape'){renderTape(state.focus);if(!state.chains[state.focus]||Date.now()-(state.chains[state.focus].t||0)>CHAIN_TTL)refresh(false);}
 }
@@ -1606,7 +1623,7 @@ renderTrinity();renderCards();
 refresh(false).finally(schedule);
 function schedule(){clearTimeout(state._t);if(document.hidden)return;state._t=setTimeout(async()=>{await refresh(false);schedule();},state.pollSec*1000);}
 window.Kairos={state,refresh,getSym,kingOf,buildFromChains,buildImbalance,flowLean,exposureProfile};
-console.log('%cKairos v7 \u2014 GEX/VEX/CEX toggle, Flow Tape, flow-into-ideas, per-metric \u0394 history, confluence','color:#f2c14e;font-weight:bold');
+console.log('%cKairos v7.1 \u2014 GEX/VEX, Flow Tape, smoothness pass: pending-refresh queue, Triad-wipe fix, spot glow, 3-across mobile','color:#f2c14e;font-weight:bold');
 </script>
 </body>
 </html>
