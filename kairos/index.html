@@ -3,7 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="dark">
 <title>Kairos</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='0.9em' font-size='90' fill='%23f2c14e'%3E%E2%97%86%3C/text%3E%3C/svg%3E">
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#07080d;--panel:#0d1017;--panel2:#12151e;--border:#1d2330;--text:#e9edf5;--muted:#6d7688;--cyan:#22d3ee;--pika:#f2c14e;--gold:#f2c14e;--barney:#a855f7;--green:#34d399;--red:#f87171;--teal:#2dd4bf}
@@ -15,7 +17,6 @@ header{display:flex;align-items:center;justify-content:space-between;padding:9px
 .hdr-right{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
 .btn{background:transparent;border:1px solid transparent;color:var(--muted);padding:5px 11px;border-radius:7px;font-size:.74rem;cursor:pointer;font-family:inherit;transition:color .15s,border-color .15s}
 .btn:hover{color:var(--text)}
-.btn.active{color:var(--gold);border-color:#f2c14e44;background:#f2c14e0e}
 .btn.primary{background:var(--gold);color:#0a0a08;border:none;font-weight:700}
 .btn.primary:hover{color:#000;filter:brightness(1.06)}
 #btnSettings,#btnHelp{border-color:var(--border);color:var(--muted)}
@@ -26,8 +27,16 @@ header{display:flex;align-items:center;justify-content:space-between;padding:9px
 }
 .btn.active{border-color:var(--cyan);background:#00e5ff18;color:var(--cyan)}
 select,input{background:var(--panel2);border:1px solid var(--border);color:var(--text);padding:5px 8px;border-radius:5px;font-size:.76rem;font-family:inherit}
-.banner{background:#0a1218;border-bottom:1px solid #152028;padding:5px 14px;font-size:.7rem;color:var(--muted);display:flex;justify-content:space-between}
+/* metric toggle — GEX / VEX */
+.mtoggle{display:inline-flex;border:1px solid var(--border);border-radius:7px;overflow:hidden}
+.mtoggle button{background:transparent;border:none;color:var(--muted);padding:5px 9px;font-size:.72rem;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:.03em;transition:background .15s,color .15s}
+.mtoggle button:hover{color:var(--text)}
+.mtoggle button[data-m="gex"].on{background:var(--gold);color:#0a0a08}
+.mtoggle button[data-m="vex"].on{background:var(--cyan);color:#04121a}
+.mtoggle.dim{opacity:.35;pointer-events:none}
+.banner{background:#0a1218;border-bottom:1px solid #152028;padding:5px 14px;font-size:.7rem;color:var(--muted);display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
 .banner .live{color:var(--green);font-weight:600}
+#sessInfo{color:var(--muted)}
 main{padding:10px;display:flex;flex-direction:column;gap:10px}
 .trinity{display:grid;grid-template-columns:repeat(3,1fr);gap:3px}
 .panel{background:var(--panel);border:1px solid var(--border);border-radius:12px;display:flex;flex-direction:column;height:calc(100vh - 172px);min-height:540px;overflow:hidden}
@@ -39,54 +48,75 @@ main{padding:10px;display:flex;flex-direction:column;gap:10px}
 .badge-src{font-size:.6rem;padding:1px 5px;border-radius:3px;font-weight:600}
 .badge-src.live{background:#22c55e22;color:var(--green)}.badge-src.sandbox{background:#f59e0b22;color:#f59e0b}
 .badge-src.cboe{background:#38bdf822;color:#38bdf8}.badge-src.demo{background:#f2c14e22;color:var(--pika)}
+.badge-src.stale{background:#f8717122;color:#f87171}
 .king-pill{background:linear-gradient(135deg,#f2c14e30,#f2c14e12);border:1px solid #f2c14e77;color:var(--pika);font-size:.66rem;padding:2px 8px;border-radius:12px;font-weight:700;white-space:nowrap}
+.king-pill.vex{background:linear-gradient(135deg,#22d3ee30,#22d3ee12);border-color:#22d3ee77;color:var(--cyan)}
 .strikes{overflow-y:auto;flex:1;scrollbar-width:thin;scrollbar-color:#2a3140 transparent}
 .srow{display:grid;grid-template-columns:56px 1fr 76px;align-items:center;padding:3px 8px;font-size:.74rem;border-bottom:1px solid #0c0f16;cursor:pointer}
 .srow:hover{filter:brightness(1.18)}
-.srow.spot{outline:1.5px solid #e9edf5b8;outline-offset:-1.5px;border-radius:4px}
-.spotpx{font-size:.58rem;font-family:'JetBrains Mono';font-weight:700;color:#e9edf5;background:#e9edf51a;border:1px solid #e9edf540;border-radius:4px;padding:0 5px;margin-left:4px}
-.dpill{font-size:.58rem;font-family:'JetBrains Mono';font-weight:700;padding:0 5px;border-radius:4px;margin-right:2px}
-.dpill.up{background:#34d39922;color:#34d399}.dpill.dn{background:#f8717126;color:#f87171}
+/* spot row — deliberately loud: cyan glow frame + cyan strike + live price pill */
+.srow.spot{border-left:3px solid var(--cyan);outline:2px solid #22d3eeb3;outline-offset:-2px;position:relative;z-index:1;box-shadow:inset 0 0 12px #22d3ee22}
+.srow.spot .strike{color:var(--cyan);text-shadow:0 0 8px #22d3ee88}
 .srow.king{background:#f2c14e!important}
-.srow.king .strike,.srow.king .gex{color:#000!important;font-weight:700!important}
+.srow.king.vexk{background:var(--cyan)!important}
+.srow.king .strike,.srow.king .gex{color:#000!important;font-weight:700!important;text-shadow:none}
 .srow.king .star{color:#000}
-
+.srow.wall .gex{font-weight:700}
 .srow .strike{font-family:'JetBrains Mono';font-weight:600}
 .srow .gex{font-family:'JetBrains Mono';text-align:right;font-weight:600;font-size:.72rem}
-.srow .mid{display:flex;align-items:center;gap:4px}
+.srow .mid{display:flex;align-items:center;gap:4px;flex-wrap:wrap}
 .star{color:var(--pika);font-size:.72rem;font-weight:700}
-
+.wtag{font-size:.54rem;padding:0 4px;border-radius:3px;font-weight:700;letter-spacing:.03em}
+.wtag.cw{background:#2dd4bf26;color:var(--teal)}
+.wtag.pw{background:#a855f733;color:#c99bff}
 .dchip{font-size:.58rem;font-family:'JetBrains Mono';margin-left:2px}
 .drv{font-size:.62rem;padding:1px 7px;border-radius:9px;border:1px solid #2a3140;color:var(--teal);background:#2dd4bf10}
-/* imbalance view */
-.imb{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:12px}
-.imb-top{display:flex;gap:10px;align-items:center;margin-bottom:10px}
-.imb-stats{display:grid;grid-template-columns:repeat(7,1fr);gap:8px}
-@media(max-width:900px){.imb-stats{grid-template-columns:repeat(2,1fr)}}
-.stat{background:var(--panel2);border:1px solid var(--border);border-radius:9px;padding:8px 10px}
-.sl{font-size:.58rem;color:var(--muted);letter-spacing:.07em;margin-bottom:3px}
-.sv{font-size:1.02rem;font-weight:700;font-family:'JetBrains Mono'}
-.imb-row{display:grid;grid-template-columns:1fr 118px 1fr;align-items:center;gap:6px;padding:2px 0}
-.imb-row .side{position:relative;height:13px;background:#10141d;border-radius:3px;overflow:hidden}
-.imb-row .side i,.imb-row .side b{position:absolute;top:0;height:100%;display:block}
-.side.l i,.side.l b{right:0}.side.r i,.side.r b{left:0}
-.side.l i{background:#34d3991c}.side.l b{background:#34d399c9}
-.side.r i{background:#f871711c}.side.r b{background:#f87171c9}
-.klabel{text-align:center;font-size:.7rem;font-weight:700;display:flex;align-items:center;justify-content:center;gap:4px;flex-wrap:wrap}
-.imb-row.spotrow2{outline:1.5px solid #e9edf5b8;outline-offset:-1px;border-radius:4px}
-/* single view: price-aligned expiry board */
+.drv.warn{color:#fca5a5;border-color:#7f1d1d;background:#f871710d}
+.combo-pop{position:fixed;z-index:120;background:var(--panel);border:1px solid #2a3140;border-radius:8px;max-height:250px;overflow-y:auto;box-shadow:0 12px 34px #000d;padding:4px;scrollbar-width:thin;scrollbar-color:#2a3140 transparent}
+.combo-item{padding:6px 12px;font-size:.78rem;font-family:'JetBrains Mono';font-weight:600;cursor:pointer;border-radius:5px;white-space:nowrap}
+.combo-item:hover,.combo-item.on{background:#00e5ff18;color:var(--cyan)}
+.combo-hint{padding:5px 12px;font-size:.62rem;color:var(--muted);border-top:1px solid #1a1f2b;margin-top:3px}
 .sgrid-wrap{overflow:auto;flex:1;scrollbar-width:thin;scrollbar-color:#2a3140 transparent}
 table.sgrid{border-collapse:collapse;width:auto;margin:0 auto}
 .sgrid th{position:sticky;top:0;z-index:5;background:#0e1119;color:var(--cyan);font-size:.68rem;font-weight:600;padding:6px 8px;text-align:right;border-bottom:1px solid var(--border);white-space:nowrap}
 .sgrid th.sk,.sgrid td.sk{position:sticky;left:0;z-index:4;background:var(--panel);text-align:left;font-family:'JetBrains Mono';font-weight:700;font-size:.7rem;padding:2px 8px;border-right:1px solid var(--border);white-space:nowrap}
 .sgrid th.sk{z-index:6}
 .sgrid td{font-family:'JetBrains Mono';font-size:.68rem;font-weight:600;text-align:right;padding:2px 9px;border-bottom:1px solid #0c0f16;white-space:nowrap;min-width:92px;max-width:118px}
-.sgrid tr.spotrow td.sk{color:var(--cyan)}
-.sgrid tr.spotrow{outline:1.5px solid #e9edf5b8;outline-offset:-1.5px}
+.sgrid tr.spotrow td.sk{color:var(--cyan);text-shadow:0 0 8px #22d3ee88;background:#0c1e27}
+.sgrid tr.spotrow{outline:2px solid #22d3eeb3;outline-offset:-2px}
 .sgrid td.kcell{background:#f2c14e!important;color:#000!important;font-weight:700!important}
+.sgrid td.kcell.vexk{background:var(--cyan)!important}
 .sgrid td.zero{color:#3a4254}
 @media(max-width:760px){.sgrid td,.sgrid th{padding:2px 6px;font-size:.6rem}.sgrid td{min-width:70px}}
-
+.imb,.tape{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:12px}
+.imb-top{display:flex;gap:10px;align-items:center;margin-bottom:10px}
+.imb-stats{display:grid;grid-template-columns:repeat(7,1fr);gap:8px}
+#tapeStats{grid-template-columns:repeat(4,1fr)}
+@media(max-width:900px){.imb-stats,#tapeStats{grid-template-columns:repeat(2,1fr)}}
+.stat{background:var(--panel2);border:1px solid var(--border);border-radius:9px;padding:8px 10px}
+.sl{font-size:.58rem;color:var(--muted);letter-spacing:.07em;margin-bottom:3px}
+.sv{font-size:1.02rem;font-weight:700;font-family:'JetBrains Mono'}
+.imb-row{display:grid;grid-template-columns:1fr 158px 1fr;align-items:center;gap:6px;padding:2px 0}
+.imb-row .side{position:relative;height:13px;background:#10141d;border-radius:3px;overflow:hidden}
+.imb-row .side i,.imb-row .side b{position:absolute;top:0;height:100%;display:block}
+.side.l i,.side.l b{right:0}.side.r i,.side.r b{left:0}
+.side.l i{background:#34d3991c}.side.l b{background:#34d399c9}
+.side.r i{background:#f871711c}.side.r b{background:#f87171c9}
+.klabel{text-align:center;font-size:.72rem;font-weight:700;display:flex;align-items:center;justify-content:center;gap:5px;flex-wrap:wrap;font-family:'JetBrains Mono';white-space:nowrap}
+.imb-row.spotrow2{outline:2px solid #22d3eeb3;outline-offset:-2px;border-radius:4px}
+.spotpx{font-size:.58rem;font-family:'JetBrains Mono';font-weight:700;color:#dffaff;background:#22d3ee26;border:1px solid #22d3ee88;border-radius:4px;padding:0 5px;box-shadow:0 0 8px #22d3ee40}
+.dpill{font-size:.56rem;font-family:'JetBrains Mono';font-weight:700;padding:0 5px;border-radius:4px}
+.dpill.up{background:#34d39922;color:#34d399}.dpill.dn{background:#f8717126;color:#f87171}
+/* flow tape */
+.tape-wrap{max-height:54vh;overflow:auto;scrollbar-width:thin;scrollbar-color:#2a3140 transparent;margin-top:10px}
+.tape table{border-collapse:collapse;width:100%}
+.tape th{position:sticky;top:0;background:#0e1119;color:var(--muted);font-size:.62rem;letter-spacing:.05em;text-align:right;padding:6px 8px;border-bottom:1px solid var(--border);white-space:nowrap}
+.tape th:first-child,.tape td:first-child{text-align:left}
+.tape td{font-family:'JetBrains Mono';font-size:.7rem;padding:4px 8px;border-bottom:1px solid #0c0f16;text-align:right;white-space:nowrap}
+.tape tr:hover td{background:#12151e}
+.cbadge{font-size:.56rem;font-weight:700;padding:0 5px;border-radius:3px}
+.cbadge.c{background:#34d39922;color:var(--green)}
+.cbadge.p{background:#f8717122;color:var(--red)}
 .chart-area{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:10px;display:grid;grid-template-columns:1fr 252px;gap:10px;height:calc(100vh - 128px);min-height:520px}
 .chart-col{display:flex;flex-direction:column;min-width:0}
 .chart-top{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap}
@@ -99,10 +129,8 @@ table.sgrid{border-collapse:collapse;width:auto;margin:0 auto}
 .lvl-l{display:flex;align-items:center;gap:6px}
 .dot{width:8px;height:8px;border-radius:50%}
 .dot.king{background:var(--pika);box-shadow:0 0 6px var(--pika)}.dot.call{background:var(--teal)}.dot.put{background:var(--barney)}.dot.flip{background:var(--cyan)}.dot.gate{background:#f59e0b}
+.dot.spot{background:#e9edf5;box-shadow:0 0 6px #e9edf5}
 .lvl-v{font-family:'JetBrains Mono';font-weight:600}
-.legend{display:flex;gap:10px;flex-wrap:wrap;font-size:.66rem;color:var(--muted);margin-top:5px}
-.legend span{display:flex;align-items:center;gap:3px}.legend i{width:9px;height:9px;border-radius:2px;display:inline-block}
-
 .surfaced{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:10px}
 .surfaced h3{font-size:.72rem;color:var(--muted);letter-spacing:.05em;margin-bottom:8px;text-transform:uppercase}
 .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px}
@@ -113,7 +141,6 @@ table.sgrid{border-collapse:collapse;width:auto;margin:0 auto}
 .tag.long{background:#22c55e22;color:var(--green)}.tag.short{background:#ef444422;color:var(--red)}.tag.king{background:#f2c14e22;color:var(--pika)}
 .score{width:32px;height:32px;border-radius:50%;border:2px solid var(--cyan);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.76rem;color:var(--cyan)}
 .card-line{font-family:'JetBrains Mono';font-size:.78rem}.card-meta{font-size:.68rem;color:var(--muted);margin-top:2px}
-
 .modal-bg{position:fixed;inset:0;background:#000000cc;display:none;align-items:center;justify-content:center;z-index:100;padding:16px}
 .modal-bg.open{display:flex}
 .modal{background:var(--panel);border:1px solid var(--border);border-radius:12px;width:100%;max-width:900px;max-height:88vh;overflow-y:auto;padding:18px;position:relative}
@@ -122,53 +149,57 @@ table.sgrid{border-collapse:collapse;width:auto;margin:0 auto}
 .g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}@media(max-width:680px){.g2{grid-template-columns:1fr}}
 .st{font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin:10px 0 6px}
 .rec{background:var(--panel2);border-radius:7px;padding:10px;border-left:3px solid var(--cyan);margin-bottom:6px}
+.conf-box{background:#0a0c12;border:1px solid var(--border);border-radius:7px;padding:8px 10px;font-size:.74rem;font-family:'JetBrains Mono';line-height:1.7;margin-bottom:6px}
 .prof{height:140px;background:#0a0c12;border-radius:6px}
-
 .settings{position:fixed;top:0;right:-360px;width:340px;height:100%;background:var(--panel);border-left:1px solid var(--border);z-index:80;transition:right .22s;padding:16px;overflow-y:auto}
 .settings.open{right:0}
 .fg{margin-bottom:12px}.fg label{display:block;font-size:.72rem;color:var(--muted);margin-bottom:3px}
+.fg .hint{font-size:.62rem;color:var(--muted);margin-top:3px;line-height:1.45}
 .method{font-size:.72rem;color:var(--muted);line-height:1.5;background:#0a0c12;padding:10px;border-radius:7px;margin-top:10px}
 footer{text-align:center;padding:12px;font-size:.65rem;color:#3f4656;border-top:1px solid var(--border)}
-/* tooltips */
 [data-tip]{position:relative}
-[data-tip]:hover::after{content:attr(data-tip);position:absolute;bottom:calc(100% + 7px);left:50%;transform:translateX(-50%);background:#161a24;border:1px solid #2a3140;color:var(--text);padding:7px 10px;border-radius:7px;font-size:.68rem;font-weight:400;line-height:1.45;white-space:normal;width:max-content;max-width:250px;z-index:200;pointer-events:none;text-align:left;box-shadow:0 6px 20px #000c}
+[data-tip]:hover::after{content:attr(data-tip);position:absolute;bottom:calc(100% + 7px);left:50%;transform:translateX(-50%);background:#161a24;border:1px solid #2a3140;color:var(--text);padding:7px 10px;border-radius:7px;font-size:.68rem;font-weight:400;line-height:1.45;white-space:normal;width:max-content;max-width:260px;z-index:200;pointer-events:none;text-align:left;box-shadow:0 6px 20px #000c}
 [data-tip]:hover::before{content:'';position:absolute;bottom:calc(100% + 2px);left:50%;transform:translateX(-50%);border:5px solid transparent;border-top-color:#2a3140;z-index:200}
-/* loading skeleton */
 .skelrow{height:19px;margin:3px 8px;border-radius:4px;background:linear-gradient(90deg,#10141d 25%,#181e2b 50%,#10141d 75%);background-size:200% 100%;animation:shimmer 1.3s infinite}
 @keyframes shimmer{to{background-position:-200% 0}}
 .err-chip{margin:14px;padding:10px;border:1px solid #ef444455;border-radius:8px;color:#fca5a5;font-size:.74rem;line-height:1.5}
-/* per-panel stats strip */
 .pstats{display:flex;gap:10px;flex-wrap:wrap;padding:5px 10px;border-bottom:1px solid var(--border);background:#0d1018;font-size:.66rem;color:var(--muted)}
 .pstats b{color:var(--text);font-family:'JetBrains Mono';font-weight:600}
 .regime{padding:1px 6px;border-radius:3px;font-weight:700;font-size:.62rem}
 .regime.pos{background:#2dd4bf22;color:var(--teal)}.regime.neg{background:#c026ff22;color:#e879f9}
-/* help modal */
 .help h3{font-size:.86rem;margin:14px 0 5px;color:var(--cyan)}
 .help p,.help li{font-size:.78rem;line-height:1.65;color:#c6cddb}
 .help ul{padding-left:18px;margin:4px 0}
 .help .kbd{background:#161a24;border:1px solid #2a3140;border-radius:4px;padding:0 5px;font-family:'JetBrains Mono';font-size:.72rem}
-/* mobile */
 @media(max-width:760px){
   header{flex-wrap:wrap;row-gap:6px;padding:8px 10px}
-  .hdr-right{width:100%;overflow-x:auto;flex-wrap:nowrap;padding-bottom:2px;scrollbar-width:none}
-  .banner{font-size:.62rem;gap:8px}
-  main{padding:7px}
-  .panel{height:auto;min-height:0;max-height:64vh}
-  #chart{height:300px}
+  /* one clean horizontally-scrollable nav row — no wrapping, no squished buttons */
+  .hdr-right{width:100%;overflow-x:auto;flex-wrap:nowrap;padding-bottom:2px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+  .hdr-right::-webkit-scrollbar{display:none}
+  .hdr-right>*{flex:0 0 auto}
+  .hdr-right .btn{white-space:nowrap;padding:5px 9px;font-size:.7rem}
+  #lastUp{display:none}
+  .banner{font-size:.6rem;gap:8px;padding:4px 10px}
+  main{padding:5px}
+  /* keep all three Triad panels side by side — skinny is intentional */
+  .trinity{grid-template-columns:repeat(3,1fr);gap:2px}
+  .panel{height:auto;min-height:0;max-height:70vh}
   .chart-area{grid-template-columns:1fr}
   .levels{max-height:180px}
   .settings{width:100%;right:-100%}
   .cards{grid-template-columns:1fr 1fr}
   .modal{padding:14px}
-  .pstats{gap:7px}
-   .srow { grid-template-columns: 36px 1fr 52px; padding: 2px; font-size: 0.6rem; }
-  .srow .strike { font-size: 0.6rem; }
-  .srow .gex { font-size: 0.6rem; }
-  .p-head { padding: 4px; gap: 2px; }
-  .ticker-sel { max-width: 55px; font-size: 0.75rem; padding: 2px; }
-  .price { font-size: 0.7rem; }
-  .king-pill { font-size: 0.55rem; padding: 1px 4px; }
-  .pstats { padding: 3px; gap: 4px; font-size: 0.55rem; }
+  .srow{grid-template-columns:34px 1fr 50px;padding:2px;font-size:.6rem}
+  .srow .strike{font-size:.6rem}
+  .srow .gex{font-size:.6rem}
+  .p-head{padding:4px 3px;gap:2px;flex-wrap:wrap}
+  .ticker-sel{max-width:52px;font-size:.72rem;padding:2px}
+  .price{font-size:.68rem}
+  .king-pill{font-size:.52rem;padding:1px 4px}
+  .badge-src{font-size:.5rem}
+  .pstats{padding:3px;gap:4px;font-size:.55rem}
+  .imb-row{grid-template-columns:1fr 120px 1fr}
+  .spotpx{font-size:.5rem;padding:0 3px}
 }
 .hidden{display:none!important}
 .loader{display:inline-block;width:10px;height:10px;border:2px solid var(--cyan);border-top-color:transparent;border-radius:50%;animation:spin .65s linear infinite}
@@ -179,45 +210,63 @@ footer{text-align:center;padding:12px;font-size:.65rem;color:#3f4656;border-top:
 <header>
   <div class="logo"><span>◆</span> Kairos</div>
   <div class="hdr-right">
-    <button class="btn active" id="btnTrinity">Trinity</button>
+    <button class="btn active" id="btnTrinity" data-tip="Three lenses in balance — SPXW · SPY · QQQ. Alignment = conviction, divergence = size down or pass.">Triad</button>
     <button class="btn" id="btnSingle">Single</button>
     <button class="btn" id="btnChart">Chart</button>
     <button class="btn" id="btnIdeas">Ideas</button>
     <button class="btn" id="btnImb">Imbalance</button>
-    <select id="expiryFilter" data-tip="Which expirations feed the map. 0DTE = today only (day-trading structure); All = first 5 expirations stacked."><option value="all">All</option><option value="0dte">0DTE</option><option value="7d">≤7D</option><option value="30d">≤30D</option></select>
-    <button class="btn" id="btnHelp" data-tip="How to read and use Kairos — nodes, flips, units, workflow">?</button>
+    <button class="btn" id="btnTape" data-tip="Opening-flow tape — where fresh option dollars are hitting today, ranked by premium.">Tape</button>
+    <div class="mtoggle" id="mtoggle" data-tip="Which exposure the map shows. GEX=gamma (pin/momentum). VEX=vanna (how walls move when IV moves).">
+      <button data-m="gex" class="on">GEX</button>
+      <button data-m="vex">VEX</button>
+    </div>
+    <select id="expiryFilter" data-tip="Which expirations feed the map. 0DTE = today only; All = first 5 expirations stacked. Switching re-filters cached chains instantly."><option value="all">All</option><option value="0dte">0DTE</option><option value="7d">≤7D</option><option value="30d">≤30D</option></select>
+    <button class="btn" id="btnHelp" data-tip="How to read and use Kairos">?</button>
     <button class="btn" id="btnSettings">Settings</button>
-    <button class="btn primary" id="btnRefresh">Refresh <span id="spin" class="hidden loader"></span></button>
+    <button class="btn primary" id="btnRefresh" data-tip="Hard reload — re-pulls chains, OI and IV now. Scheduled polls only tick quotes and re-price locally.">Refresh <span id="spin" class="hidden loader"></span></button>
   </div>
 </header>
-<div class="banner"><div id="bannerText">Loading…</div><div id="lastUp">—</div></div>
+<div class="banner">
+  <div id="bannerText">Loading…</div>
+  <div id="sessInfo" data-tip="Spot and quotes are live for the current session. Open interest is OCC's prior-settlement figure, published pre-market — so the map's standing structure is as-of the prior close. No vendor has intraday OI."></div>
+  <div id="lastUp">—</div>
+</div>
 <main>
   <div id="trinityWrap"><div class="trinity" id="trinity"></div></div>
   <div class="chart-area hidden" id="chartSec">
     <div class="chart-col">
       <div class="chart-top">
-        <input id="chartTicker" class="ticker-sel" list="tickList" value="SPY" style="width:92px" data-tip="Type any symbol — pulls its chain on the fly">
+        <input id="chartTicker" class="ticker-sel" value="SPY" style="width:92px" autocomplete="off" data-tip="Type any symbol — pulls its chain on the fly">
         <span id="chartFocus"></span>
-        <button class="btn" id="btnPine" style="border-color:var(--border);color:var(--text)" data-tip="Copies these levels as a Pine v5 indicator (line thickness = node strength). Paste into the Pine editor on your TradingView account.">Copy Pine</button>
+        <button class="btn" id="btnPine" style="border-color:var(--border);color:var(--text)" data-tip="Copies the ACTIVE metric's levels (GEX/VEX) as a Pine v5 indicator. Line thickness = node strength. Paste into TradingView.">Copy Pine</button>
       </div>
       <div id="tvChart"></div>
     </div>
     <div class="levels">
       <div class="rail-h">KEY LEVELS</div>
       <div id="lvlList"></div>
-      <div class="rail-h" style="margin-top:12px" data-tip="Biggest node changes since the last refresh — where exposure is building or unwinding right now">TOP MOVERS · Δ LAST REFRESH</div>
+      <div class="rail-h" style="margin-top:12px" data-tip="Biggest node changes since ~12 min ago — where exposure is building or unwinding right now">TOP MOVERS · Δ ~12 MIN</div>
       <div id="movers"></div>
     </div>
   </div>
   <div class="imb hidden" id="imbSec">
     <div class="imb-top">
-      <input id="imbTicker" class="ticker-sel" list="tickList" value="SPY" style="width:92px" data-tip="Type any optionable ticker">
+      <input id="imbTicker" class="ticker-sel" value="SPY" style="width:92px" autocomplete="off" data-tip="Type any optionable ticker">
       <span id="imbMeta" style="font-size:.68rem;color:var(--muted)"></span>
     </div>
     <div class="imb-stats" id="imbStats"></div>
     <div style="text-align:center;font-size:.62rem;color:var(--muted);margin:10px 0 5px;letter-spacing:.08em">CALLS ← → PUTS · bright = today's volume · faint = open interest</div>
     <div id="imbBars"></div>
     <div id="imbNote" style="font-size:.62rem;color:var(--muted);margin-top:9px;line-height:1.5"></div>
+  </div>
+  <div class="tape hidden" id="tapeSec">
+    <div class="imb-top">
+      <input id="tapeTicker" class="ticker-sel" value="SPY" style="width:92px" autocomplete="off" data-tip="Type any optionable ticker">
+      <span id="tapeMeta" style="font-size:.68rem;color:var(--muted)"></span>
+    </div>
+    <div class="imb-stats" id="tapeStats"></div>
+    <div id="tapeBody"></div>
+    <div id="tapeNote" style="font-size:.62rem;color:var(--muted);margin-top:10px;line-height:1.55"></div>
   </div>
   <div class="surfaced hidden" id="ideasSec">
     <h3>Surfaced Ideas</h3>
@@ -229,23 +278,30 @@ footer{text-align:center;padding:12px;font-size:.65rem;color:#3f4656;border-top:
   <div class="modal help">
     <button class="close" id="closeHelp">×</button>
     <h2>How to use Kairos</h2>
-    <h3>What you're looking at</h3>
-    <p>Every number is dealer <strong>gamma exposure (GEX)</strong> — the dollar hedging obligation market makers carry at each strike. Positive (teal, "Pika") = dealers hedge against the move: dips get bought, rips get sold, price pins. Negative (purple, "Barney") = dealers hedge with the move: moves accelerate. The solid <span style="background:#f2c14e;color:#000;padding:0 4px;border-radius:3px;font-weight:700">yellow</span> row is the <strong>King</strong> — the biggest absolute node and the market's primary magnet.</p>
+    <h3>The two lenses — GEX / VEX</h3>
+    <p>The <b>GEX / VEX</b> toggle up top swaps what every map shows. They are two different Greek exposures, and their walls sit in <em>different strikes</em> — that's the whole point.</p>
+    <ul>
+      <li><strong>GEX (gamma)</strong> — the dollar hedging load at each strike. Positive (teal) = dealers fade the move (pin/range); negative (purple) = dealers chase it (momentum). Gamma peaks near the money. This is the classic map.</li>
+      <li><strong>VEX (vanna)</strong> — how dealer delta shifts when <em>IV</em> moves. Vanna peaks out in the wings (~15–25Δ), so the vanna King is usually nowhere near the gamma King. +VEX near spot: rising IV makes dealers sell into strength / falling IV hands the market a bid — the "vanna tailwind" that quietly lifts grinding, low-vol tape and caps vol spikes. −VEX: dealers chase IV, moves amplify on a vol expansion.</li>
+    </ul>
+    <p>Read them together: when the gamma King and vanna King <strong>cluster at the same strike</strong>, that strike is a super-magnet. The deep-dive modal shows both and flags tight confluence.</p>
     <h3>Node taxonomy</h3>
     <ul>
-      <li><strong>King</strong> — largest |GEX|. Price tends to gravitate to it, especially into expiry.</li>
-      <li><strong>Gatekeepers</strong> — next-strongest nodes between you and the King. Expect stalls/deflections there.</li>
-      <li><strong>Zero Gamma Flip</strong> — where net dealer gamma crosses zero (computed from the full Black-Scholes re-priced profile, not per-strike sign flips). Above it: pinning regime. Below it: momentum regime.</li>
-      <li><strong>Air pockets</strong> (shaded bands on the chart) — near-zero exposure zones. No dealer friction: price moves fast through them.</li>
+      <li><strong>King</strong> — largest |exposure| for the active metric. The market's primary magnet for that force.</li>
+      <li><strong>Call / Put Wall</strong> — largest positive node above and largest negative node below spot, tagged <span class="wtag cw">CW</span> / <span class="wtag pw">PW</span>.</li>
+      <li><strong>Zero Flip</strong> — where net exposure crosses zero (from the Black-Scholes re-priced profile). Computed per metric.</li>
+      <li><strong>Spot row</strong> — the cyan-framed row with the live price pill. That's where price is trading right now; everything above it is overhead structure, everything below is support.</li>
     </ul>
-    <h3>The chart</h3>
-    <p>Real candles (Tradier). Horizontal lines = current levels, <strong>thickness = strength</strong>. The dot trails are node history — every refresh stamps a column of dots, so you can literally watch a node build or decay through the session (growth beside an air pocket is the classic acceleration setup). <span class="kbd">Copy Pine</span> exports today's levels as an indicator for your real TradingView charts.</p>
-    <h3>Workflow (Skylit doctrine, worth keeping)</h3>
-    <p>Chart first, map second. Build your thesis from price action, then use the map to confirm or deny — nodes are context, not entry signals. Full Trinity alignment (SPXW + SPY + QQQ agreeing) = highest conviction; divergence = size down or pass.</p>
+    <h3>Flow Tape</h3>
+    <p>Ranks today's <strong>opening premium</strong> — contracts where volume is running ≥70% of open interest (new positioning, not churn), sized by real dollars (mid × volume × 100). <strong>Honest limits:</strong> Tradier's REST feed reports total contract volume, not per-trade aggressor side, so this is <em>not</em> tick-level buy/sell or sweep detection, and puts may be hedges. What it does capture cleanly: where fresh option dollars are opening, which walls are being built vs. stale, and a directional dollar lean that feeds the Ideas score.</p>
+    <h3>The Δ chips</h3>
+    <p>The ▲/▼ percentages flag nodes building or unwinding vs. <strong>~12 minutes ago</strong>. A node must be ≥8% of the King and have moved ≥8% to earn one — that kills the far-OTM tail noise. Chips track whichever metric is active.</p>
+    <h3>Imbalance</h3>
+    <p>Per-strike call vs put pressure — bright bars are today's volume, faint bars are standing OI. WK Ceiling/Floor are the biggest weekly call OI above spot and put OI below. Sentiment blends volume ratio with premium ratio.</p>
+    <h3>Workflow (Skylit doctrine)</h3>
+    <p>Chart first, map second. Build your thesis from price, then use the map to confirm or deny. Full Triad alignment = highest conviction; divergence = size down or pass. Structure is context, not a signal.</p>
     <h3>Units &amp; honesty</h3>
-    <p><strong>$ per 1-pt move</strong> (default) matches Heatseeker's scale; <strong>$ per 1% move</strong> is the SpotGamma-style convention — same math, different denominator. OI updates once daily pre-market; Greeks/IV (ORATS) refresh ~hourly; quotes are real-time. Signs assume the standard dealer position (long calls / short puts) — the Dealer setting stress-tests that assumption, which is the honest version of Heatseeker's proprietary inference.</p>
-    <h3>Panel stats</h3>
-    <p><strong>Net±1%</strong> — summed exposure within 1% of spot (the regime that matters right now). <strong>EM</strong> — expected move to nearest expiry from ATM IV. <strong>Δ15m</strong> — King strength change over 15 minutes (velocity).</p>
+    <p>GEX is <strong>$ per 1-pt move</strong> (Heatseeker scale). VEX is <strong>$ delta per vol-point</strong>. OI updates daily pre-market; Greeks/IV refresh ~hourly; quotes are real-time. Chains cache ~90s and every metric is re-priced from live spot on each tick. Signs assume the standard dealer position (long calls / short puts).</p>
   </div>
 </div>
 <div class="modal-bg" id="modal">
@@ -255,7 +311,7 @@ footer{text-align:center;padding:12px;font-size:.65rem;color:#3f4656;border-top:
     <div class="g2">
       <div>
         <div class="st">Snapshot</div><div id="mGex"></div>
-        <div class="st" data-tip="Net dealer gamma re-priced across a ±7% spot grid. Gold dash = flip, white dash = spot. Right of the flip = pinning, left = momentum.">Gamma Profile ⓘ</div><div class="prof" id="prof"></div>
+        <div class="st" data-tip="Net dealer exposure for the active metric re-priced across a ±7% spot grid. Gold dash = flip, white dash = spot.">Exposure Profile ⓘ</div><div class="prof" id="prof"></div>
         <div id="mNotes" class="hidden"></div>
       </div>
       <div>
@@ -268,65 +324,140 @@ footer{text-align:center;padding:12px;font-size:.65rem;color:#3f4656;border-top:
 
 <div class="settings" id="settings">
   <h3 style="margin-bottom:14px">Settings</h3>
-  <div class="fg"><label>Tradier API token</label><input type="password" id="tok" style="width:100%"></div>
-  <div class="fg"><label>Refresh every (seconds)</label><input type="text" id="poll" value="10" style="width:80px" data-tip="10 is the floor — any faster would break Tradier's 120 requests/minute limit"></div>
+  <div class="fg">
+    <label>Tradier API token</label>
+    <input type="password" id="tok" style="width:100%" placeholder="paste your token (stored only in this browser)" autocomplete="off">
+    <div class="hint">Free at tradier.com (a sandbox token works). Leave empty to run on delayed CBOE data. Never hard-code or share a token inside this file — each person pastes their own here.</div>
+  </div>
+  <div class="fg"><label>Refresh every (seconds)</label><input type="text" id="poll" value="10" style="width:80px" data-tip="10 is the floor. Scheduled polls only tick live quotes (1 batched request) — chains re-pull every ~90s — well under Tradier's 120 req/min limit."></div>
   <div class="fg"><label>Map shows</label><select id="sizeBasis" style="width:100%"><option value="oi">Standing positions — open interest, updates daily</option><option value="vol">Today's flow — volume traded so far this session</option></select></div>
   <button class="btn primary" style="width:100%;margin-top:8px" id="save">Save</button>
-  <div class="method">Everything else is locked to the most accurate setup: live spot quotes, gamma re-priced from spot + IV on every refresh, standard dealer convention, Heatseeker-scale units ($ per 1-pt move). Full explanation under <b>?</b>.</div>
+  <div class="method">Everything else is locked to the most accurate setup: live spot quotes, exposure re-priced from spot + IV on every tick, standard dealer convention. Chains/OI/IV cache ~90s, keeping request volume ~80% lower and the UI smooth. Full explanation under <b>?</b>.</div>
 </div>
-<datalist id="tickList"></datalist>
-<footer>Kairos · structure is context, not a signal</footer>
+<footer>Kairos v7.1 · GEX · VEX · Flow · structure is context, not a signal</footer>
 
 <script>
-const DEFAULT_TOKEN='nFN3ie8zOpkbfAj1giZUpX97yspA';
+/* =====================================================================
+   Kairos v7.1 — dealer exposure terminal (GEX + VEX + Flow). Single file.
+
+   v7.1 — smoothness + focus pass (no calculation changes to GEX/VEX):
+   • CEX removed end-to-end: toggle, per-strike math, profile grid,
+     history snapshots, modal, help. ~33% less Black-Scholes work/rebuild.
+   • ⚡ flow tags dropped from map rows — Δ% chips (vs ~12 min ago) stay.
+     Flow Tape view and flow-into-Ideas scoring are unchanged.
+   • Spot visibility: exactly one spot row (nearest strike), cyan glow
+     frame, cyan strike text, live price pill in Triad + Single grid,
+     Spot line added to the Chart key-levels rail.
+   • Triad-wipe bug fixed: changing the ticker in Single view no longer
+     rewrites the saved Triad; loader self-heals any collapsed saved list.
+   • Pending-refresh queue: refreshes requested mid-flight run right after
+     instead of being dropped — tab hops always load.
+   • Panels never rebuild while a ticker box has focus / combobox is open.
+   • Scroll restore is synchronous (no 40ms flash-to-top). Tape repaints
+     only when its chain actually changes (~90s), scroll preserved.
+   • Mobile: Triad stays 3-across (skinny by design); the nav row is now
+     one clean horizontal scroll instead of wrapping into a jumble.
+   • Background Ideas sweep: 5 min unless the Ideas view is open (110s),
+     and it never runs while a visible-panel refresh is in flight.
+   ===================================================================== */
 const TICKS=['SPXW','SPY','QQQ','IWM','NVDA','AAPL','MSFT','META','TSLA','AMZN','GOOGL'];
+const CHAIN_TTL=90000;
+const HIST_SAVE_MS=60000;
+const DELTA_WINDOW=720;
+const DELTA_MATERIAL=0.08;
+const DELTA_MIN=8;
+const FLOW_OPEN=0.7;        // vol/oi ratio to call a node "opening" (being rebuilt today)
+const FLOW_MIN_PREM=25000;  // $ premium floor for a tape print to matter
+
+function cleanSym(s){s=String(s||'').trim().toUpperCase();return /^[A-Z0-9.\-\/]{1,12}$/.test(s)?s:'';}
+function underOf(sym){return (sym==='SPXW'||sym==='SPX')?'SPX':sym;}
+
 const state={
-  data:{}, multi:{}, focus:'SPY', view:'trinity',
-  dealerMode:'standard', customShort:0.7, expiry:'all', pollSec:10,
+  data:{}, chains:{}, spot:{}, multi:{}, focus:'SPY', view:'trinity',
+  metric:(localStorage.getItem('kairos_metric')||'gex'),
+  dealerMode:'standard', customShort:0.7, expiry:'all',
+  pollSec:Math.max(10,parseInt(localStorage.getItem('kairos_poll'))||10),
   calcMode:'live', unit:'pt',
   sizeBasis:localStorage.getItem('kairos_basis')||'oi',
-  tradierToken:localStorage.getItem('kairos_tok')||DEFAULT_TOKEN,
+  tradierToken:(localStorage.getItem('kairos_tok')||'').trim(),
   tradierEnv:localStorage.getItem('kairos_env')||'production',
-  trinityTickers:(localStorage.getItem('kairos_ticks')||'SPXW,SPY,QQQ').split(',').map(s=>s.trim().toUpperCase()),
-  chart:null, series:null, lines:[], expCache:{}, candleBase:null, tf:'5m', synthetic:false,
-  history:{}, overlay:null, firstLoadFailed:false
+  trinityTickers:(localStorage.getItem('kairos_ticks')||'SPXW,SPY,QQQ').split(',').map(cleanSym).filter(Boolean),
+  expCache:{}, history:{}, prevG:{}, dataAge:{}, ideas:{}, tech:{},
+  scrolled:{}, refreshing:false, pendingRefresh:false, pendingForce:false,
+  lastHistSave:0, firstLoadFailed:false, singleLoading:false
 };
-function tzOff(){return -new Date().getTimezoneOffset()*60;}
+if(!state.trinityTickers.length)state.trinityTickers=['SPXW','SPY','QQQ'];
+// self-heal: an older bug could collapse the saved Triad to one ticker — pad back to 3
+if(state.trinityTickers.length<3){
+  ['SPXW','SPY','QQQ'].forEach(t=>{if(state.trinityTickers.length<3&&!state.trinityTickers.includes(t))state.trinityTickers.push(t);});
+  localStorage.setItem('kairos_ticks',state.trinityTickers.join(','));
+}
+state.trinityTickers=state.trinityTickers.slice(0,3);
+if(!['gex','vex'].includes(state.metric))state.metric='gex';
 try{
   const h=JSON.parse(localStorage.getItem('kairos_hist')||'null');
-  if(h&&h.d===new Date().toDateString())state.history=h.h||{};
+  if(h&&h.v===6&&h.d===new Date().toDateString())state.history=h.h||{};
 }catch(e){}
 
+/* ---- metric plumbing ---- */
+function metricKey(m){return m==='vex'?'v':'g';}
+function metricLabel(m){return m==='vex'?'Vanna':'Gamma';}
+function mval(s,metric){metric=metric||state.metric;return metric==='vex'?(s.vex||0):(s.gex||0);}
 function fmtG(v,spot){return fmt(state.unit==='pt'&&spot?v/(spot*0.01):v);}
+function mdisp(v,spot){return state.metric==='gex'?fmtG(v,spot):fmt(v);}
 function fmt(v){const a=Math.abs(v);if(a>=1e9)return(v/1e9).toFixed(2)+'B';if(a>=1e6)return(v/1e6).toFixed(1)+'M';if(a>=1e3)return(v/1e3).toFixed(1)+'K';return Math.round(v)+'';}
-function kingOf(s){let m=0,k=null;(s||[]).forEach(x=>{if(Math.abs(x.gex)>m){m=Math.abs(x.gex);k=x}});return k;}
-function callWall(s){let m=0,w=null;(s||[]).forEach(x=>{if(x.gex>m){m=x.gex;w=x}});return w;}
-function putWall(s){let m=0,w=null;(s||[]).forEach(x=>{if(x.gex<m){m=x.gex;w=x}});return w;}
-function flipOf(s,spot){const a=[...(s||[])].sort((x,y)=>x.k-y.k);let f=null,b=1e18;for(let i=0;i<a.length-1;i++)if(a[i].gex*a[i+1].gex<=0){const m=(a[i].k+a[i+1].k)/2;const d=spot?Math.abs(m-spot):i;if(d<b){b=d;f={k:m};}}return f;}
+function dealerAdj(u,a){return state.dealerMode==='shortall'?-a:state.dealerMode==='custom'?a*(1-2*state.customShort):u;}
+
+function kingOf(s,metric){let m=0,k=null;(s||[]).forEach(x=>{const v=Math.abs(mval(x,metric));if(v>m){m=v;k=x}});return k;}
+function callWall(s,metric){let m=0,w=null;(s||[]).forEach(x=>{const v=mval(x,metric);if(v>m){m=v;w=x}});return w;}
+function putWall(s,metric){let m=0,w=null;(s||[]).forEach(x=>{const v=mval(x,metric);if(v<m){m=v;w=x}});return w;}
+function flipOf(s,spot,metric){const a=[...(s||[])].sort((x,y)=>x.k-y.k);let f=null,b=1e18;for(let i=0;i<a.length-1;i++){const g0=mval(a[i],metric),g1=mval(a[i+1],metric);if(g0*g1<=0){const m=(a[i].k+a[i+1].k)/2;const d=spot?Math.abs(m-spot):i;if(d<b){b=d;f={k:m};}}}return f;}
+
 function localDate(){const d=new Date();const p=n=>String(n).padStart(2,'0');return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate());}
-function dteOf(dstr){return Math.max(0,(new Date(dstr+'T16:00:00')-Date.now())/86400000);}
-// Black-Scholes gamma (r=q=0 — negligible for exposure mapping)
+const _nyOff={};
+function nyOffset(dstr){
+  if(_nyOff[dstr])return _nyOff[dstr];
+  let off='-05:00';
+  try{
+    const probe=new Date(dstr+'T12:00:00Z');
+    const s=new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',timeZoneName:'shortOffset'}).format(probe);
+    const m=s.match(/GMT([+-]\d+)/);
+    if(m){const h=parseInt(m[1],10);off=(h<0?'-':'+')+String(Math.abs(h)).padStart(2,'0')+':00';}
+  }catch(e){}
+  return _nyOff[dstr]=off;
+}
+function dteOf(dstr){return Math.max(0,(new Date(dstr+'T16:00:00'+nyOffset(dstr))-Date.now())/86400000);}
+function prevBiz(d){const x=new Date(d);do{x.setDate(x.getDate()-1);}while(x.getDay()===0||x.getDay()===6);return x;}
+function sessionInfo(){
+  const now=new Date();
+  const fmtNY=dt=>dt.toLocaleDateString('en-US',{timeZone:'America/New_York',weekday:'short',month:'short',day:'numeric'});
+  const nyStr=now.toLocaleDateString('en-US',{timeZone:'America/New_York',year:'numeric',month:'2-digit',day:'2-digit'});
+  const parts=nyStr.split('/');
+  const nyDate=new Date(+parts[2],+parts[0]-1,+parts[1]);
+  const dow=nyDate.getDay();
+  const sess=(dow===0||dow===6)?prevBiz(new Date(nyDate.getTime()+86400000)):nyDate;
+  return {sess:fmtNY(sess),oi:fmtNY(prevBiz(sess))};
+}
+/* Black-Scholes second-order Greeks (r=q=0). Raw gamma/vanna are identical
+   for calls and puts at a strike — dealer SIGN comes from position only. */
 function bsGamma(S,K,iv,T){if(T<=0||iv<=0||S<=0||K<=0)return 0;const st=iv*Math.sqrt(T);const d1=(Math.log(S/K)+0.5*iv*iv*T)/st;return Math.exp(-0.5*d1*d1)/(S*st*Math.sqrt(2*Math.PI));}
 function bsVanna(S,K,iv,T){if(T<=0||iv<=0||S<=0||K<=0)return 0;const st=iv*Math.sqrt(T);const d1=(Math.log(S/K)+0.5*iv*iv*T)/st;const d2=d1-st;return -Math.exp(-0.5*d1*d1)/Math.sqrt(2*Math.PI)*d2/iv;}
-// Net VEX at spot ($ delta change per 1 vol pt, per 1% ... standard call+/put- dealer convention)
-function netVex(contracts,spot){
-  if(!contracts||!contracts.length||!spot)return null;
-  const sgn=c=>state.dealerMode==='shortall'?-1:state.dealerMode==='custom'?(1-2*state.customShort):(c.call?1:-1);
-  let v=0;for(const c of contracts)v+=sgn(c)*bsVanna(spot,c.k,c.iv,c.T)*c.oi*100*spot*0.01;
-  return v;
+
+function ensureProfile(sym,d){
+  if(!d)return null;
+  if(d.profile)return d.profile;
+  if(!d.contracts||!d.contracts.length)return null;
+  const key=(+d.spot).toPrecision(4)+'|'+state.expiry+'|'+state.dealerMode+'|'+(d.chStamp||0);
+  const pc=state._profCache=state._profCache||{};
+  if(pc[sym]&&pc[sym].key===key){d.profile=pc[sym].p;return d.profile;}
+  const p=exposureProfile(d.contracts,d.spot);
+  pc[sym]={key,p};d.profile=p;
+  return p;
 }
-function alignState(g,v){
-  if(g==null||v==null)return null;
-  if(g>=0&&v>=0)return{s:'+GEX / +VEX',d:'pinning — dips bought, vol crush adds bid'};
-  if(g>=0&&v<0)return{s:'+GEX / \u2212VEX',d:'range with a lid — rallies quietly capped'};
-  if(g<0&&v<0)return{s:'\u2212GEX / \u2212VEX',d:'amplified moves — momentum regime'};
-  return{s:'\u2212GEX / +VEX',d:'volatile but snapback-prone on IV fade'};
-}
-// explainable 0-100 conviction: king dominance + spot proximity
-function panelStats(sym,d){
+function panelStats(sym,d,metric){
+  metric=metric||state.metric;
   const near=(d.strikes||[]).filter(s=>Math.abs(s.k-d.spot)<=d.spot*0.01);
-  const net1=near.reduce((a,s)=>a+s.gex,0);
-  // EM: nearest expiry ATM IV
+  const net1=near.reduce((a,s)=>a+mval(s,metric),0);
   let em=null;
   if(d.contracts&&d.contracts.length){
     let best=null;
@@ -336,66 +467,93 @@ function panelStats(sym,d){
     }
     if(best)em=d.spot*best.iv*Math.sqrt(best.T);
   }
-  if(!d.profile&&d.contracts&&d.contracts.length)d.profile=gammaProfile(d.contracts,d.spot);
-  const fl=d.profile&&d.profile.flip?d.profile.flip:null;
-  // velocity: King |GEX| change vs ~15 min ago
+  const prof=ensureProfile(sym,d);
+  const fl=prof?(metric==='vex'?prof.flipV:prof.flipG):null;
   let vel=null;
   const hist=state.history[sym]||[];
   if(hist.length>1){
-    const now=hist[hist.length-1],cut=now.t-900;
+    const now=hist[hist.length-1],cut=now.t-900,mk=metricKey(metric);
     let old=null;for(const h of hist){if(h.t<=cut)old=h;}
-    if(old&&old.top.length&&now.top.length){
-      const a=Math.abs(old.top[0].g),b=Math.abs(now.top[0].g);
-      if(a>0)vel=(b-a)/a*100;
-    }
+    const an=now[mk]||[],ao=old?(old[mk]||[]):[];
+    if(ao.length&&an.length){const a=Math.abs(ao[0].val),b=Math.abs(an[0].val);if(a>0)vel=(b-a)/a*100;}
   }
   return{net1,em,fl,vel};
 }
-function deltaOf(sym,k,cur){
-  const p=state.prevG&&state.prevG[sym]?state.prevG[sym][k]:undefined;
-  if(p===undefined||Math.abs(p)<1e4)return null;   // ignore dust
-  return (cur-p)/Math.abs(p)*100;
+function histValue(sym,k,secsAgo,metric){
+  metric=metric||state.metric;const mk=metricKey(metric);
+  const h=state.history[sym];if(!h||h.length<2)return null;
+  const now=h[h.length-1].t,cut=now-secsAgo;
+  let chosen=null;
+  for(const snap of h){if(snap.t<=cut)chosen=snap;}
+  if(!chosen)chosen=h[0];
+  const arr=chosen[mk]||[];
+  const hit=arr.find(x=>x.k===k);
+  return hit?hit.val:null;
+}
+function deltaOf(sym,k,cur,maxAbs,metric){
+  metric=metric||state.metric;
+  if(maxAbs&&Math.abs(cur)<DELTA_MATERIAL*maxAbs)return null;
+  let base=histValue(sym,k,DELTA_WINDOW,metric);
+  if(base===null&&metric==='gex'){const pg=state.prevG&&state.prevG[sym];base=pg?pg[k]:undefined;}
+  if(base===undefined||base===null||Math.abs(base)<Math.max(1e3,0.05*(maxAbs||0)))return null;
+  return (cur-base)/Math.abs(base)*100;
 }
 function deltaChip(dl){
-  if(dl===null||!isFinite(dl)||Math.abs(dl)<1)return '';
-  const v=Math.abs(dl)>=100?Math.round(Math.abs(dl)):Math.abs(dl).toFixed(Math.abs(dl)>=10?0:1);
-  return `<span class="dpill ${dl>=0?'up':'dn'}" data-tip="Node change vs previous refresh \u2014 building or unwinding">${dl>=0?'+':'\u2212'}${v}%</span>`;
+  if(dl===null||!isFinite(dl)||Math.abs(dl)<DELTA_MIN)return '';
+  const c=dl>=0?'var(--teal)':'#e879f9';
+  return `<span class="dchip" style="color:${c};font-weight:700" data-tip="Change vs ~12 min ago — growing nodes are being built, shrinking nodes are unwinding">${dl>=0?'\u25b2':'\u25bc'}${Math.abs(dl)>=100?Math.round(Math.abs(dl)):Math.abs(dl).toFixed(1)}%</span>`;
 }
-// ---- daily technicals (Tradier history, cached 10 min) ----
+/* ---- opening-flow lean: real vol/OI/premium, opening inferred from vol>=70% OI ---- */
+function flowLean(sym){
+  const ch=state.chains[sym];if(!ch||!ch.list||!ch.list.length)return null;
+  const spot=state.spot[sym]||ch.spot||ch.spotHint||0;if(!spot)return null;
+  let callPrem=0,putPrem=0;const prints=[];
+  for(const c of ch.list.filter(expiryFilt)){
+    if(!c.vol)continue;
+    const voi=c.vol/Math.max(c.oi,1);
+    if(voi<FLOW_OPEN)continue;                 // churn, not new positioning
+    const prem=(c.mid||0)*c.vol*100;
+    if(c.call)callPrem+=prem;else putPrem+=prem;
+    if(prem>=FLOW_MIN_PREM)prints.push({k:c.k,call:c.call,e:c.e,vol:c.vol,oi:c.oi,voi,prem,iv:c.iv});
+  }
+  prints.sort((a,b)=>b.prem-a.prem);
+  return{callPrem,putPrem,net:callPrem-putPrem,prints:prints.slice(0,30),spot};
+}
+/* ---- daily technicals (Tradier history, cached 10 min) ---- */
 async function getTech(sym){
-  state.tech=state.tech||{};
   const c=state.tech[sym];
   if(c&&Date.now()-c.t<600000)return c;
+  if(!(state.tradierToken.length>8))return state.tech[sym]={t:Date.now(),ok:false};
   const tryFetch=async u=>{
     const start=new Date(Date.now()-140*86400000).toISOString().slice(0,10);
-    const j=await tFetch('/markets/history?symbol='+u+'&interval=daily&start='+start);
+    const j=await tFetch('/markets/history?symbol='+encodeURIComponent(u)+'&interval=daily&start='+start);
     const days=j.history&&j.history.day;const arr=Array.isArray(days)?days:(days?[days]:[]);
     return arr.map(x=>+x.close).filter(x=>x>0);
   };
   let closes=null;
-  const u=(sym==='SPXW'||sym==='SPX')?'SPX':sym;
+  const u=underOf(sym);
   try{closes=await tryFetch(u);}catch(e){}
-  if((!closes||closes.length<40)&&u==='SPX'){try{closes=await tryFetch('SPY');}catch(e){}} // %-based signals, scale-free
+  if((!closes||closes.length<40)&&u==='SPX'){try{closes=await tryFetch('SPY');}catch(e){}}
   if(!closes||closes.length<40)return state.tech[sym]={t:Date.now(),ok:false};
   const sma=n=>closes.slice(-n).reduce((a,b)=>a+b,0)/n;
-  // Wilder RSI(14)
+  const w=closes.slice(-60);
   let g=0,l=0;
-  for(let i=closes.length-15;i<closes.length-1;i++){const d2=closes[i+1]-closes[i];if(d2>0)g+=d2;else l-=d2;}
-  const rsi=l===0?100:100-100/(1+(g/14)/(l/14));
+  for(let i=1;i<=14;i++){const d2=w[i]-w[i-1];if(d2>0)g+=d2;else l-=d2;}
+  let ag=g/14,al=l/14;
+  for(let i=15;i<w.length;i++){const d2=w[i]-w[i-1];ag=(ag*13+Math.max(d2,0))/14;al=(al*13+Math.max(-d2,0))/14;}
+  const rsi=al===0?100:100-100/(1+ag/al);
   return state.tech[sym]={t:Date.now(),ok:true,close:closes[closes.length-1],sma20:sma(20),sma50:sma(50),rsi};
 }
-// ---- composite idea: structure (GEX) x technicals; returns null when there's no edge ----
+/* ---- composite idea: GEX structure x technicals x opening flow ---- */
 function scoreIdea(sym,d,tech){
   if(!d||!d.strikes||!d.strikes.length)return null;
-  const kg=kingOf(d.strikes);if(!kg)return null;
-  const ps=panelStats(sym,d);
+  const kg=kingOf(d.strikes,'gex');if(!kg)return null;
+  const ps=panelStats(sym,d,'gex');
   const spot=d.spot;
   const tot=d.strikes.reduce((a,s)=>a+Math.abs(s.gex),0)||1;
   const conc=Math.abs(kg.gex)/tot;
-  // structural direction: positive King = magnet (pull toward it); negative King = momentum (trend decides)
   let sBias=0;
   if(kg.gex>0)sBias=kg.k>spot?1:kg.k<spot?-1:0;
-  // technical direction
   let tBias=0;
   if(tech&&tech.ok){
     if(tech.close>tech.sma20&&tech.sma20>tech.sma50)tBias=1;
@@ -404,41 +562,44 @@ function scoreIdea(sym,d,tech){
   let bias=0;
   if(kg.gex>0){
     if(sBias===0)return null;
-    if(tBias!==0&&tBias!==sBias)return null;      // structure vs trend conflict → no play
+    if(tBias!==0&&tBias!==sBias)return null;
     bias=sBias;
   }else{
-    if(tBias===0)return null;                      // momentum regime needs a trend
+    if(tBias===0)return null;
     bias=tBias;
   }
   const drivers=[];
   let score=30;
-  // flip side agreement
   if(ps.fl!=null){
     const above=spot>ps.fl;
     if((bias>0&&above)||(bias<0&&!above)){score+=15;drivers.push((above?'above':'below')+' flip');}
     else score-=8;
   }
-  // King reachable within expected move
   if(ps.em&&kg.gex>0){
     const r=Math.min(1,ps.em/Math.max(1e-9,Math.abs(kg.k-spot)));
     score+=Math.round(15*r);
     if(r>=0.9)drivers.push('King inside EM');
   }
-  // King dominance
   score+=Math.round(10*Math.min(1,conc*3));
   if(conc>0.18)drivers.push('dominant King');
-  // trend quality
   if(tBias===bias&&tBias!==0){score+=15;drivers.push(bias>0?'uptrend':'downtrend');}
   else if(tech&&tech.ok)score+=5;
-  // RSI sanity
   if(tech&&tech.ok){
     if(bias>0&&tech.rsi>72){score-=10;}
     else if(bias<0&&tech.rsi<28){score-=10;}
     else score+=5;
   }
-  // velocity: King building
   if(ps.vel!=null&&ps.vel>2){score+=5;drivers.push('King building');}
-  // air-pocket runway toward the target
+  // opening-flow confirmation — the extra variable
+  const fl=flowLean(sym);let flowNote=null;
+  if(fl){
+    const t=fl.callPrem+fl.putPrem;
+    if(t>0){
+      const lean=fl.net/t;
+      if((bias>0&&lean>0.15)||(bias<0&&lean<-0.15)){score+=8;drivers.push('flow confirms');flowNote='confirms';}
+      else if((bias>0&&lean<-0.15)||(bias<0&&lean>0.15)){score-=8;drivers.push('flow diverges');flowNote='diverges';}
+    }
+  }
   const target=kg.gex>0?kg.k:null;
   if(target){
     const lo=Math.min(spot,target),hi=Math.max(spot,target);
@@ -451,323 +612,368 @@ function scoreIdea(sym,d,tech){
   return{
     sym,score,t:Date.now(),
     bias:bias>0?'LONG':'SHORT',
-    momentum:kg.gex<0,
+    momentum:kg.gex<0,flow:flowNote,
     target:target?(+target).toFixed(dp):null,
     invalid,
     line:kg.gex>0
       ?`${sym} ~ATM ${bias>0?'call':'put'}, 30\u201345 DTE \u00b7 target King ${(+kg.k).toFixed(dp)}`
       :`${sym} ${bias>0?'call':'put'} \u2014 momentum regime (\u2212GEX), trend ${bias>0?'up':'down'}`,
-    drivers:drivers.slice(0,4),
+    drivers:drivers.slice(0,5),
     meta:`King ${kg.k} \u00b7 ${Math.round(conc*100)}% of book${ps.em?` \u00b7 EM \u00b1${ps.em.toFixed(dp)}`:''}${tech&&tech.ok?` \u00b7 RSI ${Math.round(tech.rsi)}`:''}`
   };
 }
-// ---- background fleet sweep: all preset tickers, budget-aware ----
 let sweeping=false;
 async function ideasSweep(force){
-  if(sweeping||!state.tradierToken)return;
+  if(sweeping||document.hidden||state.refreshing)return; // never compete with a visible-panel refresh
   const now=Date.now();
-  if(!force&&state.lastSweep&&now-state.lastSweep<110000)return;
+  const gap=state.view==='ideas'?110000:300000; // full-watchlist sweep every 5 min unless Ideas is open
+  if(!force&&state.lastSweep&&now-state.lastSweep<gap)return;
   sweeping=true;state.lastSweep=now;
-  state.ideas=state.ideas||{};state.dataAge=state.dataAge||{};
-  for(const sym of TICKS){
-    try{
-      let d=state.data[sym];
-      if(!d||!state.dataAge[sym]||Date.now()-state.dataAge[sym]>90000){
-        const r=await getSym(sym,3); // 3 expirations is enough for swing structure
-        if(r){
+  try{
+    if(state.tradierToken.length>8){
+      try{const qs=await fetchQuotes(TICKS);TICKS.forEach(s=>{const u=underOf(s);if(qs[u])state.spot[s]=qs[u];});}catch(e){}
+    }
+    for(const sym of TICKS){
+      try{
+        let d=state.data[sym];
+        if(!d||!state.dataAge[sym]||Date.now()-state.dataAge[sym]>90000){
           const old=state.data[sym];
-          if(old&&old.strikes){const m={};old.strikes.forEach(s=>m[s.k]=s.gex);state.prevG[sym]=m;}
-          state.data[sym]=r;state.dataAge[sym]=Date.now();d=r;
+          const r=await getSym(sym,3,false);
+          if(r){
+            if(old&&old.strikes){const m={};old.strikes.forEach(s=>m[s.k]=s.gex);state.prevG[sym]=m;}
+            state.data[sym]=r;state.dataAge[sym]=Date.now();d=r;
+          }
         }
-      }
-      if(!d)continue;
-      const tech=await getTech(sym);
-      state.ideas[sym]=scoreIdea(sym,d,tech);
-    }catch(e){}
-    await new Promise(r2=>setTimeout(r2,120));
-  }
-  sweeping=false;
+        if(!d)continue;
+        const tech=await getTech(sym);
+        state.ideas[sym]=scoreIdea(sym,d,tech);
+      }catch(e){}
+      await new Promise(r2=>setTimeout(r2,60));
+    }
+  }finally{sweeping=false;}
   if(state.view==='ideas')renderCards();
 }
 setInterval(()=>ideasSweep(false),30000);
-setTimeout(()=>ideasSweep(true),4000);
-function scoreOf(d){
-  const kg=kingOf(d.strikes);if(!kg)return 0;
-  const tot=(d.strikes||[]).reduce((a,s)=>a+Math.abs(s.gex),0)||1;
-  const conc=Math.abs(kg.gex)/tot;
-  const prox=Math.max(0,1-Math.abs(d.spot-kg.k)/(d.spot*0.012));
-  return Math.round(40+conc*40+prox*20);
-}
-// TRUE gamma profile: re-price net dealer gamma across a spot grid, flip = zero crossing nearest spot
-function gammaProfile(contracts,spot){
+setTimeout(()=>ideasSweep(true),15000); // let the visible panels land first
+
+/* ---- per-metric exposure profile across ±7% spot grid ---- */
+function exposureProfile(contracts,spot){
   if(!contracts||!contracts.length||!spot)return null;
-  const sgn=c=>state.dealerMode==='shortall'?-1:state.dealerMode==='custom'?(1-2*state.customShort):(c.call?1:-1);
   const n=48,lo=spot*0.93,hi=spot*1.07,pts=[];
   for(let i=0;i<=n;i++){
-    const s=lo+(hi-lo)*i/n;let g=0;
-    for(const c of contracts)g+=sgn(c)*bsGamma(s,c.k,c.iv,c.T)*c.oi*100*s*s*0.01;
-    pts.push({s,g});
+    const s=lo+(hi-lo)*i/n;
+    let gu=0,ga=0,vu=0,va=0;
+    for(const c of contracts){
+      const sg=c.call?1:-1;
+      const gg=bsGamma(s,c.k,c.iv,c.T)*c.oi;
+      const vv=bsVanna(s,c.k,c.iv,c.T)*c.oi;
+      gu+=sg*gg;ga+=gg;vu+=sg*vv;va+=vv;
+    }
+    pts.push({s,
+      g:dealerAdj(gu,ga)*100*s*s*0.01,
+      v:dealerAdj(vu,va)*100*s*0.01});
   }
-  let flip=null,best=1e18;
-  for(let i=0;i<pts.length-1;i++)if(pts[i].g*pts[i+1].g<0){
-    const x=pts[i].s+(pts[i+1].s-pts[i].s)*(-pts[i].g)/(pts[i+1].g-pts[i].g);
-    if(Math.abs(x-spot)<best){best=Math.abs(x-spot);flip=x;}
-  }
+  const flipFor=key=>{let f=null,b=1e18;for(let i=0;i<pts.length-1;i++){if(pts[i][key]*pts[i+1][key]<0){const x=pts[i].s+(pts[i+1].s-pts[i].s)*(-pts[i][key])/(pts[i+1][key]-pts[i][key]);if(Math.abs(x-spot)<b){b=Math.abs(x-spot);f=x;}}}return f;};
   const idx=Math.max(0,Math.min(n,Math.round((spot-lo)/(hi-lo)*n)));
-  return{pts,flip,netAtSpot:pts[idx]?pts[idx].g:0};
+  return{pts,
+    flipG:flipFor('g'),flipV:flipFor('v'),
+    netG:pts[idx]?pts[idx].g:0,netV:pts[idx]?pts[idx].v:0};
 }
 function base(){return state.tradierEnv==='production'?'https://api.tradier.com/v1':'https://sandbox.tradier.com/v1';}
 function hdr(){return{'Authorization':'Bearer '+state.tradierToken,'Accept':'application/json'};}
 
 const rl={stamps:[]};
 async function tFetch(path){
-  // sliding-window limiter: stay under Tradier's 120 requests/min
   const now=Date.now();
   rl.stamps=rl.stamps.filter(t=>now-t<60000);
-  if(rl.stamps.length>=110)await new Promise(r=>setTimeout(r,60000-(now-rl.stamps[0])+150));
-  rl.stamps.push(Date.now());
+  rl.stamps.push(now);
+  if(rl.stamps.length>110){
+    const wait=60000-(now-rl.stamps[0])+200;
+    if(wait>0)await new Promise(r=>setTimeout(r,wait));
+  }
   const r=await fetch(base()+path,{headers:hdr(),cache:'no-store'});
   if(!r.ok)throw new Error(r.status+' '+(await r.text()).slice(0,80));
   return r.json();
 }
 async function exps(sym){
-  const u=(sym==='SPXW'||sym==='SPX')?'SPX':sym;
+  const u=underOf(sym);
   if(state.expCache[u]&&Date.now()-state.expCache[u].t<40*60*1000)return state.expCache[u].d;
-  const j=await tFetch('/markets/options/expirations?symbol='+u+'&includeAllRoots=true');
+  const j=await tFetch('/markets/options/expirations?symbol='+encodeURIComponent(u)+'&includeAllRoots=true');
   const d=(j.expirations&&j.expirations.date)?j.expirations.date:[];
   state.expCache[u]={d,t:Date.now()};
   return d;
 }
-
-async function fetchTradier(sym,maxExp){
-  const under=(sym==='SPXW'||sym==='SPX')?'SPX':sym;
-  // 1) spot FIRST — GEX needs the real S^2 (no more 700^2 placeholder)
-  let spot=0;
-  try{
-    const q=await tFetch('/markets/quotes?symbols='+under);
-    const qq=q.quotes&&q.quotes.quote;if(qq)spot=+(qq.last||qq.close||0);
-  }catch(e){}
-  // 2) expirations — honors the expiry filter dropdown now
+async function fetchQuotes(syms){
+  const uniq=[...new Set(syms.map(underOf))].filter(Boolean);
+  if(!uniq.length)return{};
+  const j=await tFetch('/markets/quotes?symbols='+encodeURIComponent(uniq.join(',')));
+  let q=j.quotes&&j.quotes.quote;if(!q)return{};
+  if(!Array.isArray(q))q=[q];
+  const out={};
+  q.forEach(x=>{const p=+(x.last||x.close||0);if(p>0&&x.symbol)out[String(x.symbol).toUpperCase()]=p;});
+  return out;
+}
+async function fetchChainsTradier(sym,maxExp){
+  const under=underOf(sym);
   const dates=await exps(sym);
   const today=localDate();
-  let near=dates.filter(d=>d>=today);
-  if(state.expiry==='0dte')near=near.filter(d=>d===today);
-  else if(state.expiry==='7d')near=near.filter(d=>dteOf(d)<=7.2);
-  else if(state.expiry==='30d')near=near.filter(d=>dteOf(d)<=30.2);
-  near=near.slice(0,maxExp||(state.expiry==='30d'?8:5));
+  let near=dates.filter(d=>d>=today).slice(0,maxExp);
   if(!near.length)near=dates.filter(d=>d>=today).slice(0,1);
-  // 3) chains — keep per-contract {k,oi,iv,T,call} for the BS gamma profile
-  const byExpRaw={};const cAgg={};let total=0;let bestD=1e9,spotEst=0;
-  for(const e of near){
-    try{
-      const j=await tFetch('/markets/options/chains?symbol='+under+'&expiration='+e+'&greeks=true');
-      const o=(j.options&&j.options.option)?j.options.option:[];
-      const arr=Array.isArray(o)?o:(o?[o]:[]);total+=arr.length;
-      const T=Math.max(dteOf(e),0.02)/365; // 0DTE floored ~30min so gamma stays finite
-      const by={};
-      arr.forEach(opt=>{
-        const k=+(opt.strike||0),oi=+(opt.open_interest||0),vol=+(opt.volume||0);
-        const gr=opt.greeks||{};
-        const gV=+(gr.gamma||0),iv=+(gr.mid_iv||gr.smv_vol||0);
-        const call=(opt.option_type||'').toLowerCase()==='call';
-        if(!k)return;
-        if(!oi&&!vol)return;
-        // LIVE RE-PRICE: ORATS marks gamma ~hourly, but IV drifts slowly while spot moves fast.
-        // Re-pricing gamma from (live spot, hourly IV) makes the map spot-fresh on every poll.
-        let g=gV;
-        if(state.calcMode==='live'&&spot&&iv>0.01&&iv<5){const gb=bsGamma(spot,k,iv,T);if(gb>0)g=gb;}
-        if(!g)return;
-        const dl=Math.abs(+(gr.delta||0));
-        if(call&&oi&&Math.abs(dl-0.5)<bestD){bestD=Math.abs(dl-0.5);spotEst=k;} // ATM fallback spot
-        if(!by[k])by[k]={k,u:0,a:0,uv:0,av:0,oi:0,cv:0,pv:0,coi:0,poi:0,cpr:0,ppr:0,wc:0,wp:0};
-        by[k].u+=(call?1:-1)*g*oi;   // positioning basis (OI)
-        by[k].a+=g*oi;
-        by[k].uv+=(call?1:-1)*g*vol; // flow basis (today's volume)
-        by[k].av+=g*vol;
-        by[k].oi+=oi;
-        const mid=((+(opt.bid||0))+(+(opt.ask||0)))/2||+(opt.last||0);
-        const wk=T<=7.6/365;
-        if(call){by[k].cv+=vol;by[k].coi+=oi;by[k].cpr+=vol*mid*100;if(wk)by[k].wc+=oi;}
-        else{by[k].pv+=vol;by[k].poi+=oi;by[k].ppr+=vol*mid*100;if(wk)by[k].wp+=oi;}
-        if(oi&&iv>0.01&&iv<5){
-          const ck=k+'|'+(call?'C':'P');
-          if(!cAgg[e])cAgg[e]={};
-          if(!cAgg[e][ck])cAgg[e][ck]={k,oi:0,ivw:0,T,call};
-          cAgg[e][ck].oi+=oi;cAgg[e][ck].ivw+=iv*oi;
-        }
-      });
-      byExpRaw[e]=by;
-    }catch(e){}
-  }
-  if(!spot)spot=spotEst;
-  if(!spot)throw new Error('no spot');
-  const contracts=[];
-  Object.values(cAgg).forEach(m2=>Object.values(m2).forEach(c=>contracts.push({k:c.k,oi:c.oi,iv:c.ivw/c.oi,T:c.T,call:c.call})));
-  const mult=100*spot*spot*0.01;
-  const pick=s=>state.sizeBasis==='vol'?{u:s.uv||0,a:s.av||0}:{u:s.u,a:s.a};
-  const val=s=>{const q=pick(s);return state.dealerMode==='shortall'?-q.a*mult:state.dealerMode==='custom'?q.a*mult*(1-2*state.customShort):q.u*mult;};
-  // 4) per-expiry lists (real $ values) + aggregate book
-  const byExp={};const allBy={};
-  Object.keys(byExpRaw).forEach(e=>{
-    const list=Object.values(byExpRaw[e]).map(s=>({k:s.k,gex:val(s),oi:s.oi})).filter(s=>s.gex!==0).sort((a,b)=>b.k-a.k);
-    const ek=kingOf(list);
-    list.forEach(s=>{s.star=(s===ek);s.type=s.gex>=0?'pika':'barney';});
-    byExp[e]=list;
-    Object.values(byExpRaw[e]).forEach(s=>{
-      if(!allBy[s.k])allBy[s.k]={k:s.k,u:0,a:0,uv:0,av:0,oi:0,cv:0,pv:0,coi:0,poi:0,cpr:0,ppr:0,wc:0,wp:0};
-      allBy[s.k].u+=s.u;allBy[s.k].a+=s.a;allBy[s.k].uv+=s.uv;allBy[s.k].av+=s.av;allBy[s.k].oi+=s.oi;
-      allBy[s.k].cv+=s.cv;allBy[s.k].pv+=s.pv;allBy[s.k].coi+=s.coi;allBy[s.k].poi+=s.poi;
-      allBy[s.k].cpr+=s.cpr;allBy[s.k].ppr+=s.ppr;allBy[s.k].wc+=s.wc;allBy[s.k].wp+=s.wp;
+  if(!near.length)throw new Error('no expirations');
+  const agg={};let total=0,bestD=1e9,spotHint=0;
+  await Promise.allSettled(near.map(async e=>{
+    const j=await tFetch('/markets/options/chains?symbol='+encodeURIComponent(under)+'&expiration='+e+'&greeks=true');
+    const o=(j.options&&j.options.option)?j.options.option:[];
+    const arr=Array.isArray(o)?o:(o?[o]:[]);
+    total+=arr.length;
+    const T=Math.max(dteOf(e),0.02)/365;
+    arr.forEach(opt=>{
+      const k=+(opt.strike||0),oi=+(opt.open_interest||0),vol=+(opt.volume||0);
+      if(!k||(!oi&&!vol))return;
+      const gr=opt.greeks||{};
+      const g0=+(gr.gamma||0),iv=+(gr.mid_iv||gr.smv_vol||0);
+      const call=(opt.option_type||'').toLowerCase()==='call';
+      const dl=Math.abs(+(gr.delta||0));
+      const mid=((+(opt.bid||0))+(+(opt.ask||0)))/2||+(opt.last||0);
+      if(call&&oi&&Math.abs(dl-0.5)<bestD){bestD=Math.abs(dl-0.5);spotHint=k;}
+      const ck=e+'|'+k+'|'+(call?'C':'P');
+      const c=agg[ck]||(agg[ck]={e,k,call,T,oi:0,vol:0,ivw:0,ivn:0,g0w:0,g0n:0,mid:0});
+      c.oi+=oi;c.vol+=vol;c.mid=mid||c.mid;
+      const w2=oi||1;
+      if(iv>0.01&&iv<5){c.ivw+=iv*w2;c.ivn+=w2;}
+      if(g0>0){c.g0w+=g0*w2;c.g0n+=w2;}
     });
-  });
-  let strikes=Object.values(allBy).map(s=>({k:s.k,gex:val(s),oi:s.oi,cv:s.cv,pv:s.pv,coi:s.coi,poi:s.poi,cpr:s.cpr,ppr:s.ppr,wc:s.wc,wp:s.wp})).sort((a,b)=>b.k-a.k);
-  const kg=kingOf(strikes);
-  strikes.forEach(s=>{s.type=s.gex>=0?'pika':'barney';s.star=(s===kg);});
-  const range=(sym==='SPXW'||sym==='SPX')?280:45;
-  strikes=strikes.filter(s=>Math.abs(s.k-spot)<range);
-  state.multi[sym]={byExp,spot,dates:near.filter(e=>byExp[e]&&byExp[e].length)};
-  return{spot,source:state.tradierEnv==='production'?'tradier-live':'tradier-sandbox',strikes,rawCount:total,contracts};
+  }));
+  const list=Object.values(agg).map(c=>({e:c.e,k:c.k,call:c.call,T:c.T,oi:c.oi,vol:c.vol,iv:c.ivn?c.ivw/c.ivn:0,g0:c.g0n?c.g0w/c.g0n:0,mid:c.mid}));
+  if(!list.length)throw new Error('empty chains');
+  return{list,dates:near,rawCount:total,spotHint,spot:0,src:state.tradierEnv==='production'?'tradier-live':'tradier-sandbox',maxExp};
 }
-
-async function fetchCBOE(sym){
+async function fetchChainsCBOE(sym){
   let cs=sym;if(sym==='SPX'||sym==='SPXW')cs='_SPX';
-  const url='https://cdn.cboe.com/api/global/delayed_quotes/options/'+cs+'.json';
+  const url='https://cdn.cboe.com/api/global/delayed_quotes/options/'+encodeURIComponent(cs)+'.json';
   const proxies=[url,'https://api.allorigins.win/raw?url='+encodeURIComponent(url)];
   let j=null;
   for(const u of proxies){
     try{const c=new AbortController();const t=setTimeout(()=>c.abort(),8000);const r=await fetch(u,{signal:c.signal,cache:'no-store'});clearTimeout(t);if(r.ok){j=await r.json();break;}}catch(e){}
   }
-  if(!j)throw new Error('CBOE');
+  if(!j)throw new Error('CBOE unreachable');
   const data=j.data||j,opts=data.options||[],spot=+(data.current_price||0);
   if(!spot)throw new Error('CBOE no spot');
-  const mult=100*spot*spot*0.01;
-  const by={};const cAgg={};const now=Date.now();
+  const now=Date.now();
+  const list=[];const seen={};
   opts.forEach(o=>{
-    let k=+(o.strike||0),oi=+(o.open_interest||0),g=+(o.gamma||0),call=null,T=0;
-    const vol=+(o.volume||0),iv0=+(o.iv||0);
+    let k=+(o.strike||0),oi=+(o.open_interest||0),g0=+(o.gamma||0),call=null,e=null,T=0;
+    const vol=+(o.volume||0),iv=+(o.iv||0);
+    const mid=((+(o.bid||0))+(+(o.ask||0)))/2||+(o.last_trade_price||0);
     const m=String(o.option||'').match(/(\d{6})([CP])(\d{8})$/);
     if(m){
       if(!k)k=parseInt(m[3],10)/1000;
-      call=m[2]==='C';                       // OCC symbol is the ONLY reliable type source here
-      const ex=new Date('20'+m[1].slice(0,2)+'-'+m[1].slice(2,4)+'-'+m[1].slice(4,6)+'T16:00:00');
+      call=m[2]==='C';
+      e='20'+m[1].slice(0,2)+'-'+m[1].slice(2,4)+'-'+m[1].slice(4,6);
+      const ex=new Date(e+'T16:00:00'+nyOffset(e));
       T=Math.max((ex-now)/86400000,0.02)/365;
-      const dd=(ex-now)/86400000;
-      if(state.expiry==='0dte'&&dd>0.8)return;
-      if(state.expiry==='7d'&&dd>7.2)return;
-      if(state.expiry==='30d'&&dd>30.2)return;
-      if(dd<-0.1)return;                     // skip expired rows
+      if((ex-now)/86400000<-0.1)return;
     }
     if(call===null)call=String(o.option_type||'').toLowerCase()==='call';
-    if(!k)return;
+    if(!k||!e)return;
     if(!oi&&!vol)return;
-    if(state.calcMode==='live'&&spot&&iv0>0.01&&iv0<5&&T>0){const gb=bsGamma(spot,k,iv0,T);if(gb>0)g=gb;}
-    if(!g)return;
-    if(!by[k])by[k]={k,u:0,a:0,uv:0,av:0,oi:0,cv:0,pv:0,coi:0,poi:0,cpr:0,ppr:0,wc:0,wp:0};
-    by[k].u+=(call?1:-1)*g*oi;
-    by[k].a+=g*oi;
-    by[k].uv+=(call?1:-1)*g*vol;
-    by[k].av+=g*vol;
-    by[k].oi+=oi;
-    const mid2=((+(o.bid||0))+(+(o.ask||0)))/2||+(o.last_trade_price||0);
-    const wk2=T>0&&T<=7.6/365;
-    if(call){by[k].cv+=vol;by[k].coi+=oi;by[k].cpr+=vol*mid2*100;if(wk2)by[k].wc+=oi;}
-    else{by[k].pv+=vol;by[k].poi+=oi;by[k].ppr+=vol*mid2*100;if(wk2)by[k].wp+=oi;}
-    const iv=+(o.iv||0);
-    if(iv>0.01&&iv<5&&T>0){
-      const ck=k+'|'+T.toFixed(5)+(call?'C':'P');
-      if(!cAgg[ck])cAgg[ck]={k,oi:0,ivw:0,T,call};
-      cAgg[ck].oi+=oi;cAgg[ck].ivw+=iv*oi;
-    }
+    list.push({e,k,call,T,oi,vol,iv:(iv>0.01&&iv<5)?iv:0,g0:g0>0?g0:0,mid});
+    seen[e]=1;
   });
-  const contracts=[];Object.values(cAgg).forEach(c=>contracts.push({k:c.k,oi:c.oi,iv:c.ivw/c.oi,T:c.T,call:c.call}));
-  const pick=s=>state.sizeBasis==='vol'?{u:s.uv||0,a:s.av||0}:{u:s.u,a:s.a};
-  const val=s=>{const q=pick(s);return state.dealerMode==='shortall'?-q.a*mult:state.dealerMode==='custom'?q.a*mult*(1-2*state.customShort):q.u*mult;};
-  let strikes=Object.values(by).map(s=>({k:s.k,gex:val(s),oi:s.oi,cv:s.cv,pv:s.pv,coi:s.coi,poi:s.poi,cpr:s.cpr,ppr:s.ppr,wc:s.wc,wp:s.wp})).sort((a,b)=>b.k-a.k);
-  const kg=kingOf(strikes);
-  strikes.forEach(s=>{s.type=s.gex>=0?'pika':'barney';s.star=(s===kg);});
+  if(!list.length)throw new Error('CBOE empty');
+  return{list,dates:Object.keys(seen).sort(),rawCount:opts.length,spotHint:0,spot,src:'cboe',maxExp:99};
+}
+function expiryFilt(c){
+  const dd=dteOf(c.e);
+  if(state.expiry==='0dte')return dd<=0.8;
+  if(state.expiry==='7d')return dd<=7.2;
+  if(state.expiry==='30d')return dd<=30.2;
+  return true;
+}
+
+/* ---- shared aggregator: builds GEX + VEX per strike in one pass ---- */
+function buildFromChains(sym){
+  const ch=state.chains[sym];
+  if(!ch||!ch.list||!ch.list.length)return null;
+  const spot=state.spot[sym]||ch.spot||ch.spotHint||0;
+  if(!spot)return null;
+  const cs=ch.list.filter(expiryFilt);
+  if(!cs.length)return null;
+  const gmult=100*spot*spot*0.01, vmult=100*spot*0.01;
+  const per={};const contracts=[];
+  for(const c of cs){
+    let g=c.g0;
+    if(state.calcMode==='live'&&c.iv>0.01&&c.iv<5){const gb=bsGamma(spot,c.k,c.iv,c.T);if(gb>0)g=gb;}
+    let van=0;
+    if(c.iv>0.01&&c.iv<5)van=bsVanna(spot,c.k,c.iv,c.T);
+    if(!g&&!van)continue;
+    const sgn=c.call?1:-1;
+    const pe=per[c.e]||(per[c.e]={});
+    const b=pe[c.k]||(pe[c.k]={k:c.k,gu:0,ga:0,guv:0,gav:0,vu:0,va:0,vuv:0,vva:0,oi:0,vol:0});
+    b.gu+=sgn*g*c.oi;  b.ga+=g*c.oi;    b.guv+=sgn*g*c.vol;   b.gav+=g*c.vol;
+    b.vu+=sgn*van*c.oi;b.va+=van*c.oi;  b.vuv+=sgn*van*c.vol; b.vva+=van*c.vol;
+    b.oi+=c.oi;b.vol+=c.vol;
+    if(c.oi&&c.iv>0.01&&c.iv<5)contracts.push({k:c.k,oi:c.oi,iv:c.iv,T:c.T,call:c.call});
+  }
+  const bv=state.sizeBasis==='vol';
+  const gval=s=>dealerAdj(bv?s.guv:s.gu, bv?s.gav:s.ga)*gmult;
+  const vval=s=>dealerAdj(bv?s.vuv:s.vu, bv?s.vva:s.va)*vmult;
+  const byExp={},allBy={};
+  const dates=Object.keys(per).sort();
+  const FIELDS=['gu','ga','guv','gav','vu','va','vuv','vva','oi','vol'];
+  dates.forEach(e=>{
+    const listE=Object.values(per[e]).map(s=>({k:s.k,gex:gval(s),vex:vval(s),oi:s.oi,vol:s.vol}))
+      .filter(s=>s.gex!==0||s.vex!==0).sort((a,b)=>b.k-a.k);
+    byExp[e]=listE;
+    Object.values(per[e]).forEach(s=>{
+      const t=allBy[s.k]||(allBy[s.k]={k:s.k,gu:0,ga:0,guv:0,gav:0,vu:0,va:0,vuv:0,vva:0,oi:0,vol:0});
+      FIELDS.forEach(f=>t[f]+=s[f]);
+    });
+  });
+  let strikes=Object.values(allBy).map(s=>({k:s.k,gex:gval(s),vex:vval(s),oi:s.oi,vol:s.vol})).sort((a,b)=>b.k-a.k);
   const range=(sym==='SPXW'||sym==='SPX')?280:45;
   strikes=strikes.filter(s=>Math.abs(s.k-spot)<range);
-  return{spot,source:'cboe',strikes,rawCount:opts.length,contracts};
+  state.multi[sym]={byExp,spot,dates:dates.filter(e=>byExp[e]&&byExp[e].length)};
+  return{spot,source:ch.src,strikes,rawCount:ch.rawCount,contracts,chStamp:ch.t};
 }
-
-async function getSym(sym,maxExp){
-  if(state.tradierToken&&state.tradierToken.length>8){
-    try{return await fetchTradier(sym,maxExp);}catch(e){console.warn('T',sym,e.message);}
+function buildImbalance(sym){
+  const ch=state.chains[sym];
+  if(!ch||!ch.list||!ch.list.length)return null;
+  const spot=state.spot[sym]||ch.spot||ch.spotHint||0;
+  if(!spot)return null;
+  const cs=ch.list.filter(expiryFilt);
+  if(!cs.length)return null;
+  const by={};
+  for(const c of cs){
+    if(!c.oi&&!c.vol)continue;
+    const b=by[c.k]||(by[c.k]={k:c.k,cv:0,pv:0,coi:0,poi:0,cpr:0,ppr:0,wc:0,wp:0});
+    const wk=c.T>0&&c.T<=7.6/365;
+    const prem=(c.mid||0)*c.vol*100;
+    if(c.call){b.cv+=c.vol;b.coi+=c.oi;b.cpr+=prem;if(wk)b.wc+=c.oi;}
+    else{b.pv+=c.vol;b.poi+=c.oi;b.ppr+=prem;if(wk)b.wp+=c.oi;}
   }
-  try{return await fetchCBOE(sym);}catch(e){console.warn('C',sym,e.message);}
-  return null;
+  const strikes=Object.values(by).sort((a,b)=>b.k-a.k);
+  return{spot,source:ch.src,strikes};
 }
-
-// SELECTIVE COLOR: only strong nodes get vibrant color
-// weak nodes almost disappear
-function rowStyle(s, maxAbs){
-  const ratio = Math.abs(s.gex) / maxAbs;
-  // weak → faded indigo wash (Heatseeker board feel)
-  if(ratio < 0.10) return 'background:rgba(99,102,241,0.06);';
-  if(ratio < 0.32){
-    const a = 0.08 + (ratio-0.10)/0.22 * 0.18;
-    if(s.gex >= 0) return `background:rgba(45,212,191,${a});`;
-    return `background:rgba(147,51,234,${a});`;
+async function getSym(sym,maxExp,force){
+  sym=cleanSym(sym);if(!sym)return null;
+  const need=maxExp||(state.expiry==='30d'?8:5);
+  const ch=state.chains[sym];
+  const fresh=!force&&ch&&ch.list&&ch.list.length&&(Date.now()-ch.t<CHAIN_TTL)&&ch.maxExp>=need;
+  if(!fresh){
+    let got=null;
+    if(state.tradierToken.length>8){
+      try{got=await fetchChainsTradier(sym,need);}catch(e){console.warn('Tradier',sym,e.message);}
+    }
+    if(!got){try{got=await fetchChainsCBOE(sym);}catch(e){console.warn('CBOE',sym,e.message);}}
+    if(got){got.t=Date.now();state.chains[sym]=got;if(got.spot)state.spot[sym]=got.spot;}
+    else if(!ch)return null;
   }
-  const a = 0.30 + Math.min(0.58, (ratio-0.32)/0.68 * 0.58);
-  if(s.gex >= 0) return `background:rgba(45,212,191,${a});`;
-  return `background:rgba(147,51,234,${a});`;
+  const c2=state.chains[sym];if(!c2)return null;
+  if(!state.spot[sym]){
+    if(c2.spot)state.spot[sym]=c2.spot;
+    else if(state.tradierToken.length>8){
+      try{const q=await fetchQuotes([sym]);const u=underOf(sym);if(q[u])state.spot[sym]=q[u];}catch(e){}
+    }
+    if(!state.spot[sym]&&c2.spotHint)state.spot[sym]=c2.spotHint;
+  }
+  return buildFromChains(sym);
 }
+function rowStyle(s,maxAbs){
+  const v=mval(s);
+  const ratio=Math.abs(v)/maxAbs;
+  if(ratio<0.10)return 'background:rgba(99,102,241,0.06);';
+  if(ratio<0.32){
+    const a=0.08+(ratio-0.10)/0.22*0.18;
+    return v>=0?`background:rgba(45,212,191,${a});`:`background:rgba(147,51,234,${a});`;
+  }
+  const a=0.30+Math.min(0.58,(ratio-0.32)/0.68*0.58);
+  return v>=0?`background:rgba(45,212,191,${a});`:`background:rgba(147,51,234,${a});`;
+}
+function centerIn(wrap,el2){
+  if(!wrap||!el2)return;
+  const r=el2.getBoundingClientRect(),wr=wrap.getBoundingClientRect();
+  wrap.scrollTop=Math.max(0,wrap.scrollTop+(r.top-wr.top)-(wrap.clientHeight/2-r.height/2));
+}
+function skeletonPanel(sym,label){
+  const p=document.createElement('div');p.className='panel'+(state.view==='single'?' single-mode':'');
+  p.dataset.sym=sym;
+  const rows=Array.from({length:22},()=>'<div class="skelrow"></div>').join('');
+  p.innerHTML=`<div class="p-head"><div class="p-left"><span style="font-weight:700">${sym}</span><span class="badge-src demo">${label||'loading'}</span></div></div><div class="strikes">${rows}</div>`;
+  return p;
+}
+function kingCls(){return state.metric==='vex'?'vexk':'';}
+function pillCls(){return state.metric==='vex'?'vex':'';}
 
 function renderTrinity(){
-  const el=document.getElementById('trinity');el.innerHTML='';
-  document.getElementById('trinity').style.gridTemplateColumns=state.view==='single'?'1fr':'';
+  const el=document.getElementById('trinity');
+  // never yank the DOM out from under a typing user
+  const ae=document.activeElement;
+  if(comboFor||(ae&&ae.classList&&ae.classList.contains('ticker-sel')&&el.contains(ae)))return;
+  const prevScroll={};
+  el.querySelectorAll('.panel[data-key]').forEach(pn=>{
+    const w=pn.querySelector('.strikes,.sgrid-wrap');
+    if(w)prevScroll[pn.dataset.key]={top:w.scrollTop,left:w.scrollLeft};
+  });
+  el.innerHTML='';
+  el.style.gridTemplateColumns=state.view==='single'?'1fr':'';
   const list=state.view==='single'?[state.focus]:state.trinityTickers;
+  const mlab=state.metric==='vex'?'Vanna King':'King';
 
   list.forEach(sym=>{
+    const key=sym+'|'+(state.view==='single'?'s':'t');
     const d=state.data[sym];
+    if(state.view==='single'&&state.singleLoading&&(!state.multi[sym]||(state.multi[sym].dates||[]).length<8)){
+      const p=skeletonPanel(sym,'loading 9 expiries');p.dataset.key=key;el.appendChild(p);return;
+    }
     if(!d){
-      const p=document.createElement('div');p.className='panel'+(state.view==='single'?' single-mode':'');
+      const p=document.createElement('div');p.className='panel'+(state.view==='single'?' single-mode':'');p.dataset.key=key;
       const rows=state.firstLoadFailed
-        ?`<div class="err-chip">No data source reachable for ${sym}. Check the Tradier token in Settings — CBOE fallback also failed.</div>`
+        ?`<div class="err-chip">No data source reachable for ${sym}. ${state.tradierToken?'Check the Tradier token in Settings — CBOE fallback also failed.':'Add a free Tradier token in Settings for live data, or wait for the CBOE retry.'}</div>`
         :Array.from({length:22},()=>'<div class="skelrow"></div>').join('');
       p.innerHTML=`<div class="p-head"><div class="p-left"><span style="font-weight:700">${sym}</span><span class="badge-src demo">${state.firstLoadFailed?'offline':'loading'}</span></div></div><div class="strikes">${rows}</div>`;
       el.appendChild(p);
       return;
     }
     const kg=kingOf(d.strikes);
-    const maxAbs=Math.max(...(d.strikes||[]).map(x=>Math.abs(x.gex)),1);
+    const cw=callWall(d.strikes),pw=putWall(d.strikes);
+    const maxAbs=Math.max(...(d.strikes||[]).map(x=>Math.abs(mval(x))),1);
     const srcMap={'tradier-live':'live','tradier-sandbox':'sandbox','cboe':'cboe','demo':'demo'};
     const srcTxt={'tradier-live':'Tradier Live','tradier-sandbox':'Sandbox','cboe':'CBOE','demo':'Demo'};
+    const age=state.dataAge[sym]?Date.now()-state.dataAge[sym]:0;
+    const staleB=age>3*state.pollSec*1000?`<span class="badge-src stale" data-tip="No successful update for ${Math.round(age/1000)}s — showing the last good snapshot">stale</span>`:'';
 
     const p=document.createElement('div');
     p.className='panel'+(state.view==='single'?' single-mode':'');
+    p.dataset.sym=sym;p.dataset.key=key;
 
     if(state.view==='single' && state.multi[sym] && state.multi[sym].dates && state.multi[sym].dates.length){
       const m=state.multi[sym];
       p.innerHTML=`
         <div class="p-head">
           <div class="p-left">
-            <input class="ticker-sel" list="tickList" data-old="${sym}" value="${sym}" style="width:86px" data-tip="Type any optionable ticker and press Enter">
+            <input class="ticker-sel" data-old="${sym}" value="${sym}" style="width:86px" autocomplete="off" data-tip="Type any optionable ticker and press Enter">
             <span class="price mono">$${(d.spot||0).toFixed(2)}</span>
-            <span class="badge-src ${srcMap[d.source]||'demo'}">${srcTxt[d.source]||d.source}</span>
+            <span class="badge-src ${srcMap[d.source]||'demo'}">${srcTxt[d.source]||d.source}</span>${staleB}
           </div>
-          <div class="king-pill" data-tip="Biggest absolute node = the market magnet. Up arrow = positive (pinning) King, down = negative (momentum) King.">★ King ${kg?fmtG(kg.gex,d.spot):'—'} ${kg&&kg.gex>0?'↑':'↓'}</div>
+          <div class="king-pill ${pillCls()}" data-tip="Biggest absolute ${metricLabel(state.metric)} node = the magnet for that force.">★ ${mlab} ${kg?mdisp(mval(kg),d.spot):'—'} ${kg&&mval(kg)>0?'↑':'↓'}</div>
         </div>
         <div class="sgrid-wrap"></div>`;
       el.appendChild(p);
       p.querySelector('.ticker-sel').onchange=e=>{
-        const old=e.target.dataset.old,neu=e.target.value.trim().toUpperCase();
-        if(!neu||neu===old)return;
-        const i=state.trinityTickers.indexOf(old);
-        if(i>=0)state.trinityTickers[i]=neu;else state.trinityTickers=[neu];
-        localStorage.setItem('kairos_ticks',state.trinityTickers.join(','));
-        state.focus=neu;refresh();
+        const old=e.target.dataset.old,neu=cleanSym(e.target.value);
+        if(!neu){e.target.value=old;return;}
+        if(neu===old)return;
+        // single view: change focus only — never touch the saved Triad set
+        state.focus=neu;state.singleLoading=true;refresh(false);
       };
       const wrap=p.querySelector('.sgrid-wrap');
       const range=(sym==='SPXW'||sym==='SPX')?280:45;
-      // union strike ladder across expiries, aligned by price (desc)
       const ks=new Set();
       m.dates.forEach(e2=>(m.byExp[e2]||[]).forEach(s=>{if(Math.abs(s.k-m.spot)<range)ks.add(s.k);}));
       const ladder=[...ks].sort((a,b)=>b-a);
       const cell={};let gMax=1,gK=null;
-      m.dates.forEach(e2=>{cell[e2]={};(m.byExp[e2]||[]).forEach(s=>{cell[e2][s.k]=s.gex;const a=Math.abs(s.gex);if(a>gMax){gMax=a;gK=e2+'|'+s.k;}});});
-      const prevG=(state.prevG&&state.prevG[sym])||null;
+      m.dates.forEach(e2=>{cell[e2]={};(m.byExp[e2]||[]).forEach(s=>{const v=mval(s);cell[e2][s.k]=v;const a=Math.abs(v);if(a>gMax){gMax=a;gK=e2+'|'+s.k;}});});
       let spotK=null,bs=1e18;ladder.forEach(k=>{const dd=Math.abs(k-m.spot);if(dd<bs){bs=dd;spotK=k;}});
       const shade=v=>{
         const r=Math.abs(v)/gMax;
@@ -775,91 +981,107 @@ function renderTrinity(){
         const a=r<0.30?(0.07+r/0.30*0.18):(0.28+Math.min(0.6,(r-0.30)/0.70*0.6));
         return v>=0?`background:rgba(45,212,191,${a.toFixed(2)})`:`background:rgba(147,51,234,${a.toFixed(2)})`;
       };
+      const kcls=kingCls();
       let h='<table class="sgrid"><thead><tr><th class="sk">Strike</th>'+m.dates.map(e2=>`<th>${e2}</th>`).join('')+'</tr></thead><tbody>';
       ladder.forEach(k=>{
         const rowSum=m.dates.reduce((a,e2)=>a+(cell[e2][k]||0),0);
-        const dlR=deltaOf(sym,k,rowSum);
-        const arrow=deltaChip(dlR);
-        h+=`<tr class="${k===spotK?'spotrow':''}"><td class="sk" title="${dlR!==null&&isFinite(dlR)?'\u0394 '+dlR.toFixed(1)+'% vs last refresh (net across shown expiries)':''}">${k}${k===spotK?` <span class="spotpx">\u25c0 $${(m.spot||0).toFixed(2)}</span>`:''} ${arrow}</td>`;
+        const dlR=deltaOf(sym,k,rowSum,gMax);
+        const arrow=(dlR!==null&&isFinite(dlR)&&Math.abs(dlR)>=DELTA_MIN)?(dlR>=0?' <span style="color:var(--teal)">\u25b4'+Math.abs(dlR).toFixed(0)+'%</span>':' <span style="color:#e879f9">\u25be'+Math.abs(dlR).toFixed(0)+'%</span>'):'';
+        h+=`<tr class="${k===spotK?'spotrow':''}"><td class="sk" title="${dlR!==null&&isFinite(dlR)?'\u0394 '+dlR.toFixed(1)+'% vs ~12 min ago (net across shown expiries)':''}">${k}${k===spotK?' \u25b6 <span class="spotpx">$'+m.spot.toFixed(2)+'</span>':''}${arrow}</td>`;
         m.dates.forEach(e2=>{
           const v=cell[e2][k];
           if(v===undefined||Math.abs(v)<1){h+='<td class="zero">\u2014</td>';return;}
           const king=(e2+'|'+k)===gK;
-          h+=`<td class="${king?'kcell':''}" style="${king?'':shade(v)+';color:'+(v>=0?'var(--teal)':'#e879f9')}" title="${sym} ${k} \u00b7 ${e2} \u00b7 ${fmtG(v,m.spot)}">${fmtG(v,m.spot)}${king?' \u2605':''}</td>`;
+          h+=`<td class="${king?'kcell '+kcls:''}" style="${king?'':shade(v)+';color:'+(v>=0?'var(--teal)':'#e879f9')}" title="${sym} ${k} \u00b7 ${e2} \u00b7 ${mdisp(v,m.spot)}">${mdisp(v,m.spot)}${king?' \u2605':''}</td>`;
         });
         h+='</tr>';
       });
       h+='</tbody></table>';
       wrap.innerHTML=h;
-      // auto-center on spot
-      const sr=wrap.querySelector('.spotrow');
-      if(sr&&sr.scrollIntoView)setTimeout(()=>sr.scrollIntoView({block:'center'}),40);
+      if(state.scrolled[key]&&prevScroll[key]){wrap.scrollTop=prevScroll[key].top;wrap.scrollLeft=prevScroll[key].left||0;}
+      else{const sr=wrap.querySelector('.spotrow');if(sr)centerIn(wrap,sr);state.scrolled[key]=true;}
       return;
     }
 
-    // Trinity list
+    // Triad list
     p.innerHTML=`
       <div class="p-head">
         <div class="p-left">
-          <input class="ticker-sel" list="tickList" data-old="${sym}" value="${sym}" style="width:86px" data-tip="Type any optionable ticker and press Enter">
+          <input class="ticker-sel" data-old="${sym}" value="${sym}" style="width:86px" autocomplete="off" data-tip="Type any optionable ticker and press Enter">
           <span class="price mono">$${(d.spot||0).toFixed(2)}</span>
-          <span class="badge-src ${srcMap[d.source]||'demo'}">${srcTxt[d.source]||d.source}</span>
+          <span class="badge-src ${srcMap[d.source]||'demo'}">${srcTxt[d.source]||d.source}</span>${staleB}
         </div>
-        <div class="king-pill" data-tip="Biggest absolute node = the market magnet. Up arrow = positive (pinning) King, down = negative (momentum) King.">★ King ${kg?fmtG(kg.gex,d.spot):'—'} ${kg&&kg.gex>0?'↑':'↓'}</div>
+        <div class="king-pill ${pillCls()}" data-tip="Biggest absolute ${metricLabel(state.metric)} node = the magnet for that force.">★ ${mlab} ${kg?mdisp(mval(kg),d.spot):'—'} ${kg&&mval(kg)>0?'↑':'↓'}</div>
       </div>
       <div class="pstats"></div>
       <div class="strikes"></div>`;
     el.appendChild(p);
     p.querySelector('.ticker-sel').onchange=e=>{
-      const old=e.target.dataset.old,neu=e.target.value.trim().toUpperCase();
-      if(!neu||neu===old)return;
+      const old=e.target.dataset.old,neu=cleanSym(e.target.value);
+      if(!neu){e.target.value=old;return;}
+      if(neu===old)return;
       const i=state.trinityTickers.indexOf(old);
-      if(i>=0)state.trinityTickers[i]=neu;else state.trinityTickers=[neu];
+      if(i>=0)state.trinityTickers[i]=neu; // swap that slot only — never collapse the Triad
       localStorage.setItem('kairos_ticks',state.trinityTickers.join(','));
-      state.focus=neu;refresh();
+      state.focus=neu;refresh(false);
     };
     const ps=panelStats(sym,d);
+    let regimeChip;
+    if(state.metric==='gex')regimeChip=`<span class="regime ${ps.net1>=0?'pos':'neg'}" data-tip="Net dealer gamma within 1% of spot. + = dealers fade moves (range/pin). − = dealers chase (trend/momentum).">${ps.net1>=0?'+GEX pin':'\u2212GEX momo'}</span>`;
+    else regimeChip=`<span class="regime ${ps.net1>=0?'pos':'neg'}" data-tip="Net dealer vanna near spot. +VEX: rising IV → dealers sell into strength / falling IV → dealer bid (supports low-vol drift, caps vol spikes). −VEX: dealers chase IV, moves amplify on vol expansion.">${ps.net1>=0?'+VEX bid':'\u2212VEX chase'}</span>`;
     p.querySelector('.pstats').innerHTML=`
-      <span class="regime ${ps.net1>=0?'pos':'neg'}" data-tip="Summed dealer GEX within 1% of spot. Positive = dealers fade moves (range/pin). Negative = dealers chase moves (trend/momentum).">${ps.net1>=0?'+GEX pin':'\u2212GEX momo'}</span>
-      <span data-tip="Net exposure within \u00b11% of spot">Net\u00b11% <b style="color:${ps.net1>=0?'var(--teal)':'#e879f9'}">${fmtG(ps.net1,d.spot)}</b></span>
-      ${ps.fl?`<span data-tip="Zero gamma flip from the Black-Scholes re-priced profile \u2014 the regime border">Flip <b>${(+ps.fl).toFixed(d.spot>2000?0:1)}</b></span>`:''}
+      ${regimeChip}
+      <span data-tip="Net exposure within \u00b11% of spot">Net\u00b11% <b style="color:${ps.net1>=0?'var(--teal)':'#e879f9'}">${mdisp(ps.net1,d.spot)}</b></span>
+      ${ps.fl?`<span data-tip="Zero-${metricLabel(state.metric)} flip from the Black-Scholes re-priced profile">Flip <b>${(+ps.fl).toFixed(d.spot>2000?0:1)}</b></span>`:''}
       ${ps.em?`<span data-tip="Expected move to nearest expiry, from ATM implied vol (S \u00d7 IV \u00d7 \u221aT)">EM <b>\u00b1${ps.em.toFixed(d.spot>2000?0:2)}</b></span>`:''}
-      ${ps.vel!=null?`<span data-tip="King node strength change over ~15 minutes \u2014 growing King = building magnet, decaying = unwinding">\u039415m <b style="color:${ps.vel>=0?'var(--teal)':'#e879f9'}">${ps.vel>=0?'+':''}${ps.vel.toFixed(1)}%</b></span>`:''}`;
+      ${ps.vel!=null?`<span data-tip="King strength change over ~15 minutes">\u039415m <b style="color:${ps.vel>=0?'var(--teal)':'#e879f9'}">${ps.vel>=0?'+':''}${ps.vel.toFixed(1)}%</b></span>`:''}`;
 
     const listEl=p.querySelector('.strikes');
+    const kcls=kingCls();
     let kingRow=null;
-    let spotK=null,_bs=1e18;
-    (d.strikes||[]).forEach(s=>{const dd=Math.abs(s.k-d.spot);if(dd<_bs){_bs=dd;spotK=s.k;}});
+    // exactly one spot row: the strike nearest to live price
+    let spotK3=null,bd3=1e18;
+    (d.strikes||[]).forEach(s=>{const dd3=Math.abs(s.k-d.spot);if(dd3<bd3){bd3=dd3;spotK3=s.k;}});
     (d.strikes||[]).forEach(s=>{
+      const v=mval(s);
       const row=document.createElement('div');row.className='srow';
-      const isSpot=(s.k===spotK);
+      const isSpot=s.k===spotK3;
       if(isSpot)row.classList.add('spot');
-      if(s===kg){row.classList.add('king');kingRow=row;}
-      else row.style.cssText=rowStyle(s,maxAbs);
-      let mid=s.star?'<span class="star">★</span>':'';
-      if(isSpot)mid+=`<span class="spotpx">\u25c0 $${(d.spot||0).toFixed(2)}</span>`;
-      row.title=`${sym} ${s.k} \u2014 GEX ${fmtG(s.gex,d.spot)} (${s.gex>=0?'Pika: dealers fade moves here':'Barney: dealers chase moves here'}) \u00b7 OI ${(s.oi||0).toLocaleString()} \u00b7 ${(Math.abs(s.gex)/ (maxAbs||1)*100).toFixed(0)}% of King`;
-      const dl=deltaOf(sym,s.k,s.gex);
+      if(s===kg){row.classList.add('king');if(kcls)row.classList.add(kcls);kingRow=row;}
+      else{row.style.cssText=rowStyle(s,maxAbs);if(s===cw||s===pw)row.classList.add('wall');}
+      let mid=s.star||s===kg?'<span class="star">★</span>':'';
+      if(isSpot)mid+=`<span class="spotpx">$${(d.spot||0).toFixed(2)}</span>`;
+      if(s===cw&&s!==kg)mid+='<span class="wtag cw" data-tip="Largest positive node above spot (ceiling)">CW</span>';
+      if(s===pw&&s!==kg)mid+='<span class="wtag pw" data-tip="Largest negative node below spot (support)">PW</span>';
+      row.title=`${sym} ${s.k} \u2014 ${metricLabel(state.metric)} ${mdisp(v,d.spot)} \u00b7 OI ${(s.oi||0).toLocaleString()} \u00b7 vol ${(s.vol||0).toLocaleString()} \u00b7 ${(Math.abs(v)/(maxAbs||1)*100).toFixed(0)}% of King`;
+      const dl=deltaOf(sym,s.k,v,maxAbs);
       row.innerHTML=`
         <div class="strike">${s.k}</div>
         <div class="mid">${mid}${deltaChip(dl)}</div>
-        <div class="gex" style="color:${s.gex>=0?'var(--teal)':'#e879f9'}">${fmtG(s.gex,d.spot)}</div>`;
+        <div class="gex" style="color:${v>=0?'var(--teal)':'#e879f9'}">${mdisp(v,d.spot)}</div>`;
       row.onclick=()=>{state.focus=sym;openDeep(sym);updateChart(sym);};
       listEl.appendChild(row);
     });
-    if(kingRow&&kingRow.scrollIntoView)setTimeout(()=>kingRow.scrollIntoView({block:'center',behavior:'smooth'}),50);
+    if(state.scrolled[key]&&prevScroll[key])listEl.scrollTop=prevScroll[key].top;
+    else{if(kingRow)centerIn(listEl,kingRow);state.scrolled[key]=true;}
   });
 }
 
 function recordSnapshots(){
-  const t=Math.floor(Date.now()/1000)+tzOff();
+  const t=Math.floor(Date.now()/1000);
   Object.keys(state.data).forEach(sym=>{
     const d=state.data[sym];if(!d||!d.strikes||!d.strikes.length)return;
-    const top=[...d.strikes].sort((a,b)=>Math.abs(b.gex)-Math.abs(a.gex)).slice(0,12).map(s=>({k:s.k,g:Math.round(s.gex)}));
-    (state.history[sym]=state.history[sym]||[]).push({t,top});
+    const topFor=metric=>[...d.strikes].sort((a,b)=>Math.abs(mval(b,metric))-Math.abs(mval(a,metric))).slice(0,12).map(s=>({k:s.k,val:Math.round(mval(s,metric))}));
+    (state.history[sym]=state.history[sym]||[]).push({t,g:topFor('gex'),v:topFor('vex')});
     if(state.history[sym].length>260)state.history[sym].shift();
   });
-  try{localStorage.setItem('kairos_hist',JSON.stringify({d:new Date().toDateString(),h:state.history}));}catch(e){}
+  persistHistory(false);
+}
+function persistHistory(force){
+  const now=Date.now();
+  if(!force&&now-state.lastHistSave<HIST_SAVE_MS)return;
+  state.lastHistSave=now;
+  try{localStorage.setItem('kairos_hist',JSON.stringify({v:6,d:new Date().toDateString(),h:state.history}));}catch(e){}
 }
 function airPockets(d){
   const arr=[...(d.strikes||[])].sort((a,b)=>a.k-b.k);
@@ -877,14 +1099,12 @@ function airPockets(d){
     prev=arr[i].k;
   }
   if(start!==null&&prev-start>=minSpan)zones.push({lo:start,hi:prev});
-  // keep the pockets nearest spot — those are the tradeable runways
   return zones.sort((a,b)=>Math.abs((a.lo+a.hi)/2-d.spot)-Math.abs((b.lo+b.hi)/2-d.spot)).slice(0,3);
 }
-function flipFor(d){
-  if(d.contracts&&d.contracts.length){
-    if(!d.profile)d.profile=gammaProfile(d.contracts,d.spot);
-    if(d.profile&&d.profile.flip)return{price:d.profile.flip,how:'BS profile'};
-  }
+function flipFor(sym,d){
+  const p=ensureProfile(sym,d);
+  const fl=p?(state.metric==='vex'?p.flipV:p.flipG):null;
+  if(fl)return{price:fl,how:'BS profile'};
   const f=flipOf(d.strikes,d.spot);
   return f?{price:f.k,how:'approx'}:null;
 }
@@ -893,46 +1113,46 @@ function loadTV(sym){
   const w=document.getElementById('tvChart');
   if(!w||tvLoaded===sym)return;
   w.innerHTML='';
-  const map=s=>(s==='SPXW'||s==='SPX')?'SPX':s;
   const holder=document.createElement('div');holder.className='tradingview-widget-container';holder.style.height='100%';
   const inner=document.createElement('div');inner.className='tradingview-widget-container__widget';inner.style.height='100%';
   holder.appendChild(inner);w.appendChild(holder);
   const sc=document.createElement('script');
   sc.src='https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';
   sc.async=true;
-  sc.innerHTML=JSON.stringify({autosize:true,symbol:map(sym),interval:'5',theme:'dark',style:'1',locale:'en',backgroundColor:'#05060a',gridColor:'#12161e',hide_side_toolbar:false,allow_symbol_change:true,withdateranges:true,studies:['STD;VWAP'],support_host:'https://www.tradingview.com'});
+  sc.innerHTML=JSON.stringify({autosize:true,symbol:underOf(sym),interval:'5',theme:'dark',style:'1',locale:'en',backgroundColor:'#05060a',gridColor:'#12161e',hide_side_toolbar:false,allow_symbol_change:true,withdateranges:true,studies:['STD;VWAP'],support_host:'https://www.tradingview.com'});
   holder.appendChild(sc);
   tvLoaded=sym;
 }
 function updateChart(sym){
   const d=state.data[sym]; if(!d) return;
   const ct=document.getElementById('chartTicker');
-  if(ct&&ct.value!==sym)ct.value=sym;
+  if(ct&&ct.value!==sym&&document.activeElement!==ct)ct.value=sym;
+  document.getElementById('chartFocus').textContent=metricLabel(state.metric).toUpperCase()+' levels';
   if(state.view==='chart')loadTV(sym);
-  const kg=kingOf(d.strikes), cw=callWall(d.strikes), pw=putWall(d.strikes), fl=flipFor(d);
+  const kg=kingOf(d.strikes), cw=callWall(d.strikes), pw=putWall(d.strikes), fl=flipFor(sym,d);
   const used=new Set();
-  let html='';
+  let html=lvl('spot','Spot',(d.spot||0).toFixed(2),'live');
   const add=(type,label,s,val)=>{if(!s||used.has(s.k))return;used.add(s.k);html+=lvl(type,label,s.k,val);};
-  add('king','King Node',kg,kg?fmtG(kg.gex,d.spot):'');
-  add('call','Call Wall',cw,cw?fmtG(cw.gex,d.spot):'');
-  add('put','Put Wall',pw,pw?fmtG(pw.gex,d.spot):'');
-  if(fl) html+=lvl('flip','Zero Gamma Flip',(+fl.price).toFixed(1),fl.how);
+  add('king',metricLabel(state.metric)+' King',kg,kg?mdisp(mval(kg),d.spot):'');
+  add('call','Call Wall',cw,cw?mdisp(mval(cw),d.spot):'');
+  add('put','Put Wall',pw,pw?mdisp(mval(pw),d.spot):'');
+  if(fl) html+=lvl('flip','Zero '+metricLabel(state.metric)+' Flip',(+fl.price).toFixed(1),fl.how);
   let gN=0;
-  for(const g of [...(d.strikes||[])].sort((a,b)=>Math.abs(b.gex)-Math.abs(a.gex))){
+  for(const g of [...(d.strikes||[])].sort((a,b)=>Math.abs(mval(b))-Math.abs(mval(a)))){
     if(gN>=2)break;
     if(used.has(g.k))continue;
     used.add(g.k);gN++;
-    html+=lvl('gate','Gatekeeper '+gN,g.k,fmtG(g.gex,d.spot));
+    html+=lvl('gate','Gatekeeper '+gN,g.k,mdisp(mval(g),d.spot));
   }
-  airPockets(d).forEach(z=>html+=lvl('gate','Air Pocket',z.lo.toFixed(d.spot>2000?0:1)+'\u2013'+z.hi.toFixed(d.spot>2000?0:1),'low friction'));
+  if(state.metric==='gex')airPockets(d).forEach(z=>html+=lvl('gate','Air Pocket',z.lo.toFixed(d.spot>2000?0:1)+'\u2013'+z.hi.toFixed(d.spot>2000?0:1),'low friction'));
   document.getElementById('lvlList').innerHTML=html||'<div style="color:var(--muted);font-size:.76rem">No levels yet \u2014 waiting on first refresh</div>';
-  // top movers vs previous refresh
-  const mv=(d.strikes||[]).map(s=>({k:s.k,g:s.gex,dl:deltaOf(sym,s.k,s.gex)}))
-    .filter(x=>x.dl!==null&&isFinite(x.dl)&&Math.abs(x.dl)>=1&&Math.abs(x.g)>1e5)
+  const mA=Math.max(...(d.strikes||[]).map(x=>Math.abs(mval(x))),1);
+  const mv=(d.strikes||[]).map(s=>({k:s.k,g:mval(s),dl:deltaOf(sym,s.k,mval(s),mA)}))
+    .filter(x=>x.dl!==null&&isFinite(x.dl)&&Math.abs(x.dl)>=DELTA_MIN)
     .sort((a,b)=>Math.abs(b.dl)-Math.abs(a.dl)).slice(0,6);
   document.getElementById('movers').innerHTML=mv.length
-    ?mv.map(x=>`<div class="lvl"><div class="lvl-l"><span class="dot ${x.g>=0?'call':'put'}"></span>${x.k}</div><div class="lvl-v" style="color:${x.dl>=0?'var(--teal)':'#e879f9'}">${x.dl>=0?'\u25b2':'\u25bc'}${Math.abs(x.dl).toFixed(1)}% <span style="color:var(--muted);font-weight:400">${fmtG(x.g,d.spot)}</span></div></div>`).join('')
-    :'<div style="color:var(--muted);font-size:.72rem">Needs two refreshes to populate</div>';
+    ?mv.map(x=>`<div class="lvl"><div class="lvl-l"><span class="dot ${x.g>=0?'call':'put'}"></span>${x.k}</div><div class="lvl-v" style="color:${x.dl>=0?'var(--teal)':'#e879f9'}">${x.dl>=0?'\u25b2':'\u25bc'}${Math.abs(x.dl).toFixed(1)}% <span style="color:var(--muted);font-weight:400">${mdisp(x.g,d.spot)}</span></div></div>`).join('')
+    :'<div style="color:var(--muted);font-size:.72rem">No material node moved \u2265'+DELTA_MIN+'% in the last ~12 min</div>';
 }
 function lvl(type,label,price,gex){
   return `<div class="lvl"><div class="lvl-l"><div class="dot ${type}"></div>${label}</div><div><span class="lvl-v">${price}</span> <span style="color:var(--muted);font-size:.68rem">${gex}</span></div></div>`;
@@ -948,6 +1168,7 @@ function renderCards(){
   }
   ideas.forEach(i=>{
     const c=document.createElement('div');c.className='card';
+    const flowTag=i.flow==='confirms'?'<span class="drv">flow \u2713</span>':i.flow==='diverges'?'<span class="drv warn">flow \u2717</span>':'';
     c.innerHTML=`
       <div class="card-top">
         <div><span class="card-sym">${i.sym}</span><span class="tag ${i.bias.toLowerCase()}">${i.bias}</span>${i.momentum?'<span class="tag short">\u2212GEX</span>':''}</div>
@@ -955,127 +1176,244 @@ function renderCards(){
       </div>
       <div class="card-line">${i.line}</div>
       ${i.target||i.invalid?`<div class="card-line" style="color:var(--muted)">${i.target?`target <b style="color:var(--gold)">${i.target}</b>`:''}${i.invalid?` \u00b7 invalid ${i.bias==='LONG'?'below':'above'} <b style="color:var(--cyan)">${i.invalid}</b>`:''}</div>`:''}
-      <div style="display:flex;gap:5px;flex-wrap:wrap;margin:5px 0 3px">${(i.drivers||[]).map(x=>`<span class="drv">${x}</span>`).join('')}</div>
+      <div style="display:flex;gap:5px;flex-wrap:wrap;margin:5px 0 3px">${(i.drivers||[]).filter(x=>x!=='flow confirms'&&x!=='flow diverges').map(x=>`<span class="drv">${x}</span>`).join('')}${flowTag}</div>
       <div class="card-meta">${i.meta}</div>`;
     c.onclick=()=>{state.focus=i.sym;openDeep(i.sym);};
     el.appendChild(c);
   });
   const note=document.createElement('div');
   note.style.cssText='grid-column:1/-1;color:var(--muted);font-size:.68rem;margin-top:2px';
-  note.textContent=`${ideas.length} of ${scanned} scanned tickers qualify \u00b7 re-scans every ~2 min \u00b7 context, not signals`;
+  note.textContent=`${ideas.length} of ${scanned} scanned tickers qualify \u00b7 GEX \u00d7 trend \u00d7 opening flow \u00b7 re-scans every ~2 min \u00b7 context, not signals`;
   el.appendChild(note);
+}
+
+/* ---- Imbalance view (re-renders every tick on purpose: spot pill tracks live price; ~35 rows is negligible) ---- */
+function renderImb(sym){
+  const d=buildImbalance(sym);
+  const bars=document.getElementById('imbBars'),stats=document.getElementById('imbStats');
+  const ti=document.getElementById('imbTicker');if(ti&&ti.value!==sym&&document.activeElement!==ti)ti.value=sym;
+  const spot=d?d.spot:(state.spot[sym]||0);
+  document.getElementById('imbMeta').textContent=d?`$${spot.toFixed(2)} \u00b7 ${d.source}`:'';
+  if(!d||!d.strikes||!d.strikes.length){
+    stats.innerHTML='';
+    bars.innerHTML=`<div class="err-chip">No flow data yet for ${sym} \u2014 it loads on the next refresh (or check the ticker).</div>`;
+    document.getElementById('imbNote').textContent='';
+    return;
+  }
+  const rows=d.strikes.filter(s=>(s.cv||0)+(s.pv||0)+(s.coi||0)+(s.poi||0)>0);
+  if(!rows.length){bars.innerHTML='<div class="err-chip">Chain loaded but no volume/OI fields \u2014 refresh once to repopulate.</div>';stats.innerHTML='';return;}
+  const tot=f=>rows.reduce((a,s)=>a+(s[f]||0),0);
+  const cv=tot('cv'),pv=tot('pv'),cpr=tot('cpr'),ppr=tot('ppr');
+  const ratio=pv?cv/pv:null,prr=ppr?cpr/ppr:null;
+  const blend=((ratio||1)+(prr||1))/2;
+  const sent=blend>1.15?'Bullish':blend<0.87?'Bearish':'Neutral';
+  const sc=sent==='Bullish'?'var(--green)':sent==='Bearish'?'var(--red)':'var(--muted)';
+  let ceil=null,flr=null,mc=0,mp=0;
+  rows.forEach(s=>{
+    if(s.k>=spot&&(s.wc||0)>mc){mc=s.wc;ceil=s.k;}
+    if(s.k<=spot&&(s.wp||0)>mp){mp=s.wp;flr=s.k;}
+  });
+  stats.innerHTML=`
+    <div class="stat"><div class="sl">CALL VOL</div><div class="sv" style="color:var(--green)">${cv.toLocaleString()}</div></div>
+    <div class="stat"><div class="sl">PUT VOL</div><div class="sv" style="color:var(--red)">${pv.toLocaleString()}</div></div>
+    <div class="stat"><div class="sl" data-tip="Call volume \u00f7 put volume across the loaded chain. Above 1 = call-dominant tape.">C/P RATIO</div><div class="sv" style="color:var(--gold)">${ratio?ratio.toFixed(2):'\u2014'}</div></div>
+    <div class="stat"><div class="sl" data-tip="Blend of the volume ratio and the premium ratio (call dollars vs put dollars traded).">SENTIMENT</div><div class="sv" style="color:${sc}">${sent}</div></div>
+    <div class="stat"><div class="sl" data-tip="Call premium traded minus put premium traded today">NET PREMIUM</div><div class="sv" style="color:${cpr-ppr>=0?'var(--green)':'var(--red)'}">${fmt(cpr-ppr)}</div></div>
+    <div class="stat"><div class="sl" data-tip="Biggest weekly-expiry call OI at/above spot \u2014 where MMs are most paid to cap price under into weekly settlement">WK CEILING</div><div class="sv mono" style="color:var(--gold)">${ceil??'\u2014'}</div></div>
+    <div class="stat"><div class="sl" data-tip="Biggest weekly-expiry put OI at/below spot \u2014 the weekly floor where max put decay pays MMs">WK FLOOR</div><div class="sv mono" style="color:var(--cyan)">${flr??'\u2014'}</div></div>`;
+  let idx=0,bs=1e18;rows.forEach((s,i)=>{const dd=Math.abs(s.k-spot);if(dd<bs){bs=dd;idx=i;}});
+  const spread=16;
+  const upIdx=Math.max(0,idx-spread), dnIdx=Math.min(rows.length-1,idx+spread);
+  let hiK=rows[upIdx].k, loK=rows[dnIdx].k;
+  if(ceil!=null)hiK=Math.max(hiK,ceil);
+  if(flr!=null)loK=Math.min(loK,flr);
+  const win=rows.filter(s=>s.k>=loK&&s.k<=hiK);
+  const mx=Math.max(...win.map(s=>Math.max(s.cv||0,s.pv||0)),1);
+  const mo=Math.max(...win.map(s=>Math.max(s.coi||0,s.poi||0)),1);
+  const spotK2=rows[idx].k;
+  bars.innerHTML=win.map(s=>{
+    const cwid=Math.round((s.cv||0)/mx*100),pwid=Math.round((s.pv||0)/mx*100);
+    const co=Math.round((s.coi||0)/mo*100),po=Math.round((s.poi||0)/mo*100);
+    const mark=s.k===ceil?' <span class="dpill up">CEIL</span>':s.k===flr?' <span class="dpill dn">FLR</span>':'';
+    return `<div class="imb-row ${s.k===spotK2?'spotrow2':''}" title="${sym} ${s.k} \u00b7 calls ${((s.cv||0)).toLocaleString()} vol / ${((s.coi||0)).toLocaleString()} OI \u00b7 puts ${((s.pv||0)).toLocaleString()} vol / ${((s.poi||0)).toLocaleString()} OI">
+      <div class="side l"><i style="width:${co}%"></i><b style="width:${cwid}%"></b></div>
+      <div class="klabel">${s.k}${s.k===spotK2?`<span class="spotpx">$${spot.toFixed(2)}</span>`:''}${mark}</div>
+      <div class="side r"><i style="width:${po}%"></i><b style="width:${pwid}%"></b></div>
+    </div>`;
+  }).join('');
+  document.getElementById('imbNote').textContent='Feed note: Tradier reports total volume per contract, not buy-vs-sell aggressor side \u2014 so the green/red buy-sell split from tick-level tools can\u2019t be derived here. Premium weighting and volume-vs-OI carry the same signal transparently.';
+}
+
+/* ---- Flow Tape view — repaints only when its chain actually changes (~90s) or filter/symbol switches ---- */
+function renderTape(sym){
+  const fl=flowLean(sym);
+  const ti=document.getElementById('tapeTicker');if(ti&&ti.value!==sym&&document.activeElement!==ti)ti.value=sym;
+  const stats=document.getElementById('tapeStats'),body=document.getElementById('tapeBody'),meta=document.getElementById('tapeMeta');
+  const spot=fl?fl.spot:(state.spot[sym]||0);
+  meta.textContent=spot?`$${spot.toFixed(2)}`:'';
+  const ch=state.chains[sym];
+  const stamp=sym+'|'+((ch&&ch.t)||0)+'|'+state.expiry;
+  if(state._tapeStamp===stamp)return;
+  state._tapeStamp=stamp;
+  if(!fl||!fl.prints.length){
+    stats.innerHTML='';
+    body.innerHTML=`<div class="err-chip">No qualifying opening prints for ${sym} yet \u2014 needs a contract's volume today to run \u2265${Math.round(FLOW_OPEN*100)}% of its open interest with \u2265$${(FLOW_MIN_PREM/1000)}k premium. Loads on refresh; quietest early in the session.</div>`;
+    document.getElementById('tapeNote').textContent='';
+    return;
+  }
+  const t=fl.callPrem+fl.putPrem;
+  const lean=t?fl.net/t:0;
+  const sTxt=lean>0.15?'Call-heavy':lean<-0.15?'Put-heavy':'Balanced';
+  const sc=lean>0.15?'var(--green)':lean<-0.15?'var(--red)':'var(--muted)';
+  stats.innerHTML=`
+    <div class="stat"><div class="sl" data-tip="Premium in call contracts opening today (vol \u2265 70% of OI)">CALL OPENING $</div><div class="sv" style="color:var(--green)">${fmt(fl.callPrem)}</div></div>
+    <div class="stat"><div class="sl" data-tip="Premium in put contracts opening today">PUT OPENING $</div><div class="sv" style="color:var(--red)">${fmt(fl.putPrem)}</div></div>
+    <div class="stat"><div class="sl" data-tip="Call opening $ minus put opening $. Puts can be hedges, so read directionally, not literally.">NET LEAN</div><div class="sv" style="color:${sc}">${sTxt}</div></div>
+    <div class="stat"><div class="sl">OPENING PRINTS</div><div class="sv">${fl.prints.length}</div></div>`;
+  const oldWrap=body.querySelector('.tape-wrap');const keepScroll=oldWrap?oldWrap.scrollTop:0;
+  body.innerHTML='<div class="tape-wrap"><table><thead><tr><th>Contract</th><th>Exp</th><th>Vol</th><th>OI</th><th>Vol/OI</th><th>IV</th><th>Premium</th></tr></thead><tbody>'+
+    fl.prints.map(p=>{
+      const otm=(p.call&&p.k>spot)||(!p.call&&p.k<spot);
+      return `<tr><td><span class="cbadge ${p.call?'c':'p'}">${p.call?'C':'P'}</span> ${p.k}${otm?'':' <span style="color:var(--muted)">itm</span>'}</td><td>${p.e.slice(5)}</td><td>${p.vol.toLocaleString()}</td><td>${p.oi.toLocaleString()}</td><td style="color:${p.voi>=1?'var(--gold)':'var(--muted)'}">${p.voi.toFixed(1)}\u00d7</td><td>${p.iv?(p.iv*100).toFixed(0)+'%':'\u2014'}</td><td style="color:var(--gold)">${fmt(p.prem)}</td></tr>`;
+    }).join('')+
+    '</tbody></table></div>';
+  const newWrap=body.querySelector('.tape-wrap');if(newWrap&&keepScroll)newWrap.scrollTop=keepScroll;
+  document.getElementById('tapeNote').innerHTML='Opening = today\u2019s volume \u2265 '+Math.round(FLOW_OPEN*100)+'% of standing OI (new positioning, not churn). Premium = mid \u00d7 volume \u00d7 100 (real dollars). <b>Honest limits:</b> Tradier REST gives total contract volume, not per-trade aggressor side \u2014 so this is <b>not</b> tick-level buy/sell or sweep detection, and puts may be hedges rather than bearish bets. What it captures cleanly: where fresh option dollars are opening today, which walls are being built vs. stale, and a directional lean that feeds the Ideas score.';
 }
 
 function openDeep(sym){
   const d=state.data[sym];if(!d)return;
-  document.getElementById('mTitle').textContent=sym+' Deep Analysis';
-  const kg=kingOf(d.strikes),cw=callWall(d.strikes),pw=putWall(d.strikes),fl=flipFor(d);
-  if(!d.profile&&d.contracts&&d.contracts.length)d.profile=gammaProfile(d.contracts,d.spot);
+  const M=metricLabel(state.metric);
+  document.getElementById('mTitle').textContent=sym+' \u00b7 '+M+' Deep Analysis';
+  const kg=kingOf(d.strikes),cw=callWall(d.strikes),pw=putWall(d.strikes),fl=flipFor(sym,d);
+  const pr=ensureProfile(sym,d);
   const dp=d.spot>2000?0:1;
   const distK=kg?((kg.k-d.spot)/d.spot*100):null;
   const above=fl?d.spot>+fl.price:null;
-  const net=d.profile?d.profile.netAtSpot:null;
+  const net=pr?(state.metric==='vex'?pr.netV:pr.netG):null;
+  const regTxt=state.metric==='gex'?(net>=0?'+GEX \u00b7 pinning':'\u2212GEX \u00b7 momentum')
+    :(net>=0?'+VEX \u00b7 vol-drift bid':'\u2212VEX \u00b7 vol-chase');
+  // confluence across metrics
+  const gk=kingOf(d.strikes,'gex'),vk=kingOf(d.strikes,'vex');
+  const ksArr=[gk,vk].filter(Boolean).map(x=>x.k);
+  let confLine='';
+  if(ksArr.length>=2){
+    const spread=Math.max(...ksArr)-Math.min(...ksArr);
+    const tol=d.spot*0.004;
+    confLine=spread<=tol
+      ?`<span style="color:var(--gold);font-weight:700">\u25c6 tight confluence \u2014 super-magnet zone</span>`
+      :`<span style="color:var(--muted)">spread ${spread.toFixed(dp)} pts across metrics</span>`;
+  }
   document.getElementById('mGex').innerHTML=`
     <div style="font-size:.85rem;line-height:1.9">
       Spot <b class="mono">$${(d.spot||0).toFixed(2)}</b>
-      ${net!=null?`<span class="regime ${net>=0?'pos':'neg'}" style="margin-left:8px">${net>=0?'+GEX \u00b7 pinning':'\u2212GEX \u00b7 momentum'}</span>`:''}<br>
-      King <b style="color:var(--gold)">${kg?kg.k:'\u2014'}</b>${distK!=null?` <span style="color:var(--muted)">(${distK>=0?'+':''}${distK.toFixed(2)}% away \u00b7 ${fmtG(kg.gex,d.spot)})</span>`:''}<br>
-      Flip <b style="color:var(--cyan)">${fl?(+fl.price).toFixed(dp):'\u2014'}</b>${above!=null?` <span style="color:var(--muted)">spot ${above?'above \u2192 dips get bought':'below \u2192 moves accelerate'}</span>`:''}<br>
-      Range <b class="mono">${pw?pw.k:'\u2014'}</b> <span style="color:var(--muted)">put wall (support)</span> \u2192 <b class="mono">${cw?cw.k:'\u2014'}</b> <span style="color:var(--muted)">call wall (cap)</span>
+      ${net!=null?`<span class="regime ${net>=0?'pos':'neg'}" style="margin-left:8px">${regTxt}</span>`:''}<br>
+      ${M} King <b style="color:var(--gold)">${kg?kg.k:'\u2014'}</b>${distK!=null?` <span style="color:var(--muted)">(${distK>=0?'+':''}${distK.toFixed(2)}% away \u00b7 ${mdisp(mval(kg),d.spot)})</span>`:''}<br>
+      Flip <b style="color:var(--cyan)">${fl?(+fl.price).toFixed(dp):'\u2014'}</b>${above!=null?` <span style="color:var(--muted)">spot ${above?'above':'below'}</span>`:''}<br>
+      Range <b class="mono">${pw?pw.k:'\u2014'}</b> <span style="color:var(--muted)">put wall</span> \u2192 <b class="mono">${cw?cw.k:'\u2014'}</b> <span style="color:var(--muted)">call wall</span>
+    </div>
+    <div class="conf-box" style="margin-top:8px">
+      <div style="display:flex;justify-content:space-between"><span>\u0393 Gamma King</span><b style="color:var(--gold)">${gk?gk.k:'\u2014'}</b></div>
+      <div style="display:flex;justify-content:space-between"><span>Vanna King</span><b style="color:var(--cyan)">${vk?vk.k:'\u2014'}</b></div>
+      <div style="text-align:center;margin-top:4px;font-size:.7rem">${confLine}</div>
     </div>`;
   const prof=document.getElementById('prof');
-  prof.innerHTML=`<canvas id="pc" width="400" height="130" style="width:100%;height:130px"></canvas>`;
-  const ctx=document.getElementById('pc').getContext('2d');
+  prof.innerHTML=`<canvas id="pc" style="width:100%;height:130px"></canvas>`;
+  const cvn=document.getElementById('pc');
+  const dpr=Math.max(1,window.devicePixelRatio||1);
+  cvn.width=400*dpr;cvn.height=130*dpr;
+  const ctx=cvn.getContext('2d');ctx.scale(dpr,dpr);
   ctx.fillStyle='#0a0c12';ctx.fillRect(0,0,400,130);
-  const pr=d.profile||(d.contracts&&d.contracts.length?(d.profile=gammaProfile(d.contracts,d.spot)):null);
+  const key=metricKey(state.metric);
+  const flipVal=state.metric==='vex'?pr&&pr.flipV:pr&&pr.flipG;
   if(pr&&pr.pts&&pr.pts.length){
-    const mx=Math.max(...pr.pts.map(p=>Math.abs(p.g)),1);
+    const mx=Math.max(...pr.pts.map(p=>Math.abs(p[key])),1);
     ctx.strokeStyle='#2a3140';ctx.beginPath();ctx.moveTo(0,65);ctx.lineTo(400,65);ctx.stroke();
     const lo=pr.pts[0].s,hi=pr.pts[pr.pts.length-1].s,xOf=s=>((s-lo)/(hi-lo)*390+5);
     ctx.beginPath();
-    pr.pts.forEach((p,i)=>{const x=xOf(p.s),y=65-(p.g/mx)*55;i?ctx.lineTo(x,y):ctx.moveTo(x,y);});
-    ctx.strokeStyle='#00e5ff';ctx.lineWidth=1.6;ctx.stroke();ctx.lineWidth=1;
+    pr.pts.forEach((p,i)=>{const x=xOf(p.s),y=65-(p[key]/mx)*55;i?ctx.lineTo(x,y):ctx.moveTo(x,y);});
+    ctx.strokeStyle=state.metric==='vex'?'#22d3ee':'#00e5ff';ctx.lineWidth=1.6;ctx.stroke();ctx.lineWidth=1;
     ctx.setLineDash([3,3]);
     ctx.strokeStyle='#e8ecf4';ctx.beginPath();ctx.moveTo(xOf(d.spot),0);ctx.lineTo(xOf(d.spot),130);ctx.stroke();
-    if(pr.flip){ctx.strokeStyle='#f2c14e';ctx.beginPath();ctx.moveTo(xOf(pr.flip),0);ctx.lineTo(xOf(pr.flip),130);ctx.stroke();}
+    if(flipVal){ctx.strokeStyle='#f2c14e';ctx.beginPath();ctx.moveTo(xOf(flipVal),0);ctx.lineTo(xOf(flipVal),130);ctx.stroke();}
     ctx.setLineDash([]);
-  }else{
-    const sorted=[...(d.strikes||[])].sort((a,b)=>a.k-b.k);
-    const mx=Math.max(...sorted.map(s=>Math.abs(s.gex)),1);
-    sorted.forEach((s,i)=>{
-      const x=(i/Math.max(sorted.length-1,1))*380+10;
-      const h=(Math.abs(s.gex)/mx)*55;
-      ctx.fillStyle=s.gex>=0?'#2dd4bf':'#c026ff';
-      ctx.fillRect(x,65-(s.gex>=0?h:0),Math.max(2,380/sorted.length-1),h);
-    });
-    ctx.strokeStyle='#00e5ff';ctx.beginPath();ctx.moveTo(0,65);ctx.lineTo(400,65);ctx.stroke();
   }
-    const idea=(state.ideas||{})[sym];
-  const vx=d.contracts?netVex(d.contracts,d.spot):null;
-  const al=alignState(net!=null?net:(kg?kg.gex:null),vx);
+  const idea=(state.ideas||{})[sym];
   document.getElementById('mRecs').innerHTML=idea
     ?`<div class="rec" style="border-left-color:${idea.bias==='LONG'?'var(--green)':'var(--red)'}">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
           <b>${idea.bias} \u00b7 score ${idea.score}</b>
-          ${al?`<span style="font-size:.66rem;color:var(--muted)" data-tip="${al.d}">${al.s}</span>`:''}
+          ${idea.flow?`<span style="font-size:.66rem;color:${idea.flow==='confirms'?'var(--green)':'var(--red)'}">flow ${idea.flow}</span>`:''}
         </div>
         <div class="mono" style="font-size:.82rem">${idea.line}</div>
         ${idea.target||idea.invalid?`<div style="font-size:.72rem;color:var(--muted);margin-top:3px">${idea.target?`target <b style="color:var(--gold)">${idea.target}</b>`:''}${idea.invalid?` \u00b7 invalid ${idea.bias==='LONG'?'below':'above'} <b style="color:var(--cyan)">${idea.invalid}</b>`:''}</div>`:''}
         <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:5px">${(idea.drivers||[]).map(x=>`<span class="drv">${x}</span>`).join('')}</div>
       </div>`
-    :`<div class="rec"><div style="font-size:.78rem;color:var(--muted);line-height:1.55">No edge right now \u2014 GEX structure and the daily trend don\u2019t agree.${al?` Alignment: <b style="color:var(--text)">${al.s}</b> \u2014 ${al.d}.`:''}</div></div>`;
-  const top=[...(d.strikes||[])].sort((a,b)=>Math.abs(b.gex)-Math.abs(a.gex)).slice(0,5);
-  const mxA=top.length?Math.abs(top[0].gex):1;
+    :`<div class="rec"><div style="font-size:.78rem;color:var(--muted);line-height:1.55">No edge right now \u2014 GEX structure and the daily trend don\u2019t agree. Ideas always score off gamma + trend + flow; the metric toggle only changes the map you\u2019re reading.</div></div>`;
+  const top=[...(d.strikes||[])].sort((a,b)=>Math.abs(mval(b))-Math.abs(mval(a))).slice(0,5);
+  const mxA=top.length?Math.abs(mval(top[0])):1;
   document.getElementById('mNodes').innerHTML=top.map((n,i)=>{
-    const r=Math.abs(n.gex)/mxA;
+    const v=mval(n);const r=Math.abs(v)/mxA;
     return `<div style="display:flex;align-items:center;gap:8px;font-size:.76rem;padding:4px 0;border-bottom:1px solid #1a1f2b">
       <span class="mono" style="width:52px;font-weight:700;${i===0?'color:var(--gold)':''}">${n.k}${i===0?' \u2605':''}</span>
-      <span class="mono" style="width:70px;color:${n.gex>=0?'var(--teal)':'#e879f9'}">${fmtG(n.gex,d.spot)}</span>
-      <span style="flex:1;height:4px;border-radius:2px;background:#161a24;overflow:hidden"><span style="display:block;height:100%;width:${Math.round(r*100)}%;background:${i===0?'var(--gold)':n.gex>=0?'var(--teal)':'var(--barney)'}"></span></span>
+      <span class="mono" style="width:78px;color:${v>=0?'var(--teal)':'#e879f9'}">${mdisp(v,d.spot)}</span>
+      <span style="flex:1;height:4px;border-radius:2px;background:#161a24;overflow:hidden"><span style="display:block;height:100%;width:${Math.round(r*100)}%;background:${i===0?'var(--gold)':v>=0?'var(--teal)':'var(--barney)'}"></span></span>
     </div>`;
   }).join('');
   document.getElementById('modal').classList.add('open');
 }
 
-async function refresh(){
+async function refresh(force){
+  if(state.refreshing){state.pendingRefresh=true;if(force)state.pendingForce=true;return;} // queue it — never drop a tab-hop refresh
+  state.refreshing=true;
   const spin=document.getElementById('spin');const btn=document.getElementById('btnRefresh');
   spin.classList.remove('hidden');btn.disabled=true;
-  const results={};
-  // fetch only what the current view needs — frees budget for the idea sweep
-  const ticks=(state.view==='single'||state.view==='chart'||state.view==='imb')
-    ?[state.focus]
-    :[...new Set([...state.trinityTickers.slice(0,3),state.focus])];
-  state.dataAge=state.dataAge||{};
-  for(const s of ticks){
-    const deep=(state.view==='single'&&s===state.focus)?9:undefined; // Single gets ~9 expirations
-    const r=await getSym(s,deep);
-    if(r){results[s]=r;state.dataAge[s]=Date.now();}
-    if(state.tradierToken)await new Promise(r2=>setTimeout(r2,120));
+  try{
+    const ticks=(state.view==='single'||state.view==='chart'||state.view==='imb'||state.view==='tape')
+      ?[state.focus]
+      :[...new Set([...state.trinityTickers.slice(0,3),state.focus])];
+    if(state.tradierToken.length>8){
+      try{const qs=await fetchQuotes(ticks);ticks.forEach(s=>{const u=underOf(s);if(qs[u])state.spot[s]=qs[u];});}catch(e){console.warn('quotes',e.message);}
+    }
+    const results={};
+    for(const s of ticks){
+      const deep=(state.view==='single'&&s===state.focus)?9:undefined;
+      const old=state.data[s];
+      const r=await getSym(s,deep,force);
+      if(r){
+        if(old&&old.strikes){const m={};old.strikes.forEach(x=>{m[x.k]=x.gex;});state.prevG[s]=m;}
+        state.data[s]=r;state.dataAge[s]=Date.now();results[s]=r;
+      }
+    }
+    state.firstLoadFailed=Object.keys(results).length===0&&Object.keys(state.data).length===0;
+    recordSnapshots();
+    const sources=Object.values(results).map(d=>d.source);
+    let b='';
+    if(sources.some(s=>s==='tradier-live'))b=`<span class="live">● LIVE</span> · ${state.sizeBasis==='vol'?'today\u2019s flow':'positioning (OI)'} · ${metricLabel(state.metric)} spot-fresh · chains ~${Math.round(CHAIN_TTL/1000)}s`;
+    else if(sources.some(s=>s==='tradier-sandbox'))b=`● TRADIER SANDBOX — delayed data`;
+    else if(sources.some(s=>s==='cboe'))b=`● CBOE DELAYED (~15 min)${state.tradierToken?'':' — add a free Tradier token in Settings for live data'}`;
+    else b=`● NO DATA — all sources failed (token? network?)`;
+    document.getElementById('bannerText').innerHTML=b;
+    const si=sessionInfo();
+    document.getElementById('sessInfo').innerHTML=`Session <b style="color:var(--text)">${si.sess}</b> · OI as-of <b style="color:var(--text)">${si.oi}</b> close`;
+    document.getElementById('lastUp').textContent='Last: '+new Date().toLocaleTimeString();
+    if(state.view==='single')state.singleLoading=false;
+    if(state.view==='trinity'||state.view==='single')renderTrinity();
+    if(state.view==='ideas')renderCards();
+    if(state.view==='chart')updateChart(state.focus);
+    if(state.view==='imb')renderImb(state.focus);
+    if(state.view==='tape')renderTape(state.focus);
+  }finally{
+    spin.classList.add('hidden');btn.disabled=false;state.refreshing=false;
+    if(state.pendingRefresh){
+      state.pendingRefresh=false;const f=!!state.pendingForce;state.pendingForce=false;
+      setTimeout(()=>refresh(f),60);
+    }
   }
-  state.firstLoadFailed=Object.keys(results).length===0&&Object.keys(state.data).length===0;
-  state.prevG=state.prevG||{};
-  Object.keys(results).forEach(sym=>{
-    const old=state.data[sym];
-    if(old&&old.strikes){const m={};old.strikes.forEach(s=>m[s.k]=s.gex);state.prevG[sym]=m;}
-  });
-  state.data={...state.data,...results}; // merge: symbols outside this view keep last data
-  recordSnapshots();
-  const sources=Object.values(results).map(d=>d.source);
-  let b='';
-  if(sources.some(s=>s==='tradier-live'))b=`<span class="live">● LIVE</span> · ${state.sizeBasis==='vol'?'today\u2019s flow':'positioning (OI)'} · \u0393 spot-fresh`;
-  else if(sources.some(s=>s==='tradier-sandbox'))b=`● TRADIER SANDBOX — delayed data`;
-  else if(sources.some(s=>s==='cboe'))b=`● CBOE DELAYED (~15 min) · OI daily`;
-  else b=`● NO DATA — all sources failed (token? network?)`;
-  document.getElementById('bannerText').innerHTML=b;
-  document.getElementById('lastUp').textContent='Last: '+new Date().toLocaleTimeString();
-  if(state.view==='trinity'||state.view==='single')renderTrinity();
-  if(state.view==='ideas')renderCards();
-  if(state.view==='chart')updateChart(state.focus);
-  if(state.view==='imb')renderImb(state.focus);
-  spin.classList.add('hidden');btn.disabled=false;
 }
 
 document.getElementById('closeM').onclick=()=>document.getElementById('modal').classList.remove('open');
+document.getElementById('modal').onclick=e=>{if(e.target.id==='modal')e.target.classList.remove('open');};
 document.getElementById('btnHelp').onclick=()=>document.getElementById('helpModal').classList.add('open');
 document.getElementById('closeHelp').onclick=()=>document.getElementById('helpModal').classList.remove('open');
 document.getElementById('helpModal').onclick=e=>{if(e.target.id==='helpModal')e.target.classList.remove('open');};
@@ -1086,149 +1424,206 @@ document.getElementById('btnSettings').onclick=()=>{
   document.getElementById('settings').classList.toggle('open');
 };
 document.getElementById('save').onclick=()=>{
-  state.tradierToken=document.getElementById('tok').value.trim()||DEFAULT_TOKEN;
+  state.tradierToken=document.getElementById('tok').value.trim();
   state.pollSec=Math.max(10,parseInt(document.getElementById('poll').value)||10);
   state.sizeBasis=document.getElementById('sizeBasis').value;
   localStorage.setItem('kairos_basis',state.sizeBasis);
   localStorage.setItem('kairos_tok',state.tradierToken);
+  localStorage.setItem('kairos_poll',String(state.pollSec));
   document.getElementById('settings').classList.remove('open');
-  refresh();
+  refresh(true);
 };
-document.getElementById('btnRefresh').onclick=()=>refresh();
-document.getElementById('expiryFilter').onchange=e=>{state.expiry=e.target.value;refresh();};
-function renderImb(sym){
-  const d=state.data[sym];
-  const bars=document.getElementById('imbBars'),stats=document.getElementById('imbStats');
-  const ti=document.getElementById('imbTicker');if(ti&&ti.value!==sym&&document.activeElement!==ti)ti.value=sym;
-  document.getElementById('imbMeta').textContent=d?`$${(d.spot||0).toFixed(2)} \u00b7 ${d.source}`:'';
-  if(!d||!d.strikes||!d.strikes.length){
-    stats.innerHTML='';
-    bars.innerHTML=`<div class="err-chip">No data yet for ${sym} \u2014 it loads on the next refresh (or check the ticker).</div>`;
-    document.getElementById('imbNote').textContent='';
-    return;
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){
+    document.querySelectorAll('.modal-bg.open').forEach(m=>m.classList.remove('open'));
+    document.getElementById('settings').classList.remove('open');
+    closeCombo();
   }
-  const rows=[...d.strikes].filter(s=>(s.cv||0)+(s.pv||0)+(s.coi||0)+(s.poi||0)>0).sort((a,b)=>b.k-a.k);
-  if(!rows.length){bars.innerHTML='<div class="err-chip">Chain loaded but no volume/OI fields \u2014 refresh once to repopulate with flow data.</div>';stats.innerHTML='';return;}
-  const tot=f=>rows.reduce((a,s)=>a+(s[f]||0),0);
-  const cv=tot('cv'),pv=tot('pv'),cpr=tot('cpr'),ppr=tot('ppr');
-  const ratio=pv?cv/pv:null,prr=ppr?cpr/ppr:null;
-  const blend=((ratio||1)+(prr||1))/2;
-  const sent=blend>1.15?'Bullish':blend<0.87?'Bearish':'Neutral';
-  const sc=sent==='Bullish'?'var(--green)':sent==='Bearish'?'var(--red)':'var(--muted)';
-  let ceil=null,flr=null,mc=0,mp=0;
-  rows.forEach(s=>{
-    if(s.k>=d.spot&&(s.wc||0)>mc){mc=s.wc;ceil=s.k;}
-    if(s.k<=d.spot&&(s.wp||0)>mp){mp=s.wp;flr=s.k;}
-  });
-  stats.innerHTML=`
-    <div class="stat"><div class="sl">CALL VOL</div><div class="sv" style="color:var(--green)">${cv.toLocaleString()}</div></div>
-    <div class="stat"><div class="sl">PUT VOL</div><div class="sv" style="color:var(--red)">${pv.toLocaleString()}</div></div>
-    <div class="stat"><div class="sl" data-tip="Call volume \u00f7 put volume across the loaded chain. Above 1 = call-dominant tape.">C/P RATIO</div><div class="sv" style="color:var(--gold)">${ratio?ratio.toFixed(2):'\u2014'}</div></div>
-    <div class="stat"><div class="sl" data-tip="Blend of the volume ratio and the premium ratio (call dollars vs put dollars traded). Premium weighting matters: 1,000 cheap lottos \u2260 1,000 expensive contracts.">SENTIMENT</div><div class="sv" style="color:${sc}">${sent}</div></div>
-    <div class="stat"><div class="sl" data-tip="Call premium traded minus put premium traded today">NET PREMIUM</div><div class="sv" style="color:${cpr-ppr>=0?'var(--green)':'var(--red)'}">${fmt(cpr-ppr)}</div></div>
-    <div class="stat"><div class="sl" data-tip="Biggest weekly-expiry call OI at/above spot \u2014 the strike MMs are most paid to cap price under into the weekly settlement">WK CEILING</div><div class="sv mono" style="color:var(--gold)">${ceil??'\u2014'}</div></div>
-    <div class="stat"><div class="sl" data-tip="Biggest weekly-expiry put OI at/below spot \u2014 the weekly floor where max put decay pays MMs">WK FLOOR</div><div class="sv mono" style="color:var(--cyan)">${flr??'\u2014'}</div></div>`;
-  // window: 14 above / 14 below spot
-  let idx=0,bs=1e18;rows.forEach((s,i)=>{const dd=Math.abs(s.k-d.spot);if(dd<bs){bs=dd;idx=i;}});
-  const win=rows.slice(Math.max(0,idx-14),idx+15);
-  const mx=Math.max(...win.map(s=>Math.max(s.cv||0,s.pv||0)),1);
-  const mo=Math.max(...win.map(s=>Math.max(s.coi||0,s.poi||0)),1);
-  const spotK2=rows[idx].k;
-  bars.innerHTML=win.map(s=>{
-    const cw=Math.round((s.cv||0)/mx*100),pw=Math.round((s.pv||0)/mx*100);
-    const co=Math.round((s.coi||0)/mo*100),po=Math.round((s.poi||0)/mo*100);
-    const mark=s.k===ceil?' <span class="dpill up">CEIL</span>':s.k===flr?' <span class="dpill dn">FLR</span>':'';
-    return `<div class="imb-row ${s.k===spotK2?'spotrow2':''}" title="${sym} ${s.k} \u00b7 calls ${((s.cv||0)).toLocaleString()} vol / ${((s.coi||0)).toLocaleString()} OI \u00b7 puts ${((s.pv||0)).toLocaleString()} vol / ${((s.poi||0)).toLocaleString()} OI">
-      <div class="side l"><i style="width:${co}%"></i><b style="width:${cw}%"></b></div>
-      <div class="klabel mono">${s.k}${s.k===spotK2?`<span class="spotpx">$${d.spot.toFixed(2)}</span>`:''}${mark}</div>
-      <div class="side r"><i style="width:${po}%"></i><b style="width:${pw}%"></b></div>
-    </div>`;
-  }).join('');
-  document.getElementById('imbNote').textContent='Feed note: Tradier reports total volume per contract, not buy-vs-sell aggressor side \u2014 so the green/red buy-sell split from tick-level tools can\u2019t be derived here. Premium weighting and volume-vs-OI carry the same signal transparently.';
+});
+document.addEventListener('click',e=>{
+  const s=document.getElementById('settings');
+  if(!s.classList.contains('open'))return;
+  if(s.contains(e.target)||e.target.closest('#btnSettings'))return;
+  s.classList.remove('open');
+});
+document.getElementById('btnRefresh').onclick=()=>refresh(true);
+document.getElementById('expiryFilter').onchange=e=>{state.expiry=e.target.value;refresh(false);};
+
+/* ---- metric toggle ---- */
+function setMetric(m){
+  if(state.metric===m)return;
+  state.metric=m;localStorage.setItem('kairos_metric',m);
+  document.querySelectorAll('#mtoggle button').forEach(b=>b.classList.toggle('on',b.dataset.m===m));
+  if(state.view==='trinity'||state.view==='single')renderTrinity();
+  else if(state.view==='chart')updateChart(state.focus);
+  if(document.getElementById('modal').classList.contains('open'))openDeep(state.focus);
 }
+document.querySelectorAll('#mtoggle button').forEach(b=>{b.dataset.m=b.textContent.toLowerCase();b.onclick=()=>setMetric(b.dataset.m);});
+document.querySelectorAll('#mtoggle button').forEach(b=>b.classList.toggle('on',b.dataset.m===state.metric));
+
 function setView(v){
   state.view=v;
-  ['btnTrinity','btnSingle','btnChart','btnIdeas','btnImb'].forEach(id=>document.getElementById(id).classList.remove('active'));
-  document.getElementById(v==='trinity'?'btnTrinity':v==='single'?'btnSingle':v==='chart'?'btnChart':v==='imb'?'btnImb':'btnIdeas').classList.add('active');
+  ['btnTrinity','btnSingle','btnChart','btnIdeas','btnImb','btnTape'].forEach(id=>document.getElementById(id).classList.remove('active'));
+  const bmap={trinity:'btnTrinity',single:'btnSingle',chart:'btnChart',ideas:'btnIdeas',imb:'btnImb',tape:'btnTape'};
+  document.getElementById(bmap[v]).classList.add('active');
   document.getElementById('trinityWrap').classList.toggle('hidden',v!=='trinity'&&v!=='single');
   document.getElementById('chartSec').classList.toggle('hidden',v!=='chart');
-  document.getElementById('imbSec').classList.toggle('hidden',v!=='imb');
   document.getElementById('ideasSec').classList.toggle('hidden',v!=='ideas');
+  document.getElementById('imbSec').classList.toggle('hidden',v!=='imb');
+  document.getElementById('tapeSec').classList.toggle('hidden',v!=='tape');
+  document.getElementById('mtoggle').classList.toggle('dim',v==='ideas'||v==='imb'||v==='tape');
+  if(v==='single'){
+    const m=state.multi[state.focus];
+    state.singleLoading=!(m&&m.dates&&m.dates.length>=8);
+  }
   if(v==='trinity'||v==='single')renderTrinity();
-  if(v==='single'){const m=state.multi[state.focus];if(!m||(m.dates||[]).length<8)refresh();}
+  if(v==='trinity'){
+    // coming back to Triad: the poll only fed the focused ticker while you were away — refetch stale panels now
+    const stale=state.trinityTickers.some(s=>!state.dataAge[s]||Date.now()-state.dataAge[s]>state.pollSec*1500);
+    if(stale)refresh(false);
+  }
+  if(v==='single'&&state.singleLoading)refresh(false);
   if(v==='ideas'){renderCards();ideasSweep(false);}
-  if(v==='chart'){loadTV(state.focus);updateChart(state.focus);}
-  if(v==='imb')renderImb(state.focus);
+  if(v==='chart'){loadTV(state.focus);updateChart(state.focus);if(!state.data[state.focus])refresh(false);}
+  if(v==='imb'){renderImb(state.focus);if(!state.chains[state.focus]||Date.now()-(state.chains[state.focus].t||0)>CHAIN_TTL)refresh(false);}
+  if(v==='tape'){renderTape(state.focus);if(!state.chains[state.focus]||Date.now()-(state.chains[state.focus].t||0)>CHAIN_TTL)refresh(false);}
 }
-document.addEventListener('focusin',e=>{
-  const t=e.target;
-  if(t&&t.tagName==='INPUT'&&t.classList.contains('ticker-sel')){t.dataset.keep=t.value;t.value='';}
-});
-document.addEventListener('focusout',e=>{
-  const t=e.target;
-  if(t&&t.tagName==='INPUT'&&t.classList.contains('ticker-sel')&&!t.value)t.value=t.dataset.keep||'';
-});
 document.getElementById('btnTrinity').onclick=()=>setView('trinity');
 document.getElementById('btnSingle').onclick=()=>setView('single');
 document.getElementById('btnChart').onclick=()=>setView('chart');
 document.getElementById('btnIdeas').onclick=()=>setView('ideas');
 document.getElementById('btnImb').onclick=()=>setView('imb');
-document.getElementById('imbTicker').onchange=async()=>{
-  const el=document.getElementById('imbTicker');
-  const v=el.value.trim().toUpperCase();if(!v)return;
-  el.value=v;state.focus=v;
+document.getElementById('btnTape').onclick=()=>setView('tape');
+
+const chartSel=document.getElementById('chartTicker');
+chartSel.onchange=async()=>{
+  const v=cleanSym(chartSel.value);
+  if(!v){chartSel.value=state.focus;return;}
+  chartSel.value=v;state.focus=v;tvLoaded='';
   if(!state.data[v]){
     document.getElementById('spin').classList.remove('hidden');
-    try{const r=await getSym(v);if(r){state.data[v]=r;(state.dataAge=state.dataAge||{})[v]=Date.now();}}catch(e){}
+    try{const r=await getSym(v);if(r){state.data[v]=r;state.dataAge[v]=Date.now();}}catch(e){}
+    document.getElementById('spin').classList.add('hidden');
+  }
+  updateChart(v);
+};
+document.getElementById('imbTicker').onchange=async()=>{
+  const el=document.getElementById('imbTicker');
+  const v=cleanSym(el.value);if(!v){el.value=state.focus;return;}
+  el.value=v;state.focus=v;
+  if(!state.chains[v]){
+    document.getElementById('spin').classList.remove('hidden');
+    try{const r=await getSym(v);if(r){state.data[v]=r;state.dataAge[v]=Date.now();}}catch(e){}
     document.getElementById('spin').classList.add('hidden');
   }
   renderImb(v);
 };
-// interchangeable chart ticker
-document.getElementById('tickList').innerHTML=TICKS.map(t=>`<option value="${t}">`).join('');
-const chartSel=document.getElementById('chartTicker');
-chartSel.onchange=async()=>{
-  const v=chartSel.value.trim().toUpperCase();if(!v)return;
-  chartSel.value=v;state.focus=v;
-  if(!state.data[state.focus]){
+document.getElementById('tapeTicker').onchange=async()=>{
+  const el=document.getElementById('tapeTicker');
+  const v=cleanSym(el.value);if(!v){el.value=state.focus;return;}
+  el.value=v;state.focus=v;
+  if(!state.chains[v]){
     document.getElementById('spin').classList.remove('hidden');
-    try{state.data[state.focus]=await getSym(state.focus);}catch(e){}
+    try{const r=await getSym(v);if(r){state.data[v]=r;state.dataAge[v]=Date.now();}}catch(e){}
     document.getElementById('spin').classList.add('hidden');
   }
-  updateChart(state.focus);
+  renderTape(v);
 };
-// Pine v5 export: bakes current node lines (with thickness) into a paste-ready TradingView indicator
+
+/* ---- custom ticker combobox ---- */
+const comboPop=document.createElement('div');comboPop.className='combo-pop';comboPop.style.display='none';document.body.appendChild(comboPop);
+let comboFor=null, comboIdx=-1;
+function comboItems(input){
+  const filt=cleanSym(input.value);
+  const arr=filt?TICKS.filter(t=>t.includes(filt)):TICKS.slice();
+  return arr.length?arr:TICKS.slice();
+}
+function openCombo(input){
+  comboFor=input;comboIdx=-1;
+  const items=comboItems(input);
+  comboPop.innerHTML=items.map((t,i)=>`<div class="combo-item" data-v="${t}">${t}</div>`).join('')+'<div class="combo-hint">type any symbol · Enter</div>';
+  const r=input.getBoundingClientRect();
+  comboPop.style.left=Math.round(r.left)+'px';
+  comboPop.style.top=Math.round(r.bottom+3)+'px';
+  comboPop.style.minWidth=Math.max(r.width,120)+'px';
+  comboPop.style.display='block';
+}
+function closeCombo(){comboPop.style.display='none';comboFor=null;comboIdx=-1;}
+function pickCombo(v){
+  if(!comboFor)return;
+  const inp=comboFor;inp.value=v;closeCombo();
+  inp.dispatchEvent(new Event('change',{bubbles:true}));
+}
+document.addEventListener('focusin',e=>{if(e.target.classList&&e.target.classList.contains('ticker-sel'))openCombo(e.target);});
+document.addEventListener('input',e=>{if(e.target.classList&&e.target.classList.contains('ticker-sel')&&comboFor===e.target)openCombo(e.target);});
+document.addEventListener('keydown',e=>{
+  if(!comboFor||comboPop.style.display==='none')return;
+  const items=[...comboPop.querySelectorAll('.combo-item')];
+  if(e.key==='ArrowDown'){e.preventDefault();comboIdx=Math.min(items.length-1,comboIdx+1);}
+  else if(e.key==='ArrowUp'){e.preventDefault();comboIdx=Math.max(0,comboIdx-1);}
+  else if(e.key==='Enter'){
+    e.preventDefault();
+    if(comboIdx>=0&&items[comboIdx])pickCombo(items[comboIdx].dataset.v);
+    else{const inp=comboFor;closeCombo();inp.dispatchEvent(new Event('change',{bubbles:true}));inp.blur();}
+    return;
+  }else return;
+  items.forEach((it,i)=>it.classList.toggle('on',i===comboIdx));
+  if(items[comboIdx])items[comboIdx].scrollIntoView({block:'nearest'});
+});
+comboPop.addEventListener('mousedown',e=>{
+  const it=e.target.closest('.combo-item');if(!it)return;
+  e.preventDefault();pickCombo(it.dataset.v);
+});
+document.addEventListener('mousedown',e=>{
+  if(comboFor&&e.target!==comboFor&&!comboPop.contains(e.target))closeCombo();
+});
+window.addEventListener('scroll',()=>{if(comboFor)openCombo(comboFor);},true);
+
+function copyText(t){
+  if(navigator.clipboard&&navigator.clipboard.writeText)return navigator.clipboard.writeText(t).catch(()=>copyFallback(t));
+  return copyFallback(t);
+}
+function copyFallback(t){
+  return new Promise(res=>{
+    const ta=document.createElement('textarea');ta.value=t;ta.style.position='fixed';ta.style.opacity='0';
+    document.body.appendChild(ta);ta.select();
+    try{document.execCommand('copy');}catch(e){}
+    ta.remove();res();
+  });
+}
 document.getElementById('btnPine').onclick=()=>{
   const d=state.data[state.focus];if(!d||!d.strikes||!d.strikes.length)return;
-  const nodes=[...d.strikes].sort((a,b)=>Math.abs(b.gex)-Math.abs(a.gex)).slice(0,9);
-  const max=Math.abs(nodes[0].gex)||1;
-  let p='//@version=5\nindicator("Kairos GEX \u2014 '+state.focus+' '+new Date().toLocaleString().replace(/"/g,'')+'", overlay=true)\n';
+  const M=metricLabel(state.metric).toUpperCase();
+  const nodes=[...d.strikes].sort((a,b)=>Math.abs(mval(b))-Math.abs(mval(a))).slice(0,9);
+  const max=Math.abs(mval(nodes[0]))||1;
+  let p='//@version=5\nindicator("Kairos '+M+' \u2014 '+state.focus+' '+new Date().toLocaleString().replace(/"/g,'')+'", overlay=true)\n';
   nodes.forEach((n,i)=>{
-    const r=Math.abs(n.gex)/max;
+    const v=mval(n);const r=Math.abs(v)/max;
     const w=r>=0.72?4:r>=0.42?3:r>=0.18?2:1;
-    const col=i===0?'color.yellow':(n.gex>=0?'color.new(color.teal,'+Math.round(60-55*r)+')':'color.new(color.purple,'+Math.round(60-55*r)+')');
-    p+='hline('+n.k+', title="'+(i===0?'KING ':i<3?'G'+i+' ':'')+fmtG(n.gex,d.spot)+'", color='+col+', linewidth='+w+')\n';
+    const col=i===0?'color.yellow':(v>=0?'color.new(color.teal,'+Math.round(60-55*r)+')':'color.new(color.purple,'+Math.round(60-55*r)+')');
+    p+='hline('+n.k+', title="'+(i===0?'KING ':i<3?'G'+i+' ':'')+mdisp(v,d.spot)+'", color='+col+', linewidth='+w+')\n';
   });
-  const fl=flipFor(d);
+  const fl=flipFor(state.focus,d);
   if(fl)p+='hline('+(+fl.price).toFixed(2)+', title="FLIP", color=color.aqua, linestyle=hline.style_dashed, linewidth=2)\n';
-  navigator.clipboard.writeText(p).then(()=>{
+  copyText(p).then(()=>{
     const b=document.getElementById('btnPine');const t=b.textContent;b.textContent='Copied \u2713';
     setTimeout(()=>b.textContent=t,1600);
   });
 };
 
-if(!localStorage.getItem('kairos_tok')){
-  localStorage.setItem('kairos_tok',DEFAULT_TOKEN);
-  localStorage.setItem('kairos_env','production');
-}
-state.tradierToken=localStorage.getItem('kairos_tok')||DEFAULT_TOKEN;
-state.tradierEnv=localStorage.getItem('kairos_env')||'production';
+document.addEventListener('visibilitychange',()=>{
+  if(document.hidden){clearTimeout(state._t);persistHistory(true);}
+  else{refresh(false).finally(schedule);}
+});
+window.addEventListener('beforeunload',()=>persistHistory(true));
+
+if(!state.tradierToken)document.getElementById('bannerText').innerHTML='Delayed CBOE mode \u2014 add a free Tradier token in <b>Settings</b> for live data';
+{const si=sessionInfo();document.getElementById('sessInfo').innerHTML=`Session <b style="color:var(--text)">${si.sess}</b> · OI as-of <b style="color:var(--text)">${si.oi}</b> close`;}
 renderTrinity();renderCards();
-refresh();
-function schedule(){clearTimeout(state._t);state._t=setTimeout(async()=>{await refresh();schedule();},state.pollSec*1000);}
-schedule();
-window.Kairos={state,refresh,getSym,kingOf};
-console.log('%cKairos v4.1 — Imbalance view, weekly ceiling/floor, spot markers, \u0394 pills','color:#f2c14e;font-weight:bold');
+refresh(false).finally(schedule);
+function schedule(){clearTimeout(state._t);if(document.hidden)return;state._t=setTimeout(async()=>{await refresh(false);schedule();},state.pollSec*1000);}
+window.Kairos={state,refresh,getSym,kingOf,buildFromChains,buildImbalance,flowLean,exposureProfile};
+console.log('%cKairos v7.1 \u2014 GEX/VEX, Flow Tape, smoothness pass: pending-refresh queue, Triad-wipe fix, spot glow, 3-across mobile','color:#f2c14e;font-weight:bold');
 </script>
 </body>
 </html>
