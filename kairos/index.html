@@ -1034,7 +1034,7 @@ function renderTrinity(){
     const cw=callWall(d.strikes),pw=putWall(d.strikes);
     const maxAbs=Math.max(...(d.strikes||[]).map(x=>Math.abs(mval(x))),1);
     const srcMap={'tradier-live':'live','tradier-sandbox':'sandbox','cboe':'cboe','demo':'demo'};
-    const srcTxt={'tradier-live':'Tradier Live','tradier-sandbox':'Sandbox','cboe':'CBOE','demo':'Demo'};
+    const srcTxt={'tradier-live':'Live','tradier-sandbox':'Sandbox','cboe':'CBOE','demo':'Demo'};
     const age=state.dataAge[sym]?Date.now()-state.dataAge[sym]:0;
     const staleB=age>3*state.pollSec*1000?`<span class="badge-src stale" data-tip="No successful update for ${Math.round(age/1000)}s — showing the last good snapshot">stale</span>`:'';
 
