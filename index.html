@@ -1118,7 +1118,7 @@ function chartSVG(p,W,H,big){
   const pts=p.pts.map(([x,yv])=>`${sx(x).toFixed(1)},${sy(yv).toFixed(1)}`).join(' ');
   let s=`<polyline points="${pts}" fill="none" stroke="${big?'#e8eef7':DIM}" stroke-width="${big?2.2:1.6}" stroke-linejoin="round" stroke-linecap="round"/>`;
   (p.lines||[]).forEach(([x1,y1,x2,y2])=>{ s+=`<line x1="${sx(x1).toFixed(1)}" y1="${sy(y1).toFixed(1)}" x2="${sx(x2).toFixed(1)}" y2="${sy(y2).toFixed(1)}" stroke="${CYAN}" stroke-width="1.1" stroke-dasharray="4 4" opacity=".8"/>`; });
-  if(p.arr){ const last=p.pts[p.pts.length-1], ax=sx(last[0]), ay=sy(last[1]), up=p.arr==='up', col=up?GREEN:RED, hw=big?7:5, hh=big?10:7, gap=big?5:3; const tip=up?ay-gap-hh:ay+gap+hh, base=up?ay-gap:ay+gap; s+=`<path d="M${ax.toFixed(1)} ${tip.toFixed(1)} L${(ax-hw).toFixed(1)} ${base.toFixed(1)} L${(ax+hw).toFixed(1)} ${base.toFixed(1)} Z" fill="${col}"/>`; }`}
+  if(p.arr){ const last=p.pts[p.pts.length-1], ax=sx(last[0]), ay=sy(last[1]), up=p.arr==='up', col=up?GREEN:RED, hw=big?7:5, hh=big?10:7, gap=big?5:3; const tip=up?ay-gap-hh:ay+gap+hh, base=up?ay-gap:ay+gap; s+=`<path d="M${ax.toFixed(1)} ${tip.toFixed(1)} L${(ax-hw).toFixed(1)} ${base.toFixed(1)} L${(ax+hw).toFixed(1)} ${base.toFixed(1)} Z" fill="${col}"/>`; }
   return `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" aria-hidden="true">${s}</svg>`;
 }
 function patternThumb(p,big){ const W=big?380:128, H=big?210:76; return p.c ? candleSVG(p.c,W,H,big) : chartSVG(p,W,H,big); }
