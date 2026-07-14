@@ -227,7 +227,7 @@ footer{text-align:center;padding:12px;font-size:.65rem;color:#3f4656;border-top:
     <button class="btn active" id="btnTrinity" data-tip="Three lenses in balance — SPXW · SPY · QQQ. Alignment = conviction, divergence = size down or pass.">Triad</button>
     <button class="btn" id="btnSingle">Single</button>
     <button class="btn" id="btnChart">Chart</button>
-    <button class="btn" id="btnIdeas">Ideas</button>
+    <button class="btn" id="btnIdeas">Aether</button>
     <button class="btn" id="btnImb">Imbalance</button>
     <button class="btn" id="btnTape" data-tip="Opening-flow tape — where fresh option dollars are hitting today, ranked by premium.">Tape</button>
     <div class="mtoggle" id="mtoggle" data-tip="Which exposure the map shows. GEX=gamma (pin/momentum). VEX=vanna (how walls move when IV moves).">
@@ -346,7 +346,7 @@ footer{text-align:center;padding:12px;font-size:.65rem;color:#3f4656;border-top:
   <div class="fg">
     <label>Tradier API token</label>
     <input type="password" id="tok" style="width:100%" placeholder="paste your token (stored only in this browser)" autocomplete="off">
-    <div class="hint">Free at tradier.com (a sandbox token works). Leave empty to run on delayed CBOE data. Never hard-code or share a token inside this file — each person pastes their own here.</div>
+    <div class="hint">Free at tradier.com. Leave empty to run on delayed CBOE data.</div>
   </div>
   <div class="fg"><label>Refresh every (seconds)</label><input type="text" id="poll" value="10" style="width:80px" data-tip="10 is the floor. Scheduled polls only tick live quotes (1 batched request) — chains re-pull every ~90s — well under Tradier's 120 req/min limit."></div>
   <div class="fg"><label>Map shows</label><select id="sizeBasis" style="width:100%"><option value="oi">Standing positions — open interest, updates daily</option><option value="vol">Today's flow — volume traded so far this session</option></select></div>
