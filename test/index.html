@@ -264,6 +264,23 @@ footer{text-align:center;padding:12px;font-size:.65rem;color:#3f4656;border-top:
 .zfoot{font-size:.58rem;font-family:'JetBrains Mono';color:#f59e0b;margin-top:7px;border-top:1px solid #1a1f2b;padding-top:6px;line-height:1.5}
 .zhon{margin-top:12px;background:#0a0c12;border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:.64rem;color:var(--muted);line-height:1.7}
 .zhon b{color:#f59e0b}
+.zspec{display:flex;flex-direction:column;gap:2.5px;margin:2px 0 6px}
+.zspec>div{display:flex;gap:8px;align-items:baseline}
+.zspec span{font-family:'JetBrains Mono';font-size:.55rem;letter-spacing:.09em;color:var(--muted);width:66px;flex:0 0 auto;padding-top:1px}
+.zspec b{font-weight:600;font-family:'JetBrains Mono';font-size:.71rem;color:var(--text)}
+.zspec em{font-style:normal;font-weight:700}
+.zspec i,.zlvls i{font-style:normal;color:var(--muted);font-weight:400;font-size:.6rem}
+.zlvls{width:100%;border-collapse:collapse;margin:7px 0 3px;font-family:'JetBrains Mono'}
+.zlvls th{font-size:.53rem;letter-spacing:.09em;color:var(--muted);text-align:right;font-weight:600;padding:2px 6px;border-bottom:1px solid #1a1f2b}
+.zlvls th:first-child{text-align:left}
+.zlvls td{font-size:.69rem;font-weight:600;text-align:right;padding:3px 6px;border-bottom:1px solid #12161f;white-space:nowrap}
+.zlvls td:first-child{text-align:left;font-size:.55rem;letter-spacing:.07em;color:var(--muted)}
+.zlvls tr.ls td:nth-child(2){color:var(--red)}
+.zlvls tr.l1 td:nth-child(2){color:var(--cyan)}
+.zlvls tr.l2 td:nth-child(2){color:var(--pika)}
+.zlvls tr.lr td{border-bottom:none;color:var(--text)}
+.zlvls .up{color:var(--green)}
+.zlvls .dn{color:var(--red)}
 @media(max-width:760px){.zgrid{grid-template-columns:1fr}.zbtn{margin-left:0}}
 </style>
 </head>
@@ -274,7 +291,7 @@ footer{text-align:center;padding:12px;font-size:.65rem;color:#3f4656;border-top:
     <button class="btn active" id="btnTrinity" data-tip="Three lenses in balance — SPXW · SPY · QQQ. Alignment = conviction, divergence = size down or pass.">Triad</button>
     <button class="btn" id="btnSingle">Single</button>
     <button class="btn" id="btnChart">Chart</button>
-    <button class="btn" id="btnIdeas">Ideas</button>
+    <button class="btn" id="btnIdeas">Aether</button>
     <button class="btn" id="btnImb">Imbalance</button>
     <button class="btn" id="btnTape" data-tip="Opening-flow tape — where fresh option dollars are hitting today, ranked by premium.">Tape</button>
     <div class="mtoggle" id="mtoggle" data-tip="Which exposure the map shows. GEX=gamma (pin/momentum). VEX=vanna (how walls move when IV moves).">
@@ -339,7 +356,7 @@ footer{text-align:center;padding:12px;font-size:.65rem;color:#3f4656;border-top:
       <h3 style="margin-bottom:0">Surfaced Ideas</h3>
       <div class="mtoggle" id="aetherTabs">
         <button data-a="swing" class="on" data-tip="Multi-day swing ideas — GEX regime × daily trend × intraday tape × opening flow. 30–45 DTE horizon.">Swing</button>
-        <button data-a="zero" data-tip="Kairos Zero — same-day (0DTE/1DTE) setups built on the 0DTE-only dealer book, the live tape, and the session clock. Long premium only, journaled fires.">0DTE</button>
+        <button data-a="zero" data-tip="Kairos Zero — same-day (0DTE/1DTE) setups built on the 0DTE-only dealer book, the live tape, and the session clock. Long premium only, journaled fires.">Ƶero</button>
       </div>
       <span id="zeroClock" class="hidden" style="margin-left:auto;font-size:.66rem;color:var(--muted);font-family:'JetBrains Mono'"></span>
     </div>
@@ -527,7 +544,13 @@ function metricLabel(m){return m==='vex'?'Vanna':'Gamma';}
 function mval(s,metric){metric=metric||state.metric;return metric==='vex'?(s.vex||0):(s.gex||0);}
 function fmtG(v,spot){return fmt(state.unit==='pt'&&spot?v/(spot*0.01):v);}
 function mdisp(v,spot){return state.metric==='gex'?fmtG(v,spot):fmt(v);}
-function fmt(v){const a=Math.abs(v);if(a>=1e9)return(v/1e9).toFixed(2)+'B';if(a>=1e6)return(v/1e6).toFixed(1)+'M';if(a>=1e3)return(v/1e3).toFixed(1)+'K';return Math.round(v)+'';}
+function fmt(v){
+  const a=Math.abs(v);
+  if(a<1e3)return Math.round(v)+'';
+  const k=v/1e3;
+  const decimals=Math.abs(k)<100?1:0;
+  return k.toLocaleString('en-US',{minimumFractionDigits:decimals,maximumFractionDigits:decimals})+'K';
+}
 function dealerAdj(u,a){return state.dealerMode==='shortall'?-a:state.dealerMode==='custom'?a*(1-2*state.customShort):u;}
 
 function kingOf(s,metric){let m=0,k=null;(s||[]).forEach(x=>{const v=Math.abs(mval(x,metric));if(v>m){m=v;k=x}});return k;}
@@ -2211,8 +2234,7 @@ function zMapBar(c){
   const pts=[c.stop,c.spotAt,c.t1,c.t2];
   const lo=Math.min(...pts),hi=Math.max(...pts),W=v=>((v-lo)/((hi-lo)||1)*100);
   const mk=(v,cls,lab)=>'<span class="zmk '+cls+'" style="left:'+W(v).toFixed(1)+'%" title="'+lab+' '+v+'"></span>';
-  return '<div class="zmap"><div class="zbar"></div>'+mk(c.stop,'mstop','stop')+mk(c.spotAt,'ment','entry')+mk(c.t1,'mt1','T1')+mk(c.t2,'mt2','T2')+'</div>'+
-    '<div class="zlabels"><span>STOP '+c.stop+'</span><span>ENTRY '+c.spotAt+'</span><span>T1 '+c.t1+'</span><span>T2 '+c.t2+'</span></div>';
+  return '<div class="zmap"><div class="zbar"></div>'+mk(c.stop,'mstop','stop')+mk(c.spotAt,'ment','entry')+mk(c.t1,'mt1','T1')+mk(c.t2,'mt2','T2')+'</div>';
 }
 function zGatesHtml(gates){
   return '<div class="zgates">'+gates.map(g=>'<div class="zg '+(g.ok?'ok':'no')+'"><span>'+(g.ok?'\u2713':'\u2717')+'</span><b>'+g.n+'</b><i>'+g.txt+'</i></div>').join('')+'</div>';
@@ -2220,12 +2242,25 @@ function zGatesHtml(gates){
 function zCardHtml(c){
   const sideTag='<span class="tag '+(c.side>0?'long':'short')+'">'+(c.side>0?'LONG':'SHORT')+'</span>';
   const pk=c.peak&&c.entry?((c.peak-c.entry)/c.entry*100):0;
-  const est=c.est?('<div class="zrow zest"><span>at stop <b class="dn">'+c.est.ps+'%</b></span><span>at T1 <b class="up">+'+c.est.p1+'%</b></span><span>at T2 <b class="up">+'+c.est.p2+'%</b></span><span>prem R:R <b>'+(c.est.rrP!=null?c.est.rrP.toFixed(2)+':1':'\u2014')+'</b></span></div>'):'';
+  const est=c.est||null;
+  const d$=p=>'$'+Math.max(0,c.entry*(1+p/100)).toFixed(2);
+  const cCell=p=>est?('<b class="'+(p>=0?'up':'dn')+'">'+d$(p)+'</b> <i>('+(p>=0?'+':'')+p+'%)</i>'):'<i>\u2014</i>';
+  const spec='<div class="zspec">'+
+    '<div><span>CONTRACT</span><b>'+c.sym+' '+String(c.e).slice(5)+' <em style="color:'+(c.call?'var(--green)':'var(--red)')+'">'+c.k+(c.call?'C':'P')+'</em> \u00b7 \u0394'+c.dlv+(c.spr!=null?' <i>\u00b7 spread '+c.spr+'%</i>':'')+'</b></div>'+
+    '<div><span>FIRED</span><b>'+c.hm+' ET'+(est?' <i>\u00b7 ~'+est.eta+'m runway</i>':'')+' <i>\u00b7 '+(c.is0?'0DTE':'1DTE')+'</i></b></div>'+
+    '<div><span>MARKS</span><b>last $'+(c.last!=null?c.last:'\u2014')+' <i>\u00b7 peak '+(pk>0?'+':'')+pk.toFixed(0)+'%</i></b></div>'+
+    '</div>';
+  const lvls='<table class="zlvls">'+
+    '<tr><th>LEVEL</th><th>UNDERLYING</th><th>CONTRACT (EST)</th></tr>'+
+    '<tr class="le"><td>ENTRY</td><td>'+c.spotAt+'</td><td><b>~$'+c.entry+'</b> <i>mid</i></td></tr>'+
+    '<tr class="ls"><td>STOP</td><td>'+c.stop+'</td><td>'+cCell(est?est.ps:0)+'</td></tr>'+
+    '<tr class="l1"><td>T1</td><td>'+c.t1+'</td><td>'+cCell(est?est.p1:0)+'</td></tr>'+
+    '<tr class="l2"><td>T2</td><td>'+c.t2+'</td><td>'+cCell(est?est.p2:0)+'</td></tr>'+
+    '<tr class="lr"><td>R:R</td><td>'+c.rrU+':1</td><td>'+(est&&est.rrP!=null?est.rrP.toFixed(2)+':1':'\u2014')+'</td></tr>'+
+    '</table>';
   return '<div class="zcard">'+zStatusRibbon(c)+
-    '<div class="zhead"><div><span class="card-sym">'+c.sym+'</span>'+sideTag+'<span class="zsetup">'+c.setup+(c.is0?' \u00b7 0DTE':' \u00b7 1DTE')+'</span></div><div class="score">'+c.score+'</div></div>'+
-    '<div class="zcon mono">'+c.sym+' '+String(c.e).slice(5)+' <b style="color:'+(c.call?'var(--green)':'var(--red)')+'">'+c.k+(c.call?'C':'P')+'</b> \u00b7 \u0394'+c.dlv+' \u00b7 entry ~$'+c.entry+' mid'+(c.spr!=null?' \u00b7 spr '+c.spr+'%':'')+'</div>'+
-    zMapBar(c)+est+
-    '<div class="zrow" style="color:var(--muted)">R:R '+c.rrU+':1 und \u00b7 fired '+c.hm+' ET'+(c.est?' \u00b7 ~'+c.est.eta+'m runway':'')+' \u00b7 last $'+(c.last||'\u2014')+' \u00b7 peak '+(pk>0?'+':'')+pk.toFixed(0)+'%</div>'+
+    '<div class="zhead"><div><span class="card-sym">'+c.sym+'</span>'+sideTag+'<span class="zsetup">'+c.setup+'</span></div><div class="score">'+c.score+'</div></div>'+
+    spec+zMapBar(c)+lvls+
     (c.gates?zGatesHtml(c.gates):'')+
     '<div style="display:flex;gap:5px;flex-wrap:wrap;margin:6px 0 3px">'+(c.drivers||[]).map(x=>'<span class="drv">'+x+'</span>').join('')+'</div>'+
     '<div class="zwhy">'+c.why+'</div>'+
