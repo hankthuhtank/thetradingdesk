@@ -42,7 +42,7 @@ select,input{background:var(--panel2);border:1px solid var(--border);color:var(-
   #presetBar::-webkit-scrollbar{display:none}
   .pchip{padding:4px 9px;font-size:.68rem}
 }
-.banner{background:#0a1218;border-bottom:1px solid #152028;padding:5px 14px;font-size:.7rem;color:var(--muted);display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.banner{background:#0a1218;border-bottom:1px solid #152028;padding:5px 14px;font-size:.7rem;color:var(--muted);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .banner .live{color:var(--green);font-weight:600}
 #sessInfo{color:var(--muted)}
 main{padding:10px;display:flex;flex-direction:column;gap:10px}

@@ -787,12 +787,10 @@ function renderTrinity(){
       <div class="p-head">
         <div class="p-left">
           <input class="ticker-sel" data-old="${sym}" value="${sym}" style="width:86px" autocomplete="off" data-tip="Type any optionable ticker and press Enter">
-          <span class="price mono">$${(d.spot||0).toFixed(2)}</span>
-          <span class="badge-src ${srcMap[d.source]||'demo'}">${srcTxt[d.source]||d.source}</span>${staleB}
+          <span class="price mono">$${(d.spot||0).toFixed(2)}</span>${staleB}
         </div>
         <div class="king-pill ${pillCls()}${kg&&mval(kg)<0?' kneg':''}" data-tip="Biggest absolute ${metricLabel(state.metric)} node — the magnet for that force. Strike first: that is the level price is drawn to. Exposure size is secondary.">★ ${mlab} ${kg?kg.k:'\u2014'}${kg?` <i style="font-style:normal;opacity:.66;font-weight:600">${mdisp(mval(kg),d.spot)}</i>`:''}</div>
       </div>
-      <div class="pstats"></div>
       <div class="strikes"></div>`;
     el.appendChild(p);
     p.querySelector('.ticker-sel').onchange=e=>{
@@ -807,17 +805,6 @@ function renderTrinity(){
       localStorage.setItem('kairos_ticks',state.trinityTickers.join(','));
       state.focus=neu;refresh(false);
     };
-    const ps=panelStats(sym,d);
-    let regimeChip;
-    if(state.metric==='gex')regimeChip=`<span class="regime ${ps.net1>=0?'pos':'neg'}" data-tip="Net dealer gamma within 1% of spot. + = dealers fade moves (range/pin). − = dealers chase (trend/momentum).">${ps.net1>=0?'+GEX pin':'\u2212GEX momo'}</span>`;
-    else regimeChip=`<span class="regime ${ps.net1>=0?'pos':'neg'}" data-tip="Net dealer vanna near spot. +VEX: rising IV → dealers sell into strength / falling IV → dealer bid (supports low-vol drift, caps vol spikes). −VEX: dealers chase IV, moves amplify on vol expansion.">${ps.net1>=0?'+VEX bid':'\u2212VEX chase'}</span>`;
-    p.querySelector('.pstats').innerHTML=`
-      ${regimeChip}
-      <span data-tip="Net exposure within \u00b11% of spot">Net\u00b11% <b style="color:${ps.net1>=0?'var(--teal)':'#e879f9'}">${mdisp(ps.net1,d.spot)}</b></span>
-      ${ps.fl?`<span data-tip="Zero-${metricLabel(state.metric)} flip from the Black-Scholes re-priced profile">Flip <b>${(+ps.fl).toFixed(d.spot>2000?0:1)}</b></span>`:''}
-      ${ps.em?`<span data-tip="Expected move to nearest expiry, from ATM implied vol (S \u00d7 IV \u00d7 \u221aT)">EM <b>\u00b1${ps.em.toFixed(d.spot>2000?0:2)}</b></span>`:''}
-      ${ps.vel!=null?`<span data-tip="King strength change over ~15 minutes">\u039415m <b style="color:${ps.vel>=0?'var(--teal)':'#e879f9'}">${ps.vel>=0?'+':''}${ps.vel.toFixed(1)}%</b></span>`:''}`;
-
     const listEl=p.querySelector('.strikes');
     const kcls=kingCls();
     let kingRow=null,spotRow=null;
@@ -1198,14 +1185,15 @@ async function refresh(force){
     recordSnapshots();
     const sources=Object.values(results).map(d=>d.source);
     let b='';
-    if(sources.some(s=>s==='tradier-live'))b=`<span class="live">● LIVE</span> · ${state.sizeBasis==='vol'?'today\u2019s flow':'positioning (OI)'} · ${metricLabel(state.metric)} spot-fresh · chains ~${Math.round(CHAIN_TTL/1000)}s`;
+    if(sources.some(s=>s==='tradier-live'))b=`<span class="live">● LIVE</span>`;
     else if(sources.some(s=>s==='tradier-sandbox'))b=`● TRADIER SANDBOX — delayed data`;
     else if(sources.some(s=>s==='cboe'))b=`● CBOE DELAYED (~15 min)${state.tradierToken?'':' — add a free Tradier token in Settings for live data'}`;
     else b=`● NO DATA — all sources failed (token? network?)`;
-    document.getElementById('bannerText').innerHTML=b;
     const si=sessionInfo();
-    document.getElementById('sessInfo').innerHTML=`Session <b style="color:var(--text)">${si.sess}</b> · OI as-of <b style="color:var(--text)">${si.oi}</b> close`;
-    document.getElementById('lastUp').textContent='Last: '+new Date().toLocaleTimeString();
+    if(sources.some(s=>s==='tradier-live'))b+=` <span style="color:var(--muted)">\u00b7 Session <b style="color:var(--text)">${si.sess}</b> \u00b7 OI as-of <b style="color:var(--text)">${si.oi}</b></span>`;
+    document.getElementById('bannerText').innerHTML=b;
+    const se=document.getElementById('sessInfo');if(se)se.innerHTML='';
+    const lu=document.getElementById('lastUp');if(lu)lu.textContent='';
     if(state.view==='single')state.singleLoading=false;
     if(state.view==='trinity'||state.view==='single')renderTrinity();
     if(state.view==='ideas')renderCards();
@@ -1463,7 +1451,7 @@ document.addEventListener('visibilitychange',()=>{
 window.addEventListener('beforeunload',()=>persistHistory(true));
 
 if(!state.tradierToken)document.getElementById('bannerText').innerHTML='Delayed CBOE mode \u2014 add a free Tradier token in <b>Settings</b> for live data';
-{const si=sessionInfo();document.getElementById('sessInfo').innerHTML=`Session <b style="color:var(--text)">${si.sess}</b> · OI as-of <b style="color:var(--text)">${si.oi}</b> close`;}
+
 renderTrinity();renderCards();
 refresh(false).finally(schedule);
 function schedule(){clearTimeout(state._t);if(document.hidden)return;state._t=setTimeout(async()=>{await refresh(false);schedule();},state.pollSec*1000);}
