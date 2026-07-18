@@ -125,6 +125,21 @@ header{position:relative;padding:72px 0 40px;border-bottom:1px solid var(--line)
 .hm .hc{font-family:var(--mono);font-size:.74rem;font-weight:600;align-self:flex-end}
 .hm.skel{background:linear-gradient(90deg,var(--panel) 25%,var(--panel-2) 50%,var(--panel) 75%);background-size:200% 100%;animation:shim 1.4s infinite}
 @keyframes shim{to{background-position:-200% 0}}
+/* mobile: hero stacks so the live command center + heatmap get full width */
+@media(max-width:880px){
+  header{padding:52px 0 32px}
+  .hero-grid{grid-template-columns:1fr;gap:30px}
+  .command{width:100%}
+  .command .cbody{padding:16px}
+  .idx-row{gap:7px}
+  .heatmap{gap:6px}
+  .hm{min-height:64px;padding:11px 9px}
+  .hm .hs{font-size:.72rem} .hm .hc{font-size:.8rem} .hm .hn{font-size:.6rem}
+}
+@media(max-width:400px){
+  .heatmap{grid-template-columns:repeat(3,1fr)}
+  .idx .p{font-size:1.05rem}
+}
 
 /* sections */
 .section{padding:96px 0;position:relative}
@@ -369,6 +384,99 @@ body.locked{overflow:hidden}
 .earn-item .ewhen{margin-left:auto;font-family:var(--mono);font-size:.58rem;padding:3px 8px;border-radius:5px;background:var(--panel-2);color:var(--dim);text-transform:uppercase;letter-spacing:.06em}
 .earn-item .ewhen.bmo{color:var(--gold)} .earn-item .ewhen.amc{color:var(--violet)}
 
+/* ===== earnings weekly calendar (inline card) ===== */
+.flag.wide{grid-column:1/-1}
+.ew-head{display:flex;align-items:center;gap:12px;margin:2px 0 14px;flex-wrap:wrap;position:relative}
+.ew-range{margin-left:auto;font-family:var(--mono);font-size:.62rem;letter-spacing:.1em;color:var(--gold);text-transform:uppercase;border:1px solid rgba(245,185,66,.3);border-radius:100px;padding:5px 12px;background:rgba(245,185,66,.06)}
+.ew-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:9px;position:relative}
+.ew-day{border:1px solid var(--line);border-radius:12px;background:var(--panel);padding:13px 12px;display:flex;flex-direction:column;gap:9px;min-height:168px}
+.ew-day.today{border-color:rgba(245,185,66,.55);background:linear-gradient(180deg,rgba(245,185,66,.07),var(--panel))}
+.ew-day.past{opacity:.45}
+.ew-dh{display:flex;align-items:baseline;justify-content:space-between;border-bottom:1px solid var(--line-2);padding-bottom:8px}
+.ew-dow{font-family:var(--disp);font-weight:700;text-transform:uppercase;font-size:.9rem;letter-spacing:.03em}
+.ew-day.today .ew-dow{color:var(--gold)}
+.ew-date{font-family:var(--mono);font-size:.64rem;color:var(--faint)}
+.ew-chips{display:flex;flex-direction:column;gap:7px;flex:1}
+.ew-chip{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:.74rem;font-weight:600;color:var(--text);line-height:1}
+.ew-chip .dot{width:6px;height:6px;border-radius:50%;flex:0 0 auto;background:var(--faint)}
+.ew-chip .dot.bmo{background:var(--gold);box-shadow:0 0 6px var(--gold-glow)} .ew-chip .dot.amc{background:var(--violet);box-shadow:0 0 6px var(--violet-bg)}
+.ew-foot{font-family:var(--mono);font-size:.58rem;letter-spacing:.05em;text-transform:uppercase;color:var(--cyan);margin-top:auto}
+.ew-quiet{font-family:var(--mono);font-size:.62rem;color:var(--faint);margin:auto 0}
+.ew-legend{display:flex;gap:16px;margin-top:14px;font-family:var(--mono);font-size:.56rem;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);flex-wrap:wrap}
+.ew-legend span{display:inline-flex;align-items:center;gap:6px}
+.ew-legend i{width:6px;height:6px;border-radius:50%;display:inline-block}
+.ew-legend i.bmo{background:var(--gold)} .ew-legend i.amc{background:var(--violet)}
+@media(max-width:760px){
+  .ew-grid{grid-auto-flow:column;grid-auto-columns:minmax(146px,1fr);grid-template-columns:none;overflow-x:auto;scroll-snap-type:x proximity;padding-bottom:8px;-webkit-overflow-scrolling:touch;scrollbar-width:thin}
+  .ew-day{scroll-snap-align:start}
+  .ew-range{margin-left:0}
+}
+
+/* ===== three live boards row ===== */
+.boards{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:16px}
+.flag.board{padding:24px}
+.flag.board .fname{font-size:1.15rem}
+.flag.board .bdesc{color:var(--dim);font-size:.9rem;margin-bottom:14px;position:relative}
+.board-live{position:relative;border-top:1px solid var(--line-2);margin-top:auto;padding-top:13px;display:flex;flex-wrap:wrap;gap:6px 14px;font-family:var(--mono);font-size:.72rem;color:var(--dim);min-height:20px}
+.board-live b{color:var(--text);font-weight:600}
+.board-live .lg{color:var(--faint);font-size:.6rem;letter-spacing:.06em;text-transform:uppercase}
+.board-tap{position:relative;font-family:var(--mono);font-size:.6rem;letter-spacing:.1em;color:var(--accent,var(--cyan));text-transform:uppercase;margin-top:12px}
+@media(max-width:900px){.boards{grid-template-columns:1fr}}
+
+/* ===== modal internals: boards, range bars, regime, wire ===== */
+.mrow{display:flex;justify-content:space-between;align-items:center;gap:12px;border:1px solid var(--line);border-radius:11px;padding:13px 15px;margin-bottom:9px;background:var(--panel)}
+.mrow .mn{font-weight:600;font-size:.94rem}
+.mrow .mn small{color:var(--faint);font-family:var(--mono);font-size:.64rem;margin-left:8px;letter-spacing:.04em}
+.mrow .mp{text-align:right;font-family:var(--mono);white-space:nowrap}
+.mrow .mp .v{font-size:1.02rem;font-weight:600}
+.mrow .mp .c{font-size:.72rem}
+.idxrow{border:1px solid var(--line);border-radius:11px;padding:13px 15px;margin-bottom:9px;background:var(--panel)}
+.idxrow .top{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+.idxrow .nm{font-weight:600;font-size:.92rem}
+.idxrow .nm small{color:var(--faint);font-family:var(--mono);font-size:.62rem;margin-left:7px}
+.idxrow .pr{font-family:var(--mono);text-align:right;white-space:nowrap}
+.idxrow .pr .v{font-size:1rem;font-weight:600}
+.idxrow .pr .c{font-size:.7rem}
+.rngbar{position:relative;height:6px;border-radius:4px;background:linear-gradient(90deg,var(--red-bg),var(--panel-3) 45%,var(--panel-3) 55%,var(--green-bg));margin-top:11px;border:1px solid var(--line-2)}
+.rngbar i{position:absolute;top:50%;width:12px;height:12px;border-radius:50%;background:var(--cyan);box-shadow:0 0 10px var(--cyan-glow);transform:translate(-50%,-50%);border:2px solid var(--void)}
+.rng-lab{display:flex;justify-content:space-between;font-family:var(--mono);font-size:.56rem;color:var(--faint);margin-top:6px;letter-spacing:.04em}
+.msub-h{font-family:var(--mono);font-size:.58rem;letter-spacing:.16em;text-transform:uppercase;color:var(--faint);margin:20px 0 11px;display:flex;align-items:center;gap:10px}
+.msub-h::after{content:"";flex:1;height:1px;background:var(--line-2)}
+.breadth{border:1px solid var(--line);border-radius:11px;padding:14px 15px;background:var(--panel)}
+.breadth .bt{display:flex;justify-content:space-between;font-family:var(--mono);font-size:.74rem;margin-bottom:9px}
+.breadth .bt .g{color:var(--green)} .breadth .bt .r{color:var(--red)}
+.bbar{height:8px;border-radius:5px;overflow:hidden;display:flex;background:var(--red-bg)}
+.bbar i{display:block;height:100%;background:var(--green)}
+.breadth .lead{display:flex;justify-content:space-between;gap:12px;margin-top:11px;font-family:var(--mono);font-size:.68rem;color:var(--dim)}
+.breadth .lead b{font-weight:600}
+.regime{margin-top:16px;border:1px solid var(--line);border-radius:12px;padding:15px 16px;background:var(--bg-2)}
+.regime .rl{font-family:var(--mono);font-size:.56rem;letter-spacing:.16em;text-transform:uppercase;color:var(--faint);margin-bottom:8px}
+.regime .rv{font-family:var(--disp);font-weight:700;font-size:1.2rem;display:flex;align-items:center;gap:10px}
+.regime .rd{font-size:.82rem;color:var(--dim);margin-top:7px;line-height:1.55}
+.pill{display:inline-block;font-family:var(--mono);font-size:.58rem;letter-spacing:.08em;text-transform:uppercase;padding:4px 10px;border-radius:100px;border:1px solid var(--line);color:var(--dim)}
+.pill.on{color:var(--green);border-color:rgba(52,211,153,.4);background:var(--green-bg)}
+.pill.off{color:var(--red);border-color:rgba(248,113,113,.4);background:var(--red-bg)}
+.pill.neu{color:var(--cyan);border-color:rgba(34,211,238,.4);background:var(--cyan-glow)}
+.wire-item{display:block;border-bottom:1px solid var(--line-2);padding:13px 0;transition:opacity .15s}
+.wire-item:first-child{padding-top:2px}
+.wire-item:hover{opacity:.72}
+.wire-meta{display:flex;gap:10px;align-items:center;font-family:var(--mono);font-size:.56rem;letter-spacing:.06em;text-transform:uppercase;color:var(--faint);margin-bottom:5px}
+.wire-src{color:var(--cyan);font-weight:600}
+.wire-h{font-size:.94rem;color:var(--text);line-height:1.45}
+.mwk-day{margin-bottom:20px}
+.mwk-dh{display:flex;align-items:baseline;gap:12px;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--line)}
+.mwk-dh .d{font-family:var(--disp);font-weight:700;text-transform:uppercase;font-size:1.05rem}
+.mwk-dh.today .d{color:var(--gold)}
+.mwk-dh .dt{font-family:var(--mono);font-size:.66rem;color:var(--faint)}
+.mwk-dh .ct{margin-left:auto;font-family:var(--mono);font-size:.58rem;letter-spacing:.08em;text-transform:uppercase;color:var(--faint)}
+.mwk-names{display:flex;flex-wrap:wrap;gap:8px}
+.mwk-name{display:flex;align-items:center;gap:7px;font-family:var(--mono);font-size:.78rem;font-weight:600;border:1px solid var(--line);border-radius:8px;padding:7px 11px;background:var(--panel)}
+.mwk-name .dot{width:6px;height:6px;border-radius:50%;background:var(--faint)}
+.mwk-name .dot.bmo{background:var(--gold)} .mwk-name .dot.amc{background:var(--violet)}
+.mwk-name em{font-style:normal;color:var(--faint);font-weight:400;font-size:.66rem}
+.mwk-rest{font-family:var(--mono);font-size:.66rem;color:var(--faint);margin-top:9px;line-height:1.6}
+.mwk-quiet{font-family:var(--mono);font-size:.72rem;color:var(--faint)}
+
 @media(prefers-reduced-motion:reduce){
   html{scroll-behavior:auto}
   .reveal{opacity:1;transform:none;transition:none}
@@ -435,7 +543,7 @@ body.locked{overflow:hidden}
     <div class="sec-head reveal">
       <div class="eyebrow">01 // THE TERMINAL</div>
       <h2 class="disp">The market, <span class="c">live</span> — in one glance.</h2>
-      <p>Real quotes and real structure, never a simulation dressed up as a feed. The heatmap and indices above update on their own; below is this week’s earnings and the two flagship tools that make this desk different.</p>
+      <p>Real quotes and real structure, never a simulation dressed up as a feed. The heatmap and indices above update on their own. Below: the two flagship terminals, this week’s earnings laid out as a calendar, and three live boards that frame the tape before you read any single chart.</p>
     </div>
     <div class="flagship reveal" style="margin-bottom:16px">
       <div class="flag kairos">
@@ -467,16 +575,42 @@ body.locked{overflow:hidden}
         <a class="btn btn-gold fcta" href="/delphi">Launch Delphi →</a>
       </div>
     </div>
-    <div class="flagship reveal">
-      <button class="flag" style="text-align:left;--accent:var(--gold);--accent-fade:rgba(245,185,66,.12)" onclick="openModal('m-earn')">
-        <div class="ftop"><span class="fic" style="border-color:var(--gold);color:var(--gold);background:rgba(245,185,66,.12)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg></span><span class="fname" style="font-size:1.2rem">Earnings This Week<small>LIVE CALENDAR</small></span></div>
-        <p>The names reporting over the next five sessions, with before-open / after-close timing — the events most likely to gap your positions. Tap to open.</p>
-        <div id="earnPreview" style="position:relative"></div>
+    <div class="flagship reveal" style="margin-bottom:16px">
+      <button class="flag wide" style="text-align:left;--accent:var(--gold);--accent-fade:rgba(245,185,66,.14)" onclick="openModal('m-earn')" aria-label="Open the full earnings calendar">
+        <div class="ftop" style="margin-bottom:6px">
+          <span class="fic" style="border-color:var(--gold);color:var(--gold);background:rgba(245,185,66,.12)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg></span>
+          <span class="fname" style="font-size:1.25rem">Earnings This Week<small>LIVE WEEKLY CALENDAR</small></span>
+          <span class="ftag" style="color:var(--gold);border-color:var(--gold)">Live</span>
+        </div>
+        <div class="ew-head"><span class="ew-range" id="earnRange">—</span></div>
+        <div id="earnWeek"><div class="ew-grid">
+          <div class="ew-day"><div class="ew-dh"><span class="ew-dow">Mon</span></div><div class="ew-quiet">Loading…</div></div>
+          <div class="ew-day"><div class="ew-dh"><span class="ew-dow">Tue</span></div><div class="ew-quiet">Loading…</div></div>
+          <div class="ew-day"><div class="ew-dh"><span class="ew-dow">Wed</span></div><div class="ew-quiet">Loading…</div></div>
+          <div class="ew-day"><div class="ew-dh"><span class="ew-dow">Thu</span></div><div class="ew-quiet">Loading…</div></div>
+          <div class="ew-day"><div class="ew-dh"><span class="ew-dow">Fri</span></div><div class="ew-quiet">Loading…</div></div>
+        </div></div>
+        <div class="ew-legend"><span><i class="bmo"></i> Before open</span><span><i class="amc"></i> After close</span><span style="color:var(--cyan)">Tap for the full week, with estimates →</span></div>
       </button>
-      <button class="flag" style="text-align:left;--accent:var(--violet);--accent-fade:rgba(168,85,247,.12)" onclick="openModal('m-market')">
-        <div class="ftop"><span class="fic" style="border-color:var(--violet);color:var(--violet);background:rgba(168,85,247,.12)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 17l5-6 4 3 3-5 6 5M3 21h18"/></svg></span><span class="fname" style="font-size:1.2rem">Market Pulse<small>INDICES + VOLATILITY</small></span></div>
-        <p>Live SPY, QQQ and a VIX-futures proxy — the shared tape the whole floor watches. Context on the regime before you read any single chart.</p>
-        <div style="font-family:var(--mono);font-size:.66rem;color:var(--faint);letter-spacing:.08em;position:relative">TAP TO OPEN · REAL QUOTES, CLEARLY LABELED</div>
+    </div>
+    <div class="boards reveal">
+      <button class="flag board" style="text-align:left;--accent:var(--violet);--accent-fade:rgba(168,85,247,.14)" onclick="openModal('m-market')">
+        <div class="ftop"><span class="fic" style="border-color:var(--violet);color:var(--violet);background:rgba(168,85,247,.12)"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 17l5-6 4 3 3-5 6 5M3 21h18"/></svg></span><span class="fname">Market Pulse<small>BREADTH · RANGE · VOL</small></span></div>
+        <p class="bdesc">The four big index ETFs with intraday range, sector breadth, and the volatility regime — the shared tape the whole floor watches.</p>
+        <div class="board-live" id="pulseLive"><span class="lg">Live board · tap to open</span></div>
+        <div class="board-tap" style="--accent:var(--violet)">Open the pulse board →</div>
+      </button>
+      <button class="flag board" style="text-align:left;--accent:var(--cyan);--accent-fade:rgba(34,211,238,.14)" onclick="openModal('m-cross')">
+        <div class="ftop"><span class="fic"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 2v20M2 12h20M5 5l14 14M19 5L5 19"/></svg></span><span class="fname">Cross-Asset<small>BONDS · USD · GOLD · OIL</small></span></div>
+        <p class="bdesc">The macro backdrop behind equities — Treasuries, the dollar, gold, oil and Bitcoin — read as a single risk-on / risk-off board.</p>
+        <div class="board-live" id="crossLive"><span class="lg">Macro board · tap to open</span></div>
+        <div class="board-tap">Open the macro board →</div>
+      </button>
+      <button class="flag board" style="text-align:left;--accent:var(--gold);--accent-fade:rgba(245,185,66,.14)" onclick="openModal('m-wire')">
+        <div class="ftop"><span class="fic" style="border-color:var(--gold);color:var(--gold);background:rgba(245,185,66,.12)"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 11a9 9 0 0 1 9 9M4 4a16 16 0 0 1 16 16M6 18h.01"/></svg></span><span class="fname">The Wire<small>LIVE MARKET NEWS</small></span></div>
+        <p class="bdesc">The headlines moving the whole tape, pulled live and clearly sourced — context on the day before you open a single chart.</p>
+        <div class="board-live" id="wireLive"><span class="lg">Live newswire · tap to open</span></div>
+        <div class="board-tap" style="--accent:var(--gold)">Open the wire →</div>
       </button>
     </div>
   </div>
@@ -734,17 +868,31 @@ body.locked{overflow:hidden}
 </div></div></div>
 
 <div class="modal" id="m-market" role="dialog" aria-modal="true" aria-label="Market pulse"><div class="mwin"><div class="mbar"><span class="dots"><s></s><s></s><s></s></span><span class="mt">TOOL // MARKET PULSE (LIVE)</span><button class="mx" onclick="closeModal('m-market')" aria-label="Close">×</button></div><div class="mbody">
-  <h3>Market Pulse</h3><p class="msub">Live SPY / QQQ / volatility via Finnhub — real quotes, clearly labeled.</p>
+  <h3>Market Pulse</h3><p class="msub">The four major index ETFs, sector breadth, and the volatility regime — real quotes via Finnhub, clearly labeled.</p>
   <div id="mktKeyWrap" class="mf" style="margin-bottom:16px;display:none"><label for="mktKey">Finnhub API key</label><input id="mktKey" type="text" placeholder="paste your free finnhub.io key" autocomplete="off" spellcheck="false"><button class="mbtn" onclick="saveMktKey()" style="margin-top:10px">Save key &amp; load</button></div>
-  <div id="marketOut"><p class="mnote">Loading live quotes…</p></div>
-  <button class="mbtn ghost" onclick="loadMarket()">Refresh</button>
-  <p class="mnote">Context only — never a call to act. SPY &amp; QQQ are live ETF quotes. Volatility is shown via <b>VIXY</b> (VIX short-term futures ETF), a tradable proxy since spot ^VIX isn’t on Finnhub’s free tier. Free key at <a href="https://finnhub.io/register" target="_blank" rel="noopener">finnhub.io</a> · 60 calls/min.</p>
+  <div id="marketOut"><p class="mnote">Loading the board…</p></div>
+  <button class="mbtn ghost" onclick="loadMarket()" style="margin-top:6px">Refresh</button>
+  <p class="mnote">Context only — never a call to act. Index prices are live ETF quotes; the range bar shows where price sits between the day’s low and high. Breadth is the 11 sector SPDRs. Volatility uses <b>VIXY</b> (VIX short-term futures ETF) as a tradable proxy, since spot ^VIX isn’t on Finnhub’s free tier. Free key at <a href="https://finnhub.io/register" target="_blank" rel="noopener">finnhub.io</a> · 60 calls/min.</p>
 </div></div></div>
 
-<div class="modal" id="m-earn" role="dialog" aria-modal="true" aria-label="Earnings this week"><div class="mwin"><div class="mbar"><span class="dots"><s></s><s></s><s></s></span><span class="mt">LIVE // EARNINGS THIS WEEK</span><button class="mx" onclick="closeModal('m-earn')" aria-label="Close">×</button></div><div class="mbody">
-  <h3>Earnings This Week</h3><p class="msub">Reports over the next five sessions — the events most likely to gap a position.</p>
+<div class="modal" id="m-cross" role="dialog" aria-modal="true" aria-label="Cross-asset macro board"><div class="mwin"><div class="mbar"><span class="dots"><s></s><s></s><s></s></span><span class="mt">TOOL // CROSS-ASSET (LIVE)</span><button class="mx" onclick="closeModal('m-cross')" aria-label="Close">×</button></div><div class="mbody">
+  <h3>Cross-Asset Board</h3><p class="msub">The macro backdrop behind equities — bonds, the dollar, metals, oil and crypto — read as one risk-on / risk-off tape.</p>
+  <div id="crossOut"><p class="mnote">Loading the macro board…</p></div>
+  <button class="mbtn ghost" onclick="loadCross()" style="margin-top:6px">Refresh</button>
+  <p class="mnote">Context only. Each line is a liquid, tradable proxy: <b>TLT</b> long Treasuries, <b>UUP</b> the US dollar, <b>GLD</b> gold, <b>SLV</b> silver, <b>USO</b> WTI crude, and Bitcoin via CoinGecko. The “risk backdrop” read is descriptive, not a signal — it just names what the cross-asset moves are saying together.</p>
+</div></div></div>
+
+<div class="modal" id="m-wire" role="dialog" aria-modal="true" aria-label="The wire — market news"><div class="mwin"><div class="mbar"><span class="dots"><s></s><s></s><s></s></span><span class="mt">LIVE // THE WIRE</span><button class="mx" onclick="closeModal('m-wire')" aria-label="Close">×</button></div><div class="mbody">
+  <h3>The Wire</h3><p class="msub">Live general-market headlines via Finnhub — clearly sourced, links out to the original.</p>
+  <div id="wireOut"><p class="mnote">Loading the wire…</p></div>
+  <button class="mbtn ghost" onclick="loadWire()" style="margin-top:14px">Refresh</button>
+  <p class="mnote">Headlines are third-party and link to their source — this is context, never a call to act. A red-tape day and a green-tape day read differently; know which one you’re in before you trust a single chart.</p>
+</div></div></div>
+
+<div class="modal" id="m-earn" role="dialog" aria-modal="true" aria-label="Earnings this week"><div class="mwin wide"><div class="mbar"><span class="dots"><s></s><s></s><s></s></span><span class="mt">LIVE // EARNINGS THIS WEEK</span><button class="mx" onclick="closeModal('m-earn')" aria-label="Close">×</button></div><div class="mbody">
+  <h3>Earnings This Week</h3><p class="msub" id="earnFullSub">The trading week laid out day by day — notable names highlighted, with consensus EPS where the calendar has it.</p>
   <div id="earnFull"><p class="mnote">Loading the calendar…</p></div>
-  <p class="mnote">Live via Finnhub earnings calendar. <b>BMO</b> = before market open, <b>AMC</b> = after market close. Around earnings, implied volatility is rich and the post-report IV crush is brutal — respect the event.</p>
+  <p class="mnote">Live via Finnhub earnings calendar. <b>BMO</b> = before market open, <b>AMC</b> = after market close. Names shown are the widely-followed large- and mid-caps; the day count includes every confirmed report. Around earnings, implied volatility is rich and the post-report IV crush is brutal — respect the event.</p>
 </div></div></div>
 
 <div class="modal" id="m-pattern" role="dialog" aria-modal="true" aria-label="Pattern detail"><div class="mwin"><div class="mbar"><span class="dots"><s></s><s></s><s></s></span><span class="mt" id="pd-bar">PATTERN</span><button class="mx" onclick="closeModal('m-pattern')" aria-label="Close">×</button></div><div class="mbody" id="pdBody"></div></div></div>
@@ -815,6 +963,7 @@ async function loadIdx(){
   row.innerHTML=IDX.map(([s])=>`<div class="idx"><div class="s">${s}</div><div class="p" style="color:var(--faint)">···</div><div class="ch"></div></div>`).join('');
   try{
     const res=await Promise.all(IDX.map(async([s,n])=>({s,n,q:await fhQuote(s)})));
+    SHARED.idx=res; renderPulsePreview();
     row.innerHTML=res.map(({s,n,q})=>{
       if(typeof q.c!=='number'||q.c===0) return `<div class="idx"><div class="s">${s}</div><div class="p">—</div><div class="ch" style="color:var(--faint)">n/a</div></div>`;
       const up=(q.dp||0)>=0;
@@ -831,6 +980,7 @@ async function loadHeatmap(){
   if(!mktKey()){ grid.innerHTML=SECTORS.map(s=>`<div class="hm" style="background:var(--panel-2)"><div class="hs">${s.sym}</div><div class="hc" style="color:var(--faint)">—</div></div>`).join(''); return; }
   try{
     const res=await Promise.all(SECTORS.map(async s=>({...s,q:await fhQuote(s.sym)})));
+    SHARED.sectors=res; renderPulsePreview();
     grid.innerHTML=res.map(s=>{
       const p=(s.q&&typeof s.q.dp==='number')?s.q.dp:null;
       if(p===null) return `<div class="hm" style="background:var(--panel-2)"><div class="hs">${s.sym}</div><div class="hn">${s.name}</div><div class="hc" style="color:var(--faint)">n/a</div></div>`;
@@ -840,40 +990,113 @@ async function loadHeatmap(){
   }catch(e){ $('#hmStamp').textContent=e&&e.rate?'rate limit':'unavailable'; }
 }
 
-/* ===== earnings this week (Finnhub calendar) ===== */
-let earnCache=null;
-function fmtDay(d){ try{ return new Date(d+'T12:00:00').toLocaleDateString(undefined,{weekday:'short'}); }catch(e){ return d; } }
-function whenTag(h){ h=(h||'').toLowerCase(); if(h==='bmo')return['BMO','bmo']; if(h==='amc')return['AMC','amc']; return['—','']; }
+/* ===== shared helpers ===== */
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function timeAgo(d){const s=(Date.now()-d.getTime())/1000; if(s<60)return'just now'; const m=s/60; if(m<60)return`${Math.floor(m)}m ago`; const h=m/60; if(h<24)return`${Math.floor(h)}h ago`; const dd=h/24; return dd<7?`${Math.floor(dd)}d ago`:d.toLocaleDateString(undefined,{month:'short',day:'numeric'});}
+function arrow(p){return p>=0?'▲':'▼';}
+function pct(p){return`${p>=0?'+':''}${p.toFixed(2)}%`;}
+/* shared live snapshots so previews reuse data already fetched (rate-limit friendly) */
+const SHARED={idx:null,sectors:null};
+
+/* ===== earnings: weekly calendar (Finnhub calendar) ===== */
+/* widely-followed large/mid-caps — used only to prioritize which names get chips; every report still counts toward the day total */
+const NOTABLE=new Set(('AAPL MSFT NVDA GOOGL GOOG AMZN META TSLA AVGO ORCL CRM ADBE AMD INTC QCOM TXN MU AMAT LRCX KLAC ASML ARM SMCI PLTR SNOW NET DDOG CRWD ZS PANW FTNT NOW INTU ANET CSCO IBM DELL HPQ HPE WDC STX '+
+'JPM BAC WFC C GS MS SCHW USB PNC TFC COF AXP BLK BX KKR APO SPGI ICE CME MCO V MA PYPL SQ COIN HOOD SOFI ALLY DFS SYF '+
+'BRK.B UNH JNJ LLY PFE MRK ABBV ABT TMO DHR BMY AMGN GILD MDT ISRG CVS CI ELV HUM VRTX REGN MRNA BIIB ZTS '+
+'WMT COST HD LOW TGT TJX DG DLTR KR PG KO PEP MDLZ MO PM CL KMB GIS KHC HSY STZ MNST KDP CLX '+
+'MCD SBUX CMG YUM DPZ NKE LULU RCL CCL NCLH MAR HLT ABNB BKNG EXPD UBER LYFT DASH '+
+'DIS NFLX CMCSA T VZ TMUS CHTR WBD PARA SPOT ROKU EA TTWO '+
+'XOM CVX COP SLB EOG OXY PSX MPC VLO KMI WMB OKE HAL DVN FANG HES '+
+'BA CAT DE HON GE GEV MMM LMT RTX NOC GD UPS FDX UNP CSX NSC ETN EMR ITW PH ROK '+
+'F GM RIVN LCID STLA TM '+
+'ADP PYPL SHOP SPGI TDG CARR OTIS FAST PAYX WM RSG '+
+'LIN APD SHW FCX NEM NUE '+
+'PLD AMT EQIX CCI SPG O DLR PSA '+
+'NEE DUK SO D AEP EXC XEL '+
+'AI SNAP PINS DKNG RBLX U TWLO OKTA MDB TEAM WDAY ZM DOCU '+
+'BABA JD PDD NIO LI XPE SE MELI GLBE NU SHOP CVNA CHWY W ETSY EBAY '+
+'MSTR SMCI VST CEG TLN OKLO ').trim().split(/\s+/));
+
+const isoD=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+const DOW=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function fmtMD(d){return`${MON[d.getMonth()]} ${d.getDate()}`;}
+/* current trading week Mon–Fri; on the weekend it rolls forward to the coming week */
+function weekRange(){
+  const now=new Date(), d=new Date(now.getFullYear(),now.getMonth(),now.getDate()), dow=d.getDay();
+  const mon=new Date(d);
+  if(dow===0) mon.setDate(d.getDate()+1);
+  else if(dow===6) mon.setDate(d.getDate()+2);
+  else mon.setDate(d.getDate()-(dow-1));
+  const days=[]; for(let i=0;i<5;i++){const x=new Date(mon);x.setDate(mon.getDate()+i);days.push(x);}
+  return {mon,fri:days[4],days,today:d,todayIso:isoD(d)};
+}
+function whenClass(h){h=(h||'').toLowerCase();return h==='bmo'?'bmo':h==='amc'?'amc':'';}
+let earnCache=null, earnWeekKey=null;
 async function fetchEarnings(){
-  if(earnCache) return earnCache;
+  const wk=weekRange(), key=isoD(wk.mon);
+  if(earnCache&&earnWeekKey===key) return {list:earnCache,wk};
   if(!mktKey()) throw {nokey:true};
-  const from=new Date(); const to=new Date(Date.now()+6*864e5);
-  const iso=d=>d.toISOString().slice(0,10);
-  const r=await fetch(`https://finnhub.io/api/v1/calendar/earnings?from=${iso(from)}&to=${iso(to)}&token=${encodeURIComponent(mktKey())}`);
+  const r=await fetch(`https://finnhub.io/api/v1/calendar/earnings?from=${isoD(wk.mon)}&to=${isoD(wk.fri)}&token=${encodeURIComponent(mktKey())}`);
   if(r.status===403||r.status===401) throw {auth:true};
   if(r.status===429) throw {rate:true};
   if(!r.ok) throw new Error('bad');
   const d=await r.json();
-  let list=(d.earningsCalendar||[]).filter(e=>e.symbol&&/^[A-Z.]{1,6}$/.test(e.symbol));
-  list.sort((a,b)=> a.date===b.date ? a.symbol.localeCompare(b.symbol) : a.date.localeCompare(b.date));
-  earnCache=list; return list;
+  let list=(d.earningsCalendar||[]).filter(e=>e.symbol&&/^[A-Z][A-Z.]{0,5}$/.test(e.symbol));
+  earnCache=list; earnWeekKey=key; return {list,wk};
 }
-async function loadEarnPreview(){
-  const el=$('#earnPreview'); if(!el) return;
+function earnErr(e){ const m=e&&e.nokey?'Add a Finnhub key to load the calendar.':e&&e.auth?'This key doesn’t have earnings-calendar access.':e&&e.rate?'Rate limit — try again shortly.':'Calendar unavailable right now.'; return `<div class="ew-grid">${[0,1,2,3,4].map(()=>`<div class="ew-day"><div class="ew-quiet">${m}</div></div>`).join('')}</div>`; }
+/* inline: the 5-column weekly grid on the card */
+async function loadEarnWeek(){
+  const host=$('#earnWeek'); if(!host) return;
   try{
-    const list=await fetchEarnings();
-    if(!list.length){ el.innerHTML=`<p class="mnote">No confirmed reports in the next five sessions.</p>`; return; }
-    el.innerHTML=list.slice(0,5).map(e=>{const[w,c]=whenTag(e.hour);return `<div class="earn-item"><span class="esym">${e.symbol}</span><span class="eday">${fmtDay(e.date)}</span><span class="ewhen ${c}">${w}</span></div>`;}).join('')+`<div style="font-family:var(--mono);font-size:.6rem;color:var(--cyan);letter-spacing:.1em;margin-top:8px">+ ${Math.max(0,list.length-5)} more · tap to open →</div>`;
-  }catch(e){ el.innerHTML=`<p class="mnote">${e&&e.auth?'Earnings calendar needs a key with calendar access.':e&&e.rate?'Rate limit — try again shortly.':'Calendar unavailable right now.'}</p>`; }
+    const {list,wk}=await fetchEarnings();
+    const rangeEl=$('#earnRange'); if(rangeEl) rangeEl.textContent=`${fmtMD(wk.mon)} – ${fmtMD(wk.fri)}`;
+    const map={}; wk.days.forEach(d=>map[isoD(d)]=[]);
+    list.forEach(e=>{ if(map[e.date]) map[e.date].push(e); });
+    host.innerHTML=`<div class="ew-grid">`+wk.days.map(d=>{
+      const iso=isoD(d), items=map[iso]||[];
+      const notable=items.filter(e=>NOTABLE.has(e.symbol)).sort((a,b)=>a.symbol.localeCompare(b.symbol));
+      const cls=iso===wk.todayIso?'today':(iso<wk.todayIso?'past':'');
+      const shown=notable.slice(0,4);
+      let body;
+      if(shown.length){
+        body=`<div class="ew-chips">`+shown.map(e=>`<div class="ew-chip"><span class="dot ${whenClass(e.hour)}"></span>${esc(e.symbol)}</div>`).join('')+`</div>`;
+        const extra=items.length-shown.length;
+        body+=`<div class="ew-foot">${extra>0?`+${extra} more`:`${items.length} report${items.length!==1?'s':''}`}</div>`;
+      } else if(items.length){
+        body=`<div class="ew-chips"></div><div class="ew-foot" style="color:var(--faint)">${items.length} report${items.length!==1?'s':''}</div>`;
+      } else {
+        body=`<div class="ew-quiet">Quiet</div>`;
+      }
+      return `<div class="ew-day ${cls}"><div class="ew-dh"><span class="ew-dow">${DOW[d.getDay()]}</span><span class="ew-date">${d.getDate()}</span></div>${body}</div>`;
+    }).join('')+`</div>`;
+  }catch(e){ host.innerHTML=earnErr(e); }
 }
+/* modal: day-by-day detail with EPS estimates */
 async function loadEarnings(){
-  const el=$('#earnFull');
-  el.innerHTML='<p class="mnote">Loading the calendar…</p>';
+  const el=$('#earnFull'); el.innerHTML='<p class="mnote">Loading the calendar…</p>';
   try{
-    const list=await fetchEarnings();
-    if(!list.length){ el.innerHTML='<p class="mnote">No confirmed reports in the next five sessions. Quiet week — or the calendar hasn’t populated yet.</p>'; return; }
-    el.innerHTML=list.slice(0,40).map(e=>{const[w,c]=whenTag(e.hour);const est=(e.epsEstimate!=null)?`est $${(+e.epsEstimate).toFixed(2)}`:'';return `<div class="earn-item"><span class="esym">${e.symbol}</span><span class="eday">${fmtDay(e.date)} ${e.date.slice(5)}</span><span style="font-family:var(--mono);font-size:.6rem;color:var(--faint)">${est}</span><span class="ewhen ${c}">${w}</span></div>`;}).join('');
-  }catch(e){ el.innerHTML=`<p class="err-note">${e&&e.auth?'This Finnhub key doesn’t have earnings-calendar access on its tier.':e&&e.rate?'Rate limit hit (60/min free). Try again in a moment.':'The calendar feed is unavailable right now. Try again shortly.'}</p>`; }
+    const {list,wk}=await fetchEarnings();
+    const sub=$('#earnFullSub'); if(sub) sub.textContent=`${fmtMD(wk.mon)} – ${fmtMD(wk.fri)} · the trading week day by day — notable names highlighted, with consensus EPS where the calendar has it.`;
+    if(!list.length){ el.innerHTML='<p class="mnote">No confirmed reports this week. Quiet week — or the calendar hasn’t populated yet.</p>'; return; }
+    const map={}; wk.days.forEach(d=>map[isoD(d)]=[]);
+    list.forEach(e=>{ if(map[e.date]) map[e.date].push(e); });
+    el.innerHTML=wk.days.map(d=>{
+      const iso=isoD(d), items=(map[iso]||[]);
+      const notable=items.filter(e=>NOTABLE.has(e.symbol)).sort((a,b)=>a.symbol.localeCompare(b.symbol));
+      const others=items.length-notable.length;
+      const isToday=iso===wk.todayIso;
+      let inner;
+      if(!items.length){ inner=`<div class="mwk-quiet">No confirmed reports.</div>`; }
+      else{
+        const names=notable.length?notable.map(e=>{const est=(e.epsEstimate!=null&&!isNaN(+e.epsEstimate))?`<em>est $${(+e.epsEstimate).toFixed(2)}</em>`:'';return `<span class="mwk-name"><span class="dot ${whenClass(e.hour)}"></span>${esc(e.symbol)} ${est}</span>`;}).join(''):'';
+        inner=(names?`<div class="mwk-names">${names}</div>`:'')+
+          (others>0?`<div class="mwk-rest">${notable.length?'+ ':''}${others} other smaller-cap report${others!==1?'s':''} scheduled.</div>`:'');
+      }
+      return `<div class="mwk-day"><div class="mwk-dh ${isToday?'today':''}"><span class="d">${DOW[d.getDay()]}</span><span class="dt">${fmtMD(d)}${isToday?' · today':''}</span><span class="ct">${items.length} report${items.length!==1?'s':''}</span></div>${inner}</div>`;
+    }).join('');
+  }catch(e){ el.innerHTML=`<p class="err-note">${e&&e.auth?'This Finnhub key doesn’t have earnings-calendar access on its tier.':e&&e.rate?'Rate limit hit (60/min free). Try again in a moment.':e&&e.nokey?'Add a Finnhub key to load the calendar.':'The calendar feed is unavailable right now. Try again shortly.'}</p>`; }
 }
 
 /* ===== MODALS ===== */
@@ -886,6 +1109,8 @@ function openModal(id){
   if(id==='m-valid')startValid();
   if(id==='m-crypto')loadCrypto();
   if(id==='m-market')loadMarket();
+  if(id==='m-cross')loadCross();
+  if(id==='m-wire')loadWire();
   if(id==='m-earn')loadEarnings();
   if(id==='m-futures')renderSpecs();
   if(id==='m-sim')setTimeout(runSim,80);
@@ -1078,23 +1303,98 @@ async function loadCrypto(){
     out.innerHTML=coins.map(([id,name,sym])=>{ const c=d[id]; if(!c)return''; const ch=c.usd_24h_change||0, up=ch>=0; return `<div class="crypto-row"><span class="cn">${name}<small>${sym}</small></span><span class="cp"><div class="v">$${c.usd.toLocaleString()}</div><div class="c ${up?'up':'dn'}">${up?'▲':'▼'} ${Math.abs(ch).toFixed(2)}% / 24h</div></span></div>`; }).join('');
   }catch(e){ out.innerHTML='<p class="err-note">Live feed unavailable right now — likely a rate limit. Try again in a minute.</p>'; }
 }
-/* market pulse */
-function saveMktKey(){ const v=$('#mktKey').value.trim(); if(v)localStorage.setItem('tdesk_finnhub',v); loadMarket(); }
+/* ===== market pulse (upgraded board) ===== */
+function saveMktKey(){ const v=$('#mktKey').value.trim(); if(v)localStorage.setItem('tdesk_finnhub',v); loadMarket(); loadEarnWeek(); }
+function breadthOf(sectors){
+  let g=0,r=0,lead=null,lag=null;
+  (sectors||[]).forEach(s=>{ const p=s.q&&typeof s.q.dp==='number'?s.q.dp:null; if(p===null)return; if(p>=0)g++; else r++; if(!lead||p>lead.p)lead={sym:s.sym,p}; if(!lag||p<lag.p)lag={sym:s.sym,p}; });
+  return {g,r,total:g+r,lead,lag};
+}
+function renderPulsePreview(){
+  const el=$('#pulseLive'); if(!el) return;
+  const parts=[];
+  const spy=SHARED.idx&&SHARED.idx.find(x=>x.s==='SPY');
+  if(spy&&spy.q&&typeof spy.q.dp==='number'){ const up=spy.q.dp>=0; parts.push(`<span><span class="lg">SPY</span> <b class="${up?'up':'dn'}">${pct(spy.q.dp)}</b></span>`); }
+  if(SHARED.sectors){ const b=breadthOf(SHARED.sectors); if(b.total){ parts.push(`<span><span class="lg">Breadth</span> <b>${b.g}/${b.total}</b> green</span>`); if(b.lead) parts.push(`<span><span class="lg">Lead</span> <b>${b.lead.sym}</b> <span class="${b.lead.p>=0?'up':'dn'}">${pct(b.lead.p)}</span></span>`); } }
+  el.innerHTML=parts.length?parts.join(''):`<span class="lg">Live board · tap to open</span>`;
+}
 async function loadMarket(){
   const out=$('#marketOut'), keyWrap=$('#mktKeyWrap'), key=mktKey();
-  if(!key){ keyWrap.style.display='flex'; $('#mktKey').value=localStorage.getItem('tdesk_finnhub')||''; out.innerHTML='<p class="mnote">Add a free Finnhub key above to pull live SPY / QQQ / VIXY quotes.</p>'; return; }
-  keyWrap.style.display='none'; out.innerHTML='<p class="mnote">Loading live quotes…</p>';
-  const syms=[['SPY','S&P 500 ETF'],['QQQ','Nasdaq 100 ETF'],['VIXY','Volatility · VIX futures proxy']];
+  if(!key){ keyWrap.style.display='flex'; $('#mktKey').value=localStorage.getItem('tdesk_finnhub')||''; out.innerHTML='<p class="mnote">Add a free Finnhub key above to load the board.</p>'; return; }
+  keyWrap.style.display='none'; out.innerHTML='<p class="mnote">Loading the board…</p>';
+  const idxDefs=[['SPY','S&P 500'],['QQQ','Nasdaq 100'],['DIA','Dow Jones'],['IWM','Russell 2000']];
   try{
-    const data=await Promise.all(syms.map(async([s])=>fhQuote(s)));
-    let any=false;
-    out.innerHTML=syms.map(([s,name],i)=>{ const q=data[i]; if(!q||typeof q.c!=='number'||q.c===0)return''; any=true; const ch=q.dp||0, up=ch>=0; return `<div class="crypto-row"><span class="cn">${name}<small>${s}</small></span><span class="cp"><div class="v">$${q.c.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</div><div class="c ${up?'up':'dn'}">${up?'▲':'▼'} ${Math.abs(ch).toFixed(2)}% / day</div></span></div>`; }).join('');
-    if(!any)out.innerHTML='<p class="err-note">No quotes returned — markets may be closed or those symbols aren’t on your plan.</p>';
+    const [idxQ,vixy]=await Promise.all([ Promise.all(idxDefs.map(([s])=>fhQuote(s))), fhQuote('VIXY').catch(()=>null) ]);
+    let sectors=SHARED.sectors;
+    if(!sectors){ sectors=await Promise.all(SECTORS.map(async s=>({...s,q:await fhQuote(s.sym)}))); SHARED.sectors=sectors; }
+    let idxHTML='', dpsum=0, dpn=0;
+    idxDefs.forEach(([s,n],i)=>{ const q=idxQ[i];
+      if(!q||typeof q.c!=='number'||q.c===0){ idxHTML+=`<div class="idxrow"><div class="top"><span class="nm">${n}<small>${s}</small></span><span class="pr"><span class="c" style="color:var(--faint)">n/a</span></span></div></div>`; return; }
+      const up=(q.dp||0)>=0; dpsum+=(q.dp||0); dpn++;
+      let posHTML='';
+      if(typeof q.l==='number'&&typeof q.h==='number'&&q.h>q.l){ const pos=Math.max(0,Math.min(1,(q.c-q.l)/(q.h-q.l)))*100; posHTML=`<div class="rngbar"><i style="left:${pos.toFixed(1)}%"></i></div><div class="rng-lab"><span>L ${q.l.toFixed(2)}</span><span>${pos.toFixed(0)}% of day range</span><span>H ${q.h.toFixed(2)}</span></div>`; }
+      idxHTML+=`<div class="idxrow"><div class="top"><span class="nm">${n}<small>${s}</small></span><span class="pr"><span class="v">${q.c.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</span> <span class="c ${up?'up':'dn'}">${arrow(q.dp||0)} ${pct(q.dp||0)}</span></span></div>${posHTML}</div>`;
+    });
+    const avgIdx=dpn?dpsum/dpn:0;
+    const b=breadthOf(sectors.filter(s=>/^XL/.test(s.sym))), gpct=b.total?(b.g/b.total*100):0;
+    const breadthHTML=`<div class="breadth"><div class="bt"><span class="g">${b.g} advancing</span><span class="r">${b.r} declining</span></div><div class="bbar"><i style="width:${gpct.toFixed(0)}%"></i></div><div class="lead"><span>Leader <b class="${b.lead&&b.lead.p>=0?'up':'dn'}">${b.lead?b.lead.sym+' '+pct(b.lead.p):'—'}</b></span><span>Laggard <b class="${b.lag&&b.lag.p>=0?'up':'dn'}">${b.lag?b.lag.sym+' '+pct(b.lag.p):'—'}</b></span></div></div>`;
+    let volHTML,volDp=null;
+    if(vixy&&typeof vixy.dp==='number'&&typeof vixy.c==='number'){ volDp=vixy.dp; const up=volDp>=0; volHTML=`<div class="mrow"><span class="mn">Volatility<small>VIXY · VIX-futures proxy</small></span><span class="mp"><span class="v">${vixy.c.toFixed(2)}</span> <span class="c ${up?'up':'dn'}">${arrow(volDp)} ${pct(volDp)}</span></span></div><div style="margin-top:2px">${up?'<span class="pill off">Volatility bid</span>':'<span class="pill on">Volatility offered</span>'}</div>`; }
+    else volHTML=`<div class="mrow"><span class="mn">Volatility<small>VIXY</small></span><span class="mp"><span class="c" style="color:var(--faint)">n/a</span></span></div>`;
+    let rTag,rPill,rDesc;
+    if(avgIdx>0.05&&(volDp==null||volDp<=0)&&gpct>=55){ rTag='Risk-on tilt'; rPill='<span class="pill on">Risk-on</span>'; rDesc='Indexes higher, breadth positive, volatility offered — path of least resistance is up, for now.'; }
+    else if(avgIdx<-0.05&&(volDp==null||volDp>=0)&&gpct<=45){ rTag='Risk-off / defensive'; rPill='<span class="pill off">Risk-off</span>'; rDesc='Indexes lower, breadth weak, a firmer bid under volatility — the tape is defensive.'; }
+    else { rTag='Mixed / two-sided'; rPill='<span class="pill neu">Two-sided</span>'; rDesc='Indexes, breadth and volatility aren’t pointing the same way — a stock-picker’s tape, not a trend day.'; }
+    out.innerHTML=`<div class="msub-h">Index board · intraday range</div>${idxHTML}<div class="msub-h">Sector breadth · 11 SPDRs</div>${breadthHTML}<div class="msub-h">Volatility</div>${volHTML}<div class="regime"><div class="rl">Regime read · context only</div><div class="rv">${rTag} ${rPill}</div><div class="rd">${rDesc}</div></div>`;
+    renderPulsePreview();
   }catch(e){
     if(e&&e.rate){out.innerHTML='<p class="err-note">Rate limit hit (60/min free). Try again in a moment.</p>';}
     else if(e&&e.auth){localStorage.removeItem('tdesk_finnhub');keyWrap.style.display='flex';$('#mktKey').value='';out.innerHTML='<p class="err-note">That key was rejected. Paste a valid free Finnhub key above.</p>';}
     else{out.innerHTML='<p class="err-note">Live feed unavailable right now. Try again in a minute.</p>';}
   }
+}
+
+/* ===== cross-asset macro board ===== */
+async function loadCross(){
+  const out=$('#crossOut'), key=mktKey();
+  if(!key){ out.innerHTML='<p class="mnote">Add a free Finnhub key (via Market Pulse) to load the macro board.</p>'; return; }
+  out.innerHTML='<p class="mnote">Loading the macro board…</p>';
+  const defs=[['TLT','20Y Treasuries','Bonds'],['UUP','US Dollar','FX'],['GLD','Gold','Metals'],['SLV','Silver','Metals'],['USO','WTI Crude','Energy']];
+  try{
+    const q=await Promise.all(defs.map(([s])=>fhQuote(s).catch(()=>null)));
+    let btc=null; try{ const r=await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd&include_24hr_change=true'); const d=await r.json(); btc=d.bitcoin; }catch(_){}
+    let rows='';
+    defs.forEach(([s,n,grp],i)=>{ const x=q[i];
+      if(!x||typeof x.c!=='number'||x.c===0){ rows+=`<div class="mrow"><span class="mn">${n}<small>${s}</small></span><span class="mp"><span class="c" style="color:var(--faint)">n/a</span></span></div>`; return; }
+      const up=(x.dp||0)>=0; rows+=`<div class="mrow"><span class="mn">${n}<small>${s} · ${grp}</small></span><span class="mp"><span class="v">$${x.c.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</span> <span class="c ${up?'up':'dn'}">${arrow(x.dp||0)} ${pct(x.dp||0)}</span></span></div>`;
+    });
+    if(btc){ const up=(btc.usd_24h_change||0)>=0; rows+=`<div class="mrow"><span class="mn">Bitcoin<small>BTC · Crypto · 24h</small></span><span class="mp"><span class="v">$${Math.round(btc.usd).toLocaleString()}</span> <span class="c ${up?'up':'dn'}">${arrow(btc.usd_24h_change||0)} ${pct(btc.usd_24h_change||0)}</span></span></div>`; }
+    const dp=i=>{ const x=q[i]; return x&&typeof x.dp==='number'?x.dp:null; };
+    const tlt=dp(0),uup=dp(1),gld=dp(2);
+    const spy=SHARED.idx&&SHARED.idx.find(z=>z.s==='SPY'); const spyDp=spy&&spy.q&&typeof spy.q.dp==='number'?spy.q.dp:null;
+    let tag,pill,desc;
+    if(spyDp!=null&&spyDp>0 && tlt!=null&&tlt<0 && uup!=null&&uup<0){ tag='Risk-on backdrop'; pill='<span class="pill on">Risk-on</span>'; desc='Stocks firm while bonds and the dollar slip — money leaving safety for risk.'; }
+    else if(spyDp!=null&&spyDp<0 && ((tlt!=null&&tlt>0)||(gld!=null&&gld>0)) && uup!=null&&uup>0){ tag='Flight to safety'; pill='<span class="pill off">Defensive</span>'; desc='Stocks soft while bonds, gold or the dollar catch a bid — the classic safety rotation.'; }
+    else { tag='Mixed cross-currents'; pill='<span class="pill neu">Mixed</span>'; desc='The asset classes aren’t agreeing — no clean risk-on or risk-off read in the macro tape.'; }
+    out.innerHTML=rows+`<div class="regime"><div class="rl">Risk backdrop · context only</div><div class="rv">${tag} ${pill}</div><div class="rd">${desc}</div></div>`;
+    const cl=$('#crossLive'); if(cl){ const parts=[]; if(q[2]&&typeof q[2].dp==='number'){const up=q[2].dp>=0;parts.push(`<span><span class="lg">Gold</span> <b class="${up?'up':'dn'}">${pct(q[2].dp)}</b></span>`);} if(btc){const up=(btc.usd_24h_change||0)>=0;parts.push(`<span><span class="lg">BTC</span> <b class="${up?'up':'dn'}">${pct(btc.usd_24h_change||0)}</b></span>`);} if(parts.length)cl.innerHTML=parts.join(''); }
+  }catch(e){ out.innerHTML='<p class="err-note">Macro board unavailable right now. Try again in a minute.</p>'; }
+}
+
+/* ===== the wire (Finnhub general news) ===== */
+async function loadWire(){
+  const out=$('#wireOut'), key=mktKey();
+  if(!key){ out.innerHTML='<p class="mnote">Add a free Finnhub key (via Market Pulse) to load the wire.</p>'; return; }
+  out.innerHTML='<p class="mnote">Loading the wire…</p>';
+  try{
+    const r=await fetch(`https://finnhub.io/api/v1/news?category=general&token=${encodeURIComponent(key)}`);
+    if(r.status===429)throw{rate:true}; if(r.status===401||r.status===403)throw{auth:true}; if(!r.ok)throw new Error('bad');
+    const d=await r.json();
+    const items=(Array.isArray(d)?d:[]).filter(x=>x&&x.headline&&x.url).slice(0,14);
+    if(!items.length){ out.innerHTML='<p class="mnote">No fresh headlines right now.</p>'; return; }
+    out.innerHTML=items.map(x=>{ const t=new Date((x.datetime||0)*1000); return `<a class="wire-item" href="${esc(x.url)}" target="_blank" rel="noopener"><div class="wire-meta"><span class="wire-src">${esc(x.source||'wire')}</span><span>${x.datetime?timeAgo(t):''}</span></div><div class="wire-h">${esc(x.headline)}</div></a>`; }).join('');
+    const wl=$('#wireLive'); if(wl&&items[0]){ const h=esc(items[0].headline); wl.innerHTML=`<span><span class="lg">${esc(items[0].source||'wire')}</span> <b>${h.length>44?h.slice(0,44)+'…':h}</b></span>`; }
+  }catch(e){ out.innerHTML=`<p class="err-note">${e&&e.rate?'Rate limit hit (60/min free). Try again in a moment.':e&&e.auth?'This Finnhub key was rejected for news.':'The wire is unavailable right now. Try again shortly.'}</p>`; }
 }
 
 /* ===== PATTERN LIBRARY ===== */
@@ -1183,6 +1483,9 @@ const CMDS=[
   {label:'Kairos — GEX terminal',kind:'launch',run:()=>location.href='/kairos'},
   {label:'Delphi — prediction scanner',kind:'launch',run:()=>location.href='/delphi'},
   {label:'Earnings this week',kind:'live',run:()=>openModal('m-earn')},
+  {label:'Market Pulse — indices + volatility',kind:'live',run:()=>openModal('m-market')},
+  {label:'Cross-Asset — bonds, dollar, metals, crypto',kind:'live',run:()=>openModal('m-cross')},
+  {label:'The Wire — market headlines',kind:'live',run:()=>openModal('m-wire')},
   {label:'The Terminal',kind:'section',run:()=>location.hash='terminal'},
   {label:'Encyclopedia',kind:'section',run:()=>location.hash='encyclopedia'},
   {label:'Pattern Library',kind:'section',run:()=>location.hash='patterns'},
@@ -1204,7 +1507,7 @@ cmdk.addEventListener('mousedown',e=>{if(e.target===cmdk)closeCmdk();});
 document.addEventListener('keydown',e=>{ if(e.key==='/'&&!/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)){ e.preventDefault(); cmdk.classList.contains('open')?closeCmdk():openCmdk(); } });
 
 /* ===== boot live data ===== */
-loadIdx(); loadHeatmap(); loadEarnPreview();
+loadIdx(); loadHeatmap(); loadEarnWeek();
 setInterval(loadIdx,60000);
 setInterval(loadHeatmap,60000);
 </script>
