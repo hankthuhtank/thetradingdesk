@@ -574,59 +574,75 @@ console.log('%cKairos Zero armed \u2014 0DTE/1DTE engine on the 0DTE-only dealer
 
 
 /* =====================================================================
-   KAIROS ARENA v3 — THE FIELD  (v7.7)
+   KAIROS NEXUS v4 — THE CHRONICLE  (v8.0)
 
-   What changed from v2 and why:
+   What changed from v3 and why:
 
-   v2 drew every strike as a full-width band with repeating texture —
-   sawtooth for negative, battlement notches for positive. That was the
-   error. A strike's exposure is ONE number; it does not vary along the
-   time axis. Smearing repeated sprites across 30 minutes of X manufactured
-   visual complexity out of nothing and buried the only thing that actually
-   moves: price. Twenty stacked zigzags is noise, not terrain.
+   v3 fixed the axes — exposure on price, time to the tape — but froze the
+   clock: a 30-minute window, no memory. v4 gives Nexus a memory and makes
+   it a real chart:
 
-   v3 puts exposure where it belongs — on the PRICE axis — as a single
-   continuous field, and hands the time axis back to the tape.
+     THE CHRONICLE  the field now varies over TIME. Every ~60s (and on
+                    every chain refresh) the full strike ladder's GEX+VEX
+                    is recorded as a column. Past columns render as the
+                    field AS IT WAS — walls visibly building and decaying.
+                    Columns persist to IndexedDB (~30 sessions kept), so a
+                    reload keeps the day. Before the first recorded column
+                    the plot shows tape only — no field is invented.
+     THE WINDOW     30M / 1H / 2H / DAY / 5D chips. Drag to pan, wheel to
+                    zoom, double-click to snap back live. 5D pulls deep
+                    1-min history (Tradier serves 20 days of 1-min bars).
+     TRADING TIME   overnight/weekend gaps compress to a thin seam instead
+                    of 17 hours of dead pixels. Same mapping for tape,
+                    field and grid.
+     CANDLES        timesales OHLC is now kept, not discarded. Optional
+                    1-min candle layer under the trace (auto-hides when
+                    bars go sub-3px).
+     THE LENS       hover inspector — NY clock time, price, nearest bar,
+                    and the recorded exposure of the nearest strike at
+                    that moment. Read the field like a chart.
 
-     THE FIELD    one vertical gradient across the strike ladder. Colour and
-                  opacity ARE the exposure; it fades to black through the
-                  zero crossing because that is where the field genuinely
-                  cancels. No repetition, no sprites, no dashes.
-     AEGIS   (+)  positive exposure — dealers fade moves, price is held.
-     MAELSTROM(−) negative exposure — dealers chase, price accelerates.
-     THE CROWN    King node.  RAMPARTS  Call/Put wall.  THE RIFT  flip.
-     THE FRONT    the real price path, now ending at 62% width.
-     THE REACH    forward EM cone from the Standard to the right edge —
-                  ±1σ/±2σ implied by ATM IV over the time left to expiry.
-                  Real distribution, not a forecast.
-     RIDGELINE    right margin: |exposure| per strike as a bar + a legible
-                  strike label. This is what the tiny digits should have been.
-
-   Bloom/scanlines/shake are FX. Every position is a number on the ladder.
+   Honesty rules unchanged: recorded columns are the same re-priced
+   Black-Scholes field the ladder shows, captured at real times, only
+   while a Kairos tab is open. OI inside them is still OCC prior-close.
+   The Reach, Standard, particles and key levels are CURRENT-state
+   objects: they draw only at the live edge, and key levels dim when you
+   pan into the past. Nothing here is a signal.
    ===================================================================== */
 'use strict';
 const AR={SPAN:30*60000,FWD:18,NOWF:0.62,MINR:0.04,MAXP:150,TOPB:4,TOPN:11,
-          PADL:44,PADR:118,PADY:22};
+          PADL:44,PADR:118,PADY:22,
+          WINMIN:5,WINMAX:2400,COLS_MEM:2800,KEEP_DAYS:7,DEEP_DAYS:9,
+          GAPMS:20*60000,GAPW:4*60000,REC_MS:60000};
 let aRaf=0,aT=0,aTweenSpot=null,aParts=[],aBursts=[],aShake=0,aHudT=0,aStamp='',aSeen={},aPrevReg=null,aRegFlash=0;
 let aTrail={},aHistT={},aBloom=null,aScan=0;
+let aWin=Math.max(AR.WINMIN,Math.min(AR.WINMAX,parseInt(localStorage.getItem('kairos_nx_win'))||30));
+let aPan=0,aCandle=localStorage.getItem('kairos_nx_candle')==='1';
+let aMouse=null,aDrag=null,aVM=null,aDeepT={};
+let aField={},aFieldStamp={},aFieldT={},aFCv=null,aFKey='';
+let aRecon={},aReconKey={},aReconBusy={},aTracks=[];
+let aYC=null,aYH=null,aSceneClk=0,aEdgeF=null;
+let aYManual=false,aYCenterM=null,aYHalfM=null;
+let aDB=null,aDBLoaded={};
 const aReduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
 const aBlurOK=(function(){try{const c=document.createElement('canvas').getContext('2d');c.filter='blur(2px)';return c.filter==='blur(2px)';}catch(e){return false;}})();
 
 function aCv(){return document.getElementById('arenaCanvas');}
 function aStop(){if(aRaf){cancelAnimationFrame(aRaf);aRaf=0;}}
-function aStart(){aStop();aT=0;aHist(state.focus);if(aReduce){aDraw(0);aHud(true);return;}aRaf=requestAnimationFrame(aFrame);}
+function aStart(){aStop();aT=0;aHist(state.focus,aWin>420);aDBLoad(state.focus);setTimeout(function(){aReconBuild(state.focus);},1500);if(aReduce){aDraw(0);aHud(true);return;}aRaf=requestAnimationFrame(aFrame);}
 function aFrame(ts){
   const dt=aT?Math.min(0.05,(ts-aT)/1000):0.016;aT=ts;
   aDraw(dt);
   if(ts-aHudT>420){aHudT=ts;aHud(false);}
   aRaf=requestAnimationFrame(aFrame);
 }
+function aSpanMs(){return Math.max(AR.WINMIN,Math.min(AR.WINMAX,aWin))*60000;}
 
 /* ---- real intraday history ----
-   v2 asked for a 50-minute window ending now. After the bell that window is
-   empty, so the front collapsed to whatever the live tape had (~1 minute).
-   v3 pulls the whole RTH session and lets the scene anchor to the newest bar,
-   so a closed market shows the last 30 minutes of real tape. */
+   v4: keeps full OHLC per bar (v3 threw away everything but close), MERGES
+   new pulls into the existing trail instead of clobbering it (so a deep
+   multi-day pull survives the 2-minute shallow refresh), and can fetch
+   AR.DEEP_DAYS calendar days back — Tradier serves 20 days of 1-min bars. */
 function aNY(d){
   try{
     const p=new Intl.DateTimeFormat('en-CA',{timeZone:'America/New_York',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}).formatToParts(d);
@@ -634,24 +650,34 @@ function aNY(d){
     return g('year')+'-'+g('month')+'-'+g('day')+' '+(g('hour')==='24'?'00':g('hour'))+':'+g('minute');
   }catch(e){return '';}
 }
-async function aHist(sym){
+function aClk(t){
+  try{return new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',hour:'numeric',minute:'2-digit',hour12:false}).format(new Date(t));}
+  catch(e){return '';}
+}
+function aDayLab(t){
+  try{return new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',weekday:'short'}).format(new Date(t));}
+  catch(e){return '';}
+}
+async function aHist(sym,deep){
   if(!sym)return;
   if(!(state.tradierToken&&state.tradierToken.length>8))return;
-  if(aHistT[sym]&&Date.now()-aHistT[sym]<120000)return;
-  aHistT[sym]=Date.now();
+  const key=sym+(deep?'|d':'');
+  if(aHistT[key]&&Date.now()-aHistT[key]<(deep?600000:120000))return;
+  aHistT[key]=Date.now();
   const u=underOf(sym);
   try{
-    const s=aNY(new Date(Date.now()-9*3600000)),e=aNY(new Date());
+    const s=aNY(new Date(Date.now()-(deep?AR.DEEP_DAYS*86400000:9*3600000))),e=aNY(new Date());
     if(!s||!e)return;
     const j=await tFetch('/markets/timesales?symbol='+encodeURIComponent(u)+'&interval=1min&start='+encodeURIComponent(s)+'&end='+encodeURIComponent(e)+'&session_filter=open');
     let dd=j&&j.series&&j.series.data;if(!dd)return;
     if(!Array.isArray(dd))dd=[dd];
-    const out=[];
+    const map=new Map((aTrail[sym]||[]).map(b=>[b.t,b]));
     for(const b of dd){
       const t=b.timestamp?b.timestamp*1000:0,px=+(b.close||b.price||0);
-      if(t&&px>0)out.push({t,px});
+      if(!(t&&px>0))continue;
+      map.set(t,{t,px,o:+b.open||null,h:+b.high||null,l:+b.low||null});
     }
-    if(out.length)aTrail[sym]=out.slice(-420);
+    if(map.size)aTrail[sym]=[...map.values()].sort((a,b)=>a.t-b.t).slice(-6000);
   }catch(e){}
 }
 function aPath(sym){
@@ -664,6 +690,181 @@ function aPath(sym){
   else if(sp&&!out.length)out.push({t:now,px:sp});
   return out;
 }
+
+/* ---- TRADING TIME: session-gap compression ----
+   A monotonic map t <-> tt. Real trading time passes 1:1; any gap longer
+   than GAPMS (overnight, weekend, halt) is compressed to GAPW of visual
+   time. Built from the actual bar timestamps, so it never invents a
+   session that didn't trade. Tape, field, grid and mouse all share it. */
+function aTTBuild(sym){
+  const p=aPath(sym);
+  const segs=[];let s=null;
+  for(const b of p){
+    if(!s||b.t-s.t1>AR.GAPMS){s={t0:b.t,t1:b.t};segs.push(s);}
+    else if(b.t>s.t1)s.t1=b.t;
+  }
+  if(!segs.length){const n=Date.now();segs.push({t0:n-aSpanMs(),t1:n});}
+  let acc=0;
+  for(let i=0;i<segs.length;i++){
+    segs[i].tt0=acc+(i?AR.GAPW:0);
+    acc=segs[i].tt0+(segs[i].t1-segs[i].t0);
+  }
+  const fwd=t=>{
+    if(t<=segs[0].t0)return segs[0].tt0-(segs[0].t0-t);
+    for(let i=0;i<segs.length;i++){
+      const g=segs[i];
+      if(t<=g.t1)return g.tt0+Math.max(0,t-g.t0);
+      const nx=segs[i+1];
+      if(!nx||t<nx.t0)return g.tt0+(g.t1-g.t0)+(nx?Math.min(AR.GAPW,AR.GAPW*(t-g.t1)/Math.max(1,nx.t0-g.t1)):(t-g.t1));
+    }
+    const L=segs[segs.length-1];return L.tt0+(t-L.t0);
+  };
+  const inv=tt=>{
+    if(tt<=segs[0].tt0)return segs[0].t0-(segs[0].tt0-tt);
+    for(let i=0;i<segs.length;i++){
+      const g=segs[i],w=g.t1-g.t0;
+      if(tt<=g.tt0+w)return g.t0+(tt-g.tt0);
+      const nx=segs[i+1];
+      if(!nx||tt<nx.tt0)return g.t1+(nx?(tt-g.tt0-w)/AR.GAPW*Math.max(1,nx.t0-g.t1):(tt-g.tt0-w));
+    }
+    const L=segs[segs.length-1];return L.t0+(tt-L.tt0);
+  };
+  return{segs,fwd,inv,first:segs[0].t0};
+}
+
+/* ---- THE CHRONICLE: field history recorder + IndexedDB ----
+   Every REC_MS (and immediately on a fresh chain stamp) the FULL ladder —
+   every strike's GEX and VEX plus spot — is captured for the focus and
+   Triad symbols. Float32 columns: a SPY column is ~2 KB, a 5-expiry SPX
+   column ~6 KB. In-memory ring of COLS_MEM columns per symbol; every
+   column also lands in IndexedDB (store 'cols'), pruned past KEEP_DAYS
+   sessions. Recording runs whenever the tab is open, whatever view is up,
+   so the Chronicle builds while you work the Triad. */
+function aDBOpen(){
+  return new Promise(res=>{
+    try{
+      const rq=indexedDB.open('kairos-nexus',1);
+      rq.onupgradeneeded=e=>{
+        const db=e.target.result;
+        const st=db.createObjectStore('cols',{keyPath:'id',autoIncrement:true});
+        st.createIndex('sd',['sym','day']);st.createIndex('day','day');
+      };
+      rq.onsuccess=e=>res(e.target.result);
+      rq.onerror=()=>res(null);rq.onblocked=()=>res(null);
+    }catch(e){res(null);}
+  });
+}
+(async function(){
+  aDB=await aDBOpen();
+  if(!aDB)return;
+  try{ /* prune sessions older than KEEP_DAYS (day keys are YYYY-MM-DD → lexicographic) */
+    const cut=(function(){const d=new Date(Date.now()-AR.KEEP_DAYS*86400000);const p=n=>String(n).padStart(2,'0');return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate());})();
+    const ix=aDB.transaction('cols','readwrite').objectStore('cols').index('day');
+    ix.openCursor(IDBKeyRange.upperBound(cut,true)).onsuccess=e=>{const c=e.target.result;if(c){c.delete();c.continue();}};
+  }catch(e){}
+  aDBLoad(state.focus);
+})();
+function aDBLoad(sym){
+  if(!aDB||!sym||aDBLoaded[sym])return;
+  aDBLoaded[sym]=1;
+  try{
+    const days=[];for(let i=0;i<7;i++){const d=new Date(Date.now()-i*86400000);const p=n=>String(n).padStart(2,'0');days.push(d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate()));}
+    const st=aDB.transaction('cols','readonly').objectStore('cols').index('sd');
+    const got=[];let pend=days.length;
+    days.forEach(day=>{
+      st.getAll(IDBKeyRange.only([sym,day])).onsuccess=e=>{
+        (e.target.result||[]).forEach(r=>got.push(r));
+        if(--pend===0){
+          const cur=aField[sym]||[],seen=new Set(cur.map(c=>c.t));
+          for(const r of got)if(!seen.has(r.t))cur.push({t:r.t,ks:r.ks,g:r.g,v:r.v,spot:r.spot});
+          cur.sort((a,b)=>a.t-b.t);
+          aField[sym]=cur.slice(-AR.COLS_MEM);
+          aFKey='';
+        }
+      };
+    });
+  }catch(e){}
+}
+function aDBPut(sym,col){
+  if(!aDB)return;
+  try{
+    const day=(function(){const d=new Date(col.t);const p=n=>String(n).padStart(2,'0');return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate());})();
+    aDB.transaction('cols','readwrite').objectStore('cols').put({sym,day,t:col.t,ks:col.ks,g:col.g,v:col.v,spot:col.spot});
+  }catch(e){}
+}
+/* ---- THE ECHO: reconstructed field for today's session ----
+   OI is OCC prior-settlement and does NOT change intraday — the standing
+   book was the same at 09:31 as it is now. So the field at any earlier
+   minute today is computable: the same bsGamma/bsVanna x OI x dealer-sign
+   pipeline core runs live, evaluated at that minute's real 1-min spot with
+   T rolled back. Stated plainly: IV is the current snapshot (intraday IV
+   drift is not replayed) and the basis is OI (past-time volume is
+   unknowable). Reconstructed columns render dimmer, are tagged .recon in
+   the Lens, and are NEVER persisted — recorded columns always win where
+   both exist. Prior days: recorded columns only. Built in 12ms idle slices. */
+function aReconBuild(sym){
+  const d=state.data[sym];
+  if(!d||!d.contracts||!d.contracts.length||!d.strikes||!d.strikes.length)return;
+  if(aReconBusy[sym])return;
+  const cfg=sym+'|'+state.expiry+'|'+state.dealerMode+'|'+(d.chStamp||0);
+  if(aReconKey[sym]===cfg&&(aRecon[sym]||[]).length)return;
+  const TT=aTTBuild(sym),seg=TT.segs[TT.segs.length-1];
+  const bars=(aTrail[sym]||[]).filter(b=>b.t>=seg.t0);
+  if(bars.length<5)return;
+  aReconBusy[sym]=1;
+  const ksArr=[...new Set(d.strikes.map(x=>x.k))].sort((a,b)=>a-b);
+  const idx=new Map(ksArr.map((k,i)=>[k,i]));
+  const cons=d.contracts.filter(c=>idx.has(c.k)&&c.oi&&c.iv>0.01&&c.iv<5);
+  if(!cons.length){aReconBusy[sym]=0;return;}
+  const ref=d.chStamp||Date.now(),YR=365*86400000;
+  const step=Math.max(1,Math.round(bars.length/200));
+  const ksF=Float32Array.from(ksArr),out=[];
+  let bi=0;
+  const chunk=()=>{
+    const t1=performance.now();
+    for(;bi<bars.length&&performance.now()-t1<12;bi+=step){
+      const b=bars[bi],S=b.px;
+      if(!(S>0))continue;
+      const gmult=100*S*S*0.01,vmult=100*S*0.01,n=ksArr.length;
+      const gu=new Float64Array(n),ga=new Float64Array(n),vu=new Float64Array(n),va=new Float64Array(n);
+      for(const c of cons){
+        const T=Math.max(1e-6,c.T+(ref-b.t)/YR);
+        const g=bsGamma(S,c.k,c.iv,T),van=bsVanna(S,c.k,c.iv,T);
+        const i=idx.get(c.k),sg=c.call?1:-1;
+        gu[i]+=sg*g*c.oi;ga[i]+=g*c.oi;vu[i]+=sg*van*c.oi;va[i]+=van*c.oi;
+      }
+      const g32=new Float32Array(n),v32=new Float32Array(n);
+      for(let i=0;i<n;i++){g32[i]=dealerAdj(gu[i],ga[i])*gmult;v32[i]=dealerAdj(vu[i],va[i])*vmult;}
+      out.push({t:b.t,ks:ksF,g:g32,v:v32,spot:S,r:1});
+    }
+    if(bi<bars.length)setTimeout(chunk,0);
+    else{aRecon[sym]=out;aReconKey[sym]=cfg;aReconBusy[sym]=0;aFKey='';}
+  };
+  setTimeout(chunk,0);
+}
+function aRec(){
+  if(document.hidden)return;
+  const syms=new Set([state.focus].concat(state.trinityTickers||[]));
+  const now=Date.now();
+  for(const sym of syms){
+    const d=state.data[sym];
+    if(!d||!d.strikes||!d.strikes.length)continue;
+    const stamp=state.dataAge[sym]||0;
+    const fresh=stamp!==(aFieldStamp[sym]||0);
+    if(!fresh&&now-(aFieldT[sym]||0)<AR.REC_MS-3000)continue;
+    aFieldStamp[sym]=stamp;aFieldT[sym]=now;
+    const n=d.strikes.length,ks=new Float32Array(n),g=new Float32Array(n),v=new Float32Array(n);
+    const sorted=[...d.strikes].sort((a,b)=>a.k-b.k);
+    for(let i=0;i<n;i++){ks[i]=sorted[i].k;g[i]=sorted[i].gex||0;v[i]=sorted[i].vex||0;}
+    const col={t:now,ks,g,v,spot:state.spot[sym]||d.spot||0};
+    (aField[sym]=aField[sym]||[]).push(col);
+    if(aField[sym].length>AR.COLS_MEM)aField[sym].splice(0,aField[sym].length-AR.COLS_MEM);
+    aDBPut(sym,col);
+    if(sym===state.focus)aFKey='';
+  }
+  if(state.data[state.focus])aReconBuild(state.focus);
+}
+setInterval(aRec,15000);
 
 /* ---- scene ---- */
 function aScene(){
@@ -678,21 +879,38 @@ function aScene(){
   const full=aPath(sym),now=Date.now();
   const last=full.length?full[full.length-1].t:now;
   const live=(now-last)<=5*60000;
-  const tEnd=live?now:last;                  /* closed market: anchor to the last real bar */
-  const t0=tEnd-AR.SPAN;
-  const path=full.filter(p=>p.t>=t0);
+  const anchor=live?now:last;                 /* closed market: anchor to the last real bar */
+  const TT=aTTBuild(sym);
+  const span=aSpanMs();
+  const ttAnchor=TT.fwd(anchor),ttFirst=TT.fwd(TT.first);
+  const maxPan=Math.max(0,ttAnchor-ttFirst-span*0.25);
+  if(aPan>maxPan)aPan=maxPan;if(aPan<0)aPan=0;
+  const isNow=aPan<30000;
+  const ttHi=ttAnchor-aPan,ttLo=ttHi-span;
+  const t0=TT.inv(ttLo),tEnd=TT.inv(ttHi);
+  const path=full.filter(p=>p.t>=t0-90000&&p.t<=tEnd+90000);
   let bestT=null;
   for(const c of (d.contracts||[])){if(bestT===null||c.T<bestT)bestT=c.T;}
   const dteMin=bestT?Math.max(1,bestT*525600):null;
+  /* y-range: live short windows center on spot; wide/panned windows fit the visible tape */
+  let mn=Infinity,mx=-Infinity;
+  for(const p of path){if(p.px<mn)mn=p.px;if(p.px>mx)mx=p.px;if(p.l&&p.l<mn)mn=p.l;if(p.h&&p.h>mx)mx=p.h;}
+  const wide=!isNow||span>90*60000;
+  let center=(wide&&isFinite(mn)&&mx>mn)?(mn+mx)/2:spot;
   let half=Math.max(ps.em?ps.em*1.25:spot*0.008,spot*0.005);
-  if(path.length){
-    let mn=Infinity,mx=-Infinity;
-    for(const p of path){if(p.px<mn)mn=p.px;if(p.px>mx)mx=p.px;}
-    half=Math.max(half,Math.abs(spot-mn)*1.2,Math.abs(mx-spot)*1.2);
+  if(isFinite(mn)&&mx>mn)half=Math.max(half,(center-mn)*1.15,(mx-center)*1.15);
+  if(isNow){
+    [kg,cw,pw].forEach(n2=>{if(n2&&Math.abs(n2.k-spot)<spot*0.03)half=Math.max(half,Math.abs(n2.k-center)*1.12);});
+    if(ps.fl!=null&&Math.abs(ps.fl-spot)<spot*0.03)half=Math.max(half,Math.abs(ps.fl-center)*1.1);
   }
-  [kg,cw,pw].forEach(n=>{if(n&&Math.abs(n.k-spot)<spot*0.03)half=Math.max(half,Math.abs(n.k-spot)*1.12);});
-  if(ps.fl!=null&&Math.abs(ps.fl-spot)<spot*0.03)half=Math.max(half,Math.abs(ps.fl-spot)*1.1);
-  const lo=spot-half,hi=spot+half;
+  /* tween the y-range — recentering (spot<->path, threshold crossings) glides
+     instead of snapping, which was most of the "buggy" feel while scrolling */
+  const nowClk=Date.now();
+  const tdt=aSceneClk?Math.min(0.2,(nowClk-aSceneClk)/1000):0;aSceneClk=nowClk;
+  if(aYManual&&aYCenterM!=null){aYC=aYCenterM;aYH=Math.max(spot*0.0012,aYHalfM);}
+  else if(aYC===null||aYH===null||aReduce){aYC=center;aYH=half;}
+  else{const kk=Math.min(1,tdt*4.5);aYC+=(center-aYC)*kk;aYH+=(half-aYH)*kk;}
+  const lo=aYC-aYH,hi=aYC+aYH;
   const ranks=[];
   for(const s of d.strikes){
     if(s.k<lo||s.k>hi)continue;
@@ -701,10 +919,11 @@ function aScene(){
     ranks.push({k:s.k,v,r,king:!!(kg&&s.k===kg.k),dl:deltaOf(sym,s.k,v,maxAbs,metric)});
   }
   ranks.sort((a,b)=>b.r-a.r);
-  return{sym,d,metric,spot,ps,kg,cw,pw,maxAbs,lo,hi,ranks,path,tEnd,t0,live,dteMin};
+  return{sym,d,metric,spot,ps,kg,cw,pw,maxAbs,lo,hi,ranks,path,tEnd,t0,live,dteMin,
+         TT,span,ttLo,ttHi,isNow,anchor};
 }
 
-/* ---- time-at-price (real minutes the path spent per bucket) ---- */
+/* ---- time-at-price (real minutes the path spent per bucket, this window) ---- */
 function aProfile(sc,BK){
   const h=new Array(BK).fill(0),p=sc.path;
   if(p.length<2)return h;
@@ -720,6 +939,102 @@ function aProfile(sc,BK){
 function aSigma(sc,m){
   if(!sc.ps.em||!sc.dteMin)return 0;
   return sc.ps.em*Math.sqrt(Math.max(0,Math.min(1,m/sc.dteMin)));
+}
+
+/* ---- CHRONICLE paint: historical field columns on an offscreen canvas ----
+   Rebuilt only when the viewport or the newest column changes — never per
+   frame. Intensity is normalised against the max |exposure| across every
+   visible column AND the live ladder, so you can watch a wall build or
+   bleed out in absolute terms across the day. */
+function aFieldPaint(sc,pw2,ph,xOfT,edgeX,plotL){
+  const t0=sc.t0,t1=sc.tEnd;
+  const rec=[],rc=[];
+  for(const c of (aField[sc.sym]||[]))if(c.t>=t0-AR.REC_MS*2&&c.t<=t1+1000)rec.push(c);
+  for(const c of (aRecon[sc.sym]||[]))if(c.t>=t0-AR.REC_MS*2&&c.t<=t1+1000)rc.push(c);
+  /* recorded columns win; reconstructed fill only where nothing was recorded */
+  const vis=rec.slice();
+  let ri=0;
+  for(const c of rc){
+    while(ri<rec.length&&rec[ri].t<c.t-75000)ri++;
+    if(ri<rec.length&&Math.abs(rec[ri].t-c.t)<75000)continue;
+    if(ri>0&&Math.abs(rec[ri-1].t-c.t)<75000)continue;
+    vis.push(c);
+  }
+  vis.sort((a,b)=>a.t-b.t);
+  const liveB=sc.isNow?Math.floor(Date.now()/5000):0;
+  const key=sc.sym+'|'+sc.metric+'|'+sc.lo.toFixed(3)+'|'+sc.hi.toFixed(3)+'|'+sc.ttLo.toFixed(0)+'|'+sc.span+'|'+pw2+'x'+ph+'|'+(vis.length?vis[vis.length-1].t:0)+'|'+rec.length+'.'+rc.length+'|'+(state.dataAge[sc.sym]||0)+'|'+liveB;
+  if(aFCv&&aFKey===key)return aFCv;
+  if(aDrag&&aFCv&&Date.now()-(aFieldPaint._t||0)<90)return aFCv;  /* don't rebuild 60fps mid-drag */
+  aFieldPaint._t=Date.now();
+  aFKey=key;
+  if(!aFCv)aFCv=document.createElement('canvas');
+  if(aFCv.width!==pw2||aFCv.height!==ph){aFCv.width=pw2;aFCv.height=ph;}
+  const fx=aFCv.getContext('2d');
+  fx.clearRect(0,0,pw2,ph);
+  const TEAL='45,212,191',MAG='192,84,247';
+  let gMax=sc.maxAbs;
+  const pick=c=>sc.metric==='vex'?c.v:c.g;
+  for(const c of vis){const a=pick(c);for(let i=0;i<a.length;i++){const x=Math.abs(a[i]);if(x>gMax)gMax=x;}}
+  /* structure tracks + net series for the sub-pane, one pass per rebuild */
+  aTracks=vis.map(c=>{
+    const vals=pick(c);
+    let king=null,ka=0,cw=null,cv=-Infinity,pw=null,pv=Infinity,net=0;
+    const sp=c.spot||sc.spot;
+    for(let i=0;i<c.ks.length;i++){
+      const v=vals[i],k=c.ks[i],av=Math.abs(v);
+      if(av>ka){ka=av;king=k;}
+      if(v>cv){cv=v;cw=k;}
+      if(v<pv){pv=v;pw=k;}
+      if(sp&&Math.abs(k-sp)<=sp*0.01)net+=v;
+    }
+    return{t:c.t,king,cw:cv>0?cw:null,pw:pv<0?pw:null,net,r:!!c.r};
+  });
+  const strip=(x0,x1,ks,vals,mul)=>{
+    if(x1-x0<0.5)return;
+    const fg=fx.createLinearGradient(0,0,0,ph);
+    let started=false;
+    for(let i=0;i<ks.length;i++){
+      if(ks[i]<sc.lo||ks[i]>sc.hi)continue;
+      const pos=Math.max(0,Math.min(1,(sc.hi-ks[i])/((sc.hi-sc.lo)||1)));
+      const val=vals[i],r=Math.abs(val)/gMax;
+      fg.addColorStop(pos,'rgba('+(val>=0?TEAL:MAG)+','+((0.04+r*0.44)*(mul||1)).toFixed(3)+')');
+      started=true;
+      /* zero-crossing seam: the field genuinely cancels there */
+      for(let j=i+1;j<ks.length;j++){
+        if(ks[j]<sc.lo||ks[j]>sc.hi)continue;
+        if(val*vals[j]<0){
+          const p2=Math.max(0,Math.min(1,(sc.hi-(ks[i]+ks[j])/2)/((sc.hi-sc.lo)||1)));
+          fg.addColorStop(Math.min(1,Math.max(0,p2)),'rgba(9,11,18,0.02)');
+        }
+        break;
+      }
+    }
+    if(!started)return;
+    fx.fillStyle=fg;fx.fillRect(x0,0,x1-x0,ph);
+  };
+  for(let i=0;i<vis.length;i++){
+    const c=vis[i];
+    const x0=Math.max(0,xOfT(c.t)-plotL);
+    const nxT=i<vis.length-1?vis[i+1].t:sc.tEnd;
+    const x1=Math.min(edgeX-plotL,xOfT(Math.min(nxT,sc.tEnd))-plotL);
+    strip(x0,x1,c.ks,pick(c),c.r?0.78:1);
+  }
+  /* live edge: from the newest column to the edge, the CURRENT ladder */
+  const liveFrom=vis.length?Math.max(0,xOfT(vis[vis.length-1].t)-plotL):null;
+  if(sc.isNow){
+    const band=[...sc.d.strikes].sort((a,b)=>a.k-b.k);
+    const ks=band.map(s=>s.k),vals=band.map(s=>mval(s,sc.metric));
+    strip(liveFrom==null?0:liveFrom,edgeX-plotL,ks,vals,1);
+    if(liveFrom==null&&!vis.length){
+      /* no history at all yet (first minutes of a fresh install): the whole
+         window shows the current field — same as v3 — but dimmed left of
+         the live edge so it reads as assumed, not recorded */
+      const dg=fx.createLinearGradient(0,0,edgeX-plotL,0);
+      dg.addColorStop(0,'rgba(5,7,12,.55)');dg.addColorStop(1,'rgba(5,7,12,0)');
+      fx.fillStyle=dg;fx.fillRect(0,0,edgeX-plotL,ph);
+    }
+  }
+  return aFCv;
 }
 
 /* ---- draw ---- */
@@ -747,60 +1062,76 @@ function aDraw(dt){
   aShake=Math.max(0,aShake-dt*1.5);
 
   const plotL=AR.PADL,plotR=W-AR.PADR;
-  const nowX=plotL+(plotR-plotL)*AR.NOWF;
-  const xOf=t=>plotL+(t-sc.t0)/AR.SPAN*(nowX-plotL);
+  /* live: reserve the right block for the Reach. Panned: the past gets the whole
+     plot — TWEENED, so crossing the live threshold slides instead of jumping. */
+  const edgeTarget=sc.isNow?AR.NOWF:1;
+  if(aEdgeF===null||aReduce)aEdgeF=edgeTarget;
+  else{aEdgeF+=(edgeTarget-aEdgeF)*Math.min(1,dt*6);if(Math.abs(aEdgeF-edgeTarget)<0.004)aEdgeF=edgeTarget;}
+  const nowX=plotL+(plotR-plotL)*aEdgeF;
+  const edgeX=nowX;
+  /* sub-pane: net exposure through time (skipped on very short canvases) */
+  const SUBH=H>=430?86:0,AXH=SUBH?26:0;
+  const mainB=H-AR.PADY-SUBH-AXH;
+  const pxPerTT=(edgeX-plotL)/sc.span;
+  const xOf=t=>plotL+(sc.TT.fwd(t)-sc.ttLo)*pxPerTT;
   const xFwd=m=>nowX+(m/AR.FWD)*(plotR-nowX);
-  const yOf=p=>AR.PADY+(sc.hi-p)/((sc.hi-sc.lo)||1)*(H-2*AR.PADY);
+  const yOf=p=>AR.PADY+(sc.hi-p)/((sc.hi-sc.lo)||1)*(mainB-AR.PADY);
   const spotY=yOf(aTweenSpot);
+  aVM={plotL,plotR,edgeX,ttLo:sc.ttLo,ttHi:sc.ttHi,span:sc.span,TT:sc.TT,anchor:sc.anchor,first:sc.TT.first,W,H,plotH:mainB-AR.PADY,padY:AR.PADY,yLo:sc.lo,yHi:sc.hi};
 
   ctx.save();
-  if(aShake>0.01)ctx.translate((Math.random()-0.5)*aShake*6,(Math.random()-0.5)*aShake*4);
+  if(aShake>0.01&&sc.isNow)ctx.translate((Math.random()-0.5)*aShake*6,(Math.random()-0.5)*aShake*4);
 
   /* --- backdrop --- */
   const bg=ctx.createLinearGradient(0,0,0,H);
   bg.addColorStop(0,'#080a11');bg.addColorStop(.55,'#06080e');bg.addColorStop(1,'#04050a');
   ctx.fillStyle=bg;ctx.fillRect(-12,-12,W+24,H+24);
 
-  /* --- THE FIELD: one continuous gradient across the ladder ---
-     Colour and alpha ARE the exposure. It fades through black at the zero
-     crossing because that is where the field genuinely cancels. */
-  const band=[...sc.d.strikes].filter(s=>s.k>=sc.lo&&s.k<=sc.hi);
-  if(band.length){
-    const posOf=k=>Math.max(0,Math.min(1,(sc.hi-k)/((sc.hi-sc.lo)||1)));
-    const fg=ctx.createLinearGradient(0,AR.PADY,0,H-AR.PADY);
-    for(let i=0;i<band.length;i++){
-      const v=mval(band[i],sc.metric),r=Math.abs(v)/sc.maxAbs;
-      fg.addColorStop(posOf(band[i].k),'rgba('+(v>=0?TEAL:MAG)+','+(0.04+r*0.44).toFixed(3)+')');
-      if(i<band.length-1){
-        const v2=mval(band[i+1],sc.metric);
-        if(v*v2<0)fg.addColorStop((posOf(band[i].k)+posOf(band[i+1].k))/2,'rgba(9,11,18,0.02)');
-      }
-    }
-    ctx.fillStyle=fg;ctx.fillRect(plotL,AR.PADY,plotR-plotL,H-2*AR.PADY);
-  }
+  /* --- THE CHRONICLE: the field through time --- */
+  const fcv=aFieldPaint(sc,Math.max(2,Math.round(edgeX-plotL)),Math.max(2,Math.round(mainB-AR.PADY)),xOf,edgeX,plotL);
+  if(fcv)ctx.drawImage(fcv,plotL,AR.PADY,edgeX-plotL,mainB-AR.PADY);
   /* depth: the past is dimmer than the live edge */
-  const dim=ctx.createLinearGradient(plotL,0,nowX,0);
-  dim.addColorStop(0,'rgba(5,7,12,.62)');dim.addColorStop(1,'rgba(5,7,12,0)');
-  ctx.fillStyle=dim;ctx.fillRect(plotL,AR.PADY,nowX-plotL,H-2*AR.PADY);
-  const vig=ctx.createRadialGradient(nowX,spotY,8,nowX,spotY,Math.max(W,H)*0.75);
-  vig.addColorStop(0,'rgba('+(pos?TEAL:MAG)+','+(0.05+aRegFlash*0.18).toFixed(3)+')');
-  vig.addColorStop(1,'rgba('+(pos?TEAL:MAG)+',0)');
-  ctx.fillStyle=vig;ctx.fillRect(0,0,W,H);
+  const dim=ctx.createLinearGradient(plotL,0,edgeX,0);
+  dim.addColorStop(0,'rgba(5,7,12,.45)');dim.addColorStop(1,'rgba(5,7,12,0)');
+  ctx.fillStyle=dim;ctx.fillRect(plotL,AR.PADY,edgeX-plotL,mainB-AR.PADY);
+  if(sc.isNow){
+    const vig=ctx.createRadialGradient(nowX,spotY,8,nowX,spotY,Math.max(W,H)*0.75);
+    vig.addColorStop(0,'rgba('+(pos?TEAL:MAG)+','+(0.05+aRegFlash*0.18).toFixed(3)+')');
+    vig.addColorStop(1,'rgba('+(pos?TEAL:MAG)+',0)');
+    ctx.fillStyle=vig;ctx.fillRect(0,0,W,H);
+  }
 
-  /* --- time grid --- */
+  /* --- session seams (compressed gaps) --- */
+  for(let i=1;i<sc.TT.segs.length;i++){
+    const g=sc.TT.segs[i];
+    const x=xOf(g.t0);
+    if(x<plotL-4||x>edgeX+4)continue;
+    ctx.strokeStyle='rgba(126,166,214,.16)';ctx.setLineDash([2,5]);
+    ctx.beginPath();ctx.moveTo(x+.5,AR.PADY);ctx.lineTo(x+.5,mainB);ctx.stroke();ctx.setLineDash([]);
+    aLab(ctx,aDayLab(g.t0),x+3,AR.PADY+11,'rgba(126,166,214,.6)','left',8.5);
+  }
+
+  /* --- time grid: -Nm ticks when tight, NY clock when wide --- */
+  const spanMin=sc.span/60000;
+  const step=(spanMin<=30?10:spanMin<=60?15:spanMin<=180?30:spanMin<=420?60:120)*60000;
+  const clock=spanMin>45;
   ctx.strokeStyle='rgba(126,166,214,.05)';ctx.lineWidth=1;
-  for(let m=30;m>0;m-=10){
-    const x=xOf(sc.tEnd-m*60000);
-    ctx.beginPath();ctx.moveTo(x+.5,AR.PADY);ctx.lineTo(x+.5,H-AR.PADY);ctx.stroke();
-    aLab(ctx,'-'+m+'m',x+3,H-AR.PADY+13,'rgba(96,106,124,.8)','left',9);
+  let lastTickX=-999;
+  for(let t=Math.floor(sc.tEnd/step)*step;t>=sc.t0;t-=step){
+    const x=xOf(t);
+    if(x<plotL+2||x>edgeX-2)continue;
+    if(Math.abs(x-lastTickX)<34)continue;
+    lastTickX=x;
+    ctx.beginPath();ctx.moveTo(x+.5,AR.PADY);ctx.lineTo(x+.5,mainB);ctx.stroke();
+    aLab(ctx,clock?aClk(t):('-'+Math.round((sc.tEnd-t)/60000)+'m'),x+3,mainB+13,'rgba(96,106,124,.8)','left',9);
   }
   ctx.strokeStyle='rgba(34,211,238,.22)';ctx.beginPath();
-  ctx.moveTo(nowX+.5,AR.PADY);ctx.lineTo(nowX+.5,H-AR.PADY);ctx.stroke();
-  aLab(ctx,sc.live?'NOW':'CLOSE',nowX+4,H-AR.PADY+13,'rgba('+CYAN+',.85)','left',9);
-  aLab(ctx,'+'+AR.FWD+'m',plotR-2,H-AR.PADY+13,'rgba(96,106,124,.8)','right',9);
+  ctx.moveTo(nowX+.5,AR.PADY);ctx.lineTo(nowX+.5,SUBH?H-AR.PADY:mainB);ctx.stroke();
+  aLab(ctx,sc.isNow?(sc.live?'NOW':'CLOSE'):aClk(sc.tEnd),nowX-4,mainB+13,'rgba('+CYAN+',.85)','right',9);
+  if(sc.isNow)aLab(ctx,'+'+AR.FWD+'m',plotR-2,mainB+13,'rgba(96,106,124,.8)','right',9);
 
-  /* --- time @ price, left margin --- */
-  const BK=52,prof=aProfile(sc,BK),pmax=Math.max(...prof,1),bh=(H-2*AR.PADY)/BK;
+  /* --- time @ price, left margin (window-scoped) --- */
+  const BK=52,prof=aProfile(sc,BK),pmax=Math.max(...prof,1),bh=(mainB-AR.PADY)/BK;
   for(let i=0;i<BK;i++){
     if(!prof[i])continue;
     const inten=prof[i]/pmax,y=AR.PADY+(BK-1-i)*bh,len=inten*(AR.PADL-12);
@@ -809,24 +1140,65 @@ function aDraw(dt){
   }
   aLab(ctx,'TIME @ PRICE',4,AR.PADY-8,'rgba(200,140,70,.7)','left',8);
 
-  /* --- key levels: four lines, not twenty --- */
+  /* --- key levels: CURRENT structure. Dimmed + dashed when viewing the past --- */
+  const lvA=sc.isNow?1:0.45,labYs=[];
   const line=(p,col,txt,w)=>{
     if(p==null||p<sc.lo||p>sc.hi)return;
     const y=yOf(p);
-    ctx.strokeStyle='rgba('+col+',.42)';ctx.lineWidth=w||1;
-    ctx.beginPath();ctx.moveTo(plotL,y+.5);ctx.lineTo(plotR,y+.5);ctx.stroke();
-    aLab(ctx,txt,plotL+5,y-6,'rgba('+col+',.92)','left',9);
+    ctx.strokeStyle='rgba('+col+','+(0.42*lvA).toFixed(2)+')';ctx.lineWidth=w||1;
+    if(!sc.isNow)ctx.setLineDash([4,4]);
+    ctx.beginPath();ctx.moveTo(plotL,y+.5);ctx.lineTo(plotR,y+.5);ctx.stroke();ctx.setLineDash([]);
+    let ly=y-6;                              /* dodge overlapping labels */
+    if(labYs.some(e=>Math.abs(ly-e)<11))ly=y+13;
+    if(labYs.some(e=>Math.abs(ly-e)<11))ly=y+24;
+    labYs.push(ly);
+    aLab(ctx,txt+(sc.isNow?'':' (now)'),plotL+5,ly,'rgba('+col+','+(0.92*lvA).toFixed(2)+')','left',9);
   };
   line(sc.cw?sc.cw.k:null,TEAL,'CALL WALL '+(sc.cw?sc.cw.k:''),1.5);
   line(sc.pw?sc.pw.k:null,MAG,'PUT WALL '+(sc.pw?sc.pw.k:''),1.5);
   line(sc.ps.fl,GOLD,'THE RIFT '+(sc.ps.fl!=null?(+sc.ps.fl).toFixed(sc.spot>2000?0:1):''),1.2);
   if(sc.kg){const kv=mval(sc.kg,sc.metric);line(sc.kg.k,kv>=0?GOLD:'216,60,255','\u2605 CROWN '+sc.kg.k,2);}
 
+  /* --- STRUCTURE TRACKS: where Crown / Call Wall / Put Wall actually SAT
+     through time, stepped from Chronicle columns. Walls migrating is the
+     whole story — now you can see them walk. --- */
+  if(aTracks.length>1){
+    const seg2=(y,x0,x1,col,al)=>{if(y<sc.lo||y>sc.hi||x1-x0<0.5)return;
+      const yy=yOf(y);ctx.strokeStyle='rgba('+col+','+al+')';ctx.lineWidth=1;
+      ctx.beginPath();ctx.moveTo(x0,yy+.5);ctx.lineTo(x1,yy+.5);ctx.stroke();};
+    for(let i=0;i<aTracks.length;i++){
+      const tk=aTracks[i];
+      const x0=Math.max(plotL,xOf(tk.t)),x1=Math.min(edgeX,xOf(i<aTracks.length-1?aTracks[i+1].t:sc.tEnd));
+      const al=tk.r?'0.22':'0.32';
+      if(tk.king!=null)seg2(tk.king,x0,x1,GOLD,al);
+      if(tk.cw!=null&&tk.cw!==tk.king)seg2(tk.cw,x0,x1,TEAL,al);
+      if(tk.pw!=null&&tk.pw!==tk.king)seg2(tk.pw,x0,x1,MAG,al);
+    }
+  }
+
+  /* --- CANDLES (optional layer, real 1-min OHLC, auto-hides sub-3px) --- */
+  if(aCandle){
+    const bw=60000*pxPerTT;
+    if(bw>=3){
+      for(const b of sc.path){
+        if(b.o==null||b.h==null||b.l==null)continue;
+        const x=xOf(b.t),w=Math.max(1.5,bw*0.62);
+        if(x<plotL-w||x>edgeX+w)continue;
+        const up=b.px>=b.o,c=up?TEAL:MAG;
+        ctx.strokeStyle='rgba('+c+',.5)';ctx.lineWidth=1;
+        ctx.beginPath();ctx.moveTo(x+.5,yOf(b.h));ctx.lineTo(x+.5,yOf(b.l));ctx.stroke();
+        const yO=yOf(b.o),yC=yOf(b.px);
+        ctx.fillStyle='rgba('+c+',.42)';
+        ctx.fillRect(x-w/2,Math.min(yO,yC),w,Math.max(1,Math.abs(yC-yO)));
+      }
+    }
+  }
+
   /* ================= additive layer ================= */
   ctx.globalCompositeOperation='lighter';
 
-  /* --- THE REACH: forward EM cone (real implied distribution) --- */
-  if(sc.ps.em&&sc.dteMin){
+  /* --- THE REACH: forward EM cone — live edge only --- */
+  if(sc.isNow&&sc.ps.em&&sc.dteMin){
     const N=26;
     for(const [mult,alpha] of [[2,0.05],[1,0.09]]){
       ctx.beginPath();
@@ -843,8 +1215,8 @@ function aDraw(dt){
     aLab(ctx,'THE REACH \u00b71\u03c3',xFwd(AR.FWD*0.5),yOf(sc.spot+aSigma(sc,AR.FWD))-7,'rgba('+CYAN+',.6)','center',8.5);
   }
 
-  /* --- tracer fire from the top nodes --- */
-  if(!aReduce){
+  /* --- tracer fire from the top nodes — live edge only --- */
+  if(!aReduce&&sc.isNow){
     for(const rk of sc.ranks.slice(0,AR.TOPB)){
       if(Math.random()>rk.r*0.26)continue;
       const ry=yOf(rk.k),hold=rk.v>=0;
@@ -854,24 +1226,29 @@ function aDraw(dt){
     }
     if(aParts.length>AR.MAXP)aParts.splice(0,aParts.length-AR.MAXP);
     for(let i=aParts.length-1;i>=0;i--){const q=aParts[i];q.p+=q.sp*dt;if(q.p>=1)aParts.splice(i,1);}
-  }
-  for(const q of aParts){
-    const x=q.x0+(q.x1-q.x0)*q.p,y=q.y0+(q.y1-q.y0)*q.p;
-    const a=Math.sin(q.p*Math.PI)*(0.28+q.r*0.5);
-    const c=q.king?(q.hold?GOLD:'216,60,255'):(q.hold?TEAL:MAG);
-    ctx.strokeStyle='rgba('+c+','+a.toFixed(3)+')';ctx.lineWidth=1+q.r*1.3;
-    ctx.beginPath();ctx.moveTo(x-(q.x1-q.x0)*0.045,y-(q.y1-q.y0)*0.045);ctx.lineTo(x,y);ctx.stroke();
+    for(const q of aParts){
+      const x=q.x0+(q.x1-q.x0)*q.p,y=q.y0+(q.y1-q.y0)*q.p;
+      const a=Math.sin(q.p*Math.PI)*(0.28+q.r*0.5);
+      const c=q.king?(q.hold?GOLD:'216,60,255'):(q.hold?TEAL:MAG);
+      ctx.strokeStyle='rgba('+c+','+a.toFixed(3)+')';ctx.lineWidth=1+q.r*1.3;
+      ctx.beginPath();ctx.moveTo(x-(q.x1-q.x0)*0.045,y-(q.y1-q.y0)*0.045);ctx.lineTo(x,y);ctx.stroke();
+    }
   }
 
   /* --- THE FRONT --- */
   const P=sc.path;
   if(P.length>1){
+    const thin=aCandle&&60000*pxPerTT>=3;
     for(let i=1;i<P.length;i++){
-      const a=Math.max(0.06,1-(sc.tEnd-P[i].t)/AR.SPAN);
+      if(P[i].t-P[i-1].t>AR.GAPMS)continue;      /* don't draw across a session seam */
+      const a=Math.max(0.14,1-(sc.ttHi-sc.TT.fwd(P[i].t))/sc.span);
       const x0=xOf(P[i-1].t),y0=yOf(P[i-1].px),x1=xOf(P[i].t),y1=yOf(P[i].px);
-      ctx.strokeStyle='rgba('+CYAN+','+(a*0.20).toFixed(3)+')';ctx.lineWidth=5+a*5;
-      ctx.beginPath();ctx.moveTo(x0,y0);ctx.lineTo(x1,y1);ctx.stroke();
-      ctx.strokeStyle='rgba(255,255,255,'+(a*0.62).toFixed(3)+')';ctx.lineWidth=1+a*1.3;
+      if(x1<plotL-2||x0>edgeX+2)continue;
+      if(!thin){
+        ctx.strokeStyle='rgba('+CYAN+','+(a*0.20).toFixed(3)+')';ctx.lineWidth=5+a*5;
+        ctx.beginPath();ctx.moveTo(x0,y0);ctx.lineTo(x1,y1);ctx.stroke();
+      }
+      ctx.strokeStyle='rgba(255,255,255,'+(a*(thin?0.4:0.62)).toFixed(3)+')';ctx.lineWidth=thin?1:1+a*1.3;
       ctx.beginPath();ctx.moveTo(x0,y0);ctx.lineTo(x1,y1);ctx.stroke();
     }
   }
@@ -884,12 +1261,46 @@ function aDraw(dt){
     ctx.beginPath();ctx.arc(b.x,b.y,6+b.t*64,0,Math.PI*2);ctx.stroke();
   }
 
-  /* --- the standard --- */
-  const halo=ctx.createRadialGradient(nowX,spotY,0,nowX,spotY,24);
-  halo.addColorStop(0,'rgba('+CYAN+',.85)');halo.addColorStop(.5,'rgba('+CYAN+',.22)');halo.addColorStop(1,'rgba('+CYAN+',0)');
-  ctx.fillStyle=halo;ctx.beginPath();ctx.arc(nowX,spotY,24,0,Math.PI*2);ctx.fill();
-  ctx.fillStyle='rgba(255,255,255,.96)';ctx.beginPath();ctx.arc(nowX,spotY,3.2,0,Math.PI*2);ctx.fill();
+  /* --- the standard — live edge only --- */
+  if(sc.isNow){
+    const halo=ctx.createRadialGradient(nowX,spotY,0,nowX,spotY,24);
+    halo.addColorStop(0,'rgba('+CYAN+',.85)');halo.addColorStop(.5,'rgba('+CYAN+',.22)');halo.addColorStop(1,'rgba('+CYAN+',0)');
+    ctx.fillStyle=halo;ctx.beginPath();ctx.arc(nowX,spotY,24,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='rgba(255,255,255,.96)';ctx.beginPath();ctx.arc(nowX,spotY,3.2,0,Math.PI*2);ctx.fill();
+  }
   ctx.globalCompositeOperation='source-over';
+
+  /* --- THE UNDERTOW: net ±1% exposure through time (sub-pane) ---
+     Same number as the FIELD/NET stat, per Chronicle column. Teal above
+     zero = Aegis regime then; magenta below = Maelstrom. Dimmer bars are
+     reconstructed, brighter are recorded. --- */
+  if(SUBH){
+    const sy0=mainB+AXH,sy1=H-AR.PADY;
+    ctx.fillStyle='rgba(5,7,12,.55)';ctx.fillRect(plotL,sy0,plotR-plotL,sy1-sy0);
+    ctx.strokeStyle='rgba(126,166,214,.10)';ctx.strokeRect(plotL+.5,sy0+.5,plotR-plotL-1,sy1-sy0-1);
+    const zy=(sy0+sy1)/2;
+    let nmax=1;
+    for(const tk of aTracks)if(Math.abs(tk.net)>nmax)nmax=Math.abs(tk.net);
+    if(sc.isNow&&Math.abs(sc.ps.net1)>nmax)nmax=Math.abs(sc.ps.net1);
+    ctx.strokeStyle='rgba(126,166,214,.18)';ctx.setLineDash([2,4]);
+    ctx.beginPath();ctx.moveTo(plotL,zy+.5);ctx.lineTo(edgeX,zy+.5);ctx.stroke();ctx.setLineDash([]);
+    const amp=(sy1-sy0)/2-4;
+    for(let i=0;i<aTracks.length;i++){
+      const tk=aTracks[i];
+      const x0=Math.max(plotL,xOf(tk.t)),x1=Math.min(edgeX,xOf(i<aTracks.length-1?aTracks[i+1].t:sc.tEnd));
+      if(x1-x0<0.5)continue;
+      const hgt=tk.net/nmax*amp;
+      ctx.fillStyle='rgba('+(tk.net>=0?TEAL:MAG)+','+(tk.r?'0.30':'0.48')+')';
+      ctx.fillRect(x0,Math.min(zy,zy-hgt),x1-x0,Math.max(1,Math.abs(hgt)));
+    }
+    if(sc.isNow){ /* live tip: the current net at the edge */
+      const hgt=sc.ps.net1/nmax*amp;
+      ctx.fillStyle='rgba('+(sc.ps.net1>=0?TEAL:MAG)+',.9)';
+      ctx.fillRect(edgeX-2,Math.min(zy,zy-hgt),2.5,Math.max(1.5,Math.abs(hgt)));
+    }
+    aLab(ctx,'NET ±1% · '+metricLabel(sc.metric).toUpperCase()+' · THROUGH TIME',plotL+5,sy0+11,'rgba(126,166,214,.6)','left',8);
+    aLab(ctx,'±'+fmt(nmax),edgeX-4,sy0+11,'rgba(126,166,214,.55)','right',8);
+  }
 
   /* --- bloom --- */
   if(aBlurOK&&!aReduce){
@@ -902,25 +1313,54 @@ function aDraw(dt){
     ctx.drawImage(aBloom,0,0,W,H);ctx.restore();
   }
 
-  /* --- RIDGELINE: readable strikes, right margin --- */
+  /* --- RIDGELINE: readable strikes, right margin (current ladder) --- */
   ctx.fillStyle='rgba(5,7,12,.86)';ctx.fillRect(plotR,0,W-plotR,H);
   ctx.strokeStyle='rgba(126,166,214,.12)';ctx.beginPath();ctx.moveTo(plotR+.5,AR.PADY);ctx.lineTo(plotR+.5,H-AR.PADY);ctx.stroke();
-  const bx0=plotR+8,bw=52;
+  const bx0=plotR+8,bw2=52;
   for(const rk of sc.ranks.slice(0,AR.TOPN)){
     const y=yOf(rk.k),c=rk.king?(rk.v>=0?GOLD:'216,60,255'):(rk.v>=0?TEAL:MAG);
     ctx.fillStyle='rgba('+c+',.8)';
-    aRound(ctx,bx0,y-2,Math.max(2,rk.r*bw),4,2);ctx.fill();
+    aRound(ctx,bx0,y-2,Math.max(2,rk.r*bw2),4,2);ctx.fill();
     aLab(ctx,(rk.king?'\u2605':'')+rk.k,W-6,y+4,'rgba('+c+',.96)','right',11);
   }
   aLab(ctx,'|'+metricLabel(sc.metric).toUpperCase()+'|',bx0,AR.PADY-8,'rgba(126,166,214,.55)','left',8);
 
-  /* --- price pill (right of the standard, clear of the edge) --- */
-  const lab='$'+aTweenSpot.toFixed(2);
-  ctx.font='700 12px "JetBrains Mono",monospace';
-  const tw=ctx.measureText(lab).width;
-  ctx.fillStyle='rgba('+CYAN+',.97)';
-  aRound(ctx,nowX+11,spotY-9,tw+13,18,4);ctx.fill();
-  ctx.fillStyle='#04121a';ctx.fillText(lab,nowX+17.5,spotY+4);
+  /* --- price pill — live edge only --- */
+  if(sc.isNow){
+    const lab='$'+aTweenSpot.toFixed(2);
+    ctx.font='700 12px "JetBrains Mono",monospace';
+    const tw=ctx.measureText(lab).width;
+    ctx.fillStyle='rgba('+CYAN+',.97)';
+    aRound(ctx,nowX+11,spotY-9,tw+13,18,4);ctx.fill();
+    ctx.fillStyle='#04121a';ctx.fillText(lab,nowX+17.5,spotY+4);
+  }
+
+  /* --- THE LENS: hover inspector --- */
+  if(aMouse&&aMouse.x>plotL&&aMouse.x<edgeX&&aMouse.y>AR.PADY&&aMouse.y<mainB&&!aDrag){
+    const tt=sc.ttLo+(aMouse.x-plotL)/pxPerTT,tm=sc.TT.inv(tt);
+    const py=sc.hi-(aMouse.y-AR.PADY)/(mainB-AR.PADY)*(sc.hi-sc.lo);
+    ctx.strokeStyle='rgba(255,255,255,.14)';ctx.setLineDash([3,4]);
+    ctx.beginPath();ctx.moveTo(aMouse.x+.5,AR.PADY);ctx.lineTo(aMouse.x+.5,SUBH?H-AR.PADY:mainB);ctx.stroke();ctx.setLineDash([]);
+    let bar=null,bd=1e18;
+    for(const b of sc.path){const d2=Math.abs(b.t-tm);if(d2<bd){bd=d2;bar=b;}}
+    let col=null,cd=1e18;
+    for(const c of (aField[sc.sym]||[])){if(c.t>tm)break;const d2=tm-c.t;if(d2<cd){cd=d2;col=c;}}
+    for(const c of (aRecon[sc.sym]||[])){if(c.t>tm)break;const d2=tm-c.t;if(d2<cd){cd=d2;col=c;}}
+    let fLine='';
+    if(col&&cd<10*60000){
+      let bi=-1,bk=1e18;
+      for(let i=0;i<col.ks.length;i++){const d2=Math.abs(col.ks[i]-py);if(d2<bk){bk=d2;bi=i;}}
+      if(bi>=0){const vv=(sc.metric==='vex'?col.v:col.g)[bi];fLine=col.ks[bi]+' '+metricLabel(sc.metric).toLowerCase()+' '+mdisp(vv,sc.spot)+(col.r?' · recon':'');}
+    }
+    const rows=[aClk(tm)+' \u00b7 '+aDayLab(tm),'$'+py.toFixed(sc.spot>2000?1:2)+(bar&&bd<120000?' \u00b7 close $'+(+bar.px).toFixed(2):'')];
+    if(fLine)rows.push(fLine);
+    ctx.font='600 10px "JetBrains Mono",monospace';
+    let mw=0;for(const r of rows)mw=Math.max(mw,ctx.measureText(r).width);
+    const bxx=Math.min(aMouse.x+12,W-mw-22),byy=Math.max(AR.PADY+4,Math.min(aMouse.y-10,mainB-16*rows.length-10));
+    ctx.fillStyle='rgba(5,7,12,.92)';aRound(ctx,bxx,byy,mw+14,16*rows.length+8,4);ctx.fill();
+    ctx.strokeStyle='rgba(126,166,214,.25)';aRound(ctx,bxx,byy,mw+14,16*rows.length+8,4);ctx.stroke();
+    rows.forEach((r,i)=>aLab(ctx,r,bxx+7,byy+15+i*16,i===0?'rgba('+CYAN+',.9)':'rgba(230,236,246,.92)','left',10));
+  }
 
   /* --- FX --- */
   if(!aReduce){
@@ -943,6 +1383,103 @@ function aRound(ctx,x,y,w,h,r){
   ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();
 }
 
+/* ---- THE WINDOW: chips + pan/zoom interactions ---- */
+function aSetWin(m){
+  aWin=Math.max(AR.WINMIN,Math.min(AR.WINMAX,m));
+  try{localStorage.setItem('kairos_nx_win',String(Math.round(aWin)));}catch(e){}
+  aFKey='';aChips();
+  if(aWin>420)aHist(state.focus,true);
+}
+function aGoLive(){aPan=0;aFKey='';aChips();}
+function aYFit(){aYManual=false;aYCenterM=null;aYHalfM=null;aFKey='';aChips();}
+function aChips(){
+  const el=document.getElementById('nxWins');if(!el)return;
+  const wins=[['30M',30],['1H',60],['2H',120],['DAY',390],['5D',1950]];
+  el.innerHTML=wins.map(w=>'<button data-w="'+w[1]+'"'+(Math.abs(aWin-w[1])<w[1]*0.25?' class="on"':'')+'>'+w[0]+'</button>').join('')+
+    '<button data-w="candle"'+(aCandle?' class="on"':'')+' data-tip="1-min OHLC candles from Tradier timesales. Auto-hides when bars go sub-3px.">CANDLE</button>'+
+    (aPan>30000?'<button data-w="live" class="livebtn" data-tip="Snap back to the live edge (double-click the canvas does the same)">\u25c9 LIVE</button>':'')+
+    (aYManual?'<button data-w="yfit" class="livebtn" data-tip="Auto-fit the price axis again. Drag up/down pans price; Shift+wheel (or wheel over the strikes) zooms it.">\u2921 FIT Y</button>':'');
+}
+(function(){
+  const stage=document.querySelector('.a-stage');
+  if(!stage)return;
+  const row=document.createElement('div');
+  row.id='nxWins';row.className='nx-wins mtoggle';
+  const top=document.querySelector('.a-top');
+  if(top){const lg=top.querySelector('.a-legend');top.insertBefore(row,lg||null);}
+  row.addEventListener('click',e=>{
+    const b=e.target.closest('button');if(!b)return;
+    const w=b.dataset.w;
+    if(w==='live'){aGoLive();return;}
+    if(w==='yfit'){aYFit();return;}
+    if(w==='candle'){aCandle=!aCandle;try{localStorage.setItem('kairos_nx_candle',aCandle?'1':'0');}catch(x){}aChips();return;}
+    aSetWin(+w);
+  });
+  aChips();
+  const cv=aCv();if(!cv)return;
+  cv.style.touchAction='none';cv.style.cursor='crosshair';
+  cv.addEventListener('pointerdown',e=>{
+    aDrag={x:e.clientX,y:e.clientY,pan:aPan,back:aPan>30000,yeng:false,ycen0:(aYCenterM!=null?aYCenterM:aYC)};cv.setPointerCapture(e.pointerId);cv.style.cursor='grabbing';
+  });
+  cv.addEventListener('pointermove',e=>{
+    const r=cv.getBoundingClientRect();
+    aMouse={x:e.clientX-r.left,y:e.clientY-r.top};
+    if(aDrag&&aVM){
+      const dx=e.clientX-aDrag.x;
+      aPan=aDrag.pan+dx/((aVM.edgeX-aVM.plotL)/aVM.span);
+      const maxPan=Math.max(0,aVM.TT.fwd(aVM.anchor)-aVM.TT.fwd(aVM.first)-aVM.span*0.25);
+      const prevBack=aDrag.back===true;
+      aPan=Math.max(0,Math.min(maxPan,aPan));
+      aFKey='';
+      const nowBack=aPan>30000;
+      if(nowBack!==prevBack){aDrag.back=nowBack;aChips();}
+      if(aPan>=maxPan*0.92&&aVM.span+aPan>7*3600000)aHist(state.focus,true);
+      /* --- Y pan: drag up/down to move the price window, field stays put --- */
+      const dy=e.clientY-aDrag.y;
+      if(!aDrag.yeng&&Math.abs(dy)>4){
+        aDrag.yeng=true;
+        if(aYCenterM==null){aYCenterM=aYC;aYHalfM=aYH;aDrag.ycen0=aYC;}
+        aYManual=true;aChips();
+      }
+      if(aDrag.yeng&&aVM.plotH>0){
+        aYCenterM=aDrag.ycen0+dy/aVM.plotH*(2*aYHalfM);
+      }
+    }
+  });
+  const up=e=>{if(aDrag){aDrag=null;cv.style.cursor='crosshair';}};
+  cv.addEventListener('pointerup',up);cv.addEventListener('pointercancel',up);
+  cv.addEventListener('pointerleave',()=>{aMouse=null;});
+  cv.addEventListener('dblclick',()=>{aGoLive();aSetWin(30);aYFit();});
+  cv.addEventListener('wheel',e=>{
+    if(!aVM)return;
+    e.preventDefault();
+    const r=cv.getBoundingClientRect(),mx=e.clientX-r.left,my=e.clientY-r.top;
+    /* Y-zoom: hold Shift, or scroll over the strike ridgeline on the right */
+    if(e.shiftKey||mx>aVM.plotR){
+      if(aYCenterM==null){aYCenterM=aYC;aYHalfM=aYH;}
+      aYManual=true;
+      const yf=Math.max(0,Math.min(1,(my-aVM.padY)/(aVM.plotH||1)));
+      const priceAt=(aYCenterM+aYHalfM)-yf*(2*aYHalfM);
+      aYHalfM=Math.max(1e-4,aYHalfM*(e.deltaY>0?1.14:1/1.14));
+      aYCenterM=priceAt+aYHalfM*(2*yf-1);
+      aChips();
+      return;
+    }
+    const frac=Math.max(0,Math.min(1,(mx-aVM.plotL)/(aVM.edgeX-aVM.plotL)));
+    const ttCur=aVM.ttLo+frac*aVM.span;
+    const f=e.deltaY>0?1.14:1/1.14;
+    const old=aWin;
+    aWin=Math.max(AR.WINMIN,Math.min(AR.WINMAX,aWin*f));
+    if(aWin===old)return;
+    const span2=aSpanMs();
+    const ttAnchor=aVM.TT.fwd(aVM.anchor);
+    aPan=Math.max(0,ttAnchor-(ttCur+(1-frac)*span2));
+    try{localStorage.setItem('kairos_nx_win',String(Math.round(aWin)));}catch(x){}
+    aFKey='';aChips();
+    if(aWin>420)aHist(state.focus,true);
+  },{passive:false});
+})();
+
 /* ---- HUD ---- */
 function aHud(){
   const sc=aScene(),hud=document.getElementById('arenaHud'),meta=document.getElementById('arenaMeta');
@@ -952,7 +1489,10 @@ function aHud(){
   if(st2!==aStamp)aStamp=st2;
   const dp=sc.spot>2000?0:2,pos=sc.ps.net1>=0;
   const mins=sc.path.length>1?Math.round((sc.tEnd-sc.path[0].t)/60000):0;
-  if(meta)meta.textContent='$'+(+sc.spot).toFixed(2)+' \u00b7 '+sc.d.source+' \u00b7 '+metricLabel(sc.metric).toLowerCase()+' field \u00b7 '+mins+'m of front'+(sc.live?'':' \u00b7 last session');
+  const cols=(aField[sc.sym]||[]).length,rcn=(aRecon[sc.sym]||[]).length;
+  const back=sc.isNow?'':' \u00b7 viewing '+aClk(sc.tEnd);
+  const wlab=sc.span>=390*60000?(sc.span/60000/390).toFixed(sc.span>=780*60000?1:0)+'D':Math.round(sc.span/60000)+'m';
+  if(meta)meta.textContent='$'+(+sc.spot).toFixed(2)+' \u00b7 '+sc.d.source+' \u00b7 '+metricLabel(sc.metric).toLowerCase()+' field \u00b7 '+wlab+' window \u00b7 '+cols+' rec'+(rcn?' + '+rcn+' recon':'')+back+(sc.live?'':' \u00b7 last session');
   let hi=-Infinity,lo=Infinity;
   for(const p of sc.path){if(p.px>hi)hi=p.px;if(p.px<lo)lo=p.px;}
   const st=(l,v,c,tip)=>'<div class="stat"'+(tip?' data-tip="'+tip+'"':'')+'><div class="sl">'+l+'</div><div class="sv" style="color:'+(c||'var(--text)')+'">'+v+'</div></div>';
@@ -962,7 +1502,7 @@ function aHud(){
     st('CALL WALL',sc.cw?sc.cw.k:'\u2014','var(--teal)','Largest positive node above spot.')+
     st('PUT WALL',sc.pw?sc.pw.k:'\u2014','#c99bff','Largest negative node below spot.')+
     st('THE RIFT',sc.ps.fl!=null?(+sc.ps.fl).toFixed(sc.spot>2000?0:1):'\u2014','var(--cyan)','Zero-gamma flip from the repriced profile.')+
-    st('30m RANGE',isFinite(hi)&&hi>lo?(hi-lo).toFixed(dp):'\u2014','var(--text)','High-low of the real path on screen.')+
+    st('WIN RANGE',isFinite(hi)&&hi>lo?(hi-lo).toFixed(dp):'\u2014','var(--text)','High-low of the real path in the current window ('+wlab+').')+
     st('NET \u00b11%',mdisp(sc.ps.net1,sc.spot),pos?'var(--teal)':'#e879f9','Drives the field colour.')+
     st('REACH +'+AR.FWD+'m',sc.ps.em&&sc.dteMin?'\u00b1'+aSigma(sc,AR.FWD).toFixed(dp):'\u2014','var(--cyan)','\u00b11\u03c3 implied by ATM IV over the next '+AR.FWD+' minutes.');
 }
@@ -992,8 +1532,11 @@ function aHud(){
   if(ti)ti.onchange=async function(){
     const v=cleanSym(ti.value);
     if(!v){ti.value=state.focus;return;}
-    ti.value=v;state.focus=v;aTweenSpot=null;aParts=[];aSeen={};delete aHistT[v];
-    renderPresets();aHist(v);
+    ti.value=v;state.focus=v;aTweenSpot=null;aParts=[];aSeen={};delete aHistT[v];delete aHistT[v+'|d'];
+    aPan=0;aFKey='';
+    aYC=null;aYH=null;
+    renderPresets();aHist(v,aWin>420);aDBLoad(v);aChips();
+    setTimeout(function(){aReconBuild(v);},1500);
     if(!state.data[v]){
       document.getElementById('spin').classList.remove('hidden');
       try{const r=await getSym(v);if(r){state.data[v]=r;state.dataAge[v]=Date.now();}}catch(e){}
@@ -1006,7 +1549,7 @@ document.addEventListener('visibilitychange',function(){
   if(state.view!=='arena')return;
   if(document.hidden)aStop();else aStart();
 });
-setInterval(function(){if(state.view==='arena'&&!document.hidden)aHist(state.focus);},120000);
+setInterval(function(){if(state.view==='arena'&&!document.hidden)aHist(state.focus,aWin>420);},120000);
 
 /* =====================================================================
    EDITABLE PRESET CHIPS
@@ -1047,11 +1590,13 @@ setInterval(function(){if(state.view==='arena'&&!document.hidden)aHist(state.foc
   renderPresets();
 })();
 
-window.KairosArena={AR,aScene,aStart,aStop,aDraw,aHud,aPath,aProfile,aHist,aSigma,
+window.KairosArena={AR,aScene,aStart,aStop,aDraw,aHud,aPath,aProfile,aHist,aSigma,aTTBuild,aRec,aReconBuild,aSetWin,aGoLive,
   parts:function(){return aParts;},trail:function(){return aTrail;},
+  field:function(){return aField;},recon:function(){return aRecon;},tracks:function(){return aTracks;},db:function(){return aDB;},
+  win:function(){return aWin;},pan:function(){return aPan;},
   presets:function(){return PRESETS;},bloomOK:function(){return aBlurOK;},
-  reset:function(){aTweenSpot=null;aParts=[];aBursts=[];aSeen={};}};
-console.log('%cKairos Nexus \u2014 THE FIELD. Exposure lives on the price axis; time belongs to the tape.','color:#2dd4bf;font-weight:bold');
+  reset:function(){aTweenSpot=null;aParts=[];aBursts=[];aSeen={};aFKey='';}};
+console.log('%cKairos Nexus \u2014 THE CHRONICLE. The field now remembers: pan, zoom, and read the day.','color:#2dd4bf;font-weight:bold');
 
 
 

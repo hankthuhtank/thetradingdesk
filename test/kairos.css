@@ -315,13 +315,13 @@ footer{text-align:center;padding:12px;font-size:.65rem;color:#3f4656;border-top:
 .a-lg i{width:9px;height:9px;border-radius:50%;display:block;font-style:normal}
 .a-lg i.std{background:#fff;box-shadow:0 0 9px var(--cyan)}
 .a-stage{position:relative;border:1px solid var(--border);border-radius:10px;overflow:hidden;background:#05070c}
-#arenaCanvas{display:block;width:100%;height:min(64vh,580px);min-height:360px}
+#arenaCanvas{display:block;width:100%;height:clamp(500px,calc(100vh - 330px),1100px);min-height:440px}
 .a-wait{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;font-family:'JetBrains Mono';font-size:.72rem;color:var(--muted);background:#05070c;text-align:center;padding:16px;line-height:1.6}
 .a-hud{display:grid;grid-template-columns:repeat(8,1fr);gap:6px;margin-top:10px}
 .a-hud .sv{font-size:.78rem}
 .a-hud .stat{padding:7px 9px}
 @media(max-width:1100px){.a-hud{grid-template-columns:repeat(4,1fr)}}
-@media(max-width:600px){.a-hud{grid-template-columns:repeat(2,1fr)}.a-legend{margin-left:0}#arenaCanvas{height:54vh}}
+@media(max-width:600px){.a-hud{grid-template-columns:repeat(2,1fr)}.a-legend{margin-left:0}#arenaCanvas{height:60vh;min-height:380px}}
 .a-note{font-size:.62rem;color:var(--muted);margin-top:9px;line-height:1.6}
 .a-note b{color:var(--teal)}
 .a-note em{font-style:normal;color:#e879f9}
@@ -334,3 +334,11 @@ footer{text-align:center;padding:12px;font-size:.65rem;color:#3f4656;border-top:
 .pchip .px:hover{color:var(--red);opacity:1;background:#ef444422}
 .pchip.padd{color:var(--teal);border-color:#2dd4bf55;font-weight:700;padding:4px 10px}
 .pchip.padd:hover{background:#2dd4bf18;border-color:var(--teal);color:var(--teal)}
+
+/* ---- Nexus v4: window chips + live snap-back ---- */
+.nx-wins{flex-wrap:wrap}
+.nx-wins button.on{background:var(--cyan);color:#04121a}
+.nx-wins button[data-w="candle"].on{background:var(--teal,#2dd4bf);color:#04121a}
+.nx-wins .livebtn{color:var(--cyan);border-left:1px solid var(--border)}
+.nx-wins .livebtn:hover{background:rgba(34,211,238,.12);color:var(--cyan)}
+@media(max-width:600px){.nx-wins{order:3;width:100%}}
