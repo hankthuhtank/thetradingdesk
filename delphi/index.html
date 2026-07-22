@@ -339,10 +339,10 @@ function fireAlert(type,detail,marketRow){
   alertLog.unshift({t,type,detail});
   if(alertLog.length>300)alertLog.pop();
   renderAlerts();
-  const el=document.createElement('div'); el.className='toast';
-  el.innerHTML='<div class="t-k">'+esc(type)+'</div>'+esc(detail);
-  toasts.appendChild(el); setTimeout(()=>el.remove(),9000);
-  beep();
+  //const el=document.createElement('div'); el.className='toast';
+  // el.innerHTML='<div class="t-k">'+esc(type)+'</div>'+esc(detail);
+  //toasts.appendChild(el); setTimeout(()=>el.remove(),9000);
+  //  beep();
 }
 function renderAlerts(){
   alertsEmpty.style.display=alertLog.length?'none':'block';
@@ -376,7 +376,7 @@ function classifyTrade(t){
     if(sweepBuf[k].length>=cfg.sweepN){
       flags.push('SWEEP');
       const tot=sweepBuf[k].reduce((s,x)=>s+x.usd,0);
-      fireAlert('SWEEP', t.side+' sweep · '+sweepBuf[k].length+' prints · '+usd(tot)+' · '+t.title);
+      ('SWEEP', t.side+' sweep · '+sweepBuf[k].length+' prints · '+usd(tot)+' · '+t.title);
       sweepBuf[k]=[]; // reset so it doesn't refire every trade
     }
   }
