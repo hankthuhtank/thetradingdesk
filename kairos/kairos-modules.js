@@ -83,7 +83,7 @@ async function zQualify(force){
   const day=localDate();
   if(!force&&zQualDay===day)return Z.UNI;
   if(zQualing)return Z.UNI;
-  if(!(state.tradierToken&&state.tradierToken.length>8))return Z.UNI;
+  if(!liveOn())return Z.UNI;
   zQualing=true;
   try{
     const ok=[],miss=[];
@@ -220,8 +220,8 @@ function zeroRead(sym){
   const gates=[];const G=(n,ok,txt)=>{gates.push({n,ok:!!ok,txt:txt||''});return !!ok;};
   const ph=zPhase();
   const out={sym,gates,phase:ph};
-  const live=state.tradierToken&&state.tradierToken.length>8;
-  if(!G('Live quotes',live,live?'Tradier live':'CBOE is ~15-min delayed — fires disabled without a Tradier token')){out.standby='needs live quotes for 0DTE (delayed data can\u2019t time same-day entries)';return out;}
+  const live=liveOn();
+  if(!G('Live quotes',live,live?'Live':'CBOE is ~15-min delayed — fires disabled without a Tradier token')){out.standby='needs live quotes for 0DTE (delayed data can\u2019t time same-day entries)';return out;}
   const b=zBook(sym);
   if(!b){out.standby='no chain loaded yet — the feed loop pulls it within ~1 min';return out;}
   out.book=b;
@@ -516,7 +516,7 @@ async function zFeed(force){
   zFeeding=true;zLastFeed=Date.now();
   try{
     await zQualify(false);
-    if(state.tradierToken&&state.tradierToken.length>8){
+    if(liveOn()){
       try{const qs=await fetchQuotes(Z.UNI);Z.UNI.forEach(s=>{const u=underOf(s);if(qs[u])state.spot[s]=qs[u];});}catch(e){}
     }
     for(const s of Z.UNI){
@@ -538,7 +538,7 @@ setInterval(function(){
 setInterval(function(){zFeed(false);},30000);
 setInterval(async function(){
   if(!zVisible()||state.refreshing)return;
-  if(!(state.tradierToken&&state.tradierToken.length>8))return;
+  if(!liveOn())return;
   const ph=zPhase();if(ph.closed)return;
   if(Date.now()-zLastQ<18000)return;zLastQ=Date.now();
   try{const qs=await fetchQuotes(Z.UNI);Z.UNI.forEach(s=>{const u=underOf(s);if(qs[u])state.spot[s]=qs[u];});zRecord();}catch(e){}
@@ -618,6 +618,7 @@ let aRaf=0,aT=0,aTweenSpot=null,aParts=[],aBursts=[],aShake=0,aHudT=0,aStamp='',
 let aTrail={},aHistT={},aBloom=null,aScan=0;
 let aWin=Math.max(AR.WINMIN,Math.min(AR.WINMAX,parseInt(localStorage.getItem('kairos_nx_win'))||30));
 let aPan=0,aCandle=localStorage.getItem('kairos_nx_candle')==='1';
+let aReplay=false,aReplayClk=0; // session playback
 let aCandleInt=parseInt(localStorage.getItem('kairos_nx_candleint'))||0; /* 0=auto, else minutes */
 let aMouse=null,aDrag=null,aVM=null,aDeepT={};
 let aField={},aFieldStamp={},aFieldT={},aFCv=null,aFKey='';
@@ -630,9 +631,32 @@ const aBlurOK=(function(){try{const c=document.createElement('canvas').getContex
 
 function aCv(){return document.getElementById('arenaCanvas');}
 function aStop(){if(aRaf){cancelAnimationFrame(aRaf);aRaf=0;}}
-function aStart(){aStop();aT=0;aHist(state.focus,aWin>420);aDBLoad(state.focus);setTimeout(function(){aReconBuild(state.focus);},1500);if(aReduce){aDraw(0);aHud(true);return;}aRaf=requestAnimationFrame(aFrame);}
+function aStart(){aStop();aT=0;aHist(state.focus,aWin>420);aDBLoad(state.focus);aHydrateField(state.focus);setTimeout(function(){aReconBuild(state.focus);},1500);if(aReduce){aDraw(0);aHud(true);return;}aRaf=requestAnimationFrame(aFrame);}
+/* pull the server-side field Chronicle (accumulated 24/5) into aField so the
+   history is populated even if this browser never recorded it — and so REPLAY
+   has a full session to scrub through. Merges with any local columns. */
+async function aHydrateField(sym){
+  if(!sym||!window.KairosBackend||!window.KairosBackend.enabled)return;
+  try{
+    const cols=await window.KairosBackend.fieldColumns(sym);
+    if(!cols||!cols.length)return;
+    const cur=aField[sym]||[];const seen=new Set(cur.map(c=>c.t));
+    for(const c of cols){
+      const t=c.t*1000; // server stores unix seconds
+      if(seen.has(t))continue;
+      // server nodes: [{k,g}] -> the field expects {t, ks[], g[], v[], spot, r}
+      const ks=c.nodes.map(n=>n.k), g=c.nodes.map(n=>n.g), v=c.nodes.map(()=>0);
+      cur.push({t,ks,g,v,spot:c.spot,r:false,srv:true});
+      seen.add(t);
+    }
+    cur.sort((a,b)=>a.t-b.t);
+    aField[sym]=cur.slice(-AR.COLS_MEM);
+    aFKey='';  // force field-canvas rebuild
+  }catch(e){}
+}
 function aFrame(ts){
   const dt=aT?Math.min(0.05,(ts-aT)/1000):0.016;aT=ts;
+  aReplayAdvance();
   aDraw(dt);
   if(ts-aHudT>420){aHudT=ts;aHud(false);}
   aRaf=requestAnimationFrame(aFrame);
@@ -661,7 +685,7 @@ function aDayLab(t){
 }
 async function aHist(sym,deep){
   if(!sym)return;
-  if(!(state.tradierToken&&state.tradierToken.length>8))return;
+  if(!liveOn())return;
   const key=sym+(deep?'|d':'');
   if(aHistT[key]&&Date.now()-aHistT[key]<(deep?600000:120000))return;
   aHistT[key]=Date.now();
@@ -906,8 +930,20 @@ function aScene(){
   const live=(now-last)<=5*60000;
   const anchor=live?now:last;                 /* closed market: anchor to the last real bar */
   const TT=aTTBuild(sym);
-  const span=aSpanMs();
+  let span=aSpanMs();
   const ttAnchor=TT.fwd(anchor),ttFirst=TT.fwd(TT.first);
+  /* DATA-FIT: the trading-time width of everything we actually have. Early in a
+     session (or before history lands) the requested window (e.g. DAY=390m) is
+     far wider than the data, which crushed the tape into a right-edge sliver.
+     When not panned, shrink the span to fit the data (plus a little breathing
+     room on the right), but never below a sane floor so a handful of ticks
+     still reads. This is what makes the chart populate from history. */
+  const dataTT=Math.max(0,ttAnchor-ttFirst);
+  if(aPan<30000&&dataTT>0){
+    const floor=Math.min(span,20*60000);           // at least ~20 min of view
+    const fit=Math.max(floor,dataTT*1.08);          // fit data + 8% right margin
+    span=Math.min(span,fit);                        // never wider than requested
+  }
   const maxPan=Math.max(0,ttAnchor-ttFirst-span*0.25);
   if(aPan>maxPan)aPan=maxPan;if(aPan<0)aPan=0;
   const isNow=aPan<30000;
@@ -1022,14 +1058,17 @@ function aFieldPaint(sc,pw2,ph,xOfT,edgeX,plotL){
       if(ks[i]<sc.lo||ks[i]>sc.hi)continue;
       const pos=Math.max(0,Math.min(1,(sc.hi-ks[i])/((sc.hi-sc.lo)||1)));
       const val=vals[i],r=Math.abs(val)/gMax;
-      fg.addColorStop(pos,'rgba('+(val>=0?TEAL:MAG)+','+((0.08+r*0.58)*(mul||1)).toFixed(3)+')');
+      // gentler alpha curve (sqrt) so mid-strength nodes are visible without the
+      // whole field turning into a solid slab; lower floor keeps empties dark.
+      const a=(0.04+Math.sqrt(r)*0.52)*(mul||1);
+      fg.addColorStop(pos,'rgba('+(val>=0?TEAL:MAG)+','+a.toFixed(3)+')');
       started=true;
       /* zero-crossing seam: the field genuinely cancels there */
       for(let j=i+1;j<ks.length;j++){
         if(ks[j]<sc.lo||ks[j]>sc.hi)continue;
         if(val*vals[j]<0){
           const p2=Math.max(0,Math.min(1,(sc.hi-(ks[i]+ks[j])/2)/((sc.hi-sc.lo)||1)));
-          fg.addColorStop(Math.min(1,Math.max(0,p2)),'rgba(9,11,18,0.02)');
+          fg.addColorStop(Math.min(1,Math.max(0,p2)),'rgba(9,11,18,0.015)');
         }
         break;
       }
@@ -1042,7 +1081,9 @@ function aFieldPaint(sc,pw2,ph,xOfT,edgeX,plotL){
     const x0=Math.max(0,xOfT(c.t)-plotL);
     const nxT=i<vis.length-1?vis[i+1].t:sc.tEnd;
     const x1=Math.min(edgeX-plotL,xOfT(Math.min(nxT,sc.tEnd))-plotL);
-    strip(x0,x1,c.ks,pick(c),c.r?0.78:1);
+    /* overlap each strip 0.75px into the next so adjacent columns blend instead
+       of showing hard vertical seams — this is most of what read as "blocky". */
+    strip(x0,x1+0.75,c.ks,pick(c),c.r?0.86:1);
   }
   /* live edge: from the newest column to the edge, the CURRENT ladder */
   const liveFrom=vis.length?Math.max(0,xOfT(vis[vis.length-1].t)-plotL):null;
@@ -1462,6 +1503,42 @@ function aSetWin(m){
   if(aWin>420)aHist(state.focus,true);
 }
 function aGoLive(){aPan=0;aFKey='';aChips();}
+/* --- SESSION REPLAY: animate the time-pan from the open back to live, so the
+   recorded gamma field plays forward through the day. Reuses the existing pan
+   machinery (aPan) rather than a parallel render path. Ends at the live edge. */
+function aReplayToggle(){
+  aReplay=!aReplay;
+  if(aReplay){
+    // jump to the start of what we have, then let the loop advance forward
+    const sym=state.focus;const col=(aField[sym]||[]);
+    const now=Date.now();
+    // set pan to the oldest recorded column within the 5D cap
+    if(col.length){
+      // widen window so the whole session is visible while replaying
+      aReplaySpan=aSpanMs();
+    }
+    aPan=aReplayMaxPan();aReplayClk=performance.now();
+  }
+  aFKey='';aChips();
+}
+let aReplaySpan=0;
+function aReplayMaxPan(){
+  // pan (in trading-time ms) that lands on the oldest visible column
+  const sym=state.focus;const col=(aField[sym]||[]);
+  if(!col.length)return 0;
+  const span=aSpanMs();
+  const oldest=col[0].t, now=Date.now();
+  return Math.max(0,(now-oldest)-span*0.5);
+}
+function aReplayAdvance(){
+  if(!aReplay)return;
+  const nowP=performance.now();
+  const dt=aReplayClk?(nowP-aReplayClk)/1000:0;aReplayClk=nowP;
+  // playback speed: cover a full session (~6.5h) in ~30s => ~13 real-min per sec
+  const speed=13*60000;
+  aPan=Math.max(0,aPan-speed*dt);
+  if(aPan<=0){aReplay=false;aPan=0;aChips();}
+}
 function aFocusReset(sym){
   /* full arena reset when the focus symbol changes from ANY path (tab or input) */
   aTweenSpot=null;aParts=[];aBursts=[];aSeen={};
@@ -1483,6 +1560,7 @@ function aChips(){
         return '<button data-ci="'+iv+'"'+(on?' class="on ciBtn"':' class="ciBtn"')+' data-tip="'+(iv==='auto'?'Pick the finest interval that stays readable for this window':iv+'-minute candles')+'">'+lab+'</button>';
       }).join(''):'')+
     (aPan>30000?'<button data-w="live" class="livebtn" data-tip="Snap back to the live edge (double-click the canvas does the same)">\u25c9 LIVE</button>':'')+
+    '<button data-w="replay"'+(aReplay?' class="on livebtn"':' class="livebtn"')+' data-tip="Play the session back from the open. Scrubs through the recorded gamma field over time — server-stored, so it works even if this tab was closed while the market ran.">'+(aReplay?'\u25a0 STOP':'\u25b6 REPLAY')+'</button>'+
     (aYManual?'<button data-w="yfit" class="livebtn" data-tip="Auto-fit the price axis again. Drag up/down pans price; Shift+wheel (or wheel over the strikes) zooms it.">\u2921 FIT Y</button>':'');
 }
 (function(){
@@ -1495,8 +1573,9 @@ function aChips(){
   row.addEventListener('click',e=>{
     const b=e.target.closest('button');if(!b)return;
     const w=b.dataset.w;
-    if(w==='live'){aGoLive();return;}
+    if(w==='live'){aReplay=false;aGoLive();return;}
     if(w==='yfit'){aYFit();return;}
+    if(w==='replay'){aReplayToggle();return;}
     if(b.dataset.ci!==undefined){
       var civ=b.dataset.ci;aCandleInt=(civ==='auto')?0:parseInt(civ);
       try{localStorage.setItem('kairos_nx_candleint',String(aCandleInt));}catch(x){}
@@ -2041,7 +2120,7 @@ let swFeeding=false,swLast=0;
 async function swFeed(force){
   if(swFeeding||state.refreshing)return;
   if(!force&&Date.now()-swLast<180000)return;
-  if(!(state.tradierToken&&state.tradierToken.length>8))return;
+  if(!liveOn())return;
   swFeeding=true;swLast=Date.now();
   try{
     for(const sym of TICKS){
@@ -2146,6 +2225,7 @@ function sStandbyHtml(r){
 
 /* ---- render: replaces the old renderCards ---- */
 renderCards=function(){
+  if(typeof renderAetherPulse==='function')renderAetherPulse();
   const el=document.getElementById('cards');if(!el)return;
   /* Zero owns the Aether view while its tab is active. The old body set
      el.className='zgrid', which WIPED the 'hidden' class zSetTab had put on

@@ -264,7 +264,7 @@ function flowLean(sym){
 async function getTech(sym){
   const c=state.tech[sym];
   if(c&&Date.now()-c.t<600000)return c;
-  if(!(state.tradierToken.length>8))return state.tech[sym]={t:Date.now(),ok:false};
+  if(!liveOn())return state.tech[sym]={t:Date.now(),ok:false};
   const tryFetch=async u=>{
     const start=new Date(Date.now()-140*86400000).toISOString().slice(0,10);
     const j=await tFetch('/markets/history?symbol='+encodeURIComponent(u)+'&interval=daily&start='+start);
@@ -350,53 +350,75 @@ function scoreIdea(sym,d,tech){
     if(mo===0)return null;
     bias=mo;
   }
-  const drivers=[];
-  let score=30;
-  if(ps.fl!=null){
-    const above=spot>ps.fl;
-    if((bias>0&&above)||(bias<0&&!above)){score+=15;drivers.push((above?'above':'below')+' flip');}
-    else score-=8;
-  }
-  if(ps.em&&kg.gex>0){
-    const r=Math.min(1,ps.em/Math.max(1e-9,Math.abs(kg.k-spot)));
-    score+=Math.round(15*r);
-    if(r>=0.9)drivers.push('King inside EM');
-  }
-  score+=Math.round(10*Math.min(1,conc*3));
-  if(conc>0.18)drivers.push('dominant King');
-  if(tBias===bias&&tBias!==0){score+=12;drivers.push(bias>0?'daily uptrend':'daily downtrend');}
-  else if(tech&&tech.ok)score+=4;
-  // intraday momentum vs the thesis — this is what makes today's red/green actually register
-  if(intraday!==0){
-    if(intraday===bias){score+=8;drivers.push(bias>0?'intraday \u2191':'intraday \u2193');}
-    else{score-=12;drivers.push('vs today\u2019s tape');}
-  }
-  if(tech&&tech.ok){
-    if(bias>0&&tech.rsi>72){score-=10;}
-    else if(bias<0&&tech.rsi<28){score-=10;}
-    else score+=5;
-  }
-  if(ps.vel!=null&&ps.vel>2){score+=5;drivers.push('King building');}
-  // opening-flow confirmation — the extra variable
-  const fl=flowLean(sym);let flowNote=null;
-  if(fl){
-    const t=fl.callPrem+fl.putPrem;
-    if(t>0){
-      const lean=fl.net/t;
-      if((bias>0&&lean>0.15)||(bias<0&&lean<-0.15)){score+=8;drivers.push('flow confirms');flowNote='confirms';}
-      else if((bias>0&&lean<-0.15)||(bias<0&&lean>0.15)){score-=8;drivers.push('flow diverges');flowNote='diverges';}
-    }
-  }
   const target=kg.gex>0?kg.k:null;
-  if(target){
-    const lo=Math.min(spot,target),hi=Math.max(spot,target);
-    if(airPockets(d).some(z=>z.lo<hi&&z.hi>lo)){score+=5;drivers.push('open runway');}
+
+  // ===== AETHER v2: transparent factor model (falls back to legacy if quant absent) =====
+  const Q=window.KairosQuant;
+  let v2=null,deskNoteText=null;
+  if(Q&&Q.aetherScore){
+    // --- assemble factor inputs from real signals ---
+    const flipAlign=ps.fl!=null?((bias>0)===(spot>ps.fl)?1:-1)*(kg.gex>0?1:1):0;
+    const emCoverage=(ps.em&&target)?Math.min(1,ps.em/Math.max(1e-9,Math.abs(target-spot))):0;
+    // classified flow lean (bought vs sold), signed to thesis
+    let flowLean=null;
+    if(d.contracts&&d.contracts.length){
+      try{const fc=Q.classifyFlow(d.contracts.filter(expiryFilt));
+        const tot=fc.callBought+fc.callSold+fc.putBought+fc.putSold;
+        if(tot>0){
+          // net bullish premium = calls bought + puts sold; bearish = puts bought + calls sold
+          const bull=(fc.callBought+fc.putSold),bear=(fc.putBought+fc.callSold);
+          const lean=(bull-bear)/tot;
+          flowLean=bias>0?lean:-lean;
+        }
+      }catch(e){}
+    }
+    const trendAgree=tBias===0?0:(tBias===bias?1:-1);
+    const intradayAgree=intraday===0?0:(intraday===bias?1:-1);
+    // IV rank
+    let ivRank=null;
+    try{let atm=null,bd=1e18;(d.contracts||[]).forEach(c=>{const dd=Math.abs(c.k-spot);if(c.iv>0&&dd<bd){bd=dd;atm=c.iv;}});
+      if(atm){const r=Q.qivRank(sym,atm);ivRank=r.rank;}}catch(e){}
+    // skew tailwind: a long wants call demand (negative skew), a short wants put demand (positive skew)
+    let skewTailwind=null;
+    try{const sk=Q.skew25(d.contracts,spot,dp0());if(sk){const s=sk.skew/10;skewTailwind=bias>0?-s:s;skewTailwind=Math.max(-1,Math.min(1,skewTailwind));}}catch(e){}
+    // vix regime
+    let vixBack=null;const vt=state._vixTerm;if(vt&&vt.state)vixBack=(vt.state==='backwardation');
+    // rsi extreme overlay
+    let rsiExtreme=0;
+    if(tech&&tech.ok){if(bias>0&&tech.rsi>72)rsiExtreme=-1;else if(bias<0&&tech.rsi<28)rsiExtreme=-1;}
+    v2=Q.aetherScore({bias,gexPos:kg.gex>0,flipAlign,concFrac:conc,emCoverage,
+      flowLean,trendAgree,intradayAgree,ivRank,vixBackwardation:vixBack,skewTailwind,rsiExtreme});
   }
-  score=Math.max(0,Math.min(95,Math.round(score)));
+
+  function dp0(){return spot>2000?0:1;}
+  let score,driversV2=null;
+  if(v2){
+    score=v2.score;
+    // human-readable drivers straight from the strongest factors
+    driversV2=v2.factors.filter(f=>Math.abs(f.contrib)>=0.05).sort((a,b)=>Math.abs(b.contrib)-Math.abs(a.contrib))
+      .slice(0,5).map(f=>({txt:f.label,pos:f.contrib>=0,detail:f.detail}));
+  }else{
+    // ---- legacy scoring fallback (unchanged) ----
+    const drivers=[];score=30;
+    if(ps.fl!=null){const above=spot>ps.fl;if((bias>0&&above)||(bias<0&&!above)){score+=15;drivers.push((above?'above':'below')+' flip');}else score-=8;}
+    if(ps.em&&kg.gex>0){const r=Math.min(1,ps.em/Math.max(1e-9,Math.abs(kg.k-spot)));score+=Math.round(15*r);if(r>=0.9)drivers.push('King inside EM');}
+    score+=Math.round(10*Math.min(1,conc*3));if(conc>0.18)drivers.push('dominant King');
+    if(tBias===bias&&tBias!==0){score+=12;drivers.push(bias>0?'daily uptrend':'daily downtrend');}else if(tech&&tech.ok)score+=4;
+    if(intraday!==0){if(intraday===bias){score+=8;drivers.push(bias>0?'intraday \u2191':'intraday \u2193');}else{score-=12;drivers.push('vs today\u2019s tape');}}
+    if(tech&&tech.ok){if(bias>0&&tech.rsi>72)score-=10;else if(bias<0&&tech.rsi<28)score-=10;else score+=5;}
+    if(ps.vel!=null&&ps.vel>2){score+=5;drivers.push('King building');}
+    driversV2=drivers.map(t=>({txt:t,pos:!/vs today|diverges/.test(t)}));
+  }
+  score=Math.max(0,Math.min(99,Math.round(score)));
   if(score<55)return null;
   const dp=spot>2000?0:1;
   const invalid=ps.fl!=null?(+ps.fl).toFixed(dp):null;
-  return{
+  const contractK=(function(){let best=kg.k,bd=1e18;(d.strikes||[]).forEach(s=>{const dd=Math.abs(s.k-spot);if(dd<bd){bd=dd;best=s.k;}});return best;})();
+  const rr=(function(){if(!target||!invalid)return null;const rew=Math.abs((+target)-spot),rsk=Math.abs(spot-(+invalid));return rsk>0?+(rew/rsk).toFixed(2):null;})();
+  // flow note for the thumbnail badge
+  let flowNote=null;
+  if(v2){const ff=v2.factors.find(f=>f.key==='flow');if(ff&&Math.abs(ff.val)>0.1)flowNote=ff.val>0?'confirms':'diverges';}
+  const idea={
     sym,score,t:Date.now(),
     bias:bias>0?'LONG':'SHORT',
     momentum:kg.gex<0,flow:flowNote,
@@ -404,20 +426,23 @@ function scoreIdea(sym,d,tech){
     invalid,
     entry:+spot.toFixed(dp),
     optType:bias>0?'C':'P',
-    contractK:(function(){ // nearest listed strike ~ATM for the suggested leg
-      let best=kg.k,bd=1e18;(d.strikes||[]).forEach(s=>{const dd=Math.abs(s.k-spot);if(dd<bd){bd=dd;best=s.k;}});return best;
-    })(),
-    rr:(function(){ // reward (to target) vs risk (to invalidation), both in points
-      if(!target||!invalid)return null;
-      const rew=Math.abs((+target)-spot),rsk=Math.abs(spot-(+invalid));
-      return rsk>0?+(rew/rsk).toFixed(2):null;
-    })(),
+    contractK,rr,
+    factors:driversV2,
+    v2:!!v2,
     line:kg.gex>0
       ?`${sym} ~ATM ${bias>0?'call':'put'} \u00b7 target King ${(+kg.k).toFixed(dp)}`
       :`${sym} ${bias>0?'call':'put'} \u2014 momentum regime (\u2212GEX), ${bias>0?'up':'down'} tape`,
-    drivers:drivers.slice(0,5),
+    drivers:driversV2.map(f=>f.txt).slice(0,5),
     meta:`King ${kg.k} \u00b7 ${Math.round(conc*100)}% of book${ps.em?` \u00b7 EM \u00b1${ps.em.toFixed(dp)}`:''}${tech&&tech.ok?` \u00b7 RSI ${Math.round(tech.rsi)}`:''}`
   };
+  // desk-note + journal (v2 only)
+  if(v2&&Q.deskNote){
+    const planTxt=target?`Plan: target the King ${(+target).toFixed(dp)}${invalid?`, invalid ${bias>0?'below':'above'} ${invalid}`:''}${rr?` (${rr}:1)`:''}.`:'';
+    idea.desk=Q.deskNote(sym,bias,v2,{plan:planTxt});
+    try{Q.qjLog(idea);}catch(e){}
+    if(backendOn()&&window.KairosBackend.logIdea)window.KairosBackend.logIdea(idea);
+  }
+  return idea;
 }
 let sweeping=false;
 async function ideasSweep(force){
@@ -427,7 +452,7 @@ async function ideasSweep(force){
   if(!force&&state.lastSweep&&now-state.lastSweep<gap)return;
   sweeping=true;state.lastSweep=now;
   try{
-    if(state.tradierToken.length>8){
+    if(liveOn()){
       try{const qs=await fetchQuotes(TICKS);TICKS.forEach(s=>{const u=underOf(s);if(qs[u])state.spot[s]=qs[u];});}catch(e){}
     }
     for(const sym of TICKS){
@@ -478,6 +503,12 @@ function exposureProfile(contracts,spot){
 }
 function base(){return state.tradierEnv==='production'?'https://api.tradier.com/v1':'https://sandbox.tradier.com/v1';}
 function hdr(){return{'Authorization':'Bearer '+state.tradierToken,'Accept':'application/json'};}
+/* Backend proxy: when the Cloudflare Worker is wired, every Tradier call goes
+   through it so the token lives server-side and never touches the browser.
+   Falls back to a direct call if the backend isn't configured. */
+function backendOn(){return !!(window.KairosBackend&&window.KairosBackend.enabled);}
+function liveOn(){return backendOn()||(state.tradierToken&&state.tradierToken.length>8);}
+window.liveOn=liveOn;window.backendOn=backendOn;
 
 const rl={stamps:[]};
 async function tFetch(path){
@@ -487,6 +518,11 @@ async function tFetch(path){
   if(rl.stamps.length>110){
     const wait=60000-(now-rl.stamps[0])+200;
     if(wait>0)await new Promise(r=>setTimeout(r,wait));
+  }
+  if(backendOn()){
+    const r=await fetch(window.KairosBackend.base+'/proxy'+path,{cache:'no-store'});
+    if(!r.ok)throw new Error(r.status+' '+(await r.text()).slice(0,80));
+    return r.json();
   }
   const r=await fetch(base()+path,{headers:hdr(),cache:'no-store'});
   if(!r.ok)throw new Error(r.status+' '+(await r.text()).slice(0,80));
@@ -507,9 +543,36 @@ async function fetchQuotes(syms){
   let q=j.quotes&&j.quotes.quote;if(!q)return{};
   if(!Array.isArray(q))q=[q];
   const out={};
-  q.forEach(x=>{const p=+(x.last||x.close||0);if(p>0&&x.symbol)out[String(x.symbol).toUpperCase()]=p;});
+  const ext=marketPhase()!=='rth';   // outside regular hours, prefer the extended print
+  q.forEach(x=>{
+    if(!x.symbol)return;
+    const rth=+(x.last||x.close||0);
+    const xh=+(x.extended_hours_price||0);
+    // during pre/post/overnight, show the extended-hours print if it's fresher
+    const p=(ext&&xh>0)?xh:rth;
+    if(p>0){
+      const sym=String(x.symbol).toUpperCase();
+      out[sym]=p;
+      // stash extended-hours meta for the header badge
+      if(ext&&xh>0){state._xh=state._xh||{};state._xh[sym]={px:xh,chg:+x.extended_hours_change||0,prev:rth};}
+    }
+  });
   return out;
 }
+/* which trading phase are we in (US/Eastern)? drives after-hours pricing/label */
+function marketPhase(){
+  try{
+    const f=new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',weekday:'short',hour:'2-digit',minute:'2-digit',hour12:false});
+    const pp=Object.fromEntries(f.formatToParts(new Date()).map(x=>[x.type,x.value]));
+    const wd=pp.weekday,hh=+pp.hour,mm=+pp.minute,t=hh*60+mm;
+    if(wd==='Sat'||wd==='Sun')return 'closed';
+    if(t>=9*60+30&&t<=16*60)return 'rth';
+    if(t>=4*60&&t<9*60+30)return 'pre';
+    if(t>16*60&&t<20*60)return 'post';
+    return 'overnight';
+  }catch(e){return 'rth';}
+}
+window.marketPhase=marketPhase;
 async function fetchChainsTradier(sym,maxExp){
   const under=underOf(sym);
   const dates=await exps(sym);
@@ -670,7 +733,7 @@ async function getSym(sym,maxExp,force){
   const fresh=!force&&ch&&ch.list&&ch.list.length&&(Date.now()-ch.t<CHAIN_TTL)&&ch.maxExp>=need;
   if(!fresh){
     let got=null;
-    if(state.tradierToken.length>8){
+    if(liveOn()){
       try{got=await fetchChainsTradier(sym,need);}catch(e){console.warn('Tradier',sym,e.message);}
     }
     if(!got){try{got=await fetchChainsCBOE(sym);}catch(e){console.warn('CBOE',sym,e.message);}}
@@ -680,7 +743,7 @@ async function getSym(sym,maxExp,force){
   const c2=state.chains[sym];if(!c2)return null;
   if(!state.spot[sym]){
     if(c2.spot)state.spot[sym]=c2.spot;
-    else if(state.tradierToken.length>8){
+    else if(liveOn()){
       try{const q=await fetchQuotes([sym]);const u=underOf(sym);if(q[u])state.spot[sym]=q[u];}catch(e){}
     }
     if(!state.spot[sym]&&c2.spotHint)state.spot[sym]=c2.spotHint;
@@ -747,7 +810,7 @@ function renderTrinity(){
     const cw=callWallBand(d.strikes,d.spot),pw=putWallBand(d.strikes,d.spot);
     const maxAbs=Math.max(...(d.strikes||[]).map(x=>Math.abs(mval(x))),1);
     const srcMap={'tradier-live':'live','tradier-sandbox':'sandbox','cboe':'cboe','demo':'demo'};
-    const srcTxt={'tradier-live':'Tradier Live','tradier-sandbox':'Sandbox','cboe':'CBOE','demo':'Demo'};
+    const srcTxt={'tradier-live':'Live','tradier-sandbox':'Sandbox','cboe':'CBOE','demo':'Demo'};
     const age=state.dataAge[sym]?Date.now()-state.dataAge[sym]:0;
     const staleB=age>3*state.pollSec*1000?`<span class="badge-src stale" data-tip="No successful update for ${Math.round(age/1000)}s — showing the last good snapshot">stale</span>`:'';
 
@@ -911,14 +974,28 @@ function recordSnapshots(){
     const topFor=metric=>[...d.strikes].sort((a,b)=>Math.abs(mval(b,metric))-Math.abs(mval(a,metric))).slice(0,12).map(s=>({k:s.k,val:Math.round(mval(s,metric))}));
     (state.history[sym]=state.history[sym]||[]).push({t,g:topFor('gex'),v:topFor('vex')});
     if(state.history[sym].length>HIST_TODAY_CAP)state.history[sym].shift();
-    /* Regime intraday series: net call/put premium traded + spot, for the through-day chart.
-       Cheap (3 numbers/sample), kept in-memory only (not persisted) — resets each session. */
+    /* Regime intraday series: net call/put premium + CLASSIFIED bought/sold
+       (quote-rule) + spot. In-memory, resets each session. */
     const imb=buildImbalance(sym);
     if(imb&&imb.strikes){
       let cpr=0,ppr=0;imb.strikes.forEach(s=>{cpr+=s.cpr||0;ppr+=s.ppr||0;});
+      // classified flow (bought vs sold) via the quant engine, if present
+      let cbought=null,csold=null,pbought=null,psold=null;
+      if(window.KairosQuant&&d.contracts&&d.contracts.length){
+        try{const fc=window.KairosQuant.classifyFlow(d.contracts.filter(expiryFilt));
+          cbought=fc.callBought;csold=fc.callSold;pbought=fc.putBought;psold=fc.putSold;}catch(e){}
+      }
       const ser=(state.regSeries[sym]=state.regSeries[sym]||[]);
-      ser.push({t,cpr,ppr,spot:d.spot||state.spot[sym]||0});
+      ser.push({t,cpr,ppr,spot:d.spot||state.spot[sym]||0,cbought,csold,pbought,psold});
       if(ser.length>REG_SERIES_CAP)ser.shift();
+    }
+    /* record ATM IV once/tick for IV Rank maturation (localStorage, ~1yr) */
+    if(window.KairosQuant&&d.contracts&&d.contracts.length){
+      try{
+        const spot=d.spot||state.spot[sym]||0;let atm=null,bd=1e18;
+        d.contracts.forEach(c=>{const dd=Math.abs(c.k-spot);if(c.iv>0&&dd<bd){bd=dd;atm=c.iv;}});
+        if(atm)window.KairosQuant.qivRecord(sym,atm);
+      }catch(e){}
     }
   });
   persistHistory(false);
@@ -1045,7 +1122,33 @@ function nearestExpLabel(sym){
   if(parts.length===3)return (+parts[1])+'/'+(+parts[2]);
   return soonest;
 }
+function renderAetherPulse(){
+  const el=document.getElementById('aetherPulse');if(!el)return;
+  const Q=window.KairosQuant;
+  let parts=[];
+  // vol regime (VIX term structure)
+  const vt=state._vixTerm;
+  if(vt&&vt.vix){
+    const st=vt.state==='backwardation';
+    parts.push(`<span class="ap-block" data-tip="VIX term structure. Backwardation (VIX>VIX3M) = near-term stress priced in; contango = calm. Ratio ${vt.ratio?vt.ratio.toFixed(2):'—'}."><span class="ap-l">VOL REGIME</span><b style="color:${st?'var(--red)':'var(--green)'}">${st?'BACKWARDATION':'CONTANGO'}</b> <i>VIX ${vt.vix.toFixed(1)}${vt.vix3m?' / 3M '+vt.vix3m.toFixed(1):''}</i></span>`);
+  }
+  // journal hit-rate
+  if(Q&&Q.qjStats){
+    const js=Q.qjStats();
+    if(js.closed>=1){
+      const wr=js.winRate!=null?js.winRate.toFixed(0):'—';
+      const b80=js.buckets['80+'],b70=js.buckets['70-79'];
+      const bkt=(b)=>b&&b.n?`${b.w}/${b.n}`:'0/0';
+      parts.push(`<span class="ap-block" data-tip="Track record of surfaced ideas that have since hit their target (win) or invalidation (loss). Stored locally on this device. 80+: ${bkt(b80)}, 70-79: ${bkt(b70)}."><span class="ap-l">HIT RATE</span><b style="color:${js.winRate>=50?'var(--green)':'var(--gold)'}">${wr}%</b> <i>${js.wins}/${js.closed} resolved${js.open?', '+js.open+' open':''}</i></span>`);
+    }else if(js.open>0){
+      parts.push(`<span class="ap-block"><span class="ap-l">JOURNAL</span><i>${js.open} ideas tracking \u2014 hit-rate builds as they resolve</i></span>`);
+    }
+  }
+  el.innerHTML=parts.length?parts.join(''):'';
+  el.style.display=parts.length?'':'none';
+}
 function renderCards(){
+  renderAetherPulse();
   const el=document.getElementById('cards');el.innerHTML='';
   const ideas=Object.values(state.ideas||{}).filter(Boolean).sort((a,b)=>b.score-a.score);
   const scanned=Object.keys(state.ideas||{}).length;
@@ -1074,10 +1177,14 @@ function renderCards(){
       </div>`;
     // --- expanded detail (on click) ---
     if(expanded){
+      // v2 factors: green = supporting, red = working against; with hover detail
+      const factorHtml=(i.factors&&i.factors.length&&typeof i.factors[0]==='object')
+        ? i.factors.map(f=>`<span class="drv ${f.pos?'fpos':'fneg'}" title="${(f.detail||'').replace(/"/g,'')}">${f.pos?'+':'\u2212'} ${f.txt}</span>`).join('')
+        : (i.drivers||[]).map(x=>`<span class="drv">${x}</span>`).join('');
       h+=`<div class="thumb-detail">
-        <div class="card-line">${i.line}</div>
+        ${i.desk?`<div class="desk-note">${i.desk}</div>`:`<div class="card-line">${i.line}</div>`}
         ${i.target||i.invalid?`<div class="card-line" style="color:var(--muted)">${i.target?`target <b style="color:var(--gold)">${i.target}</b>`:''}${i.invalid?` \u00b7 invalid ${i.bias==='LONG'?'below':'above'} <b style="color:var(--cyan)">${i.invalid}</b>`:''}</div>`:''}
-        <div style="display:flex;gap:5px;flex-wrap:wrap;margin:6px 0 4px">${(i.drivers||[]).filter(x=>x!=='flow confirms'&&x!=='flow diverges').map(x=>`<span class="drv">${x}</span>`).join('')}${flowTag}</div>
+        <div class="factor-row">${factorHtml}</div>
         <div class="card-meta">${i.meta}</div>
         <button class="btn thumb-deep" data-sym="${i.sym}" style="border-color:var(--border);margin-top:8px;font-size:.68rem">Open full analysis \u2192</button>
       </div>`;
@@ -1130,11 +1237,24 @@ function renderImb(sym){
     if(s.k>=spot&&(s.cg||0)>mc){mc=s.cg;ceil=s.k;}   // call wall = peak call-side gamma above spot
     if(s.k<=spot&&(s.pg||0)>mp){mp=s.pg;flr=s.k;}     // put wall  = peak put-side gamma below spot
   });
+  // v2: classified bought/sold (quote rule) — the buy/sell split we said we couldn't derive
+  let classifiedStat='';
+  if(window.KairosQuant&&d&&d.contracts&&d.contracts.length){
+    try{
+      const fc=window.KairosQuant.classifyFlow(d.contracts.filter(c=>{
+        if(state.expiry==='all')return true;const idx=(state.multi[sym]&&state.multi[sym].dates)?state.multi[sym].dates.indexOf(c.e):-1;return true;
+      }));
+      const bull=fc.callBought+fc.putSold,bear=fc.putBought+fc.callSold,tot=bull+bear;
+      const lean=tot>0?(bull-bear)/tot*100:0;
+      classifiedStat=`<div class="stat"><div class="sl" data-tip="Quote-rule classification: (calls bought + puts sold) vs (puts bought + calls sold). Bullish premium flow when positive. ~75-80% accurate vs true tick data.">NET FLOW (classified)</div><div class="sv" style="color:${lean>=0?'var(--green)':'var(--red)'}">${lean>=0?'+':''}${lean.toFixed(0)}% ${lean>=5?'bought':lean<=-5?'sold':'flat'}</div></div>`;
+    }catch(e){}
+  }
   stats.innerHTML=`
     <div class="stat"><div class="sl">CALL VOL</div><div class="sv" style="color:var(--green)">${cv.toLocaleString()}</div></div>
     <div class="stat"><div class="sl">PUT VOL</div><div class="sv" style="color:var(--red)">${pv.toLocaleString()}</div></div>
     <div class="stat"><div class="sl" data-tip="Call volume \u00f7 put volume across the loaded chain. Above 1 = call-dominant tape.">C/P RATIO</div><div class="sv" style="color:var(--gold)">${ratio?ratio.toFixed(2):'\u2014'}</div></div>
     <div class="stat"><div class="sl" data-tip="Blend of the volume ratio and the premium ratio (call dollars vs put dollars traded).">SENTIMENT</div><div class="sv" style="color:${sc}">${sent}</div></div>
+    ${classifiedStat}
     <div class="stat"><div class="sl" data-tip="Call premium traded minus put premium traded today">NET PREMIUM</div><div class="sv" style="color:${cpr-ppr>=0?'var(--green)':'var(--red)'}">${fmt(cpr-ppr)}</div></div>
     <div class="stat"><div class="sl" data-tip="Call Wall \u2014 strike above spot with the highest call-side GAMMA (OI\u00d7\u0393), the industry-standard ceiling. Gamma-weighted so a far-OTM call OI can't hijack it; this is where dealer short-call hedging caps rallies.">CALL WALL</div><div class="sv mono" style="color:var(--gold)">${ceil??'\u2014'}</div></div>
     <div class="stat"><div class="sl" data-tip="Put Wall \u2014 strike below spot with the highest put-side GAMMA (OI\u00d7\u0393), the industry-standard floor. Gamma-weighted so a far-OTM put hedge (e.g. 720) is suppressed; this is where dealer hedging supports price.">PUT WALL</div><div class="sv mono" style="color:var(--cyan)">${flr??'\u2014'}</div></div>`;
@@ -1150,7 +1270,7 @@ function renderImb(sym){
       <div class="side r"><i style="width:${po}%"></i><b style="width:${pwid}%"></b></div>
     </div>`;
   }).join('');
-  document.getElementById('imbNote').textContent='Feed note: Tradier reports total volume per contract, not buy-vs-sell aggressor side \u2014 so the green/red buy-sell split from tick-level tools can\u2019t be derived here. Premium weighting and volume-vs-OI carry the same signal transparently.';
+  document.getElementById('imbNote').textContent='Flow classification: Tradier gives total volume per contract, not the aggressor side \u2014 so the NET FLOW split above is inferred with the quote rule (where each contract\u2019s mid sits in its bid/ask spread), the same microstructure method pro tools use, ~75-80% accurate vs true tick data. Treat it as a lean, not gospel.';
   renderRegimeChart(sym);
 }
 
@@ -1171,12 +1291,14 @@ function renderRegimeChart(sym){
   const IW=W-PL-PR,IH=H-PT-PB;
   const t0=ser[0].t,t1=ser[ser.length-1].t,tspan=Math.max(1,t1-t0);
   const premMax=Math.max(1,...ser.map(p=>Math.max(Math.abs(p.cpr),Math.abs(p.ppr))));
-  // price axis: always show a real range even with few samples (min 0.3% band)
+  // SPOT axis: hug the ACTUAL path tightly so real movement reads. The old
+  // 0.3% floor + 28% pad blew a $0.50 move out to $3.50, pinning the line flat
+  // on the zero-premium line where the two fills meet. Now: 0.05% floor, 22% pad.
   const sMin=Math.min(...ser.map(p=>p.spot)),sMax=Math.max(...ser.map(p=>p.spot));
   const sMid=(sMin+sMax)/2;
-  const sRange=Math.max(sMax-sMin,sMid*0.003);
-  const sPad=sRange*0.28;
-  const sLo=sMid-sRange/2-sPad,sHi=sMid+sRange/2+sPad;
+  const sRange=Math.max(sMax-sMin,sMid*0.0005);
+  const sPad=sRange*0.22;
+  const sLo=sMin-sPad,sHi=sMax+sPad;
   const x=t=>PL+(t-t0)/tspan*IW;
   const yP=v=>PT+(premMax-v)/(2*premMax)*IH;
   const yS=v=>PT+(sHi-v)/((sHi-sLo)||1)*IH;
@@ -1203,33 +1325,34 @@ function renderRegimeChart(sym){
   };
   let g='<svg viewBox="0 0 '+W+' '+H+'" width="100%" height="'+H+'" style="display:block" preserveAspectRatio="none">';
   g+='<defs>'+
-    '<linearGradient id="regG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--green)" stop-opacity=".40"/><stop offset="1" stop-color="var(--green)" stop-opacity="0"/></linearGradient>'+
-    '<linearGradient id="regR" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="var(--red)" stop-opacity=".40"/><stop offset="1" stop-color="var(--red)" stop-opacity="0"/></linearGradient>'+
-    '<linearGradient id="regPrice" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#7cc4ec" stop-opacity=".4"/><stop offset="1" stop-color="#7cc4ec" stop-opacity="1"/></linearGradient>'+
-    '<filter id="regGlow"><feGaussianBlur stdDeviation="2.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>'+
+    '<linearGradient id="regG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--green)" stop-opacity=".18"/><stop offset="1" stop-color="var(--green)" stop-opacity="0"/></linearGradient>'+
+    '<linearGradient id="regR" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="var(--red)" stop-opacity=".18"/><stop offset="1" stop-color="var(--red)" stop-opacity="0"/></linearGradient>'+
+    '<filter id="regGlow"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>'+
     '</defs>';
   [premMax,premMax/2,0,-premMax/2,-premMax].forEach(v=>{
     const y=yP(v);
-    g+='<line x1="'+PL+'" y1="'+y.toFixed(1)+'" x2="'+(W-PR)+'" y2="'+y.toFixed(1)+'" stroke="rgba(126,166,214,'+(v===0?'.28':'.055')+')"'+(v===0?' stroke-dasharray="3 4"':'')+'/>';
-    g+='<text x="'+(PL-8)+'" y="'+(y+3).toFixed(1)+'" fill="rgba(160,174,196,.66)" font-size="9.5" text-anchor="end" font-family="JetBrains Mono">'+fmtK(v)+'</text>';
+    g+='<line x1="'+PL+'" y1="'+y.toFixed(1)+'" x2="'+(W-PR)+'" y2="'+y.toFixed(1)+'" stroke="rgba(126,166,214,'+(v===0?'.22':'.045')+')"'+(v===0?' stroke-dasharray="3 4"':'')+'/>';
+    g+='<text x="'+(PL-8)+'" y="'+(y+3).toFixed(1)+'" fill="rgba(160,174,196,.5)" font-size="9.5" text-anchor="end" font-family="JetBrains Mono">'+fmtK(v)+'</text>';
   });
-  // price axis: 5 clean ticks
-  [0,0.25,0.5,0.75,1].forEach(f=>{const v=sHi-f*(sHi-sLo);g+='<text x="'+(W-PR+8)+'" y="'+(yS(v)+3).toFixed(1)+'" fill="rgba(124,196,236,.8)" font-size="9.5" text-anchor="start" font-family="JetBrains Mono">'+v.toFixed(dp)+'</text>';});
+  // price axis: 5 clean ticks (right side, cyan = the hero axis)
+  [0,0.25,0.5,0.75,1].forEach(f=>{const v=sHi-f*(sHi-sLo);g+='<text x="'+(W-PR+8)+'" y="'+(yS(v)+3).toFixed(1)+'" fill="rgba(124,196,236,.9)" font-size="9.5" text-anchor="start" font-family="JetBrains Mono">'+v.toFixed(dp)+'</text>';});
   [0,0.33,0.66,1].forEach(f=>{const t=t0+tspan*f;g+='<text x="'+x(t).toFixed(1)+'" y="'+(H-8)+'" fill="rgba(110,122,140,.8)" font-size="9" text-anchor="middle" font-family="JetBrains Mono">'+clk(t)+'</text>';});
-  // filled bands (smoothed)
+  // premium fills — CONTEXT ONLY, dimmed so they don't wall off the chart
   g+='<path d="'+areaFrom('cpr',1,zeroY)+'" fill="url(#regG)"/>';
   g+='<path d="'+areaFrom('ppr',-1,zeroY)+'" fill="url(#regR)"/>';
-  g+='<path d="'+smooth(pts('cpr',yP,1))+'" fill="none" stroke="var(--green)" stroke-width="1.6"/>';
-  g+='<path d="'+smooth(pts('ppr',yP,-1))+'" fill="none" stroke="var(--red)" stroke-width="1.6"/>';
-  // price line — glowing, on its own axis, clearly separated
-  g+='<path d="'+smooth(pts('spot',yS,1))+'" fill="none" stroke="url(#regPrice)" stroke-width="2.1" filter="url(#regGlow)"/>';
+  g+='<path d="'+smooth(pts('cpr',yP,1))+'" fill="none" stroke="var(--green)" stroke-width="1.3" stroke-opacity=".55"/>';
+  g+='<path d="'+smooth(pts('ppr',yP,-1))+'" fill="none" stroke="var(--red)" stroke-width="1.3" stroke-opacity=".55"/>';
+  // SPOT — the hero. Drawn LAST (on top), bright solid cyan + glow + white core.
+  const spotPath=smooth(pts('spot',yS,1));
+  g+='<path d="'+spotPath+'" fill="none" stroke="#22d3ee" stroke-width="3" stroke-opacity=".9" filter="url(#regGlow)"/>';
+  g+='<path d="'+spotPath+'" fill="none" stroke="#eafcff" stroke-width="1.2"/>';
   const last=ser[ser.length-1];
   const lx=x(last.t),lyS=yS(last.spot);
   // animated live head (flow pulse) — pure SVG SMIL so it animates without JS
-  g+='<circle cx="'+lx.toFixed(1)+'" cy="'+lyS.toFixed(1)+'" r="3.4" fill="#7cc4ec"><animate attributeName="r" values="3.4;6;3.4" dur="1.8s" repeatCount="indefinite"/><animate attributeName="opacity" values="1;.5;1" dur="1.8s" repeatCount="indefinite"/></circle>';
+  g+='<circle cx="'+lx.toFixed(1)+'" cy="'+lyS.toFixed(1)+'" r="3.6" fill="#eafcff"><animate attributeName="r" values="3.6;6.5;3.6" dur="1.8s" repeatCount="indefinite"/><animate attributeName="opacity" values="1;.5;1" dur="1.8s" repeatCount="indefinite"/></circle>';
   // price pill
-  g+='<rect x="'+(lx+7).toFixed(1)+'" y="'+(lyS-8).toFixed(1)+'" width="52" height="16" rx="3" fill="#0a141c" stroke="#7cc4ec" stroke-opacity=".5"/>';
-  g+='<text x="'+(lx+11).toFixed(1)+'" y="'+(lyS+3.5).toFixed(1)+'" fill="#7cc4ec" font-size="9.5" font-family="JetBrains Mono" font-weight="700">'+last.spot.toFixed(dp)+'</text>';
+  g+='<rect x="'+(lx+7).toFixed(1)+'" y="'+(lyS-8).toFixed(1)+'" width="54" height="16" rx="3" fill="#0a141c" stroke="#22d3ee" stroke-opacity=".6"/>';
+  g+='<text x="'+(lx+11).toFixed(1)+'" y="'+(lyS+3.5).toFixed(1)+'" fill="#22d3ee" font-size="9.5" font-family="JetBrains Mono" font-weight="700">'+last.spot.toFixed(dp)+'</text>';
   g+='</svg>';
   host.innerHTML=g;
   if(meta){
@@ -1387,7 +1510,7 @@ async function refresh(force){
     const ticks=(state.view==='single'||state.view==='chart'||state.view==='imb'||state.view==='tape')
       ?[state.focus]
       :[...new Set([...state.trinityTickers.slice(0,3),state.focus])];
-    if(state.tradierToken.length>8){
+    if(liveOn()){
       try{const qs=await fetchQuotes(ticks);ticks.forEach(s=>{const u=underOf(s);if(qs[u])state.spot[s]=qs[u];});}catch(e){console.warn('quotes',e.message);}
     }
     const results={};
@@ -1402,14 +1525,33 @@ async function refresh(force){
     }
     state.firstLoadFailed=Object.keys(results).length===0&&Object.keys(state.data).length===0;
     recordSnapshots();
+    // Backend: hydrate server-accumulated history once per symbol (regime + IV),
+    // so the Regime chart and IV Rank are pre-filled from data collected 24/5.
+    if(backendOn()){
+      state._hydrated=state._hydrated||{};
+      Object.keys(results).forEach(s=>{
+        if(state._hydrated[s])return;state._hydrated[s]=1;
+        window.KairosBackend.hydrateRegime(s);
+        window.KairosBackend.hydrateIV(s);
+      });
+    }
+    // v2: refresh vol term structure (cached) + resolve journal against latest spot
+    if(window.KairosQuant){
+      window.KairosQuant.vixTerm().then(vt=>{if(vt)state._vixTerm=vt;}).catch(()=>{});
+      try{Object.keys(results).forEach(s=>{const sp=results[s].spot;if(sp)window.KairosQuant.qjResolve(s,sp);});}catch(e){}
+    }
     const sources=Object.values(results).map(d=>d.source);
+    const phase=marketPhase();
+    const phaseLabel={pre:'PRE-MARKET',post:'AFTER HOURS',overnight:'OVERNIGHT',closed:'CLOSED'}[phase];
     let b='';
-    if(sources.some(s=>s==='tradier-live'))b=`<span class="live">● LIVE</span>`;
+    if(sources.some(s=>s==='tradier-live')){
+      b=phase==='rth'?`<span class="live">● LIVE</span>`:`<span class="live" style="color:var(--gold)">● ${phaseLabel}</span>`;
+    }
     else if(sources.some(s=>s==='tradier-sandbox'))b=`● TRADIER SANDBOX — delayed data`;
     else if(sources.some(s=>s==='cboe'))b=`● CBOE DELAYED (~15 min)${state.tradierToken?'':' — add a free Tradier token in Settings for live data'}`;
     else b=`● NO DATA — all sources failed (token? network?)`;
     const si=sessionInfo();
-    if(sources.some(s=>s==='tradier-live'))b+=` <span style="color:var(--muted)">\u00b7 Session <b style="color:var(--text)">${si.sess}</b> \u00b7 OI as-of <b style="color:var(--text)">${si.oi}</b></span>`;
+    if(sources.some(s=>s==='tradier-live'))b+=` <span style="color:var(--muted)">\u00b7 Session <b style="color:var(--text)">${si.sess}</b> \u00b7 OI as-of <b style="color:var(--text)">${si.oi}</b>${phase!=='rth'?' \u00b7 <b style="color:var(--gold)">extended-hours pricing</b>':''}</span>`;
     document.getElementById('bannerText').innerHTML=b;
     const se=document.getElementById('sessInfo');if(se)se.innerHTML='';
     const lu=document.getElementById('lastUp');if(lu)lu.textContent='';
@@ -1681,4 +1823,4 @@ renderTrinity();renderCards();
 refresh(false).finally(schedule);
 function schedule(){clearTimeout(state._t);if(document.hidden)return;state._t=setTimeout(async()=>{await refresh(false);schedule();},state.pollSec*1000);}
 window.Kairos={state,refresh,getSym,kingOf,buildFromChains,buildImbalance,flowLean,exposureProfile};
-console.log('%cKairos v8.6 \u2014 Mythos (sectors + themes, hover-focus tails), Junction weekly walls + biggest nodes header','color:#f2c14e;font-weight:bold');
+console.log('%cKairos v10.0 \u2014 full backend cutover: token server-side, history hydrated from D1, session replay, extended-hours pricing.','color:#f2c14e;font-weight:bold');

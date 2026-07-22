@@ -451,3 +451,17 @@ footer{text-align:center;padding:12px;font-size:.65rem;color:#3f4656;border-top:
 /* only the wide single/Junction panel shows it; Triad's 3-up panels stay clean */
 .panel:not(.single-mode) .p-mid{display:none}
 @media(max-width:900px){.p-mid{display:none}}
+
+/* ---- Aether v2: factor chips + desk note ---- */
+.desk-note{font-size:.74rem;line-height:1.55;color:var(--text);background:rgba(34,211,238,.06);border-left:2px solid var(--cyan);padding:7px 10px;border-radius:0 6px 6px 0;margin-bottom:8px}
+.factor-row{display:flex;gap:5px;flex-wrap:wrap;margin:6px 0 4px}
+.drv.fpos{background:rgba(52,211,153,.14);color:var(--green);border:1px solid rgba(52,211,153,.25)}
+.drv.fneg{background:rgba(248,113,113,.12);color:var(--red);border:1px solid rgba(248,113,113,.22)}
+.drv.fpos,.drv.fneg{cursor:help}
+
+/* ---- Aether v2: vol-regime + journal pulse bar ---- */
+.aether-pulse{display:flex;gap:20px;flex-wrap:wrap;padding:8px 12px;margin-bottom:10px;background:var(--panel2);border:1px solid var(--border);border-radius:8px;font-family:'JetBrains Mono'}
+.ap-block{display:flex;align-items:center;gap:7px;font-size:.72rem}
+.ap-l{font-size:.56rem;letter-spacing:.08em;color:var(--muted);font-weight:700}
+.ap-block i{font-style:normal;color:var(--muted);font-size:.66rem}
+.ap-block b{font-weight:700}

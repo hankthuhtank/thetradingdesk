@@ -132,6 +132,7 @@
       </div>
       <span id="zeroClock" class="hidden" style="margin-left:auto;font-size:.66rem;color:var(--muted);font-family:'JetBrains Mono'"></span>
     </div>
+    <div id="aetherPulse" class="aether-pulse"></div>
     <div class="cards" id="cards"></div>
     <div id="zeroWrap" class="hidden"></div>
   </div>
@@ -161,10 +162,10 @@
     <p>The ▲/▼ percentages flag nodes building or unwinding vs. <strong>~12 minutes ago</strong>. A node must be ≥8% of the King and have moved ≥8% to earn one — that kills the far-OTM tail noise. Chips track whichever metric is active.</p>
     <h3>Imbalance</h3>
     <p>Per-strike call vs put pressure — bright bars are today's volume, faint bars are standing OI. Call Wall / Put Wall are the strikes with the highest call-side and put-side <em>gamma</em> (OI × Γ) inside the visible band — the industry-standard ceiling/floor. Gamma-weighting is deliberate: it's highest at-the-money and decays with distance, so a far-OTM tail hedge can't masquerade as support/resistance the way raw OI would. Sentiment blends volume ratio with premium ratio.</p>
-    <h3>Workflow (Skylit doctrine)</h3>
+    <h3>Workflow</h3>
     <p>Chart first, map second. Build your thesis from price, then use the map to confirm or deny. Full Triad alignment = highest conviction; divergence = size down or pass. Structure is context, not a signal.</p>
     <h3>Units &amp; honesty</h3>
-    <p>GEX is <strong>$ per 1-pt move</strong> (Heatseeker scale). VEX is <strong>$ delta per vol-point</strong>. OI updates daily pre-market; Greeks/IV refresh ~hourly; quotes are real-time. Chains cache ~90s and every metric is re-priced from live spot on each tick. Signs assume the standard dealer position (long calls / short puts).</p>
+    <p>GEX is <strong>$ per 1-pt move</strong>. VEX is <strong>$ delta per vol-point</strong>. OI updates daily pre-market; Greeks/IV refresh ~hourly; quotes are real-time. Chains cache ~90s and every metric is re-priced from live spot on each tick. Signs assume the standard dealer position (long calls / short puts).</p>
   </div>
 </div>
 <div class="modal-bg" id="modal">
@@ -197,9 +198,11 @@
   <button class="btn primary" style="width:100%;margin-top:8px" id="save">Save</button>
   <div class="method">Everything else is locked to the most accurate setup: live spot quotes, exposure re-priced from spot + IV on every tick, standard dealer convention. Chains/OI/IV cache ~90s, keeping request volume ~80% lower and the UI smooth. Full explanation under <b>?</b>.</div>
 </div>
-<footer>Kairos v8.6 · GEX/VEX · Aether · Nexus Chronicle+Echo · Mythos · Structure is context, not a signal</footer>
+<footer>Kairos v10.0 · GEX/VEX/Charm · Aether v2 · Mythos · Cloudflare-backed history + replay · Structure is context, not a signal</footer>
 
 <script src="kairos-core.js"></script>
+<script src="kairos-backend.js"></script>
+<script src="kairos-quant.js"></script>
 <script src="kairos-modules.js"></script>
 <script src="kairos-mythos.js"></script>
 </body>
