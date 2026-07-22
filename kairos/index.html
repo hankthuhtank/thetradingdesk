@@ -10,12 +10,13 @@
 <link rel="stylesheet" href="kairos.css">
 </head>
 <body>
+<datalist id="tickerList"></datalist>
 <header>
   <div class="logo"><span>◆</span> Kairos</div>
   <nav class="hdr-nav" id="hdrNav">
     <button class="btn active" id="btnTrinity" data-tip="Three lenses in balance — SPXW · SPY · QQQ. Alignment = conviction, divergence = size down or pass.">Triad</button>
     <button class="btn" id="btnSingle">Junction</button>
-    <button class="btn" id="btnChart">Chart</button>
+    <button class="btn" id="btnChart" data-tip="Mythos — the market's rotating bodies. Sectors and themes plotted by relative strength and momentum vs SPY. Click one to drill into its names, click a name for its full options picture.">Mythos</button>
     <button class="btn" id="btnIdeas">Aether</button>
     <button class="btn" id="btnImb">Regime</button>
     <button class="btn" id="btnTape" data-tip="Opening-flow tape — where fresh option dollars are hitting today, ranked by premium.">Tape</button>
@@ -45,34 +46,58 @@
   <div id="presetBar" class="hidden"></div>
   <div id="trinityWrap"><div class="trinity" id="trinity"></div></div>
   <div class="chart-area hidden" id="chartSec">
-    <div class="chart-col">
-      <div class="chart-top">
-        <input id="chartTicker" class="ticker-sel" value="SPY" style="width:92px" autocomplete="off" data-tip="Type any symbol — pulls its chain on the fly">
-        <span id="chartFocus"></span>
-        <button class="btn" id="btnPine" style="border-color:var(--border);color:var(--text)" data-tip="Copies the ACTIVE metric's levels (GEX/VEX) as a Pine v5 indicator. Line thickness = node strength. Paste into TradingView.">Copy Pine</button>
+    <div class="orrery" id="orrerySec">
+      <div class="orr-top">
+        <div class="orr-title">◍ MYTHOS <span class="orr-sub">market rotation · RS vs SPY</span></div>
+        <div class="orr-controls">
+          <div class="mtoggle" id="orrCatSel" data-tip="Filter the field: classic sectors, high-conviction themes, or everything.">
+            <button data-cat="all" class="on">ALL</button>
+            <button data-cat="sector">SECTORS</button>
+            <button data-cat="theme">THEMES</button>
+          </div>
+          <div class="mtoggle" id="orrTf" data-tip="Momentum lookback for the rotation. Faster = more sensitive, more noise.">
+            <button data-tf="5" class="on">1W</button>
+            <button data-tf="10">2W</button>
+            <button data-tf="21">1M</button>
+          </div>
+          <span id="orrMeta" class="orr-meta"></span>
+          <button class="btn" id="orrBack" style="display:none;border-color:var(--border)">← All</button>
+        </div>
       </div>
-      <div id="tvChart"></div>
-    </div>
-    <div class="levels">
-      <div class="rail-h">KEY LEVELS</div>
-      <div id="lvlList"></div>
-      <div class="rail-h" style="margin-top:12px" data-tip="Biggest node changes since ~12 min ago — where exposure is building or unwinding right now">TOP MOVERS · Δ ~12 MIN</div>
-      <div id="movers"></div>
+      <div class="orr-grid">
+        <div class="orr-stage">
+          <canvas id="orrCanvas"></canvas>
+          <div class="orr-wait" id="orrWait">Loading the market\u2026<br><span style="color:var(--faint)">pulling daily bars for every sector, theme and leader</span></div>
+        </div>
+        <div class="orr-rail" id="orrRail"></div>
+      </div>
+      <div class="orr-drill" id="orrDrill"></div>
+      <div class="orr-note">Each body is plotted by <b>relative strength</b> (x — is it out/under-performing SPY) and <b>relative momentum</b> (y — is that strength building or fading). Bodies rotate <b>clockwise</b> through four phases: <span style="color:var(--green)">Leading</span> (strong &amp; accelerating) → <span style="color:var(--gold)">Weakening</span> (strong but fading) → <span style="color:#e879f9">Lagging</span> (weak &amp; falling) → <span style="color:var(--cyan)">Improving</span> (weak but turning up). The tail is the recent path. This is the classic Relative Rotation Graph, computed from daily closes — leadership, not a signal.</div>
     </div>
   </div>
   <div class="imb hidden" id="imbSec">
     <div class="imb-top">
-      <input id="imbTicker" class="ticker-sel" value="SPY" style="width:92px" autocomplete="off" data-tip="Type any optionable ticker">
+      <input id="imbTicker" class="ticker-sel" list="tickerList" value="SPY" style="width:92px" autocomplete="off" data-tip="Type any optionable ticker">
       <span id="imbMeta" style="font-size:.68rem;color:var(--muted)"></span>
     </div>
     <div class="imb-stats" id="imbStats"></div>
+    <div id="regChartWrap" style="margin:14px 0 4px">
+      <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:6px">
+        <div class="rail-h" style="margin:0" data-tip="Net call premium, net put premium, and spot — recorded live this session (in-memory; resets each day).">FLOW THROUGH THE DAY</div>
+        <span class="reg-lg"><s style="background:var(--green)"></s>NET CALL $</span>
+        <span class="reg-lg"><s style="background:var(--red)"></s>NET PUT $</span>
+        <span class="reg-lg"><s style="background:var(--cyan)"></s>SPOT</span>
+        <span id="regChartMeta" style="font-size:.6rem;color:var(--muted);margin-left:auto"></span>
+      </div>
+      <div id="regChart"></div>
+    </div>
     <div style="text-align:center;font-size:.62rem;color:var(--muted);margin:10px 0 5px;letter-spacing:.08em">CALLS ← → PUTS · bright = today's volume · faint = open interest</div>
     <div id="imbBars"></div>
     <div id="imbNote" style="font-size:.62rem;color:var(--muted);margin-top:9px;line-height:1.5"></div>
   </div>
   <div class="tape hidden" id="tapeSec">
     <div class="imb-top">
-      <input id="tapeTicker" class="ticker-sel" value="SPY" style="width:92px" autocomplete="off" data-tip="Type any optionable ticker">
+      <input id="tapeTicker" class="ticker-sel" list="tickerList" value="SPY" style="width:92px" autocomplete="off" data-tip="Type any optionable ticker">
       <span id="tapeMeta" style="font-size:.68rem;color:var(--muted)"></span>
     </div>
     <div class="imb-stats" id="tapeStats"></div>
@@ -81,7 +106,7 @@
   </div>
   <div class="arena hidden" id="arenaSec">
     <div class="a-top">
-      <input id="arenaTicker" class="ticker-sel" value="SPY" style="width:92px" autocomplete="off" data-tip="Type any optionable ticker">
+      <input id="arenaTicker" class="ticker-sel" list="tickerList" value="SPY" style="width:92px" autocomplete="off" data-tip="Type any optionable ticker">
       <span id="arenaMeta" style="font-size:.68rem;color:var(--muted)"></span>
       <span class="a-legend">
         <span class="a-lg" data-tip="Positive exposure. Dealers fade moves, so price is held — the field resists."><s class="aeg"></s>AEGIS · +</span>
@@ -96,7 +121,7 @@
       <div class="a-wait" id="arenaWait">Waiting on the first chain for this ticker…<br><span style="color:var(--faint)">the field draws as soon as strikes land</span></div>
     </div>
     <div class="a-hud" id="arenaHud"></div>
-    <div id="arenaNote" class="a-note">Exposure lives on the <b>price</b> axis, time belongs to the tape. <b>The field</b> is one continuous gradient across the strike ladder — colour and opacity <em>are</em> the exposure, and it fades to black through the zero crossing because that is where the field genuinely cancels. <b>Aegis</b> (+) holds price because dealers fade moves; <em>Maelstrom</em> (−) pulls because they chase. The white trace is the <b>real price path</b> from Tradier 1-minute bars, anchored to the last real bar when the market is closed. <u>Time @ price</u> is a genuine profile. <q>The Reach</q> is the ±1σ/±2σ cone implied by ATM IV over the next 18 minutes — the implied distribution, not a prediction. Nothing here is a signal.</div>
+    <div id="arenaNote" class="a-note">Exposure lives on the <b>price</b> axis, time belongs to the tape. <b>The field</b> is one continuous gradient across the strike ladder — colour and opacity <em>are</em> the exposure, and it fades to black through the zero crossing because that is where the field genuinely cancels. <b>Aegis</b> (+) holds price because dealers fade moves; <em>Maelstrom</em> (−) pulls because they chase. The white trace is the <b>real price path</b> from Tradier 1-minute bars, anchored to the last real bar when the market is closed. <u>Time @ price</u> is a genuine profile. <q>The Reach</q> is the ±1σ/±2σ cone implied by ATM IV over the next 18 minutes — the implied distribution, not a prediction. Nothing here is a signal. <b>The Chronicle:</b> the field is recorded (~60s columns, full ladder, GEX+VEX) while a Kairos tab is open and kept ~7 days in this browser — past columns show the field <em>as it was</em>; before the first recording, only the tape draws. Drag to pan time <em>and</em> price; wheel zooms time, Shift+wheel (or wheel over the strike ladder) zooms price; double-click snaps back to live + auto-fit. 30M–5D windows; 1-min bars reach back 20 days (Tradier's limit). <b>The Echo:</b> because OI is fixed all session (OCC prior-settlement), today's field before recording began is <em>reconstructed</em> — the same Black-Scholes × OI pipeline evaluated at each minute's real spot, with current IV (drift not replayed) on an OI basis. Reconstructed columns render dimmer, are tagged in the Lens, and are never persisted — recorded columns always win. <b>The Undertow</b> (bottom pane) is net ±1% exposure through time; the thin gold/teal/magenta tracks are where Crown and the walls actually sat.</div>
   </div>
   <div class="surfaced hidden" id="ideasSec">
     <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px">
@@ -172,9 +197,10 @@
   <button class="btn primary" style="width:100%;margin-top:8px" id="save">Save</button>
   <div class="method">Everything else is locked to the most accurate setup: live spot quotes, exposure re-priced from spot + IV on every tick, standard dealer convention. Chains/OI/IV cache ~90s, keeping request volume ~80% lower and the UI smooth. Full explanation under <b>?</b>.</div>
 </div>
-<footer>Kairos v7.9 · GEX/VEX · Aether · Nexus · Structure is context, not a signal</footer>
+<footer>Kairos v8.6 · GEX/VEX · Aether · Nexus Chronicle+Echo · Mythos · Structure is context, not a signal</footer>
 
 <script src="kairos-core.js"></script>
 <script src="kairos-modules.js"></script>
+<script src="kairos-mythos.js"></script>
 </body>
 </html>

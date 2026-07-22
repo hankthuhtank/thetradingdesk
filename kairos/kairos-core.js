@@ -54,6 +54,7 @@ const HIST_SAVE_MS=60000;
 const HIST_MAX_DAYS=3;        // trading days of node history kept in localStorage
 const HIST_PRIOR_CAP=90;      // snapshots kept per symbol for NON-today days (downsampled)
 const HIST_TODAY_CAP=260;     // full-resolution snapshots for the current session
+const REG_SERIES_CAP=400;     // intraday net-premium/spot samples for the Regime chart (in-memory)
 const DELTA_WINDOW=720;
 const DELTA_MATERIAL=0.08;
 const DELTA_MIN=8;
@@ -97,6 +98,9 @@ if(!localStorage.getItem('kairos_ticks_ok')){
 if(!['gex','vex'].includes(state.metric))state.metric='gex';
 if(!['spot','king'].includes(state.centerOn))state.centerOn='king';
 state.histAll={};
+state.regSeries={};
+state.tapeSort={col:'prem',dir:-1};
+state.ideaOpen=null;
 try{
   const raw=JSON.parse(localStorage.getItem('kairos_hist')||'null');
   const today=new Date().toDateString();
@@ -127,6 +131,27 @@ function dealerAdj(u,a){return state.dealerMode==='shortall'?-a:state.dealerMode
 function kingOf(s,metric){let m=0,k=null;(s||[]).forEach(x=>{const v=Math.abs(mval(x,metric));if(v>m){m=v;k=x}});return k;}
 function callWall(s,metric){let m=0,w=null;(s||[]).forEach(x=>{const v=mval(x,metric);if(v>m){m=v;w=x}});return w;}
 function putWall(s,metric){let m=0,w=null;(s||[]).forEach(x=>{const v=mval(x,metric);if(v<m){m=v;w=x}});return w;}
+/* Band-aware walls: Call Wall = largest POSITIVE node ABOVE spot within band;
+   Put Wall = most-negative node BELOW spot within band. This is the industry
+   convention and stops a far-OTM tail node (e.g. a 360 put hedge ~10% under a
+   $397 spot) from masquerading as the actionable floor. Band defaults to ~6%
+   which comfortably covers the near-money structure that actually pins price. */
+function callWallBand(s,spot,metric,pct){
+  const b=spot*(pct||0.06);let m=0,w=null;
+  (s||[]).forEach(x=>{if(x.k<spot||x.k>spot+b)return;const v=mval(x,metric);if(v>m){m=v;w=x;}});
+  if(!w){ // fallback: nearest positive node above spot at any distance
+    let bd=1e18;(s||[]).forEach(x=>{if(x.k<spot)return;const v=mval(x,metric);if(v>0&&x.k-spot<bd){bd=x.k-spot;w=x;}});
+  }
+  return w;
+}
+function putWallBand(s,spot,metric,pct){
+  const b=spot*(pct||0.06);let m=0,w=null;
+  (s||[]).forEach(x=>{if(x.k>spot||x.k<spot-b)return;const v=mval(x,metric);if(v<m){m=v;w=x;}});
+  if(!w){ // fallback: nearest negative node below spot at any distance
+    let bd=1e18;(s||[]).forEach(x=>{if(x.k>spot)return;const v=mval(x,metric);if(v<0&&spot-x.k<bd){bd=spot-x.k;w=x;}});
+  }
+  return w;
+}
 function flipOf(s,spot,metric){const a=[...(s||[])].sort((x,y)=>x.k-y.k);let f=null,b=1e18;for(let i=0;i<a.length-1;i++){const g0=mval(a[i],metric),g1=mval(a[i+1],metric);if(g0*g1<=0){const m=(a[i].k+a[i+1].k)/2;const d=spot?Math.abs(m-spot):i;if(d<b){b=d;f={k:m};}}}return f;}
 
 function localDate(){const d=new Date();const p=n=>String(n).padStart(2,'0');return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate());}
@@ -377,6 +402,16 @@ function scoreIdea(sym,d,tech){
     momentum:kg.gex<0,flow:flowNote,
     target:target?(+target).toFixed(dp):null,
     invalid,
+    entry:+spot.toFixed(dp),
+    optType:bias>0?'C':'P',
+    contractK:(function(){ // nearest listed strike ~ATM for the suggested leg
+      let best=kg.k,bd=1e18;(d.strikes||[]).forEach(s=>{const dd=Math.abs(s.k-spot);if(dd<bd){bd=dd;best=s.k;}});return best;
+    })(),
+    rr:(function(){ // reward (to target) vs risk (to invalidation), both in points
+      if(!target||!invalid)return null;
+      const rew=Math.abs((+target)-spot),rsk=Math.abs(spot-(+invalid));
+      return rsk>0?+(rew/rsk).toFixed(2):null;
+    })(),
     line:kg.gex>0
       ?`${sym} ~ATM ${bias>0?'call':'put'} \u00b7 target King ${(+kg.k).toFixed(dp)}`
       :`${sym} ${bias>0?'call':'put'} \u2014 momentum regime (\u2212GEX), ${bias>0?'up':'down'} tape`,
@@ -597,7 +632,7 @@ function buildFromChains(sym){
     });
   });
   let strikes=Object.values(allBy).map(s=>({k:s.k,gex:gval(s),vex:vval(s),oi:s.oi,vol:s.vol})).sort((a,b)=>b.k-a.k);
-  const range=(sym==='SPXW'||sym==='SPX')?280:45;
+  const range=nxBand(sym,spot);
   strikes=strikes.filter(s=>Math.abs(s.k-spot)<range);
   state.multi[sym]={byExp,spot,dates:dates.filter(e=>byExp[e]&&byExp[e].length)};
   return{spot,source:ch.src,strikes,rawCount:ch.rawCount,contracts,chStamp:ch.t};
@@ -709,7 +744,7 @@ function renderTrinity(){
       return;
     }
     const kg=kingOf(d.strikes);
-    const cw=callWall(d.strikes),pw=putWall(d.strikes);
+    const cw=callWallBand(d.strikes,d.spot),pw=putWallBand(d.strikes,d.spot);
     const maxAbs=Math.max(...(d.strikes||[]).map(x=>Math.abs(mval(x))),1);
     const srcMap={'tradier-live':'live','tradier-sandbox':'sandbox','cboe':'cboe','demo':'demo'};
     const srcTxt={'tradier-live':'Tradier Live','tradier-sandbox':'Sandbox','cboe':'CBOE','demo':'Demo'};
@@ -722,13 +757,38 @@ function renderTrinity(){
 
     if(state.view==='single' && state.multi[sym] && state.multi[sym].dates && state.multi[sym].dates.length){
       const m=state.multi[sym];
+      /* --- Junction header strip: weekly walls (nearest expiry) + biggest nodes chart-wide --- */
+      const hdrDp=(sym==='SPXW'||sym==='SPX')?0:2;
+      const wkExp=m.dates[0]; // soonest expiry = the M-F cycle we're in
+      let wkCW=null,wkCWv=0,wkPW=null,wkPWv=0;
+      (m.byExp[wkExp]||[]).forEach(s=>{const v=mval(s);
+        if(s.k>=m.spot&&v>wkCWv){wkCWv=v;wkCW=s.k;}
+        if(s.k<=m.spot&&v<wkPWv){wkPWv=v;wkPW=s.k;}
+      });
+      // biggest nodes across the WHOLE chain (aggregate by strike)
+      const agg={};
+      m.dates.forEach(e2=>(m.byExp[e2]||[]).forEach(s=>{agg[s.k]=(agg[s.k]||0)+mval(s);}));
+      const bigNodes=Object.keys(agg).map(k=>({k:+k,v:agg[k]})).sort((a,b)=>Math.abs(b.v)-Math.abs(a.v)).slice(0,3);
+      const wkLabel=wkExp?wkExp.slice(5).replace('-','/'):'\u2014';
+      const nodeChip=n=>`<span class="hn-node ${n.v>=0?'pos':'neg'}">${n.k} <i>${mdisp(n.v,m.spot)}</i></span>`;
+      const headStrip=`<div class="p-mid">
+        <div class="hm-block" data-tip="Call & put walls computed from just the nearest expiry (${wkExp||'—'}) — the weekly cycle you're trading now.">
+          <div class="hm-lab">WEEKLY ${wkLabel}</div>
+          <div class="hm-walls"><span class="hw-c">CW ${wkCW!=null?wkCW.toFixed(hdrDp):'\u2014'}</span><span class="hw-p">PW ${wkPW!=null?wkPW.toFixed(hdrDp):'\u2014'}</span></div>
+        </div>
+        <div class="hm-block" data-tip="The three largest ${metricLabel(state.metric)} nodes across the ENTIRE chain (all expiries aggregated) — the structural magnets.">
+          <div class="hm-lab">BIGGEST NODES</div>
+          <div class="hm-nodes">${bigNodes.map(nodeChip).join('')}</div>
+        </div>
+      </div>`;
       p.innerHTML=`
         <div class="p-head">
           <div class="p-left">
-            <input class="ticker-sel" data-old="${sym}" value="${sym}" style="width:86px" autocomplete="off" data-tip="Type any optionable ticker and press Enter">
+            <input class="ticker-sel" list="tickerList" data-old="${sym}" value="${sym}" style="width:86px" autocomplete="off" data-tip="Type any optionable ticker — or pick from your roster">
             <span class="price mono">$${(d.spot||0).toFixed(2)}</span>
             <span class="badge-src ${srcMap[d.source]||'demo'}">${srcTxt[d.source]||d.source}</span>${staleB}
           </div>
+          ${headStrip}
           <div class="king-pill ${pillCls()}${kg&&mval(kg)<0?' kneg':''}" data-tip="Biggest absolute ${metricLabel(state.metric)} node — the magnet for that force. Strike first: that is the level price is drawn to. Exposure size is secondary.">★ ${mlab} ${kg?kg.k:'\u2014'}${kg?` <i style="font-style:normal;opacity:.66;font-weight:600">${mdisp(mval(kg),d.spot)}</i>`:''}</div>
         </div>
         <div class="sgrid-wrap"></div>`;
@@ -741,9 +801,17 @@ function renderTrinity(){
         state.focus=neu;state.singleLoading=true;refresh(false);
       };
       const wrap=p.querySelector('.sgrid-wrap');
-      const range=(sym==='SPXW'||sym==='SPX')?280:45;
+      /* Junction DISPLAY band — wider than the calc band so tall-priced names
+         (MSFT, META, SPXW) show their full structure. Display-only: it does NOT
+         touch wall/King math (that stays on nxBand). We also force-include the
+         King strike so it can never be clipped off the visible ladder. */
+      const dispRange=(sym==='SPXW'||sym==='SPX')?520:Math.max(70,Math.min(m.spot*0.16,1000));
+      // find the King strike across all expiries first, so we can guarantee its row
+      let _gMax=0,_gKk=null;
+      m.dates.forEach(e2=>(m.byExp[e2]||[]).forEach(s=>{const a=Math.abs(mval(s));if(a>_gMax){_gMax=a;_gKk=s.k;}}));
       const ks=new Set();
-      m.dates.forEach(e2=>(m.byExp[e2]||[]).forEach(s=>{if(Math.abs(s.k-m.spot)<range)ks.add(s.k);}));
+      m.dates.forEach(e2=>(m.byExp[e2]||[]).forEach(s=>{if(Math.abs(s.k-m.spot)<dispRange)ks.add(s.k);}));
+      if(_gKk!=null)ks.add(_gKk); // never clip the King
       const ladder=[...ks].sort((a,b)=>b-a);
       const cell={};let gMax=1,gK=null;
       m.dates.forEach(e2=>{cell[e2]={};(m.byExp[e2]||[]).forEach(s=>{const v=mval(s);cell[e2][s.k]=v;const a=Math.abs(v);if(a>gMax){gMax=a;gK=e2+'|'+s.k;}});});
@@ -786,7 +854,7 @@ function renderTrinity(){
     p.innerHTML=`
       <div class="p-head">
         <div class="p-left">
-          <input class="ticker-sel" data-old="${sym}" value="${sym}" style="width:86px" autocomplete="off" data-tip="Type any optionable ticker and press Enter">
+          <input class="ticker-sel" list="tickerList" data-old="${sym}" value="${sym}" style="width:86px" autocomplete="off" data-tip="Type any optionable ticker — or pick from your roster">
           <span class="price mono">$${(d.spot||0).toFixed(2)}</span>${staleB}
         </div>
         <div class="king-pill ${pillCls()}${kg&&mval(kg)<0?' kneg':''}" data-tip="Biggest absolute ${metricLabel(state.metric)} node — the magnet for that force. Strike first: that is the level price is drawn to. Exposure size is secondary.">★ ${mlab} ${kg?kg.k:'\u2014'}${kg?` <i style="font-style:normal;opacity:.66;font-weight:600">${mdisp(mval(kg),d.spot)}</i>`:''}</div>
@@ -843,6 +911,15 @@ function recordSnapshots(){
     const topFor=metric=>[...d.strikes].sort((a,b)=>Math.abs(mval(b,metric))-Math.abs(mval(a,metric))).slice(0,12).map(s=>({k:s.k,val:Math.round(mval(s,metric))}));
     (state.history[sym]=state.history[sym]||[]).push({t,g:topFor('gex'),v:topFor('vex')});
     if(state.history[sym].length>HIST_TODAY_CAP)state.history[sym].shift();
+    /* Regime intraday series: net call/put premium traded + spot, for the through-day chart.
+       Cheap (3 numbers/sample), kept in-memory only (not persisted) — resets each session. */
+    const imb=buildImbalance(sym);
+    if(imb&&imb.strikes){
+      let cpr=0,ppr=0;imb.strikes.forEach(s=>{cpr+=s.cpr||0;ppr+=s.ppr||0;});
+      const ser=(state.regSeries[sym]=state.regSeries[sym]||[]);
+      ser.push({t,cpr,ppr,spot:d.spot||state.spot[sym]||0});
+      if(ser.length>REG_SERIES_CAP)ser.shift();
+    }
   });
   persistHistory(false);
 }
@@ -908,6 +985,7 @@ function flipFor(sym,d){
 let tvLoaded='';
 function loadTV(sym){
   const w=document.getElementById('tvChart');
+  if(!w)return; // Orrery owns the chart view now
   if(!w||tvLoaded===sym)return;
   w.innerHTML='';
   const holder=document.createElement('div');holder.className='tradingview-widget-container';holder.style.height='100%';
@@ -921,12 +999,13 @@ function loadTV(sym){
   tvLoaded=sym;
 }
 function updateChart(sym){
+  if(!document.getElementById('tvChart'))return; // Orrery owns the chart view now
   const d=state.data[sym]; if(!d) return;
   const ct=document.getElementById('chartTicker');
   if(ct&&ct.value!==sym&&document.activeElement!==ct)ct.value=sym;
   document.getElementById('chartFocus').textContent=metricLabel(state.metric).toUpperCase()+' levels';
   if(state.view==='chart')loadTV(sym);
-  const kg=kingOf(d.strikes), cw=callWall(d.strikes), pw=putWall(d.strikes), fl=flipFor(sym,d);
+  const kg=kingOf(d.strikes), cw=callWallBand(d.strikes,d.spot), pw=putWallBand(d.strikes,d.spot), fl=flipFor(sym,d);
   const used=new Set();
   let html=lvl('spot','Spot',(d.spot||0).toFixed(2),'live');
   const add=(type,label,s,val)=>{if(!s||used.has(s.k))return;used.add(s.k);html+=lvl(type,label,s.k,val);};
@@ -955,6 +1034,17 @@ function lvl(type,label,price,gex){
   return `<div class="lvl${type==='spot'?' spotlvl':''}"><div class="lvl-l"><div class="dot ${type}"></div>${label}</div><div><span class="lvl-v">${price}</span> <span style="color:var(--muted);font-size:.68rem">${gex}</span></div></div>`;
 }
 
+/* nearest listed expiry for a symbol, formatted M/D — for the idea thumbnail contract */
+function nearestExpLabel(sym){
+  const ch=state.chains[sym];
+  if(!ch||!ch.list||!ch.list.length)return '';
+  let soonest=null;
+  for(const c of ch.list){if(c.e&&(soonest===null||c.e<soonest))soonest=c.e;}
+  if(!soonest)return '';
+  const parts=soonest.split('-'); // YYYY-MM-DD
+  if(parts.length===3)return (+parts[1])+'/'+(+parts[2]);
+  return soonest;
+}
 function renderCards(){
   const el=document.getElementById('cards');el.innerHTML='';
   const ideas=Object.values(state.ideas||{}).filter(Boolean).sort((a,b)=>b.score-a.score);
@@ -964,18 +1054,41 @@ function renderCards(){
     return;
   }
   ideas.forEach(i=>{
-    const c=document.createElement('div');c.className='card';
+    const c=document.createElement('div');c.className='card idea-thumb';
+    const expanded=state.ideaOpen===i.sym;
     const flowTag=i.flow==='confirms'?'<span class="drv">flow \u2713</span>':i.flow==='diverges'?'<span class="drv warn">flow \u2717</span>':'';
-    c.innerHTML=`
-      <div class="card-top">
-        <div><span class="card-sym">${i.sym}</span><span class="tag ${i.bias.toLowerCase()}">${i.bias}</span>${i.momentum?'<span class="tag short">\u2212GEX</span>':''}</div>
+    const clk=new Date(i.t).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});
+    const exp=nearestExpLabel(i.sym);
+    const contract=(i.contractK!=null?i.contractK:'')+i.optType+(exp?' '+exp:'');
+    const rrTxt=i.rr!=null?i.rr+' : 1':'\u2014';
+    // --- compact thumbnail (always shown) ---
+    let h=`<div class="thumb-head">
+        <div class="thumb-sym">${i.sym} <span class="tag ${i.bias.toLowerCase()}">${i.bias}</span>${i.momentum?'<span class="tag short">\u2212GEX</span>':''}</div>
         <div class="score">${i.score}</div>
       </div>
-      <div class="card-line">${i.line}</div>
-      ${i.target||i.invalid?`<div class="card-line" style="color:var(--muted)">${i.target?`target <b style="color:var(--gold)">${i.target}</b>`:''}${i.invalid?` \u00b7 invalid ${i.bias==='LONG'?'below':'above'} <b style="color:var(--cyan)">${i.invalid}</b>`:''}</div>`:''}
-      <div style="display:flex;gap:5px;flex-wrap:wrap;margin:5px 0 3px">${(i.drivers||[]).filter(x=>x!=='flow confirms'&&x!=='flow diverges').map(x=>`<span class="drv">${x}</span>`).join('')}${flowTag}</div>
-      <div class="card-meta">${i.meta}</div>`;
-    c.onclick=()=>{state.focus=i.sym;openDeep(i.sym);};
+      <div class="thumb-contract">${contract}</div>
+      <div class="thumb-grid">
+        <div><span class="tl">Entry</span><span class="tv">${i.entry??'\u2014'}</span></div>
+        <div><span class="tl">Time</span><span class="tv">${clk}</span></div>
+        <div><span class="tl">R/R</span><span class="tv" style="color:${i.rr>=1.5?'var(--green)':i.rr!=null?'var(--gold)':'var(--muted)'}">${rrTxt}</span></div>
+      </div>`;
+    // --- expanded detail (on click) ---
+    if(expanded){
+      h+=`<div class="thumb-detail">
+        <div class="card-line">${i.line}</div>
+        ${i.target||i.invalid?`<div class="card-line" style="color:var(--muted)">${i.target?`target <b style="color:var(--gold)">${i.target}</b>`:''}${i.invalid?` \u00b7 invalid ${i.bias==='LONG'?'below':'above'} <b style="color:var(--cyan)">${i.invalid}</b>`:''}</div>`:''}
+        <div style="display:flex;gap:5px;flex-wrap:wrap;margin:6px 0 4px">${(i.drivers||[]).filter(x=>x!=='flow confirms'&&x!=='flow diverges').map(x=>`<span class="drv">${x}</span>`).join('')}${flowTag}</div>
+        <div class="card-meta">${i.meta}</div>
+        <button class="btn thumb-deep" data-sym="${i.sym}" style="border-color:var(--border);margin-top:8px;font-size:.68rem">Open full analysis \u2192</button>
+      </div>`;
+    }
+    c.innerHTML=h;
+    c.classList.toggle('open',expanded);
+    c.onclick=(e)=>{
+      if(e.target.closest('.thumb-deep')){state.focus=i.sym;openDeep(i.sym);return;}
+      state.ideaOpen=(state.ideaOpen===i.sym)?null:i.sym;
+      renderCards();
+    };
     el.appendChild(c);
   });
   const note=document.createElement('div');
@@ -1038,6 +1151,91 @@ function renderImb(sym){
     </div>`;
   }).join('');
   document.getElementById('imbNote').textContent='Feed note: Tradier reports total volume per contract, not buy-vs-sell aggressor side \u2014 so the green/red buy-sell split from tick-level tools can\u2019t be derived here. Premium weighting and volume-vs-OI carry the same signal transparently.';
+  renderRegimeChart(sym);
+}
+
+/* ---- Regime intraday chart: net call $ / net put $ / spot ----
+   Flowseeker-style: filled area bands for call/put premium on the left axis,
+   price as a bright line on the right axis. Recorded live in-memory. */
+function renderRegimeChart(sym){
+  const host=document.getElementById('regChart'),meta=document.getElementById('regChartMeta');
+  if(!host)return;
+  const ser=(state.regSeries[sym]||[]).filter(p=>p&&isFinite(p.cpr)&&isFinite(p.ppr));
+  if(ser.length<2){
+    host.innerHTML='<div style="height:220px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:.68rem;border:1px dashed var(--border);border-radius:8px">Recording flow\u2026 the through-day chart fills in as the session ticks (a few minutes).</div>';
+    if(meta)meta.textContent='';
+    return;
+  }
+  const W=host.clientWidth||900,H=Math.max(240,Math.min(320,Math.round((host.clientWidth||900)*0.28)));
+  const PL=66,PR=68,PT=16,PB=24;
+  const IW=W-PL-PR,IH=H-PT-PB;
+  const t0=ser[0].t,t1=ser[ser.length-1].t,tspan=Math.max(1,t1-t0);
+  const premMax=Math.max(1,...ser.map(p=>Math.max(Math.abs(p.cpr),Math.abs(p.ppr))));
+  // price axis: always show a real range even with few samples (min 0.3% band)
+  const sMin=Math.min(...ser.map(p=>p.spot)),sMax=Math.max(...ser.map(p=>p.spot));
+  const sMid=(sMin+sMax)/2;
+  const sRange=Math.max(sMax-sMin,sMid*0.003);
+  const sPad=sRange*0.28;
+  const sLo=sMid-sRange/2-sPad,sHi=sMid+sRange/2+sPad;
+  const x=t=>PL+(t-t0)/tspan*IW;
+  const yP=v=>PT+(premMax-v)/(2*premMax)*IH;
+  const yS=v=>PT+(sHi-v)/((sHi-sLo)||1)*IH;
+  const zeroY=yP(0);
+  const fmtK=v=>{const a=Math.abs(v);return (v<0?'-':'')+'$'+(a>=1e9?(a/1e9).toFixed(2)+'B':a>=1e6?(a/1e6).toFixed(2)+'M':a>=1e3?(a/1e3).toFixed(0)+'K':a.toFixed(0));};
+  const clk=t=>{try{return new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',hour:'numeric',minute:'2-digit',hour12:false}).format(new Date(t*1000));}catch(e){return '';}};
+  const dp=sHi>=1000?0:sHi>=100?1:2;
+  // --- smooth path via Catmull-Rom -> cubic bezier ---
+  const smooth=(pts)=>{
+    if(pts.length<2)return pts.length?('M'+pts[0][0].toFixed(1)+' '+pts[0][1].toFixed(1)):'';
+    let d='M'+pts[0][0].toFixed(1)+' '+pts[0][1].toFixed(1);
+    for(let i=0;i<pts.length-1;i++){
+      const p0=pts[i-1]||pts[i],p1=pts[i],p2=pts[i+1],p3=pts[i+2]||pts[i+1];
+      const c1x=p1[0]+(p2[0]-p0[0])/6,c1y=p1[1]+(p2[1]-p0[1])/6;
+      const c2x=p2[0]-(p3[0]-p1[0])/6,c2y=p2[1]-(p3[1]-p1[1])/6;
+      d+=' C'+c1x.toFixed(1)+' '+c1y.toFixed(1)+' '+c2x.toFixed(1)+' '+c2y.toFixed(1)+' '+p2[0].toFixed(1)+' '+p2[1].toFixed(1);
+    }
+    return d;
+  };
+  const pts=(key,fn,sign)=>ser.map(p=>[x(p.t),fn((sign||1)*p[key])]);
+  const areaFrom=(key,sign,base)=>{
+    const P=pts(key,yP,sign);
+    return smooth(P)+' L'+P[P.length-1][0].toFixed(1)+' '+base.toFixed(1)+' L'+P[0][0].toFixed(1)+' '+base.toFixed(1)+' Z';
+  };
+  let g='<svg viewBox="0 0 '+W+' '+H+'" width="100%" height="'+H+'" style="display:block" preserveAspectRatio="none">';
+  g+='<defs>'+
+    '<linearGradient id="regG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--green)" stop-opacity=".40"/><stop offset="1" stop-color="var(--green)" stop-opacity="0"/></linearGradient>'+
+    '<linearGradient id="regR" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="var(--red)" stop-opacity=".40"/><stop offset="1" stop-color="var(--red)" stop-opacity="0"/></linearGradient>'+
+    '<linearGradient id="regPrice" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#7cc4ec" stop-opacity=".4"/><stop offset="1" stop-color="#7cc4ec" stop-opacity="1"/></linearGradient>'+
+    '<filter id="regGlow"><feGaussianBlur stdDeviation="2.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>'+
+    '</defs>';
+  [premMax,premMax/2,0,-premMax/2,-premMax].forEach(v=>{
+    const y=yP(v);
+    g+='<line x1="'+PL+'" y1="'+y.toFixed(1)+'" x2="'+(W-PR)+'" y2="'+y.toFixed(1)+'" stroke="rgba(126,166,214,'+(v===0?'.28':'.055')+')"'+(v===0?' stroke-dasharray="3 4"':'')+'/>';
+    g+='<text x="'+(PL-8)+'" y="'+(y+3).toFixed(1)+'" fill="rgba(160,174,196,.66)" font-size="9.5" text-anchor="end" font-family="JetBrains Mono">'+fmtK(v)+'</text>';
+  });
+  // price axis: 5 clean ticks
+  [0,0.25,0.5,0.75,1].forEach(f=>{const v=sHi-f*(sHi-sLo);g+='<text x="'+(W-PR+8)+'" y="'+(yS(v)+3).toFixed(1)+'" fill="rgba(124,196,236,.8)" font-size="9.5" text-anchor="start" font-family="JetBrains Mono">'+v.toFixed(dp)+'</text>';});
+  [0,0.33,0.66,1].forEach(f=>{const t=t0+tspan*f;g+='<text x="'+x(t).toFixed(1)+'" y="'+(H-8)+'" fill="rgba(110,122,140,.8)" font-size="9" text-anchor="middle" font-family="JetBrains Mono">'+clk(t)+'</text>';});
+  // filled bands (smoothed)
+  g+='<path d="'+areaFrom('cpr',1,zeroY)+'" fill="url(#regG)"/>';
+  g+='<path d="'+areaFrom('ppr',-1,zeroY)+'" fill="url(#regR)"/>';
+  g+='<path d="'+smooth(pts('cpr',yP,1))+'" fill="none" stroke="var(--green)" stroke-width="1.6"/>';
+  g+='<path d="'+smooth(pts('ppr',yP,-1))+'" fill="none" stroke="var(--red)" stroke-width="1.6"/>';
+  // price line — glowing, on its own axis, clearly separated
+  g+='<path d="'+smooth(pts('spot',yS,1))+'" fill="none" stroke="url(#regPrice)" stroke-width="2.1" filter="url(#regGlow)"/>';
+  const last=ser[ser.length-1];
+  const lx=x(last.t),lyS=yS(last.spot);
+  // animated live head (flow pulse) — pure SVG SMIL so it animates without JS
+  g+='<circle cx="'+lx.toFixed(1)+'" cy="'+lyS.toFixed(1)+'" r="3.4" fill="#7cc4ec"><animate attributeName="r" values="3.4;6;3.4" dur="1.8s" repeatCount="indefinite"/><animate attributeName="opacity" values="1;.5;1" dur="1.8s" repeatCount="indefinite"/></circle>';
+  // price pill
+  g+='<rect x="'+(lx+7).toFixed(1)+'" y="'+(lyS-8).toFixed(1)+'" width="52" height="16" rx="3" fill="#0a141c" stroke="#7cc4ec" stroke-opacity=".5"/>';
+  g+='<text x="'+(lx+11).toFixed(1)+'" y="'+(lyS+3.5).toFixed(1)+'" fill="#7cc4ec" font-size="9.5" font-family="JetBrains Mono" font-weight="700">'+last.spot.toFixed(dp)+'</text>';
+  g+='</svg>';
+  host.innerHTML=g;
+  if(meta){
+    const net=last.cpr-last.ppr;
+    meta.innerHTML='NCP <b style="color:var(--green)">'+fmtK(last.cpr)+'</b> \u00b7 NPP <b style="color:var(--red)">'+fmtK(last.ppr)+'</b> \u00b7 NET <b style="color:'+(net>=0?'var(--green)':'var(--red)')+'">'+fmtK(net)+'</b> \u00b7 '+ser.length+' samples';
+  }
 }
 
 /* ---- Flow Tape view — repaints only when its chain actually changes (~90s) or filter/symbol switches ---- */
@@ -1067,13 +1265,34 @@ function renderTape(sym){
     <div class="stat"><div class="sl" data-tip="Call opening $ minus put opening $. Puts can be hedges, so read directionally, not literally.">NET LEAN</div><div class="sv" style="color:${sc}">${sTxt}</div></div>
     <div class="stat"><div class="sl">OPENING PRINTS</div><div class="sv">${fl.prints.length}</div></div>`;
   const oldWrap=body.querySelector('.tape-wrap');const keepScroll=oldWrap?oldWrap.scrollTop:0;
-  body.innerHTML='<div class="tape-wrap"><table><thead><tr><th>Contract</th><th>Exp</th><th>Vol</th><th>OI</th><th>Vol/OI</th><th>IV</th><th>Premium</th></tr></thead><tbody>'+
-    fl.prints.map(p=>{
+  const ts=state.tapeSort;
+  const prints=[...fl.prints].sort((a,b)=>{
+    let va,vb;
+    if(ts.col==='k'){va=a.k;vb=b.k;}
+    else if(ts.col==='voi'){va=a.voi;vb=b.voi;}
+    else if(ts.col==='iv'){va=a.iv||0;vb=b.iv||0;}
+    else if(ts.col==='vol'){va=a.vol;vb=b.vol;}
+    else if(ts.col==='oi'){va=a.oi;vb=b.oi;}
+    else{va=a.prem;vb=b.prem;} // default premium
+    return ts.dir>0?va-vb:vb-va;
+  });
+  const arr=c=>ts.col===c?(ts.dir>0?' ▴':' ▾'):'';
+  const th=(c,lab,tip)=>`<th data-tcol="${c}" class="tsort${ts.col===c?' on':''}"${tip?' data-tip="'+tip+'"':''}>${lab}${arr(c)}</th>`;
+  body.innerHTML='<div class="tape-wrap"><table><thead><tr>'+
+    th('k','Contract')+th('e','Exp')+th('vol','Vol')+th('oi','OI')+th('voi','Vol/OI')+th('iv','IV')+th('prem','Premium')+
+    '</tr></thead><tbody>'+
+    prints.map(p=>{
       const otm=(p.call&&p.k>spot)||(!p.call&&p.k<spot);
       return `<tr><td><span class="cbadge ${p.call?'c':'p'}">${p.call?'C':'P'}</span> ${p.k}${otm?'':' <span style="color:var(--muted)">itm</span>'}</td><td>${p.e.slice(5)}</td><td>${p.vol.toLocaleString()}</td><td>${p.oi.toLocaleString()}</td><td style="color:${p.voi>=1?'var(--gold)':'var(--muted)'}">${p.voi.toFixed(1)}\u00d7</td><td>${p.iv?(p.iv*100).toFixed(0)+'%':'\u2014'}</td><td style="color:var(--gold)">${fmt(p.prem)}</td></tr>`;
     }).join('')+
     '</tbody></table></div>';
   const newWrap=body.querySelector('.tape-wrap');if(newWrap&&keepScroll)newWrap.scrollTop=keepScroll;
+  body.querySelectorAll('th[data-tcol]').forEach(h=>{h.onclick=()=>{
+    const c=h.dataset.tcol;
+    if(state.tapeSort.col===c)state.tapeSort.dir*=-1;
+    else state.tapeSort={col:c,dir:c==='k'?1:-1};
+    state._tapeStamp='';renderTape(sym); // force re-render past the stamp gate
+  };});
   document.getElementById('tapeNote').innerHTML='Opening = today\u2019s volume \u2265 '+Math.round(FLOW_OPEN*100)+'% of standing OI (new positioning, not churn). Premium = mid \u00d7 volume \u00d7 100 (real dollars). <b>Honest limits:</b> Tradier REST gives total contract volume, not per-trade aggressor side \u2014 so this is <b>not</b> tick-level buy/sell or sweep detection, and puts may be hedges rather than bearish bets. What it captures cleanly: where fresh option dollars are opening today, which walls are being built vs. stale, and a directional lean that feeds the Ideas score.';
 }
 
@@ -1081,7 +1300,7 @@ function openDeep(sym){
   const d=state.data[sym];if(!d)return;
   const M=metricLabel(state.metric);
   document.getElementById('mTitle').textContent=sym+' \u00b7 '+M+' Deep Analysis';
-  const kg=kingOf(d.strikes),cw=callWall(d.strikes),pw=putWall(d.strikes),fl=flipFor(sym,d);
+  const kg=kingOf(d.strikes),cw=callWallBand(d.strikes,d.spot),pw=putWallBand(d.strikes,d.spot),fl=flipFor(sym,d);
   const pr=ensureProfile(sym,d);
   const dp=d.spot>2000?0:1;
   const distK=kg?((kg.k-d.spot)/d.spot*100):null;
@@ -1271,6 +1490,10 @@ document.querySelectorAll('#centertoggle button').forEach(b=>b.onclick=()=>setCe
 document.querySelectorAll('#centertoggle button').forEach(b=>b.classList.toggle('on',b.dataset.c===state.centerOn));
 
 /* ---- preset ticker chips (single-focus views) ---- */
+function nxBand(sym,spot){
+  if(sym==='SPXW'||sym==='SPX')return 320;
+  return Math.max(45,Math.min(spot*0.09,600));
+}
 const PRESETS=['SPXW','SPY','QQQ','IWM','NVDA','TSLA','AAPL','MSFT','META','AMZN','GOOGL'];
 function renderPresets(){
   const bar=document.getElementById('presetBar');
@@ -1279,6 +1502,7 @@ function renderPresets(){
 async function pickPreset(t){
   t=cleanSym(t);if(!t||t===state.focus)return;
   state.focus=t;
+  if(window.__kairosArenaFocus)window.__kairosArenaFocus(t);
   if(state.view==='single')state.singleLoading=true;
   ['chartTicker','imbTicker','tapeTicker'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=t;});
   if(state.view==='chart')tvLoaded='';
@@ -1329,7 +1553,7 @@ document.getElementById('btnImb').onclick=()=>setView('imb');
 document.getElementById('btnTape').onclick=()=>setView('tape');
 
 const chartSel=document.getElementById('chartTicker');
-chartSel.onchange=async()=>{
+if(chartSel)chartSel.onchange=async()=>{
   const v=cleanSym(chartSel.value);
   if(!v){chartSel.value=state.focus;return;}
   chartSel.value=v;state.focus=v;tvLoaded='';
@@ -1424,7 +1648,7 @@ function copyFallback(t){
     ta.remove();res();
   });
 }
-document.getElementById('btnPine').onclick=()=>{
+(function(){const _bp=document.getElementById('btnPine');if(!_bp)return;_bp.onclick=()=>{
   const d=state.data[state.focus];if(!d||!d.strikes||!d.strikes.length)return;
   const M=metricLabel(state.metric).toUpperCase();
   const nodes=[...d.strikes].sort((a,b)=>Math.abs(mval(b))-Math.abs(mval(a))).slice(0,9);
@@ -1443,6 +1667,7 @@ document.getElementById('btnPine').onclick=()=>{
     setTimeout(()=>b.textContent=t,1600);
   });
 };
+})();
 
 document.addEventListener('visibilitychange',()=>{
   if(document.hidden){clearTimeout(state._t);persistHistory(true);}
@@ -1456,4 +1681,4 @@ renderTrinity();renderCards();
 refresh(false).finally(schedule);
 function schedule(){clearTimeout(state._t);if(document.hidden)return;state._t=setTimeout(async()=>{await refresh(false);schedule();},state.pollSec*1000);}
 window.Kairos={state,refresh,getSym,kingOf,buildFromChains,buildImbalance,flowLean,exposureProfile};
-console.log('%cKairos v7.3 \u2014 gamma-weighted Call/Put Wall (no more far-OTM tail floor), intraday-aware Ideas bias (red days register, \u2212GEX follows the tape)','color:#f2c14e;font-weight:bold');
+console.log('%cKairos v8.6 \u2014 Mythos (sectors + themes, hover-focus tails), Junction weekly walls + biggest nodes header','color:#f2c14e;font-weight:bold');
