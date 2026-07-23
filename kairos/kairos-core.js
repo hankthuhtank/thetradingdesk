@@ -1757,9 +1757,40 @@ function applyBootstrap(bs){
   if(state.view==='ideas'&&state._srvPlays&&typeof renderCards==='function')renderCards();
   return n;
 }
+async function serverChains(){
+  /* fetch the server's last parsed chain (<=2 min old) per visible symbol and
+     run it through the SAME buildFromChains pipeline as live data — real
+     panels, real badges, in about a second. The live fetch replaces it within
+     ~45s (t is backdated so the normal cache logic refreshes soon). */
+  if(!(window.KairosBackend&&window.KairosBackend.enabled&&window.KairosBackend.getChain))return;
+  const list=(state.view==='single'?[state.focus]:state.trinityTickers).slice(0,6);
+  await Promise.all(list.map(async sym=>{
+    if(state.chains[sym]&&state.chains[sym].list&&state.chains[sym].list.length)return;
+    try{
+      const d=await window.KairosBackend.getChain(sym);
+      if(!d||!d.list||!d.list.length)return;
+      if(state.chains[sym]&&state.chains[sym].list&&state.chains[sym].list.length)return;
+      const list2=d.list.map(x=>({e:x.e,k:x.k,call:!!x.call,T:x.T,oi:x.oi||0,vol:x.vol||0,iv:(x.iv>0.01&&x.iv<5)?x.iv:0,g0:x.g0>0?x.g0:0,mid:x.mid||0,bid:x.bid||0,ask:x.ask||0,dl:x.dl||0}));
+      const dates=[...new Set(list2.map(x=>x.e))].sort();
+      state.chains[sym]={list:list2,dates,rawCount:list2.length,spotHint:d.spot||0,spot:d.spot||0,src:'tradier-live',maxExp:dates.length,t:Date.now()-45000};
+      if(d.spot&&!state.spot[sym])state.spot[sym]=d.spot;
+      const r=buildFromChains(sym);
+      if(r&&!state.data[sym]){state.data[sym]=r;state.dataAge[sym]=Date.now();if(state.warmData)delete state.warmData[sym];}
+    }catch(e){}
+  }));
+  if(state.view==='trinity'||state.view==='single')renderTrinity();
+}
 async function warmPaint(){
   if(!(window.KairosBackend&&window.KairosBackend.enabled))return;
   state.warmData=state.warmData||{};
+  /* server series hydrate in PARALLEL from t=0 — these are tiny JSON pulls
+     and used to queue behind the multi-MB chain download */
+  state._hyT=state._hyT||{};state._hydrated=state._hydrated||{};
+  (state.trinityTickers||[]).slice(0,6).forEach(s=>{
+    state._hyT[s]=Date.now();
+    try{window.KairosBackend.hydrateRegime(s);}catch(e){}
+    if(!state._hydrated[s]){state._hydrated[s]=1;try{window.KairosBackend.hydrateIV(s);}catch(e){}}
+  });
   /* instant path: last bootstrap saved on this device (survives reloads,
      paints in ~0ms) - then the network refresh replaces it */
   try{
@@ -1769,6 +1800,7 @@ async function warmPaint(){
   try{
     const bs=await window.KairosBackend.bootstrap();
     try{localStorage.setItem('kairos_bs_v1',JSON.stringify({t:Date.now(),bs}));}catch(e){}
+    serverChains();
     if(applyBootstrap(bs))return;
     throw new Error('no-bootstrap');
   }catch(e){
@@ -2131,7 +2163,7 @@ renderTrinity();renderCards();
 refresh(false).finally(schedule);
 function schedule(){clearTimeout(state._t);if(document.hidden)return;state._t=setTimeout(async()=>{await refresh(false);schedule();},state.pollSec*1000);}
 window.Kairos={state,refresh,getSym,kingOf,buildFromChains,buildImbalance,flowLean,exposureProfile};
-console.log('%cKairos v2.0 \u2014 Net Delta Flow (directional pressure), interpolated gamma-flip line, shared-board hold, token fully server-side. Base GEX math unchanged.','color:#f2c14e;font-weight:bold');
+console.log('%cKairos v2.1 \u2014 Net Delta Flow (directional pressure), interpolated gamma-flip line, shared-board hold, token fully server-side. Base GEX math unchanged.','color:#f2c14e;font-weight:bold');
 
 state._juncTab=state._juncTab||'ladder';
 (function(){var jt=document.getElementById('juncTabs');if(!jt)return;
