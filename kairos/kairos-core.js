@@ -784,6 +784,7 @@ function renderTrinity(){
   if(comboFor||(ae&&ae.classList&&ae.classList.contains('ticker-sel')&&el.contains(ae)))return;
   const prevScroll={};
   el.querySelectorAll('.panel[data-key]').forEach(pn=>{
+    if(pn.dataset.warm)return; // warm placeholder scroll must not override centering
     const w=pn.querySelector('.strikes,.sgrid-wrap');
     if(w)prevScroll[pn.dataset.key]={top:w.scrollTop,left:w.scrollLeft};
   });
@@ -822,6 +823,7 @@ function renderTrinity(){
       const _cw=d.strikes.filter(s=>s.gex>0).sort((a,b)=>b.gex-a.gex)[0];
       const _pw=d.strikes.filter(s=>s.gex<0).sort((a,b)=>a.gex-b.gex)[0];
       const _chips='<span style="font-family:\'JetBrains Mono\';font-size:.62rem;color:var(--muted)">'+(_kg?'\u2605 '+_kg.k:'')+(_cw?' \u00b7 CW '+_cw.k:'')+(_pw?' \u00b7 PW '+_pw.k:'')+'</span>';
+      p.dataset.warm='1';
       p.innerHTML='<div class="p-head"><div class="p-left"><span style="font-weight:700">'+sym+'</span>'+_chips+
         '<span class="badge-src demo" data-tip="Painted instantly from the last server field snapshot'+(ageM!=null?' ('+ageM+'m old)':'')+' while the full live chain loads \u2014 top nodes only, live ladder lands in seconds.">warming</span></div>'+
         '<div style="font-family:\'JetBrains Mono\';font-size:.78rem;color:var(--muted)">$'+(+d.spot).toFixed(2)+'</div></div>'+
@@ -1011,6 +1013,9 @@ function recordSnapshots(){
     if(state.history[sym].length>HIST_TODAY_CAP)state.history[sym].shift();
     /* Regime intraday series: net call/put premium + CLASSIFIED bought/sold
        (quote-rule) + spot. In-memory, resets each session. */
+    if(!(typeof backendOn==='function'&&backendOn())){
+    /* only record locally when there is NO backend — otherwise the Worker is
+       the single recorder and this device just displays what it serves */
     const imb=buildImbalance(sym);
     if(imb&&imb.strikes){
       let cpr=0,ppr=0;imb.strikes.forEach(s=>{cpr+=s.cpr||0;ppr+=s.ppr||0;});
@@ -1023,6 +1028,7 @@ function recordSnapshots(){
       const ser=(state.regSeries[sym]=state.regSeries[sym]||[]);
       ser.push({t,cpr,ppr,spot:d.spot||state.spot[sym]||0,cbought,csold,pbought,psold});
       if(ser.length>REG_SERIES_CAP)ser.shift();
+    }
     }
     /* record ATM IV once/tick for IV Rank maturation (localStorage, ~1yr) */
     if(window.KairosQuant&&d.contracts&&d.contracts.length){
@@ -1163,6 +1169,7 @@ function nearestExpLabel(sym){
    vixTerm() (quotes, ~2min cache), getSym('VIX') (options chain, on demand),
    and one cached daily-history call for pivots. Context, not a signal. */
 let _vdBusy=false,_vdPiv=null,_vdPivDay='';
+function vdVisible(){return state.view==='single'&&state._juncTab==='vix';}
 async function renderVixDesk(){
   const el=document.getElementById('vixDesk');if(!el)return;
   const vt=state._vixTerm;
@@ -1205,7 +1212,7 @@ async function renderVixDesk(){
     h+='<div class="vd-note">VIX options ladder loading\u2026</div>';
     if(!_vdBusy&&liveOn()){
       _vdBusy=true;
-      getSym('VIX',undefined,false).then(r=>{if(r)state.data['VIX']=r;}).catch(()=>{}).finally(()=>{_vdBusy=false;if(state.view==='vix')renderVixDesk();});
+      getSym('VIX',undefined,false).then(r=>{if(r)state.data['VIX']=r;}).catch(()=>{}).finally(()=>{_vdBusy=false;if(vdVisible())renderVixDesk();});
     }
   }
   // --- classic daily pivots (yesterday's H/L/C) ---
@@ -1223,7 +1230,7 @@ async function renderVixDesk(){
         const y=days[days.length-1].date===today?days[days.length-2]:days[days.length-1];
         const H=+y.high,L=+y.low,C=+y.close,p=(H+L+C)/3;
         _vdPiv={p,r1:2*p-L,s1:2*p-H,r2:p+(H-L),s2:p-(H-L)};_vdPivDay=today;
-        if(state.view==='vix')renderVixDesk();
+        if(vdVisible())renderVixDesk();
       }
     }catch(e){}})();
   }
@@ -1790,16 +1797,15 @@ async function refresh(force){
     // Backend: hydrate server-accumulated history once per symbol (regime + IV),
     // so the Regime chart and IV Rank are pre-filled from data collected 24/5.
     if(backendOn()){
-      state._hydrated=state._hydrated||{};
+      state._hydrated=state._hydrated||{};state._hyT=state._hyT||{};
       Object.keys(results).forEach(s=>{
-        if(state._hydrated[s])return;state._hydrated[s]=1;
-        window.KairosBackend.hydrateRegime(s);
-        window.KairosBackend.hydrateIV(s);
+        if(!state._hydrated[s]){state._hydrated[s]=1;window.KairosBackend.hydrateIV(s);}
+        if(Date.now()-(state._hyT[s]||0)>90000){state._hyT[s]=Date.now();window.KairosBackend.hydrateRegime(s);}
       });
     }
     // v2: refresh vol term structure (cached) + resolve journal against latest spot
     if(window.KairosQuant){
-      window.KairosQuant.vixTerm().then(vt=>{if(vt)state._vixTerm=vt;if(state.view==='vix')try{renderVixDesk();}catch(e){}}).catch(()=>{});
+      window.KairosQuant.vixTerm().then(vt=>{if(vt)state._vixTerm=vt;if(vdVisible())try{renderVixDesk();}catch(e){}}).catch(()=>{});
       try{Object.keys(results).forEach(s=>{const sp=results[s].spot;if(sp)window.KairosQuant.qjResolve(s,sp);});}catch(e){}
     }
     const sources=Object.values(results).map(d=>d.source);
@@ -1920,8 +1926,8 @@ document.getElementById('presetBar').addEventListener('click',e=>{const c=e.targ
 
 function setView(v){
   state.view=v;
-  ['btnTrinity','btnSingle','btnChart','btnIdeas','btnImb','btnTape','btnVix'].forEach(id=>document.getElementById(id).classList.remove('active'));
-  const bmap={trinity:'btnTrinity',single:'btnSingle',chart:'btnChart',ideas:'btnIdeas',imb:'btnImb',tape:'btnTape',vix:'btnVix'};
+  ['btnTrinity','btnSingle','btnChart','btnIdeas','btnImb','btnTape'].forEach(id=>document.getElementById(id).classList.remove('active'));
+  const bmap={trinity:'btnTrinity',single:'btnSingle',chart:'btnChart',ideas:'btnIdeas',imb:'btnImb',tape:'btnTape'};
   if(bmap[v]&&document.getElementById(bmap[v]))document.getElementById(bmap[v]).classList.add('active');
   document.getElementById('trinityWrap').classList.toggle('hidden',v!=='trinity'&&v!=='single');
   document.getElementById('chartSec').classList.toggle('hidden',v!=='chart');
@@ -1937,8 +1943,13 @@ function setView(v){
     const m=state.multi[state.focus];
     state.singleLoading=!(m&&m.dates&&m.dates.length>=8);
   }
-  const _vs=document.getElementById('vixSec');
-  if(_vs){_vs.classList.toggle('hidden',v!=='vix');if(v==='vix')try{renderVixDesk();}catch(e){}}
+  const _jt=document.getElementById('juncTabs');
+  if(_jt)_jt.classList.toggle('hidden',v!=='single');
+  const _vd2=document.getElementById('vixDesk');
+  if(_vd2)_vd2.classList.toggle('hidden',!(v==='single'&&state._juncTab==='vix'));
+  const _tr2=document.getElementById('trinity');
+  if(_tr2)_tr2.classList.toggle('hidden',v==='single'&&state._juncTab==='vix');
+  if(v==='single'&&state._juncTab==='vix')try{renderVixDesk();}catch(e){}
   if(v==='trinity'||v==='single')renderTrinity();
   if(v==='trinity'){
     // coming back to Triad: the poll only fed the focused ticker while you were away — refetch stale panels now
@@ -1946,7 +1957,11 @@ function setView(v){
     if(stale)refresh(false);
   }
   if(v==='single'&&state.singleLoading)refresh(false);
-  if(v==='ideas'){renderCards();ideasSweep(false);}
+  if(v==='ideas'){renderCards();
+    const spF=state._srvPlays&&(Date.now()/1000-state._srvPlays.t)<600;
+    if(spF){clearTimeout(state._swpT);state._swpT=setTimeout(()=>ideasSweep(false),45000);}
+    else ideasSweep(false);
+  }
   if(v==='chart'){loadTV(state.focus);updateChart(state.focus);if(!state.data[state.focus])refresh(false);}
   if(v==='imb'){renderImb(state.focus);if(!state.chains[state.focus]||Date.now()-(state.chains[state.focus].t||0)>CHAIN_TTL)refresh(false);}
   if(v==='tape'){renderTape(state.focus);if(!state.chains[state.focus]||Date.now()-(state.chains[state.focus].t||0)>CHAIN_TTL)refresh(false);}
@@ -2095,6 +2110,13 @@ renderTrinity();renderCards();
 refresh(false).finally(schedule);
 function schedule(){clearTimeout(state._t);if(document.hidden)return;state._t=setTimeout(async()=>{await refresh(false);schedule();},state.pollSec*1000);}
 window.Kairos={state,refresh,getSym,kingOf,buildFromChains,buildImbalance,flowLean,exposureProfile};
-console.log('%cKairos v12.1 \u2014 classified net-flow Regime, VIX Desk in Junction, INVESTOR/DEGEN profiles, contract-price thumbs, Y-refit on switch.','color:#f2c14e;font-weight:bold');
+console.log('%cKairos v12.2 \u2014 classified net-flow Regime, VIX Desk in Junction, INVESTOR/DEGEN profiles, contract-price thumbs, Y-refit on switch.','color:#f2c14e;font-weight:bold');
 
-var _bv=document.getElementById('btnVix');if(_bv)_bv.onclick=function(){setView('vix');};
+state._juncTab=state._juncTab||'ladder';
+(function(){var jt=document.getElementById('juncTabs');if(!jt)return;
+  jt.addEventListener('click',function(e){var b=e.target.closest('button[data-j]');if(!b)return;
+    state._juncTab=b.dataset.j;
+    jt.querySelectorAll('button').forEach(function(x){x.classList.toggle('on',x===b);});
+    setView('single');
+  });
+})();

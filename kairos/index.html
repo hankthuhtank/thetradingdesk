@@ -21,7 +21,6 @@
     <button class="btn" id="btnImb">Regime</button>
     <button class="btn" id="btnTape" data-tip="Opening-flow tape — where fresh option dollars are hitting today, ranked by premium.">Tape</button>
     <button class="btn" id="btnArena" data-tip="The hedging field, animated live. Same numbers as the ladder — rendered as forces instead of rows.">Nexus</button>
-    <button class="btn" id="btnVix" data-tip="The VIX desk — term structure, vol regime, the VIX options GEX ladder, and daily pivots, all in one place.">Vix</button>
   </nav>
   <div class="hdr-tools">
     <div class="mtoggle" id="mtoggle" data-tip="Which exposure the map shows. GEX=gamma (pin/momentum). VEX=vanna (how walls move when IV moves).">
@@ -45,8 +44,7 @@
 </div>
 <main>
   <div id="presetBar" class="hidden"></div>
-  <div id="trinityWrap"><div class="trinity" id="trinity"></div></div>
-  <div id="vixSec" class="hidden"><div id="vixDesk" class="vixdesk"></div></div>
+  <div id="trinityWrap"><div id="juncTabs" class="mtoggle hidden" style="margin:0 0 8px"><button data-j="ladder" class="on">Ladder</button><button data-j="vix" data-tip="Everything VIX: term structure, vol regime, the VIX options GEX ladder, and daily pivots.">VIX Desk</button></div><div class="trinity" id="trinity"></div><div id="vixDesk" class="vixdesk hidden"></div></div>
   <div class="chart-area hidden" id="chartSec">
     <div class="orrery" id="orrerySec">
       <div class="orr-top">
