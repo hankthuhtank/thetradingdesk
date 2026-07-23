@@ -696,7 +696,7 @@ function buildFromChains(sym){
     });
   });
   let strikes=Object.values(allBy).map(s=>({k:s.k,gex:gval(s),vex:vval(s),oi:s.oi,vol:s.vol})).sort((a,b)=>b.k-a.k);
-  const range=nxBand(sym,spot);
+  const range=Math.min(nxBand(sym,spot),spot*0.10); // cap the ladder at +/-10% of spot
   strikes=strikes.filter(s=>Math.abs(s.k-spot)<range);
   state.multi[sym]={byExp,spot,dates:dates.filter(e=>byExp[e]&&byExp[e].length)};
   return{spot,source:ch.src,strikes,rawCount:ch.rawCount,contracts,chStamp:ch.t};
@@ -1781,6 +1781,9 @@ async function serverChains(){
   if(state.view==='trinity'||state.view==='single')renderTrinity();
 }
 async function warmPaint(){
+  try{ await warmPaintInner(); } finally { if(typeof kickLive==='function')kickLive(); }
+}
+async function warmPaintInner(){
   if(!(window.KairosBackend&&window.KairosBackend.enabled))return;
   state.warmData=state.warmData||{};
   /* server series hydrate in PARALLEL from t=0 — these are tiny JSON pulls
@@ -1800,8 +1803,9 @@ async function warmPaint(){
   try{
     const bs=await window.KairosBackend.bootstrap();
     try{localStorage.setItem('kairos_bs_v1',JSON.stringify({t:Date.now(),bs}));}catch(e){}
-    serverChains();
-    if(applyBootstrap(bs))return;
+    applyBootstrap(bs);
+    await serverChains();
+    if(Object.keys(state.data).length||Object.keys(state.warmData).length)return;
     throw new Error('no-bootstrap');
   }catch(e){
     const list=(state.view==='single'?[state.focus]:state.trinityTickers).slice(0,6);
@@ -1872,7 +1876,7 @@ async function refresh(force){
     else if(sources.some(s=>s==='cboe'))b=`● CBOE DELAYED (~15 min) — backend unreachable; running on delayed data`;
     else b=(Date.now()-state._bootT<20000)?`<span class="live">\u25cf</span> connecting \u2014 first live pull\u2026`:`● NO DATA — all sources failed (token? network?)`;
     const si=sessionInfo();
-    if(sources.some(s=>s==='tradier-live'))b+=` <span style="color:var(--muted)">\u00b7 Session <b style="color:var(--text)">${si.sess}</b> \u00b7 OI as-of <b style="color:var(--text)">${si.oi}</b>${phase!=='rth'?' \u00b7 <b style="color:var(--gold)">extended-hours pricing</b>':''}</span>`;
+    if(sources.some(s=>s==='tradier-live'))b+=` <span style="color:var(--muted)">\u00b7 Session <b style="color:var(--text)">${si.sess}</b> \u00b7 OI as-of <b style="color:var(--text)">${si.oi}</b></span>`;
     document.getElementById('bannerText').innerHTML=b;
     const se=document.getElementById('sessInfo');if(se)se.innerHTML='';
     const lu=document.getElementById('lastUp');if(lu)lu.textContent='';
@@ -2160,10 +2164,22 @@ setTimeout(function(){
 },0);
 
 renderTrinity();renderCards();
-refresh(false).finally(schedule);
+/* COLD START ORDER: when the backend is live, the server paint (/bootstrap +
+   /chain - a few hundred KB) runs FIRST and alone; the heavy live Tradier
+   pull is kicked the moment it lands. Previously both raced on the same host
+   and the megabytes won, which is what made a fresh device feel slow. */
+function kickLive(){
+  if(state._liveKicked)return;state._liveKicked=1;
+  refresh(false).finally(schedule);
+}
+window.kickLive=kickLive;
+setTimeout(function(){
+  if(!(window.KairosBackend&&window.KairosBackend.enabled)){kickLive();return;}
+  setTimeout(kickLive,4000); // safety net: never wait longer than 4s
+},0);
 function schedule(){clearTimeout(state._t);if(document.hidden)return;state._t=setTimeout(async()=>{await refresh(false);schedule();},state.pollSec*1000);}
 window.Kairos={state,refresh,getSym,kingOf,buildFromChains,buildImbalance,flowLean,exposureProfile};
-console.log('%cKairos v2.1 \u2014 Net Delta Flow (directional pressure), interpolated gamma-flip line, shared-board hold, token fully server-side. Base GEX math unchanged.','color:#f2c14e;font-weight:bold');
+console.log('%cKairos v2.2 \u2014 Net Delta Flow (directional pressure), interpolated gamma-flip line, shared-board hold, token fully server-side. Base GEX math unchanged.','color:#f2c14e;font-weight:bold');
 
 state._juncTab=state._juncTab||'ladder';
 (function(){var jt=document.getElementById('juncTabs');if(!jt)return;
