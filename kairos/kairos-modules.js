@@ -2286,6 +2286,16 @@ renderCards=function(){
   const fired=reads.filter(r=>r.fire).sort((a,b)=>b.score-a.score);
   const idle=reads.filter(r=>!r.fire).sort((a,b)=>(b.setup?1:0)-(a.setup?1:0));
   if(!reads.length){
+    /* SHARED BOARD: before this device's own sweep completes, paint the board
+       the server has — published by whichever device computed it last. Same
+       plays on every device, instantly. */
+    const sp=state._srvPlays;
+    if(sp&&sp.html&&(Date.now()/1000-sp.t)<45*60){
+      el.classList.add('zgrid');el.classList.remove('cards');
+      const age=Math.max(0,Math.round(Date.now()/1000-sp.t));
+      el.innerHTML='<div class="eng-status" style="grid-column:1/-1">SHARED BOARD \u00b7 computed '+(age<90?age+'s':Math.round(age/60)+'m')+' ago'+(sp.profile?' \u00b7 profile <b style="color:var(--teal)">'+sp.profile+'</b>':'')+' \u00b7 this device\u2019s own sweep is running and will take over</div>'+sp.html;
+      return;
+    }
     el.classList.add('cards');el.classList.remove('zgrid');
     el.innerHTML='<div style="color:var(--muted);font-size:.78rem;line-height:1.6">Scanning the watchlist\u2026 the first pass takes about a minute.</div>';
     return;
@@ -2309,7 +2319,17 @@ renderCards=function(){
     (fired.length?('<b style="color:var(--gold)">'+fired.length+' fired</b>'):'<b>0 fired</b>')+
     (topFails?' \u00b7 holding back: '+topFails:'')+
     ' \u00b7 profile <b style="color:var(--teal)">'+SW.LABEL+'</b></div>';
-  el.innerHTML=engStatus+fired.map(sCardHtml).join('')+idle.map(sStandbyHtml).join('')+
+  const _board=engStatus+fired.map(sCardHtml).join('')+idle.map(sStandbyHtml).join('');
+  /* publish this freshly computed board so every other device paints it
+     instantly on load (throttled to once a minute; fire-and-forget) */
+  if(window.KairosBackend&&window.KairosBackend.enabled&&window.KairosBackend.publishPlays){
+    const nowS=Date.now();
+    if(!state._playsPubT||nowS-state._playsPubT>60000){
+      state._playsPubT=nowS;
+      try{window.KairosBackend.publishPlays(_board,SW.LABEL,'swing');}catch(e){}
+    }
+  }
+  el.innerHTML=_board+
     swDoctrineHtml();
 };
 if(state.view==='ideas'&&state.zTab!=='zero')renderCards();

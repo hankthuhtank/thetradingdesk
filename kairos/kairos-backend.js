@@ -51,6 +51,14 @@
       } catch (e) { return false; }
     },
 
+    bootstrap() { return getJSON('/bootstrap'); },
+    async publishPlays(html, profile, tab) {
+      try {
+        const r = await fetch(api('/plays'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ html, profile, tab }) });
+        return r.ok;
+      } catch (e) { return false; }
+    },
+
     async health() { try { return await getJSON('/health'); } catch (e) { return { ok: false, error: String(e) }; } },
 
     // ---- hydration: pull server-accumulated history into the app on load ----

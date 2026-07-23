@@ -818,7 +818,11 @@ function renderTrinity(){
           '<div style="flex:1"><div style="height:7px;border-radius:3px;width:'+wPct.toFixed(1)+'%;background:linear-gradient(90deg,'+(pos?'rgba(52,211,153,.8),rgba(52,211,153,.2)':'rgba(192,132,252,.8),rgba(192,132,252,.2)')+')"></div></div></div>';
       }).join('');
       const ageM=d.t?Math.max(0,Math.round((Date.now()-d.t)/60000)):null;
-      p.innerHTML='<div class="p-head"><div class="p-left"><span style="font-weight:700">'+sym+'</span>'+
+      const _kg=d.strikes.reduce((a,b)=>Math.abs(b.gex)>Math.abs(a.gex)?b:a,d.strikes[0]);
+      const _cw=d.strikes.filter(s=>s.gex>0).sort((a,b)=>b.gex-a.gex)[0];
+      const _pw=d.strikes.filter(s=>s.gex<0).sort((a,b)=>a.gex-b.gex)[0];
+      const _chips='<span style="font-family:\'JetBrains Mono\';font-size:.62rem;color:var(--muted)">'+(_kg?'\u2605 '+_kg.k:'')+(_cw?' \u00b7 CW '+_cw.k:'')+(_pw?' \u00b7 PW '+_pw.k:'')+'</span>';
+      p.innerHTML='<div class="p-head"><div class="p-left"><span style="font-weight:700">'+sym+'</span>'+_chips+
         '<span class="badge-src demo" data-tip="Painted instantly from the last server field snapshot'+(ageM!=null?' ('+ageM+'m old)':'')+' while the full live chain loads \u2014 top nodes only, live ladder lands in seconds.">warming</span></div>'+
         '<div style="font-family:\'JetBrains Mono\';font-size:.78rem;color:var(--muted)">$'+(+d.spot).toFixed(2)+'</div></div>'+
         '<div class="strikes">'+rows+'</div>';
@@ -1387,10 +1391,25 @@ function renderRegimeChart(sym){
   /* value model: classified NET flow (bought − sold) when the split exists —
      this is what "net call $" means on flow platforms — falling back to gross
      cumulative premium for rows recorded before classification existed. */
-  const hasCf=p=>(p.cbought!=null&&p.csold!=null&&(p.cbought||p.csold));
-  const hasPf=p=>(p.pbought!=null&&p.psold!=null&&(p.pbought||p.psold));
-  const ser=raw.map(p=>Object.assign({},p,{_c:hasCf(p)?(p.cbought-p.csold):p.cpr,_p:hasPf(p)?(p.pbought-p.psold):p.ppr}));
-  const classified=ser.length&&ser.filter(hasCf).length>ser.length*0.5;
+  /* a row's classified split is VALID only if it actually splits — the old
+     server classifier positioned the midpoint in the spread (always exactly
+     50/50), which stored net = 0 for every row and flattened the chart. Those
+     degenerate rows are rejected, and the whole chart stays on ONE model
+     (majority rule + step-hold) so gross and net never mix scales. */
+  const okCf=p=>(p.cbought!=null&&p.csold!=null&&(p.cbought+p.csold)>0&&Math.abs(p.cbought-p.csold)>1);
+  const okPf=p=>(p.pbought!=null&&p.psold!=null&&(p.pbought+p.psold)>0&&Math.abs(p.pbought-p.psold)>1);
+  const nOk=raw.filter(p=>okCf(p)||okPf(p)).length;
+  const classified=raw.length>0&&nOk>raw.length*0.5;
+  let lastC=0,lastP=0;
+  const ser=raw.map(p=>{
+    let _c,_p;
+    if(classified){
+      _c=okCf(p)?(p.cbought-p.csold):lastC;
+      _p=okPf(p)?(p.pbought-p.psold):lastP;
+    }else{_c=p.cpr;_p=p.ppr;}
+    lastC=_c;lastP=_p;
+    return Object.assign({},p,{_c,_p});
+  });
   if(ser.length<2){
     host.innerHTML='<div style="height:220px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:.68rem;border:1px dashed var(--border);border-radius:8px">Recording flow\u2026 the through-day chart fills in as the session ticks (a few minutes).</div>';
     if(meta)meta.textContent='';
@@ -1674,18 +1693,38 @@ function openDeep(sym){
 async function warmPaint(){
   if(!(window.KairosBackend&&window.KairosBackend.enabled))return;
   state.warmData=state.warmData||{};
-  const list=(state.view==='single'?[state.focus]:state.trinityTickers).slice(0,6);
-  await Promise.all(list.map(async sym=>{
-    if(state.data[sym]||state.warmData[sym])return;
-    try{
-      const cols=await window.KairosBackend.fieldColumns(sym);
-      if(!cols||!cols.length)return;
-      const col=cols[cols.length-1];
-      if(state.data[sym]||!col.nodes||!col.nodes.length)return;
-      state.warmData[sym]={sym,spot:col.spot,strikes:col.nodes.map(n=>({k:n.k,gex:n.g})),warm:true,t:col.t*1000};
+  try{
+    /* ONE request cold-starts the device: every symbol's latest full ladder
+       (computed server-side every minute, 24/5) plus the shared Aether board.
+       Falls back to per-symbol field snapshots on an old worker. */
+    const bs=await window.KairosBackend.bootstrap();
+    if(bs&&bs.plays&&bs.plays.html)state._srvPlays=bs.plays;
+    if(bs&&bs.ladders&&Object.keys(bs.ladders).length){
+      Object.keys(bs.ladders).forEach(sym=>{
+        if(state.data[sym])return;
+        const L=bs.ladders[sym];
+        if(!L||!L.nodes||!L.nodes.length)return;
+        state.warmData[sym]={sym,spot:L.spot,strikes:L.nodes.map(n=>({k:n.k,gex:n.g})),warm:true,t:L.t*1000};
+      });
       if(state.view==='trinity'||state.view==='single')renderTrinity();
-    }catch(e){}
-  }));
+      if(state.view==='ideas'&&state._srvPlays&&typeof renderCards==='function')renderCards();
+      return;
+    }
+    throw new Error('no-bootstrap');
+  }catch(e){
+    const list=(state.view==='single'?[state.focus]:state.trinityTickers).slice(0,6);
+    await Promise.all(list.map(async sym=>{
+      if(state.data[sym]||state.warmData[sym])return;
+      try{
+        const cols=await window.KairosBackend.fieldColumns(sym);
+        if(!cols||!cols.length)return;
+        const col=cols[cols.length-1];
+        if(state.data[sym]||!col.nodes||!col.nodes.length)return;
+        state.warmData[sym]={sym,spot:col.spot,strikes:col.nodes.map(n=>({k:n.k,gex:n.g})),warm:true,t:col.t*1000};
+        if(state.view==='trinity'||state.view==='single')renderTrinity();
+      }catch(x){}
+    }));
+  }
 }
 setTimeout(warmPaint,0);
 async function refresh(force){
@@ -2024,4 +2063,4 @@ renderTrinity();renderCards();
 refresh(false).finally(schedule);
 function schedule(){clearTimeout(state._t);if(document.hidden)return;state._t=setTimeout(async()=>{await refresh(false);schedule();},state.pollSec*1000);}
 window.Kairos={state,refresh,getSym,kingOf,buildFromChains,buildImbalance,flowLean,exposureProfile};
-console.log('%cKairos v11.1 \u2014 classified net-flow Regime, VIX Desk in Junction, INVESTOR/DEGEN profiles, contract-price thumbs, Y-refit on switch.','color:#f2c14e;font-weight:bold');
+console.log('%cKairos v12.0 \u2014 classified net-flow Regime, VIX Desk in Junction, INVESTOR/DEGEN profiles, contract-price thumbs, Y-refit on switch.','color:#f2c14e;font-weight:bold');
