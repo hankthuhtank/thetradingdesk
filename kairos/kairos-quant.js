@@ -173,7 +173,7 @@ function skew25(contracts,spot,dp){
 let qvixCache={t:0,data:null};
 async function vixTerm(){
   if(qvixCache.data&&Date.now()-qvixCache.t<120000)return qvixCache.data;
-  if(!(state.tradierToken&&state.tradierToken.length>8))return null;
+  if(!(typeof liveOn==='function'?liveOn():(state.tradierToken&&state.tradierToken.length>8)))return null;
   try{
     const j=await tFetch('/markets/quotes?symbols=VIX9D,VIX,VIX3M,VIX6M');
     const q=j.quotes&&j.quotes.quote;const arr=Array.isArray(q)?q:(q?[q]:[]);

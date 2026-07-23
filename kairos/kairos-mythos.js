@@ -69,20 +69,25 @@ const orrReduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
 let orrDisp={};
 
 /* ---- data: reuse the same Tradier daily-history endpoint getTech uses.
-   We need ~1 series per symbol; batch politely and cache 10 min. ---- */
+   We need ~1 series per symbol; daily bars don't change intraday, so cache
+   hard (6h in-memory + localStorage) so Mythos is instant on reload. ---- */
 let orrFetchT={};
+const ORR_DCACHE='kairos_orr_daily_v1';
+(function(){try{const o=JSON.parse(localStorage.getItem(ORR_DCACHE)||'{}');if(o&&o.day===new Date().toISOString().slice(0,10)){orrCloses=o.c||{};Object.keys(orrCloses).forEach(k=>orrFetchT[k]=Date.now()-3600000);}}catch(e){}})();
+let orrDSaveT=0;
+function orrDSave(){const now=Date.now();if(now-orrDSaveT<4000)return;orrDSaveT=now;try{localStorage.setItem(ORR_DCACHE,JSON.stringify({day:new Date().toISOString().slice(0,10),c:orrCloses}));}catch(e){}}
 async function orrDaily(sym){
-  if(orrCloses[sym]&&Date.now()-(orrFetchT[sym]||0)<600000)return orrCloses[sym];
-  if(!(state.tradierToken&&state.tradierToken.length>8))return null;
+  if(orrCloses[sym]&&Date.now()-(orrFetchT[sym]||0)<6*3600000)return orrCloses[sym];
+  if(!(typeof liveOn==='function'?liveOn():(state.tradierToken&&state.tradierToken.length>8)))return orrCloses[sym]||null;
   try{
     const u=underOf(sym);
     const start=new Date(Date.now()-160*86400000).toISOString().slice(0,10);
     const j=await tFetch('/markets/history?symbol='+encodeURIComponent(u)+'&interval=daily&start='+start);
     const days=j.history&&j.history.day;const arr=Array.isArray(days)?days:(days?[days]:[]);
     const closes=arr.map(x=>+x.close).filter(x=>x>0);
-    if(closes.length>=50){orrCloses[sym]=closes;orrFetchT[sym]=Date.now();return closes;}
+    if(closes.length>=50){orrCloses[sym]=closes;orrFetchT[sym]=Date.now();orrDSave();return closes;}
   }catch(e){}
-  return null;
+  return orrCloses[sym]||null;
 }
 
 /* ---- RRG math ---- */
@@ -150,40 +155,44 @@ function orrCentroid(results){
 }
 async function orrCompute(){
   orrLoading=true;
-  const bench=await orrDaily(ORR_BENCH);
-  if(!bench){orrLoading=false;return;}
+  orrRenderRail(); // paint the loading state immediately
+  // --- collect EVERY symbol we'll need up front, then fetch in parallel waves.
+  //     Previously each sector/basket fetched serially (~44 round-trips) which
+  //     took minutes on first load. Now: one deduped parallel prefetch. ---
+  const need=new Set([ORR_BENCH]);
+  if(orrScope){orrScope.members.forEach(m=>need.add(m));}
+  else{
+    orrVisibleSectors().forEach(sec=>{
+      if(sec.synth)sec.members.forEach(m=>need.add(m));
+      else need.add(sec.etf||sec.sym);
+    });
+  }
+  const syms=[...need];
+  for(let i=0;i<syms.length;i+=8){          // 8-wide waves
+    await Promise.all(syms.slice(i,i+8).map(s=>orrDaily(s).catch(()=>null)));
+  }
+  const bench=orrCloses[ORR_BENCH];
+  if(!bench){orrLoading=false;orrRenderRail();return;}
   const out=[];
   if(orrScope){
-    // drilled in: plot the member names of the scoped sector/theme
-    const list=orrScope.members;
-    for(let i=0;i<list.length;i+=4){
-      await Promise.all(list.slice(i,i+4).map(async sym=>{
-        const c=await orrDaily(sym);if(!c)return;
-        const r=orrRRG(c,bench,orrTf);if(!r)return;
-        out.push({sym,name:sym,x:r.x,y:r.y,tail:r.tail,phase:orrPhase(r.x,r.y),ret:r.ret});
-      }));
-    }
+    orrScope.members.forEach(sym=>{
+      const c=orrCloses[sym];if(!c)return;
+      const r=orrRRG(c,bench,orrTf);if(!r)return;
+      out.push({sym,name:sym,x:r.x,y:r.y,tail:r.tail,phase:orrPhase(r.x,r.y),ret:r.ret});
+    });
   }else{
-    // top level: plot each visible sector/theme (ETF body, or synthetic centroid)
-    const secs=orrVisibleSectors();
-    for(const sec of secs){
+    orrVisibleSectors().forEach(sec=>{
       if(sec.synth){
-        // synthetic basket: centroid of member rotations
         const rs=[];
-        for(let i=0;i<sec.members.length;i+=4){
-          await Promise.all(sec.members.slice(i,i+4).map(async m=>{
-            const c=await orrDaily(m);if(!c)return;
-            const r=orrRRG(c,bench,orrTf);if(r)rs.push(r);
-          }));
-        }
+        sec.members.forEach(m=>{const c=orrCloses[m];if(!c)return;const r=orrRRG(c,bench,orrTf);if(r)rs.push(r);});
         const cen=orrCentroid(rs);
         if(cen)out.push({sym:sec.sym,name:sec.name,x:cen.x,y:cen.y,tail:cen.tail,phase:orrPhase(cen.x,cen.y),ret:cen.ret,synth:true,n:rs.length});
       }else{
-        const c=await orrDaily(sec.etf||sec.sym);if(!c)continue;
-        const r=orrRRG(c,bench,orrTf);if(!r)continue;
+        const c=orrCloses[sec.etf||sec.sym];if(!c)return;
+        const r=orrRRG(c,bench,orrTf);if(!r)return;
         out.push({sym:sec.sym,etf:sec.etf,name:sec.name,x:r.x,y:r.y,tail:r.tail,phase:orrPhase(r.x,r.y),ret:r.ret});
       }
-    }
+    });
   }
   orrPts=out;
   orrLoading=false;

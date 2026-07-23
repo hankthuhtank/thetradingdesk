@@ -835,6 +835,19 @@ function renderTrinity(){
       const wkLabel=wkExp?wkExp.slice(5).replace('-','/'):'\u2014';
       const nodeChip=n=>`<span class="hn-node ${n.v>=0?'pos':'neg'}">${n.k} <i>${mdisp(n.v,m.spot)}</i></span>`;
       const headStrip=`<div class="p-mid">
+        ${(function(){
+          const xh=(state._xh||{})[underOf(sym)]||(state._xh||{})[sym];
+          if(!xh||marketPhase()==='rth')return '';
+          const ph={pre:'PRE-MARKET',post:'AFTER HOURS',overnight:'OVERNIGHT',closed:'LAST'}[marketPhase()]||'EXTENDED';
+          const chg=xh.chg||0, pct=xh.prev?((xh.px-xh.prev)/xh.prev*100):0;
+          const up=chg>=0;
+          return `<div class="hm-block" data-tip="Extended-hours print from the ${ph.toLowerCase()} session, versus the regular-session close. Options chains still reflect the last regular session.">
+            <div class="hm-lab">${ph}</div>
+            <div class="hm-xh"><b style="color:${up?'var(--green)':'var(--red)'}">$${xh.px.toFixed(2)}</b>
+              <i style="color:${up?'var(--green)':'var(--red)'}">${up?'\u25b2':'\u25bc'} ${Math.abs(pct).toFixed(2)}%</i>
+              <s style="text-decoration:none;color:var(--muted)">close ${(xh.prev||0).toFixed(2)}</s></div>
+          </div>`;
+        })()}
         <div class="hm-block" data-tip="Call & put walls computed from just the nearest expiry (${wkExp||'—'}) — the weekly cycle you're trading now.">
           <div class="hm-lab">WEEKLY ${wkLabel}</div>
           <div class="hm-walls"><span class="hw-c">CW ${wkCW!=null?wkCW.toFixed(hdrDp):'\u2014'}</span><span class="hw-p">PW ${wkPW!=null?wkPW.toFixed(hdrDp):'\u2014'}</span></div>
@@ -1514,15 +1527,19 @@ async function refresh(force){
       try{const qs=await fetchQuotes(ticks);ticks.forEach(s=>{const u=underOf(s);if(qs[u])state.spot[s]=qs[u];});}catch(e){console.warn('quotes',e.message);}
     }
     const results={};
-    for(const s of ticks){
+    /* Fetch the panels CONCURRENTLY. This used to be a sequential await-loop, so
+       a heavy index chain (SPXW) blocked SPY/QQQ behind it and the first panel
+       always lagged. Total time is now max(one chain), not the sum. */
+    await Promise.all(ticks.map(async s=>{
       const deep=(state.view==='single'&&s===state.focus)?9:undefined;
       const old=state.data[s];
-      const r=await getSym(s,deep,force);
+      let r=null;
+      try{r=await getSym(s,deep,force);}catch(e){console.warn('getSym',s,e&&e.message);}
       if(r){
         if(old&&old.strikes){const m={};old.strikes.forEach(x=>{m[x.k]=x.gex;});state.prevG[s]=m;}
         state.data[s]=r;state.dataAge[s]=Date.now();results[s]=r;
       }
-    }
+    }));
     state.firstLoadFailed=Object.keys(results).length===0&&Object.keys(state.data).length===0;
     recordSnapshots();
     // Backend: hydrate server-accumulated history once per symbol (regime + IV),
@@ -1817,10 +1834,10 @@ document.addEventListener('visibilitychange',()=>{
 });
 window.addEventListener('beforeunload',()=>persistHistory(true));
 
-if(!state.tradierToken)document.getElementById('bannerText').innerHTML='Delayed CBOE mode \u2014 add a free Tradier token in <b>Settings</b> for live data';
+if(!state.tradierToken&&!(window.KairosBackend&&window.KairosBackend.enabled))document.getElementById('bannerText').innerHTML='Delayed CBOE mode \u2014 add a free Tradier token in <b>Settings</b> for live data';
 
 renderTrinity();renderCards();
 refresh(false).finally(schedule);
 function schedule(){clearTimeout(state._t);if(document.hidden)return;state._t=setTimeout(async()=>{await refresh(false);schedule();},state.pollSec*1000);}
 window.Kairos={state,refresh,getSym,kingOf,buildFromChains,buildImbalance,flowLean,exposureProfile};
-console.log('%cKairos v10.0 \u2014 full backend cutover: token server-side, history hydrated from D1, session replay, extended-hours pricing.','color:#f2c14e;font-weight:bold');
+console.log('%cKairos v10.2 \u2014 full backend cutover: token server-side, history hydrated from D1, session replay, extended-hours pricing.','color:#f2c14e;font-weight:bold');

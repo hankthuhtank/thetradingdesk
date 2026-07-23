@@ -1727,7 +1727,11 @@ setInterval(function(){if(state.view==='arena'&&!document.hidden)aHist(state.foc
     const saved=JSON.parse(localStorage.getItem(KEY)||'null');
     if(Array.isArray(saved)&&saved.length){PRESETS.length=0;saved.forEach(t=>PRESETS.push(t));}
   }catch(e){}
-  function save(){try{localStorage.setItem(KEY,JSON.stringify(PRESETS));}catch(e){}}
+  function save(){
+    /* Per-device roster: this list is intentionally LOCAL to this browser, so
+       each device (desktop, phone, tablet) keeps its own watchlist. */
+    try{localStorage.setItem(KEY,JSON.stringify(PRESETS));}catch(e){}
+  }
   function syncTickerList(){
     const dl=document.getElementById('tickerList');
     if(!dl)return;
