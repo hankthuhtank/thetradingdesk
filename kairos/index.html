@@ -86,6 +86,7 @@
         <div class="rail-h" style="margin:0" data-tip="Quote-rule classified NET flow: premium bought minus premium sold, for calls and for puts — the same measure flow platforms chart. Recorded by the server 24/5 and scrubbed with the crosshair.">FLOW THROUGH THE DAY</div>
         <span class="reg-lg"><s style="background:var(--green)"></s>NET CALL FLOW</span>
         <span class="reg-lg"><s style="background:var(--red)"></s>NET PUT FLOW</span>
+        <span class="reg-lg"><s style="background:#f2c14e"></s>NET DELTA FLOW</span>
         <span class="reg-lg"><s style="background:var(--cyan)"></s>SPOT</span>
         <span id="regChartMeta" style="font-size:.6rem;color:var(--muted);margin-left:auto"></span>
       </div>
@@ -196,7 +197,7 @@
   <h3 style="margin-bottom:14px">Settings</h3>
   <div class="fg">
     <label>Tradier API token</label>
-    <input type="password" id="tok" style="width:100%" placeholder="paste your token (stored only in this browser)" autocomplete="off">
+    <div style="font-size:.68rem;color:var(--muted);line-height:1.55;padding:4px 0">Live data is <b style="color:var(--teal)">integrated</b> — the Tradier connection lives server-side in the Kairos backend now. Nothing to paste, nothing stored in this browser.</div><input type="password" id="tok" style="display:none" autocomplete="off">
     <div class="hint">Free at tradier.com (a sandbox token works). Leave empty to run on delayed CBOE data. Never hard-code or share a token inside this file — each person pastes their own here.</div>
   </div>
   <div class="fg"><label>Refresh every (seconds)</label><input type="text" id="poll" value="10" style="width:80px" data-tip="10 is the floor. Scheduled polls only tick live quotes (1 batched request) — chains re-pull every ~90s — well under Tradier's 120 req/min limit."></div>

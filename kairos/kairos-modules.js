@@ -2285,7 +2285,9 @@ renderCards=function(){
   }
   const fired=reads.filter(r=>r.fire).sort((a,b)=>b.score-a.score);
   const idle=reads.filter(r=>!r.fire).sort((a,b)=>(b.setup?1:0)-(a.setup?1:0));
-  if(!reads.length){
+  const spH=state._srvPlays;
+  const spFresh=spH&&spH.html&&(Date.now()/1000-spH.t)<45*60;
+  if(!reads.length||(spFresh&&spH.count&&reads.length<spH.count)){
     /* SHARED BOARD: before this device's own sweep completes, paint the board
        the server has — published by whichever device computed it last. Same
        plays on every device, instantly. */
@@ -2326,7 +2328,7 @@ renderCards=function(){
     const nowS=Date.now();
     if(!state._playsPubT||nowS-state._playsPubT>60000){
       state._playsPubT=nowS;
-      try{window.KairosBackend.publishPlays(_board,SW.LABEL,'swing');}catch(e){}
+      try{window.KairosBackend.publishPlays(_board,SW.LABEL,'swing',fired.length+idle.length);}catch(e){}
     }
   }
   el.innerHTML=_board+

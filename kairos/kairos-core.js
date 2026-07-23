@@ -802,7 +802,7 @@ function renderTrinity(){
     if(!d){
       const p=document.createElement('div');p.className='panel'+(state.view==='single'?' single-mode':'');p.dataset.key=key;
       const rows=state.firstLoadFailed
-        ?`<div class="err-chip">No data source reachable for ${sym}. ${state.tradierToken?'Check the Tradier token in Settings — CBOE fallback also failed.':'Add a free Tradier token in Settings for live data, or wait for the CBOE retry.'}</div>`
+        ?`<div class="err-chip">No data source reachable for ${sym}. The Kairos backend and the CBOE fallback are both unreachable — check your connection; retrying automatically.</div>`
         :Array.from({length:22},()=>'<div class="skelrow"></div>').join('');
       p.innerHTML=`<div class="p-head"><div class="p-left"><span style="font-weight:700">${sym}</span><span class="badge-src demo">${state.firstLoadFailed?'offline':'loading'}</span></div></div><div class="strikes">${rows}</div>`;
       el.appendChild(p);
@@ -1415,7 +1415,7 @@ function renderRegimeChart(sym){
       _p=okPf(p)?(p.pbought-p.psold):lastP;
     }else{_c=p.cpr;_p=p.ppr;}
     lastC=_c;lastP=_p;
-    return Object.assign({},p,{_c,_p});
+    return Object.assign({},p,{_c,_p,_n:(p.ndf!=null?p.ndf:null)});
   });
   if(ser.length<2){
     host.innerHTML='<div style="height:220px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:.68rem;border:1px dashed var(--border);border-radius:8px">Recording flow\u2026 the through-day chart fills in as the session ticks (a few minutes).</div>';
@@ -1446,7 +1446,7 @@ function renderRegimeChart(sym){
   let yC,yPut,shared=false,shMax=1;
   if(classified){
     shared=true;
-    shMax=Math.max(1,...ser.map(p=>Math.max(Math.abs(p._c),Math.abs(p._p))));
+    shMax=Math.max(1,...ser.map(p=>Math.max(Math.abs(p._c),Math.abs(p._p),p._n!=null?Math.abs(p._n):0)));
     const yF=v=>PT+(shMax-v)/(2*shMax)*IH;
     yC=yF;yPut=yF;
   }else{
@@ -1501,6 +1501,25 @@ function renderRegimeChart(sym){
   }
   // price axis: 5 clean ticks (right side, cyan = the hero axis)
   [0,0.25,0.5,0.75,1].forEach(f=>{const v=sHi-f*(sHi-sLo);g+='<text x="'+(W-PR+8)+'" y="'+(yS(v)+3).toFixed(1)+'" fill="rgba(124,196,236,.9)" font-size="9.5" text-anchor="start" font-family="JetBrains Mono">'+v.toFixed(dp)+'</text>';});
+  /* GAMMA FLIP as an interpolated LINE - the zero-crossing of cumulative GEX
+     between strikes, not a bucket. Drawn only when it sits inside view.
+     Additive: the underlying (Heatseeker-calibrated) GEX math is untouched. */
+  (function(){
+    const dd=state.data[sym];if(!dd||!dd.strikes||dd.strikes.length<3)return;
+    const ss=dd.strikes.slice().sort((a2,b2)=>a2.k-b2.k);
+    const ks=[],cs=[];let cum=0;
+    for(const s2 of ss){cum+=s2.gex||0;ks.push(s2.k);cs.push(cum);}
+    let fl=null;
+    for(let i2=1;i2<cs.length;i2++){
+      if((cs[i2-1]<0&&cs[i2]>=0)||(cs[i2-1]>0&&cs[i2]<=0)){
+        const d2=cs[i2]-cs[i2-1];fl=d2?ks[i2-1]+(0-cs[i2-1])/d2*(ks[i2]-ks[i2-1]):ks[i2];break;
+      }
+    }
+    if(fl==null||fl<=sLo||fl>=sHi)return;
+    const fy=yS(fl);
+    g+='<line x1="'+PL+'" y1="'+fy.toFixed(1)+'" x2="'+(W-PR)+'" y2="'+fy.toFixed(1)+'" stroke="#f2c14e" stroke-opacity=".5" stroke-dasharray="6 4"/>';
+    g+='<text x="'+(W-PR-4)+'" y="'+(fy-4).toFixed(1)+'" fill="#f2c14e" fill-opacity=".85" font-size="8.5" text-anchor="end" font-family="JetBrains Mono">FLIP '+fl.toFixed(dp)+'</text>';
+  })();
   [0,0.33,0.66,1].forEach(f=>{const t=t0+tspan*f;g+='<text x="'+x(t).toFixed(1)+'" y="'+(H-8)+'" fill="rgba(110,122,140,.8)" font-size="9" text-anchor="middle" font-family="JetBrains Mono">'+clk(t)+'</text>';});
   // premium curves — context, each in its own band
   const cBase=shared?yC(0):PT+BAND;
@@ -1509,6 +1528,8 @@ function renderRegimeChart(sym){
   g+='<path d="'+areaOf('_p',yPut,pBase)+'" fill="url(#regR)"/>';
   g+='<path d="'+smooth(pts('_c',yC))+'" fill="none" stroke="var(--green)" stroke-width="1.6" stroke-opacity=".8"/>';
   g+='<path d="'+smooth(pts('_p',yPut))+'" fill="none" stroke="var(--red)" stroke-width="1.6" stroke-opacity=".8"/>';
+  const nPts=ser.filter(p=>p._n!=null).map(p=>[x(p.t),yC(p._n)]);
+  if(shared&&nPts.length>1)g+='<path d="'+smooth(nPts)+'" fill="none" stroke="#f2c14e" stroke-width="1.4" stroke-opacity=".85"/>';
   // SPOT — the hero. Drawn LAST (on top), bright solid cyan + glow + white core.
   const spotPath=smooth(pts('spot',yS));
   g+='<path d="'+spotPath+'" fill="none" stroke="#22d3ee" stroke-width="3" stroke-opacity=".9" filter="url(#regGlow)"/>';
@@ -1560,7 +1581,7 @@ function renderRegimeChart(sym){
       tip.innerHTML='<b>'+clk(p.t)+'</b> \u00b7 <span style="color:#7cc4ec">'+(+p.spot).toFixed(dp)+'</span>'+
         '<span class="rt-row"><i style="color:var(--green)">CALLS</i> '+fmtK(p._c)+(i>0?' <em>'+fmtD(p._c-prev._c)+'</em>':'')+'</span>'+
         '<span class="rt-row"><i style="color:var(--red)">PUTS</i> '+fmtK(p._p)+(i>0?' <em>'+fmtD(p._p-prev._p)+'</em>':'')+'</span>'+
-        '<span class="rt-row"><i style="color:'+(net>=0?'var(--green)':'var(--red)')+'">NET</i> '+fmtK(net)+'</span>';
+        (p._n!=null?'<span class="rt-row"><i style="color:#f2c14e">NDF</i> '+fmtK(p._n)+((i>0&&prev._n!=null)?' <em>'+fmtD(p._n-prev._n)+'</em>':'')+'</span>':'')+'<span class="rt-row"><i style="color:'+(net>=0?'var(--green)':'var(--red)')+'">NET</i> '+fmtK(net)+'</span>';
       tip.style.display='';
       const pxScreen=px/W*(r.width||1);
       const tw=tip.offsetWidth||150;
@@ -1573,7 +1594,7 @@ function renderRegimeChart(sym){
   }
   if(meta){
     const net=last._c-last._p;
-    meta.innerHTML='NET CALL FLOW <b style="color:var(--green)">'+fmtK(last._c)+'</b> \u00b7 NET PUT FLOW <b style="color:var(--red)">'+fmtK(last._p)+'</b> \u00b7 NET <b style="color:'+(net>=0?'var(--green)':'var(--red)')+'">'+fmtK(net)+'</b> \u00b7 '+ser.length+' samples \u00b7 '+(classified?'classified (bought\u2212sold)':'gross \u2014 classified history builds from today');
+    meta.innerHTML='NET CALL FLOW <b style="color:var(--green)">'+fmtK(last._c)+'</b> \u00b7 NET PUT FLOW <b style="color:var(--red)">'+fmtK(last._p)+'</b> \u00b7 NET <b style="color:'+(net>=0?'var(--green)':'var(--red)')+'">'+fmtK(net)+'</b> \u00b7 '+ser.length+' samples'+(last._n!=null?' \u00b7 NDF <b style="color:#f2c14e">'+fmtK(last._n)+'</b>':'')+' \u00b7 '+(classified?'classified (bought\u2212sold)':'gross \u2014 classified history builds from today');
   }
 }
 
@@ -1816,7 +1837,7 @@ async function refresh(force){
       b=phase==='rth'?`<span class="live">● LIVE</span>`:`<span class="live" style="color:var(--gold)">● ${phaseLabel}</span>`;
     }
     else if(sources.some(s=>s==='tradier-sandbox'))b=`● TRADIER SANDBOX — delayed data`;
-    else if(sources.some(s=>s==='cboe'))b=`● CBOE DELAYED (~15 min)${state.tradierToken?'':' — add a free Tradier token in Settings for live data'}`;
+    else if(sources.some(s=>s==='cboe'))b=`● CBOE DELAYED (~15 min) — backend unreachable; running on delayed data`;
     else b=(Date.now()-state._bootT<20000)?`<span class="live">\u25cf</span> connecting \u2014 first live pull\u2026`:`● NO DATA — all sources failed (token? network?)`;
     const si=sessionInfo();
     if(sources.some(s=>s==='tradier-live'))b+=` <span style="color:var(--muted)">\u00b7 Session <b style="color:var(--text)">${si.sess}</b> \u00b7 OI as-of <b style="color:var(--text)">${si.oi}</b>${phase!=='rth'?' \u00b7 <b style="color:var(--gold)">extended-hours pricing</b>':''}</span>`;
@@ -2103,14 +2124,14 @@ setTimeout(function(){
   if(state.tradierToken)return;
   var bt=document.getElementById('bannerText');if(!bt)return;
   if(window.KairosBackend&&window.KairosBackend.enabled)bt.innerHTML='<span class="live">\u25cf</span> connecting \u2014 live via Kairos backend\u2026';
-  else bt.innerHTML='Delayed CBOE mode \u2014 add a free Tradier token in <b>Settings</b> for live data';
+  else bt.innerHTML='Delayed CBOE mode \u2014 Kairos backend unreachable; retrying\u2026';
 },0);
 
 renderTrinity();renderCards();
 refresh(false).finally(schedule);
 function schedule(){clearTimeout(state._t);if(document.hidden)return;state._t=setTimeout(async()=>{await refresh(false);schedule();},state.pollSec*1000);}
 window.Kairos={state,refresh,getSym,kingOf,buildFromChains,buildImbalance,flowLean,exposureProfile};
-console.log('%cKairos v12.2 \u2014 classified net-flow Regime, VIX Desk in Junction, INVESTOR/DEGEN profiles, contract-price thumbs, Y-refit on switch.','color:#f2c14e;font-weight:bold');
+console.log('%cKairos v2.0 \u2014 Net Delta Flow (directional pressure), interpolated gamma-flip line, shared-board hold, token fully server-side. Base GEX math unchanged.','color:#f2c14e;font-weight:bold');
 
 state._juncTab=state._juncTab||'ladder';
 (function(){var jt=document.getElementById('juncTabs');if(!jt)return;

@@ -52,9 +52,9 @@
     },
 
     bootstrap() { return getJSON('/bootstrap'); },
-    async publishPlays(html, profile, tab) {
+    async publishPlays(html, profile, tab, count) {
       try {
-        const r = await fetch(api('/plays'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ html, profile, tab }) });
+        const r = await fetch(api('/plays'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ html, profile, tab, count }) });
         return r.ok;
       } catch (e) { return false; }
     },
@@ -70,6 +70,7 @@
         const ser = d.series.map(r => ({
           t: r.t, spot: r.spot, cpr: r.cpr, ppr: r.ppr,
           cbought: r.c_bought, csold: r.c_sold, pbought: r.p_bought, psold: r.p_sold,
+          ndf: (r.ndf != null ? r.ndf : null),
         }));
         const cur = window.Kairos.state.regSeries[sym] || [];
         const seen = new Set(cur.map(p => p.t));
