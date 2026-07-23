@@ -528,3 +528,27 @@ footer{text-align:center;padding:12px;font-size:.65rem;color:#3f4656;border-top:
   .nfa-sub{font-size:.52rem}
   .eng-status{font-size:.56rem}
 }
+
+
+/* ---- VIX desk (Junction) ---- */
+.vixdesk{margin-top:12px;border:1px solid var(--border);border-radius:10px;background:var(--panel2);padding:10px 12px}
+.vd-head{display:flex;align-items:baseline;gap:10px;margin-bottom:8px}
+.vd-head b{font-size:.72rem;letter-spacing:.14em}
+.vd-head span{font-size:.56rem;color:var(--muted);letter-spacing:.05em}
+.vd-row{display:flex;flex-wrap:wrap;gap:7px;align-items:center;margin:7px 0}
+.vd-chip{display:inline-flex;flex-direction:column;gap:1px;border:1px solid var(--border);border-radius:7px;padding:4px 9px;background:var(--panel)}
+.vd-chip i{font-style:normal;font-size:.5rem;letter-spacing:.1em;color:var(--muted)}
+.vd-chip b{font-family:'JetBrains Mono';font-size:.76rem}
+.vd-note{font-size:.6rem;color:var(--muted);line-height:1.5;padding:2px 0}
+.vd-lad{margin-top:4px;display:flex;flex-direction:column;gap:2.5px}
+.vd-lr{display:flex;align-items:center;gap:8px;font-family:'JetBrains Mono';font-size:.66rem}
+.vd-lr>span{width:56px;flex-shrink:0}
+.vd-tr{flex:1;height:6px;border-radius:3px;overflow:hidden;background:rgba(126,166,214,.06)}
+.vd-tr>div{height:100%;border-radius:3px;opacity:.85}
+
+/* ---- collapsible doctrine ---- */
+.zhon-d summary{cursor:pointer;font-size:.62rem;color:var(--muted);letter-spacing:.04em;padding:4px 2px;list-style:none}
+.zhon-d summary::-webkit-details-marker{display:none}
+.zhon-d summary::after{content:' \25be';opacity:.6}
+.zhon-d[open] summary::after{content:' \25b4'}
+.zhon-d .zhon{margin-top:4px}

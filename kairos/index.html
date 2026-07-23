@@ -44,7 +44,7 @@
 </div>
 <main>
   <div id="presetBar" class="hidden"></div>
-  <div id="trinityWrap"><div class="trinity" id="trinity"></div></div>
+  <div id="trinityWrap"><div class="trinity" id="trinity"></div><div id="vixDesk" class="vixdesk hidden"></div></div>
   <div class="chart-area hidden" id="chartSec">
     <div class="orrery" id="orrerySec">
       <div class="orr-top">
@@ -83,9 +83,9 @@
     <div class="imb-stats" id="imbStats"></div>
     <div id="regChartWrap" style="margin:14px 0 4px">
       <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:6px">
-        <div class="rail-h" style="margin:0" data-tip="Net call premium, net put premium, and spot — recorded live this session (in-memory; resets each day).">FLOW THROUGH THE DAY</div>
-        <span class="reg-lg"><s style="background:var(--green)"></s>NET CALL $</span>
-        <span class="reg-lg"><s style="background:var(--red)"></s>NET PUT $</span>
+        <div class="rail-h" style="margin:0" data-tip="Quote-rule classified NET flow: premium bought minus premium sold, for calls and for puts — the same measure flow platforms chart. Recorded by the server 24/5 and scrubbed with the crosshair.">FLOW THROUGH THE DAY</div>
+        <span class="reg-lg"><s style="background:var(--green)"></s>NET CALL FLOW</span>
+        <span class="reg-lg"><s style="background:var(--red)"></s>NET PUT FLOW</span>
         <span class="reg-lg"><s style="background:var(--cyan)"></s>SPOT</span>
         <span id="regChartMeta" style="font-size:.6rem;color:var(--muted);margin-left:auto"></span>
       </div>
@@ -131,8 +131,8 @@
         <button data-a="zero" data-tip="Kairos Zero — same-day (0DTE/1DTE) setups built on the 0DTE-only dealer book, the live tape, and the session clock. Long premium only, journaled fires.">0DTE</button>
       </div>
       <div class="mtoggle" id="swModeSel" data-tip="Contract profile. ITM buys deep-in-the-money (Δ0.55–0.82, 55–100 DTE): low theta drag but a large debit. OTM buys Δ0.25–0.42 runners at 45–75 DTE: a fraction of the debit, real asymmetry on a structure move, and it demands R:R ≥ 2 to pay for the lower probability of profit.">
-        <button data-swm="core" class="on">ITM</button>
-        <button data-swm="agile">OTM</button>
+        <button data-swm="core" class="on">INVESTOR</button>
+        <button data-swm="agile">DEGEN</button>
       </div>
       <span id="zeroClock" class="hidden" style="margin-left:auto;font-size:.66rem;color:var(--muted);font-family:'JetBrains Mono'"></span>
     </div>

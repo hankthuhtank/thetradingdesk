@@ -510,6 +510,7 @@ function backendOn(){return !!(window.KairosBackend&&window.KairosBackend.enable
 function liveOn(){return backendOn()||(state.tradierToken&&state.tradierToken.length>8);}
 window.liveOn=liveOn;window.backendOn=backendOn;
 
+state._bootT=Date.now();
 const rl={stamps:[]};
 async function tFetch(path){
   const now=Date.now();
@@ -1152,6 +1153,79 @@ function nearestExpLabel(sym){
   if(parts.length===3)return (+parts[1])+'/'+(+parts[2]);
   return soonest;
 }
+/* ================= VIX DESK (Junction) =================
+   Everything VIX in one place: term structure + vol regime, the VIX options
+   GEX ladder (King / call wall / put wall), and classic daily pivots. Data:
+   vixTerm() (quotes, ~2min cache), getSym('VIX') (options chain, on demand),
+   and one cached daily-history call for pivots. Context, not a signal. */
+let _vdBusy=false,_vdPiv=null,_vdPivDay='';
+async function renderVixDesk(){
+  const el=document.getElementById('vixDesk');if(!el)return;
+  const vt=state._vixTerm;
+  const d=state.data['VIX'];
+  const chip=(l,v,cl)=>'<span class="vd-chip"><i>'+l+'</i><b'+(cl?' style="color:'+cl+'"':'')+'>'+v+'</b></span>';
+  let h='<div class="vd-head"><b>VIX DESK</b><span>volatility \u00b7 context, not a signal</span></div>';
+  // --- term structure + regime ---
+  if(vt&&vt.vix){
+    const bk=vt.state==='backwardation';
+    h+='<div class="vd-row">'+
+      chip('9D',vt.vix9d?vt.vix9d.toFixed(1):'\u2014')+
+      chip('VIX',vt.vix.toFixed(1),bk?'var(--red)':'var(--text)')+
+      chip('3M',vt.vix3m?vt.vix3m.toFixed(1):'\u2014')+
+      chip('6M',vt.vix6m?vt.vix6m.toFixed(1):'\u2014')+
+      chip('REGIME',bk?'BACKWARDATION':'CONTANGO',bk?'var(--red)':'var(--green)')+
+      (vt.vix3m?chip('VIX/3M',(vt.vix/vt.vix3m).toFixed(2),(vt.vix/vt.vix3m)>1?'var(--red)':'var(--green)'):'')+
+      (vt.vix9d?chip('9D/VIX',(vt.vix9d/vt.vix).toFixed(2),(vt.vix9d/vt.vix)>1?'var(--red)':'var(--green)'):'')+
+      '</div>'+
+      '<div class="vd-note">'+(bk?'Near-term stress is bid over the back months \u2014 hedging demand NOW.':'Curve upward \u2014 calm regime; the market charges more for far-dated vol, as usual.')+' 9D/VIX above 1 = the pressure sits in the front of the curve.</div>';
+  }else h+='<div class="vd-note">term structure loading\u2026</div>';
+  // --- VIX options GEX ---
+  if(d&&d.strikes&&d.strikes.length){
+    const st=d.strikes;
+    const king=st.reduce((a,b)=>Math.abs(b.gex)>Math.abs(a.gex)?b:a,st[0]);
+    const cwS=st.filter(s=>s.gex>0).sort((a,b)=>b.gex-a.gex)[0];
+    const pwS=st.filter(s=>s.gex<0).sort((a,b)=>a.gex-b.gex)[0];
+    h+='<div class="vd-row">'+
+      chip('SPOT',(state.spot['VIX']||d.spot||0).toFixed(2),'#7cc4ec')+
+      chip('KING',king?king.k:'\u2014','var(--gold)')+
+      (cwS?chip('CALL WALL',cwS.k,'var(--green)'):'')+
+      (pwS?chip('PUT WALL',pwS.k,'var(--red)'):'')+
+      '</div>';
+    const mx=Math.max(1,...st.map(s=>Math.abs(s.gex)));
+    const top=st.slice().sort((a,b)=>Math.abs(b.gex)-Math.abs(a.gex)).slice(0,10).sort((a,b)=>b.k-a.k);
+    h+='<div class="vd-lad">'+top.map(s=>{
+      const w=Math.max(4,Math.abs(s.gex)/mx*100),pos=s.gex>=0;
+      return '<div class="vd-lr"><span>'+s.k+(king&&s.k===king.k?' \u2605':'')+'</span><div class="vd-tr"><div style="width:'+w.toFixed(1)+'%;background:'+(pos?'var(--green)':'#c084fc')+'"></div></div></div>';
+    }).join('')+'</div>';
+  }else{
+    h+='<div class="vd-note">VIX options ladder loading\u2026</div>';
+    if(!_vdBusy&&liveOn()){
+      _vdBusy=true;
+      getSym('VIX',undefined,false).then(r=>{if(r)state.data['VIX']=r;}).catch(()=>{}).finally(()=>{_vdBusy=false;if(state.view==='single')renderVixDesk();});
+    }
+  }
+  // --- classic daily pivots (yesterday's H/L/C) ---
+  const today=new Date().toISOString().slice(0,10);
+  if(_vdPiv&&_vdPivDay===today){
+    const P=_vdPiv;
+    h+='<div class="vd-row">'+chip('PIVOT',P.p.toFixed(2))+chip('R1',P.r1.toFixed(2),'var(--green)')+chip('R2',P.r2.toFixed(2),'var(--green)')+chip('S1',P.s1.toFixed(2),'var(--red)')+chip('S2',P.s2.toFixed(2),'var(--red)')+'<span class="vd-note" style="padding:0">classic pivots off yesterday\u2019s H/L/C</span></div>';
+  }else if(liveOn()&&_vdPivDay!==today+'_busy'){
+    _vdPivDay=today+'_busy';
+    (async()=>{try{
+      const start=new Date(Date.now()-12*86400000).toISOString().slice(0,10);
+      const j=await tFetch('/markets/history?symbol=VIX&interval=daily&start='+start);
+      let days=j.history&&j.history.day;if(days&&!Array.isArray(days))days=[days];
+      if(days&&days.length>=2){
+        const y=days[days.length-1].date===today?days[days.length-2]:days[days.length-1];
+        const H=+y.high,L=+y.low,C=+y.close,p=(H+L+C)/3;
+        _vdPiv={p,r1:2*p-L,s1:2*p-H,r2:p+(H-L),s2:p-(H-L)};_vdPivDay=today;
+        if(state.view==='single')renderVixDesk();
+      }
+    }catch(e){}})();
+  }
+  el.innerHTML=h;
+}
+window.renderVixDesk=renderVixDesk;
 function renderAetherPulse(){
   const el=document.getElementById('aetherPulse');if(!el)return;
   const Q=window.KairosQuant;
@@ -1160,7 +1234,6 @@ function renderAetherPulse(){
   const vt=state._vixTerm;
   if(vt&&vt.vix){
     const st=vt.state==='backwardation';
-    parts.push(`<span class="ap-block" data-tip="VIX term structure. Backwardation (VIX>VIX3M) = near-term stress priced in; contango = calm. Ratio ${vt.ratio?vt.ratio.toFixed(2):'—'}."><span class="ap-l">VOL REGIME</span><b style="color:${st?'var(--red)':'var(--green)'}">${st?'BACKWARDATION':'CONTANGO'}</b> <i>VIX ${vt.vix.toFixed(1)}${vt.vix3m?' / 3M '+vt.vix3m.toFixed(1):''}</i></span>`);
   }
   // journal hit-rate
   if(Q&&Q.qjStats){
@@ -1310,7 +1383,14 @@ function renderImb(sym){
 function renderRegimeChart(sym){
   const host=document.getElementById('regChart'),meta=document.getElementById('regChartMeta');
   if(!host)return;
-  const ser=(state.regSeries[sym]||[]).filter(p=>p&&isFinite(p.cpr)&&isFinite(p.ppr));
+  const raw=(state.regSeries[sym]||[]).filter(p=>p&&isFinite(p.cpr)&&isFinite(p.ppr));
+  /* value model: classified NET flow (bought − sold) when the split exists —
+     this is what "net call $" means on flow platforms — falling back to gross
+     cumulative premium for rows recorded before classification existed. */
+  const hasCf=p=>(p.cbought!=null&&p.csold!=null&&(p.cbought||p.csold));
+  const hasPf=p=>(p.pbought!=null&&p.psold!=null&&(p.pbought||p.psold));
+  const ser=raw.map(p=>Object.assign({},p,{_c:hasCf(p)?(p.cbought-p.csold):p.cpr,_p:hasPf(p)?(p.pbought-p.psold):p.ppr}));
+  const classified=ser.length&&ser.filter(hasCf).length>ser.length*0.5;
   if(ser.length<2){
     host.innerHTML='<div style="height:220px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:.68rem;border:1px dashed var(--border);border-radius:8px">Recording flow\u2026 the through-day chart fills in as the session ticks (a few minutes).</div>';
     if(meta)meta.textContent='';
@@ -1329,7 +1409,7 @@ function renderRegimeChart(sym){
      puts hang from the bottom ~38% — so both read as evolving curves with
      visible session shape, instead of two solid slabs from zero. Cumulative
      premium only ever grows; normalising per-band is what makes it legible. */
-  const cVals=ser.map(p=>p.cpr),pVals=ser.map(p=>p.ppr);
+  const cVals=ser.map(p=>p._c),pVals=ser.map(p=>p._p);
   const cMin=Math.min(...cVals),cMax=Math.max(...cVals);
   const pMin=Math.min(...pVals),pMax=Math.max(...pVals);
   const BAND=IH*0.38;
@@ -1375,10 +1455,10 @@ function renderRegimeChart(sym){
   [0,0.25,0.5,0.75,1].forEach(f=>{const v=sHi-f*(sHi-sLo);g+='<text x="'+(W-PR+8)+'" y="'+(yS(v)+3).toFixed(1)+'" fill="rgba(124,196,236,.9)" font-size="9.5" text-anchor="start" font-family="JetBrains Mono">'+v.toFixed(dp)+'</text>';});
   [0,0.33,0.66,1].forEach(f=>{const t=t0+tspan*f;g+='<text x="'+x(t).toFixed(1)+'" y="'+(H-8)+'" fill="rgba(110,122,140,.8)" font-size="9" text-anchor="middle" font-family="JetBrains Mono">'+clk(t)+'</text>';});
   // premium curves — context, each in its own band
-  g+='<path d="'+areaOf('cpr',yC,PT+BAND)+'" fill="url(#regG)"/>';
-  g+='<path d="'+areaOf('ppr',yPut,PT+IH-BAND)+'" fill="url(#regR)"/>';
-  g+='<path d="'+smooth(pts('cpr',yC))+'" fill="none" stroke="var(--green)" stroke-width="1.6" stroke-opacity=".8"/>';
-  g+='<path d="'+smooth(pts('ppr',yPut))+'" fill="none" stroke="var(--red)" stroke-width="1.6" stroke-opacity=".8"/>';
+  g+='<path d="'+areaOf('_c',yC,PT+BAND)+'" fill="url(#regG)"/>';
+  g+='<path d="'+areaOf('_p',yPut,PT+IH-BAND)+'" fill="url(#regR)"/>';
+  g+='<path d="'+smooth(pts('_c',yC))+'" fill="none" stroke="var(--green)" stroke-width="1.6" stroke-opacity=".8"/>';
+  g+='<path d="'+smooth(pts('_p',yPut))+'" fill="none" stroke="var(--red)" stroke-width="1.6" stroke-opacity=".8"/>';
   // SPOT — the hero. Drawn LAST (on top), bright solid cyan + glow + white core.
   const spotPath=smooth(pts('spot',yS));
   g+='<path d="'+spotPath+'" fill="none" stroke="#22d3ee" stroke-width="3" stroke-opacity=".9" filter="url(#regGlow)"/>';
@@ -1423,13 +1503,13 @@ function renderRegimeChart(sym){
       const px=x(p.t);
       xhG.style.display='';
       xhV.setAttribute('x1',px.toFixed(1));xhV.setAttribute('x2',px.toFixed(1));
-      xhC.setAttribute('cx',px.toFixed(1));xhC.setAttribute('cy',yC(p.cpr).toFixed(1));
-      xhP.setAttribute('cx',px.toFixed(1));xhP.setAttribute('cy',yPut(p.ppr).toFixed(1));
+      xhC.setAttribute('cx',px.toFixed(1));xhC.setAttribute('cy',yC(p._c).toFixed(1));
+      xhP.setAttribute('cx',px.toFixed(1));xhP.setAttribute('cy',yPut(p._p).toFixed(1));
       xhS.setAttribute('cx',px.toFixed(1));xhS.setAttribute('cy',yS(p.spot).toFixed(1));
-      const net=p.cpr-p.ppr;
+      const net=p._c-p._p;
       tip.innerHTML='<b>'+clk(p.t)+'</b> \u00b7 <span style="color:#7cc4ec">'+(+p.spot).toFixed(dp)+'</span>'+
-        '<span class="rt-row"><i style="color:var(--green)">CALLS</i> '+fmtK(p.cpr)+(i>0?' <em>'+fmtD(p.cpr-prev.cpr)+'</em>':'')+'</span>'+
-        '<span class="rt-row"><i style="color:var(--red)">PUTS</i> '+fmtK(p.ppr)+(i>0?' <em>'+fmtD(p.ppr-prev.ppr)+'</em>':'')+'</span>'+
+        '<span class="rt-row"><i style="color:var(--green)">CALLS</i> '+fmtK(p._c)+(i>0?' <em>'+fmtD(p._c-prev._c)+'</em>':'')+'</span>'+
+        '<span class="rt-row"><i style="color:var(--red)">PUTS</i> '+fmtK(p._p)+(i>0?' <em>'+fmtD(p._p-prev._p)+'</em>':'')+'</span>'+
         '<span class="rt-row"><i style="color:'+(net>=0?'var(--green)':'var(--red)')+'">NET</i> '+fmtK(net)+'</span>';
       tip.style.display='';
       const pxScreen=px/W*(r.width||1);
@@ -1442,8 +1522,8 @@ function renderRegimeChart(sym){
     svgEl.addEventListener('pointerleave',hide);
   }
   if(meta){
-    const net=last.cpr-last.ppr;
-    meta.innerHTML='NCP <b style="color:var(--green)">'+fmtK(last.cpr)+'</b> \u00b7 NPP <b style="color:var(--red)">'+fmtK(last.ppr)+'</b> \u00b7 NET <b style="color:'+(net>=0?'var(--green)':'var(--red)')+'">'+fmtK(net)+'</b> \u00b7 '+ser.length+' samples';
+    const net=last._c-last._p;
+    meta.innerHTML='NET CALL FLOW <b style="color:var(--green)">'+fmtK(last._c)+'</b> \u00b7 NET PUT FLOW <b style="color:var(--red)">'+fmtK(last._p)+'</b> \u00b7 NET <b style="color:'+(net>=0?'var(--green)':'var(--red)')+'">'+fmtK(net)+'</b> \u00b7 '+ser.length+' samples \u00b7 '+(classified?'classified (bought\u2212sold)':'gross \u2014 classified history builds from today');
   }
 }
 
@@ -1634,7 +1714,7 @@ async function refresh(force){
         state.data[s]=r;state.dataAge[s]=Date.now();results[s]=r;
       }
     }));
-    state.firstLoadFailed=Object.keys(results).length===0&&Object.keys(state.data).length===0;
+    state.firstLoadFailed=Object.keys(results).length===0&&Object.keys(state.data).length===0&&(Date.now()-state._bootT>20000);
     recordSnapshots();
     // Backend: hydrate server-accumulated history once per symbol (regime + IV),
     // so the Regime chart and IV Rank are pre-filled from data collected 24/5.
@@ -1648,7 +1728,7 @@ async function refresh(force){
     }
     // v2: refresh vol term structure (cached) + resolve journal against latest spot
     if(window.KairosQuant){
-      window.KairosQuant.vixTerm().then(vt=>{if(vt)state._vixTerm=vt;}).catch(()=>{});
+      window.KairosQuant.vixTerm().then(vt=>{if(vt)state._vixTerm=vt;if(state.view==='single')try{renderVixDesk();}catch(e){}}).catch(()=>{});
       try{Object.keys(results).forEach(s=>{const sp=results[s].spot;if(sp)window.KairosQuant.qjResolve(s,sp);});}catch(e){}
     }
     const sources=Object.values(results).map(d=>d.source);
@@ -1660,12 +1740,9 @@ async function refresh(force){
     }
     else if(sources.some(s=>s==='tradier-sandbox'))b=`● TRADIER SANDBOX — delayed data`;
     else if(sources.some(s=>s==='cboe'))b=`● CBOE DELAYED (~15 min)${state.tradierToken?'':' — add a free Tradier token in Settings for live data'}`;
-    else b=`● NO DATA — all sources failed (token? network?)`;
+    else b=(Date.now()-state._bootT<20000)?`<span class="live">\u25cf</span> connecting \u2014 first live pull\u2026`:`● NO DATA — all sources failed (token? network?)`;
     const si=sessionInfo();
     if(sources.some(s=>s==='tradier-live'))b+=` <span style="color:var(--muted)">\u00b7 Session <b style="color:var(--text)">${si.sess}</b> \u00b7 OI as-of <b style="color:var(--text)">${si.oi}</b>${phase!=='rth'?' \u00b7 <b style="color:var(--gold)">extended-hours pricing</b>':''}</span>`;
-    const vt=state._vixTerm;
-    if(vt&&vt.vix){const bk=vt.state==='backwardation';
-      b+=` <span style="color:var(--muted)">\u00b7</span> <span class="mono" data-tip="CBOE vol term structure, refreshed ~2 min. Contango (VIX below VIX3M) = calm regime; backwardation = near-term stress bid over the back months. 9D vs 3M shows where the pressure sits on the curve.">VIX <b style="color:${bk?'var(--red)':'var(--text)'}">${vt.vix.toFixed(1)}</b>${vt.vix9d?` <i style="color:var(--muted);font-style:normal">9D ${vt.vix9d.toFixed(1)}</i>`:''}${vt.vix3m?` <i style="color:var(--muted);font-style:normal">3M ${vt.vix3m.toFixed(1)}</i>`:''} <b style="font-size:.6rem;color:${bk?'var(--red)':'var(--green)'}">${bk?'BACKWARDATION':'CONTANGO'}</b></span>`;}
     document.getElementById('bannerText').innerHTML=b;
     const se=document.getElementById('sessInfo');if(se)se.innerHTML='';
     const lu=document.getElementById('lastUp');if(lu)lu.textContent='';
@@ -1789,6 +1866,8 @@ function setView(v){
     const m=state.multi[state.focus];
     state.singleLoading=!(m&&m.dates&&m.dates.length>=8);
   }
+  const _vd=document.getElementById('vixDesk');
+  if(_vd){_vd.classList.toggle('hidden',v!=='single');if(v==='single')try{renderVixDesk();}catch(e){}}
   if(v==='trinity'||v==='single')renderTrinity();
   if(v==='trinity'){
     // coming back to Triad: the poll only fed the focused ticker while you were away — refetch stale panels now
@@ -1945,4 +2024,4 @@ renderTrinity();renderCards();
 refresh(false).finally(schedule);
 function schedule(){clearTimeout(state._t);if(document.hidden)return;state._t=setTimeout(async()=>{await refresh(false);schedule();},state.pollSec*1000);}
 window.Kairos={state,refresh,getSym,kingOf,buildFromChains,buildImbalance,flowLean,exposureProfile};
-console.log('%cKairos v11.0 \u2014 instant warm-paint from server cache, Regime crosshair inspection, pinch zoom, engine status, subtle NFA.','color:#f2c14e;font-weight:bold');
+console.log('%cKairos v11.1 \u2014 classified net-flow Regime, VIX Desk in Junction, INVESTOR/DEGEN profiles, contract-price thumbs, Y-refit on switch.','color:#f2c14e;font-weight:bold');

@@ -554,6 +554,7 @@ setInterval(async function(){
 state.zTab='swing';
 function zSetTab(t){
   state.zTab=t;
+  const _ms=document.getElementById('swModeSel');if(_ms)_ms.classList.toggle('hidden',t==='zero');
   document.querySelectorAll('#aetherTabs button').forEach(b=>b.classList.toggle('on',b.dataset.a===t));
   const cardsEl=document.getElementById('cards'),zw=document.getElementById('zeroWrap'),ck=document.getElementById('zeroClock');
   if(cardsEl)cardsEl.classList.toggle('hidden',t!=='swing');
@@ -629,14 +630,14 @@ let aMouse=null,aDrag=null,aVM=null,aDeepT={};
 let aField={},aFieldStamp={},aFieldT={},aFCv=null,aFKey='';
 let aRecon={},aReconKey={},aReconBusy={},aTracks=[];
 let aYC=null,aYH=null,aSceneClk=0,aEdgeF=null;
-let aYManual=false,aYCenterM=null,aYHalfM=null;
+let aYManual=false,aYCenterM=null,aYHalfM=null,aFocusSym=null;
 let aDB=null,aDBLoaded={};
 const aReduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
 const aBlurOK=(function(){try{const c=document.createElement('canvas').getContext('2d');c.filter='blur(2px)';return c.filter==='blur(2px)';}catch(e){return false;}})();
 
 function aCv(){return document.getElementById('arenaCanvas');}
 function aStop(){if(aRaf){cancelAnimationFrame(aRaf);aRaf=0;}}
-function aStart(){aStop();aT=0;aHist(state.focus,aWin>420);aDBLoad(state.focus);aHydrateField(state.focus);setTimeout(function(){aReconBuild(state.focus);},1500);if(aReduce){aDraw(0);aHud(true);return;}aRaf=requestAnimationFrame(aFrame);}
+function aStart(){aStop();aT=0;if(aFocusSym!==state.focus){aYManual=false;aYCenterM=null;aYHalfM=null;aPan=0;}aFocusSym=state.focus;aHist(state.focus,aWin>420);aDBLoad(state.focus);aHydrateField(state.focus);setTimeout(function(){aReconBuild(state.focus);},1500);if(aReduce){aDraw(0);aHud(true);return;}aRaf=requestAnimationFrame(aFrame);}
 /* pull the server-side field Chronicle (accumulated 24/5) into aField so the
    history is populated even if this browser never recorded it — and so REPLAY
    has a full session to scrub through. Merges with any local columns. */
@@ -660,6 +661,7 @@ async function aHydrateField(sym){
   }catch(e){}
 }
 function aFrame(ts){
+  if(aFocusSym!==null&&aFocusSym!==state.focus){aStart();return;}
   const dt=aT?Math.min(0.05,(ts-aT)/1000):0.016;aT=ts;
   aDraw(dt);
   if(ts-aHudT>420){aHudT=ts;aHud(false);}
@@ -1583,7 +1585,8 @@ function aChips(){
     if(aPtrs.size===2){
       aDrag=null;cv.style.cursor='crosshair';
       const p=[...aPtrs.values()];
-      aPinch={d0:Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y)||1,w0:aWin};
+      const vert=Math.abs(p[0].y-p[1].y)>Math.abs(p[0].x-p[1].x);
+      aPinch={d0:Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y)||1,w0:aWin,vert,h0:(aYHalfM!=null?aYHalfM:aYH)};
     }
   });
   cv.addEventListener('pointermove',e=>{
@@ -1592,8 +1595,15 @@ function aChips(){
     if(aPinch&&aPtrs.size===2){
       const p=[...aPtrs.values()];
       const d=Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y)||1;
-      const w=Math.max(AR.WINMIN,Math.min(AR.WINMAX,aPinch.w0*(aPinch.d0/d)));
-      if(Math.abs(w-aWin)>0.5){aWin=w;aFKey='';aChips();}
+      if(aPinch.vert){
+        /* vertical pinch = price-axis zoom (mobile Shift+wheel) */
+        if(aYCenterM==null){aYCenterM=aYC;aYHalfM=aYH;}
+        aYManual=true;
+        aYHalfM=Math.max(1e-4,(aPinch.h0||aYH)*(aPinch.d0/d));
+      }else{
+        const w=Math.max(AR.WINMIN,Math.min(AR.WINMAX,aPinch.w0*(aPinch.d0/d)));
+        if(Math.abs(w-aWin)>0.5){aWin=w;aFKey='';aChips();}
+      }
     }
   });
   const aPtrGone=e=>{aPtrs.delete(e.pointerId);if(aPtrs.size<2)aPinch=null;};
@@ -1806,7 +1816,7 @@ const SW_CORE={
   TERM_INV:1.08,                        // front/back ATM IV ratio implying an event
   MIN_RR:1.5, MIN_RRP:1.2,
   VOL_SHOCK:5,                          // vol points for the crush disclosure
-  LABEL:'ITM', DESC:'deep-ITM \u00b7 low theta drag \u00b7 capital-heavy'
+  LABEL:'INVESTOR', DESC:'deep-ITM \u00b7 probability + staying power \u00b7 costs more per contract, on purpose'
 };
 /* AGILE — the small/mid-account profile. Cheaper debit per contract, so a
    position is sizeable on a small account and the R:R reads properly.
@@ -1817,28 +1827,25 @@ const SW_CORE={
    look cheap but their probability of profit collapses and the theta burn is
    proportionally brutal. Wider spread ceiling because OTM books are thinner. */
 const SW_AGILE={
-  /* OTM — the asymmetric-R:R profile, built the way winning OTM buyers
-     actually structure it (not lottos):
-       \u2022 45\u201375 DTE: enough runway that the thesis, not theta, decides the
-         trade — 30\u201345 DTE is the seller's window and is deliberately avoided.
-       \u2022 \u03940.25\u20130.42 (target 0.32): a fraction of the ITM debit, so the same
-         dollars buy real size and a structure move multiplies the premium.
-         Below ~0.25\u0394 probability of profit collapses — that line is held.
-       \u2022 Exit by 14 DTE, win or lose: OTM extrinsic evaporates fastest at the end.
-       \u2022 Higher bars everywhere else: R:R \u2265 2.0 demanded (lower PoP must be
-         paid for), IV screened vs realised so you're not buying a crush. */
-  DTE_LO:45, DTE_HI:75, DTE_TGT:60,
-  EXIT_DTE:14,
-  D_LO:0.25, D_HI:0.42, D_TGT:0.32,
-  MAX_SPREAD:0.12,
+  /* DEGEN — cheap convexity, eyes open. \u03940.18\u20130.35 at 25\u201350 DTE sits
+     deliberately NEARER the theta window than the investor book: the contract
+     is cheap precisely because the clock and the odds lean against it, and a
+     structure move has to come reasonably fast. The engine pays for that
+     honestly: R:R \u2265 2.5 demanded, the CHEAPEST contract inside the \u0394 band
+     wins (not the closest to target), IV screened vs realised, and out by
+     7 DTE win or lose. Sized like the premium can go to zero \u2014 it can. */
+  DTE_LO:25, DTE_HI:50, DTE_TGT:35,
+  EXIT_DTE:7,
+  D_LO:0.18, D_HI:0.35, D_TGT:0.25,
+  MAX_SPREAD:0.14,
   MIN_OI:150,
   MIN_SCORE:58,
-  HOLD:16,
+  HOLD:10,
   IV_RICH:1.25, IV_CHEAP:0.92,
   TERM_INV:1.08,
-  MIN_RR:2.0, MIN_RRP:1.7,
+  MIN_RR:2.5, MIN_RRP:2.0,
   VOL_SHOCK:5,
-  LABEL:'OTM', DESC:'OTM runners \u00b7 small debit \u00b7 asymmetric R:R'
+  LABEL:'DEGEN', DESC:'cheap OTM convexity \u00b7 strict exits \u00b7 premium can go to zero'
 };
 let SW=Object.assign({},localStorage.getItem('kairos_sw_mode')==='agile'?SW_AGILE:SW_CORE);
 function swSetMode(mode){
@@ -1925,7 +1932,7 @@ function sPick(sym,call){
       cands.push({c,mid,spr,dl,intr,ext:Math.max(0,mid-intr)});
     }
     if(!cands.length)continue;
-    cands.sort((a,b)=>Math.abs(a.dl-SW.D_TGT)-Math.abs(b.dl-SW.D_TGT));
+    cands.sort((a,b)=>{const d=Math.abs(a.dl-SW.D_TGT)-Math.abs(b.dl-SW.D_TGT);return (SW.LABEL==='DEGEN'&&Math.abs(d)<=0.05)?a.mid-b.mid:d;});
     const p=cands[0];
     return{k:p.c.k,e:p.c.e,call,T:p.c.T,dte:exps[e],iv:p.c.iv,oi:p.c.oi||0,vol:p.c.vol||0,
       mid:p.mid,bid:p.c.bid||0,ask:p.c.ask||0,dl:p.dl,spr:p.spr,intr:p.intr,ext:p.ext,
@@ -2228,7 +2235,7 @@ function sCardHtml(r){
   /* compact thumbnail head — SYM SIDE / strike+exp / Entry · Time · R:R */
   const clk=new Date().toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});
   const thumb='<div class="thumb-contract" style="margin-top:4px">'+c.k+(c.call?'C':'P')+' '+c.e+'</div>'+
-    '<div class="thumb-grid"><div><span class="tl">Entry</span><span class="tv">'+(+r.spot).toFixed(dp)+'</span></div>'+
+    '<div class="thumb-grid"><div><span class="tl">Contract</span><span class="tv">~$'+c.mid.toFixed(2)+'</span></div>'+
     '<div><span class="tl">DTE</span><span class="tv">'+Math.round(c.dte)+'</span></div>'+
     '<div><span class="tl">R:R</span><span class="tv" style="color:'+(r.rrU>=2?'var(--green)':'var(--gold)')+'">'+r.rrU.toFixed(1)+':1</span></div></div>';
   const body=open?(spec+lvls+bud+zGatesHtml(r.gates)+
@@ -2284,7 +2291,15 @@ renderCards=function(){
     return;
   }
   el.classList.add('zgrid');el.classList.remove('cards');
-  /* engine status strip: how many evaluated, how many fired, and WHICH gates
+  function swDoctrineHtml(){
+  const inv=SW.LABEL==='INVESTOR';
+  return '<details class="zhon-d" style="grid-column:1/-1"><summary><span class="nfa-min">NFA</span> <b>'+SW.LABEL+' DOCTRINE</b> \u2014 how contracts are chosen</summary><div class="zhon">'+
+    (inv
+     ?'Duration '+SW.DTE_LO+'\u2013'+SW.DTE_HI+' DTE and \u0394'+SW.D_LO+'\u2013'+SW.D_HI+' ITM, on purpose: extrinsic is the only part theta can eat, so an intrinsic-heavy contract tracks the underlying \u2248'+Math.round(SW.D_TGT*100)+'c on the dollar and bleeds slowly. It costs more per contract \u2014 that IS the trade: paying for probability and staying power. Exit by '+SW.EXIT_DTE+' DTE. IV is judged against the stock\u2019s own realised vol; every card shows what a \u2212'+SW.VOL_SHOCK+'-vol crush costs.'
+     :'Small debit, big asymmetry \u2014 eyes open. \u0394'+SW.D_LO+'\u2013'+SW.D_HI+' (target '+SW.D_TGT+') at '+SW.DTE_LO+'\u2013'+SW.DTE_HI+' DTE sits deliberately nearer the theta window: the contract is cheap because the clock and the odds lean against it. The engine pays for that honestly: R:R \u2265 '+SW.MIN_RR+' demanded, the CHEAPEST contract inside the \u0394 band wins, IV screened vs realised so you\u2019re not buying a crush, and out by '+SW.EXIT_DTE+' DTE win or lose. Size like the premium can go to zero \u2014 it can.')
+    +' <b>Not modelled:</b> the econ calendar, headlines, dividends. Context to grade your own read, not signals.</div></details>';
+}
+/* engine status strip: how many evaluated, how many fired, and WHICH gates
      are holding the rest back — so a quiet board reads as a decision, not a bug. */
   const gateFails={};
   reads.forEach(r=>{if(!r.fire&&r.gates)r.gates.forEach(g=>{if(!g.ok)gateFails[g.n]=(gateFails[g.n]||0)+1;});});
@@ -2295,7 +2310,7 @@ renderCards=function(){
     (topFails?' \u00b7 holding back: '+topFails:'')+
     ' \u00b7 profile <b style="color:var(--teal)">'+SW.LABEL+'</b></div>';
   el.innerHTML=engStatus+fired.map(sCardHtml).join('')+idle.map(sStandbyHtml).join('')+
-    '<div class="zhon" style="grid-column:1/-1"><span class="nfa-min">NFA</span> <b>SWING DOCTRINE</b> \u2014 duration is '+SW.DTE_LO+'\u2013'+SW.DTE_HI+' DTE on purpose. 30\u201345 DTE is the option <b>seller\u2019s</b> window: roughly half of an ATM option\u2019s extrinsic value burns in the final 30 days, versus ~15\u201320% between 90 and 60 DTE. A buyer entering at 30\u201345 DTE is buying the theta cliff. Strikes are \u0394'+SW.D_LO+'\u2013'+SW.D_HI+' ('+SW.LABEL+'). '+(SW.LABEL==='ITM'?'ITM is intrinsic-heavy \u2014 extrinsic is the only part theta can eat, so a 0.70\u0394 contract tracks the underlying ~70c on the dollar and bleeds far less than ATM.':'OTM is convexity-first \u2014 a ~0.32\u0394 contract costs a fraction of ITM, so the same dollars buy more contracts and a structure move can multiply the debit. The trade-offs are lower probability of profit and faster end-of-life theta, which is why this profile demands R:R \u2265 2 and exits by '+SW.EXIT_DTE+' DTE.')+' Long premium is <b>long vega</b>: every card shows what a \u2212'+SW.VOL_SHOCK+'-vol move costs. IV is judged against the stock\u2019s own realised vol (HV20) rather than raw IV, and the IV rank matures as this browser accrues sessions. Prefer a smaller debit? When a fired card shows a <b>BUDGET</b> line, the same long leg is paired with a short leg sold at the T2 node \u2014 the structure already says the move stalls there, so the cap costs little thesis while the debit drops sharply. <b>Not modelled:</b> the econ calendar, headlines, or dividends \u2014 and term-structure inversion only <i>infers</i> an event, it does not read an earnings date. Context to grade your own read, not signals.</div>';
+    swDoctrineHtml();
 };
 if(state.view==='ideas'&&state.zTab!=='zero')renderCards();
 /* swing thumbnails expand/collapse on click (delegated; swing sets innerHTML directly) */
