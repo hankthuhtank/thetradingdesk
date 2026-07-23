@@ -1205,7 +1205,7 @@ async function renderVixDesk(){
     h+='<div class="vd-note">VIX options ladder loading\u2026</div>';
     if(!_vdBusy&&liveOn()){
       _vdBusy=true;
-      getSym('VIX',undefined,false).then(r=>{if(r)state.data['VIX']=r;}).catch(()=>{}).finally(()=>{_vdBusy=false;if(state.view==='single')renderVixDesk();});
+      getSym('VIX',undefined,false).then(r=>{if(r)state.data['VIX']=r;}).catch(()=>{}).finally(()=>{_vdBusy=false;if(state.view==='vix')renderVixDesk();});
     }
   }
   // --- classic daily pivots (yesterday's H/L/C) ---
@@ -1223,7 +1223,7 @@ async function renderVixDesk(){
         const y=days[days.length-1].date===today?days[days.length-2]:days[days.length-1];
         const H=+y.high,L=+y.low,C=+y.close,p=(H+L+C)/3;
         _vdPiv={p,r1:2*p-L,s1:2*p-H,r2:p+(H-L),s2:p-(H-L)};_vdPivDay=today;
-        if(state.view==='single')renderVixDesk();
+        if(state.view==='vix')renderVixDesk();
       }
     }catch(e){}})();
   }
@@ -1432,8 +1432,20 @@ function renderRegimeChart(sym){
   const cMin=Math.min(...cVals),cMax=Math.max(...cVals);
   const pMin=Math.min(...pVals),pMax=Math.max(...pVals);
   const BAND=IH*0.38;
-  const yC=v=>PT+((cMax>cMin)?(cMax-v)/(cMax-cMin):0.5)*BAND;
-  const yPut=v=>PT+IH-BAND+((pMax>pMin)?(v-pMin)/(pMax-pMin):0.5)*BAND;
+  /* CLASSIFIED mode matches Flowseeker exactly: NCP (call bought-sold) and
+     NPP (put bought-sold) share ONE zero-centered axis and oscillate around
+     $0, with spot on the right axis. The split-band layout only remains as
+     the fallback for gross (monotone) history. */
+  let yC,yPut,shared=false,shMax=1;
+  if(classified){
+    shared=true;
+    shMax=Math.max(1,...ser.map(p=>Math.max(Math.abs(p._c),Math.abs(p._p))));
+    const yF=v=>PT+(shMax-v)/(2*shMax)*IH;
+    yC=yF;yPut=yF;
+  }else{
+    yC=v=>PT+((cMax>cMin)?(cMax-v)/(cMax-cMin):0.5)*BAND;
+    yPut=v=>PT+IH-BAND+((pMax>pMin)?(v-pMin)/(pMax-pMin):0.5)*BAND;
+  }
   const sMin=Math.min(...ser.map(p=>p.spot)),sMax=Math.max(...ser.map(p=>p.spot));
   const sMid=(sMin+sMax)/2;
   const sRange=Math.max(sMax-sMin,sMid*0.0005);
@@ -1463,19 +1475,31 @@ function renderRegimeChart(sym){
     '<linearGradient id="regR" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="var(--red)" stop-opacity=".22"/><stop offset="1" stop-color="var(--red)" stop-opacity="0"/></linearGradient>'+
     '<filter id="regGlow"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>'+
     '</defs>';
-  // faint band separators
-  [PT+BAND,PT+IH-BAND].forEach(y=>{g+='<line x1="'+PL+'" y1="'+y.toFixed(1)+'" x2="'+(W-PR)+'" y2="'+y.toFixed(1)+'" stroke="rgba(126,166,214,.07)" stroke-dasharray="2 5"/>';});
-  // band scale labels (left)
-  g+='<text x="'+(PL-8)+'" y="'+(PT+9)+'" fill="rgba(52,211,153,.6)" font-size="8.5" text-anchor="end" font-family="JetBrains Mono">'+fmtK(cMax)+'</text>';
-  g+='<text x="'+(PL-8)+'" y="'+(PT+BAND+3).toFixed(1)+'" fill="rgba(52,211,153,.35)" font-size="8.5" text-anchor="end" font-family="JetBrains Mono">'+fmtK(cMin)+'</text>';
-  g+='<text x="'+(PL-8)+'" y="'+(PT+IH-BAND+3).toFixed(1)+'" fill="rgba(248,113,113,.35)" font-size="8.5" text-anchor="end" font-family="JetBrains Mono">'+fmtK(pMin)+'</text>';
-  g+='<text x="'+(PL-8)+'" y="'+(PT+IH).toFixed(1)+'" fill="rgba(248,113,113,.6)" font-size="8.5" text-anchor="end" font-family="JetBrains Mono">'+fmtK(pMax)+'</text>';
+  if(shared){
+    // Flowseeker layout: dashed $0 line + symmetric scale labels
+    const zy=yC(0);
+    g+='<line x1="'+PL+'" y1="'+zy.toFixed(1)+'" x2="'+(W-PR)+'" y2="'+zy.toFixed(1)+'" stroke="rgba(126,166,214,.28)" stroke-dasharray="4 4"/>';
+    g+='<text x="'+(PL-8)+'" y="'+(zy+3).toFixed(1)+'" fill="rgba(160,174,196,.55)" font-size="9" text-anchor="end" font-family="JetBrains Mono">$0</text>';
+    [[shMax,1],[shMax/2,.5],[-shMax/2,.5],[-shMax,1]].forEach(pr=>{
+      const v=pr[0],y=yC(v);
+      g+='<line x1="'+PL+'" y1="'+y.toFixed(1)+'" x2="'+(W-PR)+'" y2="'+y.toFixed(1)+'" stroke="rgba(126,166,214,.05)"/>';
+      g+='<text x="'+(PL-8)+'" y="'+(y+3).toFixed(1)+'" fill="rgba(160,174,196,'+(0.3+0.2*pr[1])+')" font-size="8.5" text-anchor="end" font-family="JetBrains Mono">'+fmtK(v)+'</text>';
+    });
+  }else{
+    [PT+BAND,PT+IH-BAND].forEach(y=>{g+='<line x1="'+PL+'" y1="'+y.toFixed(1)+'" x2="'+(W-PR)+'" y2="'+y.toFixed(1)+'" stroke="rgba(126,166,214,.07)" stroke-dasharray="2 5"/>';});
+    g+='<text x="'+(PL-8)+'" y="'+(PT+9)+'" fill="rgba(52,211,153,.6)" font-size="8.5" text-anchor="end" font-family="JetBrains Mono">'+fmtK(cMax)+'</text>';
+    g+='<text x="'+(PL-8)+'" y="'+(PT+BAND+3).toFixed(1)+'" fill="rgba(52,211,153,.35)" font-size="8.5" text-anchor="end" font-family="JetBrains Mono">'+fmtK(cMin)+'</text>';
+    g+='<text x="'+(PL-8)+'" y="'+(PT+IH-BAND+3).toFixed(1)+'" fill="rgba(248,113,113,.35)" font-size="8.5" text-anchor="end" font-family="JetBrains Mono">'+fmtK(pMin)+'</text>';
+    g+='<text x="'+(PL-8)+'" y="'+(PT+IH).toFixed(1)+'" fill="rgba(248,113,113,.6)" font-size="8.5" text-anchor="end" font-family="JetBrains Mono">'+fmtK(pMax)+'</text>';
+  }
   // price axis: 5 clean ticks (right side, cyan = the hero axis)
   [0,0.25,0.5,0.75,1].forEach(f=>{const v=sHi-f*(sHi-sLo);g+='<text x="'+(W-PR+8)+'" y="'+(yS(v)+3).toFixed(1)+'" fill="rgba(124,196,236,.9)" font-size="9.5" text-anchor="start" font-family="JetBrains Mono">'+v.toFixed(dp)+'</text>';});
   [0,0.33,0.66,1].forEach(f=>{const t=t0+tspan*f;g+='<text x="'+x(t).toFixed(1)+'" y="'+(H-8)+'" fill="rgba(110,122,140,.8)" font-size="9" text-anchor="middle" font-family="JetBrains Mono">'+clk(t)+'</text>';});
   // premium curves — context, each in its own band
-  g+='<path d="'+areaOf('_c',yC,PT+BAND)+'" fill="url(#regG)"/>';
-  g+='<path d="'+areaOf('_p',yPut,PT+IH-BAND)+'" fill="url(#regR)"/>';
+  const cBase=shared?yC(0):PT+BAND;
+  g+='<path d="'+areaOf('_c',yC,cBase)+'" fill="url(#regG)"/>';
+  const pBase=shared?yPut(0):PT+IH-BAND;
+  g+='<path d="'+areaOf('_p',yPut,pBase)+'" fill="url(#regR)"/>';
   g+='<path d="'+smooth(pts('_c',yC))+'" fill="none" stroke="var(--green)" stroke-width="1.6" stroke-opacity=".8"/>';
   g+='<path d="'+smooth(pts('_p',yPut))+'" fill="none" stroke="var(--red)" stroke-width="1.6" stroke-opacity=".8"/>';
   // SPOT — the hero. Drawn LAST (on top), bright solid cyan + glow + white core.
@@ -1690,26 +1714,34 @@ function openDeep(sym){
    visible symbol and draw a provisional ladder in well under a second, so the
    screen is never blank while multi-MB chains stream in. Real data replaces it
    the moment it lands (state.data wins over state.warmData in renderTrinity). */
+function applyBootstrap(bs){
+  if(!bs)return 0;let n=0;
+  if(bs.plays&&bs.plays.html)state._srvPlays=bs.plays;
+  if(bs.ladders){
+    Object.keys(bs.ladders).forEach(sym=>{
+      if(state.data[sym])return;
+      const L=bs.ladders[sym];
+      if(!L||!L.nodes||!L.nodes.length)return;
+      state.warmData[sym]={sym,spot:L.spot,strikes:L.nodes.map(n2=>({k:n2.k,gex:n2.g})),warm:true,t:L.t*1000};n++;
+    });
+  }
+  if(n&&(state.view==='trinity'||state.view==='single'))renderTrinity();
+  if(state.view==='ideas'&&state._srvPlays&&typeof renderCards==='function')renderCards();
+  return n;
+}
 async function warmPaint(){
   if(!(window.KairosBackend&&window.KairosBackend.enabled))return;
   state.warmData=state.warmData||{};
+  /* instant path: last bootstrap saved on this device (survives reloads,
+     paints in ~0ms) - then the network refresh replaces it */
   try{
-    /* ONE request cold-starts the device: every symbol's latest full ladder
-       (computed server-side every minute, 24/5) plus the shared Aether board.
-       Falls back to per-symbol field snapshots on an old worker. */
+    const cch=JSON.parse(localStorage.getItem('kairos_bs_v1')||'null');
+    if(cch&&cch.t&&Date.now()-cch.t<30*60000)applyBootstrap(cch.bs);
+  }catch(e){}
+  try{
     const bs=await window.KairosBackend.bootstrap();
-    if(bs&&bs.plays&&bs.plays.html)state._srvPlays=bs.plays;
-    if(bs&&bs.ladders&&Object.keys(bs.ladders).length){
-      Object.keys(bs.ladders).forEach(sym=>{
-        if(state.data[sym])return;
-        const L=bs.ladders[sym];
-        if(!L||!L.nodes||!L.nodes.length)return;
-        state.warmData[sym]={sym,spot:L.spot,strikes:L.nodes.map(n=>({k:n.k,gex:n.g})),warm:true,t:L.t*1000};
-      });
-      if(state.view==='trinity'||state.view==='single')renderTrinity();
-      if(state.view==='ideas'&&state._srvPlays&&typeof renderCards==='function')renderCards();
-      return;
-    }
+    try{localStorage.setItem('kairos_bs_v1',JSON.stringify({t:Date.now(),bs}));}catch(e){}
+    if(applyBootstrap(bs))return;
     throw new Error('no-bootstrap');
   }catch(e){
     const list=(state.view==='single'?[state.focus]:state.trinityTickers).slice(0,6);
@@ -1767,7 +1799,7 @@ async function refresh(force){
     }
     // v2: refresh vol term structure (cached) + resolve journal against latest spot
     if(window.KairosQuant){
-      window.KairosQuant.vixTerm().then(vt=>{if(vt)state._vixTerm=vt;if(state.view==='single')try{renderVixDesk();}catch(e){}}).catch(()=>{});
+      window.KairosQuant.vixTerm().then(vt=>{if(vt)state._vixTerm=vt;if(state.view==='vix')try{renderVixDesk();}catch(e){}}).catch(()=>{});
       try{Object.keys(results).forEach(s=>{const sp=results[s].spot;if(sp)window.KairosQuant.qjResolve(s,sp);});}catch(e){}
     }
     const sources=Object.values(results).map(d=>d.source);
@@ -1888,9 +1920,9 @@ document.getElementById('presetBar').addEventListener('click',e=>{const c=e.targ
 
 function setView(v){
   state.view=v;
-  ['btnTrinity','btnSingle','btnChart','btnIdeas','btnImb','btnTape'].forEach(id=>document.getElementById(id).classList.remove('active'));
-  const bmap={trinity:'btnTrinity',single:'btnSingle',chart:'btnChart',ideas:'btnIdeas',imb:'btnImb',tape:'btnTape'};
-  document.getElementById(bmap[v]).classList.add('active');
+  ['btnTrinity','btnSingle','btnChart','btnIdeas','btnImb','btnTape','btnVix'].forEach(id=>document.getElementById(id).classList.remove('active'));
+  const bmap={trinity:'btnTrinity',single:'btnSingle',chart:'btnChart',ideas:'btnIdeas',imb:'btnImb',tape:'btnTape',vix:'btnVix'};
+  if(bmap[v]&&document.getElementById(bmap[v]))document.getElementById(bmap[v]).classList.add('active');
   document.getElementById('trinityWrap').classList.toggle('hidden',v!=='trinity'&&v!=='single');
   document.getElementById('chartSec').classList.toggle('hidden',v!=='chart');
   document.getElementById('ideasSec').classList.toggle('hidden',v!=='ideas');
@@ -1905,8 +1937,8 @@ function setView(v){
     const m=state.multi[state.focus];
     state.singleLoading=!(m&&m.dates&&m.dates.length>=8);
   }
-  const _vd=document.getElementById('vixDesk');
-  if(_vd){_vd.classList.toggle('hidden',v!=='single');if(v==='single')try{renderVixDesk();}catch(e){}}
+  const _vs=document.getElementById('vixSec');
+  if(_vs){_vs.classList.toggle('hidden',v!=='vix');if(v==='vix')try{renderVixDesk();}catch(e){}}
   if(v==='trinity'||v==='single')renderTrinity();
   if(v==='trinity'){
     // coming back to Triad: the poll only fed the focused ticker while you were away — refetch stale panels now
@@ -2063,4 +2095,6 @@ renderTrinity();renderCards();
 refresh(false).finally(schedule);
 function schedule(){clearTimeout(state._t);if(document.hidden)return;state._t=setTimeout(async()=>{await refresh(false);schedule();},state.pollSec*1000);}
 window.Kairos={state,refresh,getSym,kingOf,buildFromChains,buildImbalance,flowLean,exposureProfile};
-console.log('%cKairos v12.0 \u2014 classified net-flow Regime, VIX Desk in Junction, INVESTOR/DEGEN profiles, contract-price thumbs, Y-refit on switch.','color:#f2c14e;font-weight:bold');
+console.log('%cKairos v12.1 \u2014 classified net-flow Regime, VIX Desk in Junction, INVESTOR/DEGEN profiles, contract-price thumbs, Y-refit on switch.','color:#f2c14e;font-weight:bold');
+
+var _bv=document.getElementById('btnVix');if(_bv)_bv.onclick=function(){setView('vix');};

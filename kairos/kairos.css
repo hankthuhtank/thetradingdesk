@@ -552,3 +552,10 @@ footer{text-align:center;padding:12px;font-size:.65rem;color:#3f4656;border-top:
 .zhon-d summary::after{content:' \25be';opacity:.6}
 .zhon-d[open] summary::after{content:' \25b4'}
 .zhon-d .zhon{margin-top:4px}
+
+
+/* ---- v12.1: desktop cards wide enough that score badges never clip ---- */
+@media(min-width:761px){.zgrid{grid-template-columns:repeat(auto-fill,minmax(320px,1fr))}}
+.zhead{gap:6px}
+.zhead .score,.zhead .lg-take{flex-shrink:0}
+#vixSec{margin-top:8px}
