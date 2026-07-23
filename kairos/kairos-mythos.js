@@ -75,6 +75,16 @@ let orrFetchT={};
 const ORR_DCACHE='kairos_orr_daily_v1';
 (function(){try{const o=JSON.parse(localStorage.getItem(ORR_DCACHE)||'{}');if(o&&o.day===new Date().toISOString().slice(0,10)){orrCloses=o.c||{};Object.keys(orrCloses).forEach(k=>orrFetchT[k]=Date.now()-3600000);}}catch(e){}})();
 let orrDSaveT=0;
+/* seed the rotation from the server's hourly snapshot — a cold device gets
+   the whole universe in one payload instead of ~44 daily-history requests */
+window.orrSeed=function(map){
+  if(!map)return;let n=0;
+  Object.keys(map).forEach(k=>{
+    if(!orrCloses[k]||!orrCloses[k].length){orrCloses[k]=map[k];orrFetchT[k]=Date.now();n++;}
+  });
+  if(n){orrDSave();try{if(typeof orrCompute==='function'&&document.getElementById('orrCanvas'))orrCompute();}catch(e){}}
+  return n;
+};
 function orrDSave(){const now=Date.now();if(now-orrDSaveT<4000)return;orrDSaveT=now;try{localStorage.setItem(ORR_DCACHE,JSON.stringify({day:new Date().toISOString().slice(0,10),c:orrCloses}));}catch(e){}}
 async function orrDaily(sym){
   if(orrCloses[sym]&&Date.now()-(orrFetchT[sym]||0)<6*3600000)return orrCloses[sym];

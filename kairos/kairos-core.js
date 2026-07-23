@@ -1745,6 +1745,7 @@ function openDeep(sym){
 function applyBootstrap(bs){
   if(!bs)return 0;let n=0;
   if(bs.plays&&bs.plays.html)state._srvPlays=bs.plays;
+  if(bs.myth&&bs.myth.c&&window.orrSeed){try{window.orrSeed(bs.myth.c);}catch(e){}}
   if(bs.ladders){
     Object.keys(bs.ladders).forEach(sym=>{
       if(state.data[sym])return;
@@ -1931,7 +1932,23 @@ document.addEventListener('click',e=>{
   s.classList.remove('open');
 });
 document.getElementById('btnRefresh').onclick=()=>refresh(true);
-document.getElementById('expiryFilter').onchange=e=>{state.expiry=e.target.value;refresh(false);};
+document.getElementById('expiryFilter').onchange=e=>{
+  state.expiry=e.target.value;
+  /* re-filter the cached chains synchronously so the switch is instant and can
+     never be swallowed by an in-flight refresh (which is what made 0DTE look
+     dead while a load was running) */
+  Object.keys(state.chains||{}).forEach(s=>{
+    try{const r=buildFromChains(s);if(r){state.data[s]=r;state.dataAge[s]=Date.now();}}catch(x){}
+  });
+  state._tapeStamp='';state.scrolled={};
+  try{
+    renderTrinity();
+    if(state.view==='imb')renderImb(state.focus);
+    if(state.view==='tape')renderTape(state.focus);
+    if(state.view==='ideas')renderCards();
+  }catch(x){}
+  refresh(false);
+};
 
 /* ---- metric toggle ---- */
 function setMetric(m){
@@ -2179,7 +2196,7 @@ setTimeout(function(){
 },0);
 function schedule(){clearTimeout(state._t);if(document.hidden)return;state._t=setTimeout(async()=>{await refresh(false);schedule();},state.pollSec*1000);}
 window.Kairos={state,refresh,getSym,kingOf,buildFromChains,buildImbalance,flowLean,exposureProfile};
-console.log('%cKairos v2.2 \u2014 Net Delta Flow (directional pressure), interpolated gamma-flip line, shared-board hold, token fully server-side. Base GEX math unchanged.','color:#f2c14e;font-weight:bold');
+console.log('%cKairos v2.3 \u2014 Net Delta Flow (directional pressure), interpolated gamma-flip line, shared-board hold, token fully server-side. Base GEX math unchanged.','color:#f2c14e;font-weight:bold');
 
 state._juncTab=state._juncTab||'ladder';
 (function(){var jt=document.getElementById('juncTabs');if(!jt)return;
