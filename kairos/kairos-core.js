@@ -793,7 +793,7 @@ function renderTrinity(){
 
   list.forEach((sym,slotIdx)=>{
     const key=sym+'|'+(state.view==='single'?'s':'t');
-    const d=state.data[sym];
+    const d=state.data[sym]||((state.warmData||{})[sym]);
     if(state.view==='single'&&state.singleLoading&&(!state.multi[sym]||(state.multi[sym].dates||[]).length<8)){
       const p=skeletonPanel(sym,'loading 9 expiries');p.dataset.key=key;el.appendChild(p);return;
     }
@@ -805,6 +805,23 @@ function renderTrinity(){
       p.innerHTML=`<div class="p-head"><div class="p-left"><span style="font-weight:700">${sym}</span><span class="badge-src demo">${state.firstLoadFailed?'offline':'loading'}</span></div></div><div class="strikes">${rows}</div>`;
       el.appendChild(p);
       return;
+    }
+    if(d.warm){
+      const p=document.createElement('div');p.className='panel'+(state.view==='single'?' single-mode':'');p.dataset.key=key;
+      const mx=Math.max(1,...d.strikes.map(s=>Math.abs(s.gex)));
+      const rows=d.strikes.slice().sort((a,b)=>b.k-a.k).map(s=>{
+        const wPct=Math.max(3,Math.abs(s.gex)/mx*100);
+        const pos=s.gex>=0;
+        return '<div style="display:flex;align-items:center;gap:8px;padding:2.5px 10px;font-family:\'JetBrains Mono\';font-size:.72rem">'+
+          '<span style="width:56px;flex-shrink:0;color:var(--text)">'+s.k+'</span>'+
+          '<div style="flex:1"><div style="height:7px;border-radius:3px;width:'+wPct.toFixed(1)+'%;background:linear-gradient(90deg,'+(pos?'rgba(52,211,153,.8),rgba(52,211,153,.2)':'rgba(192,132,252,.8),rgba(192,132,252,.2)')+')"></div></div></div>';
+      }).join('');
+      const ageM=d.t?Math.max(0,Math.round((Date.now()-d.t)/60000)):null;
+      p.innerHTML='<div class="p-head"><div class="p-left"><span style="font-weight:700">'+sym+'</span>'+
+        '<span class="badge-src demo" data-tip="Painted instantly from the last server field snapshot'+(ageM!=null?' ('+ageM+'m old)':'')+' while the full live chain loads \u2014 top nodes only, live ladder lands in seconds.">warming</span></div>'+
+        '<div style="font-family:\'JetBrains Mono\';font-size:.78rem;color:var(--muted)">$'+(+d.spot).toFixed(2)+'</div></div>'+
+        '<div class="strikes">'+rows+'</div>';
+      el.appendChild(p);return;
     }
     const kg=kingOf(d.strikes);
     const cw=callWallBand(d.strikes,d.spot),pw=putWallBand(d.strikes,d.spot);
@@ -1302,24 +1319,32 @@ function renderRegimeChart(sym){
   const W=host.clientWidth||900,H=Math.max(240,Math.min(320,Math.round((host.clientWidth||900)*0.28)));
   const PL=66,PR=68,PT=16,PB=24;
   const IW=W-PL-PR,IH=H-PT-PB;
+  /* defensive: server hydration + live recording can interleave — sort & dedupe
+     by timestamp so the line can never loop back on itself. */
+  ser.sort((a,b)=>a.t-b.t);
+  for(let i=ser.length-1;i>0;i--)if(ser[i].t===ser[i-1].t)ser.splice(i-1,1);
   const t0=ser[0].t,t1=ser[ser.length-1].t,tspan=Math.max(1,t1-t0);
-  const premMax=Math.max(1,...ser.map(p=>Math.max(Math.abs(p.cpr),Math.abs(p.ppr))));
-  // SPOT axis: hug the ACTUAL path tightly so real movement reads. The old
-  // 0.3% floor + 28% pad blew a $0.50 move out to $3.50, pinning the line flat
-  // on the zero-premium line where the two fills meet. Now: 0.05% floor, 22% pad.
+  /* FLOW BANDS (the Flowseeker layout): each premium series is normalised to
+     its OWN range inside its OWN band — calls ride the top ~38% of the chart,
+     puts hang from the bottom ~38% — so both read as evolving curves with
+     visible session shape, instead of two solid slabs from zero. Cumulative
+     premium only ever grows; normalising per-band is what makes it legible. */
+  const cVals=ser.map(p=>p.cpr),pVals=ser.map(p=>p.ppr);
+  const cMin=Math.min(...cVals),cMax=Math.max(...cVals);
+  const pMin=Math.min(...pVals),pMax=Math.max(...pVals);
+  const BAND=IH*0.38;
+  const yC=v=>PT+((cMax>cMin)?(cMax-v)/(cMax-cMin):0.5)*BAND;
+  const yPut=v=>PT+IH-BAND+((pMax>pMin)?(v-pMin)/(pMax-pMin):0.5)*BAND;
   const sMin=Math.min(...ser.map(p=>p.spot)),sMax=Math.max(...ser.map(p=>p.spot));
   const sMid=(sMin+sMax)/2;
   const sRange=Math.max(sMax-sMin,sMid*0.0005);
   const sPad=sRange*0.22;
   const sLo=sMin-sPad,sHi=sMax+sPad;
   const x=t=>PL+(t-t0)/tspan*IW;
-  const yP=v=>PT+(premMax-v)/(2*premMax)*IH;
   const yS=v=>PT+(sHi-v)/((sHi-sLo)||1)*IH;
-  const zeroY=yP(0);
   const fmtK=v=>{const a=Math.abs(v);return (v<0?'-':'')+'$'+(a>=1e9?(a/1e9).toFixed(2)+'B':a>=1e6?(a/1e6).toFixed(2)+'M':a>=1e3?(a/1e3).toFixed(0)+'K':a.toFixed(0));};
   const clk=t=>{try{return new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',hour:'numeric',minute:'2-digit',hour12:false}).format(new Date(t*1000));}catch(e){return '';}};
   const dp=sHi>=1000?0:sHi>=100?1:2;
-  // --- smooth path via Catmull-Rom -> cubic bezier ---
   const smooth=(pts)=>{
     if(pts.length<2)return pts.length?('M'+pts[0][0].toFixed(1)+' '+pts[0][1].toFixed(1)):'';
     let d='M'+pts[0][0].toFixed(1)+' '+pts[0][1].toFixed(1);
@@ -1331,32 +1356,31 @@ function renderRegimeChart(sym){
     }
     return d;
   };
-  const pts=(key,fn,sign)=>ser.map(p=>[x(p.t),fn((sign||1)*p[key])]);
-  const areaFrom=(key,sign,base)=>{
-    const P=pts(key,yP,sign);
-    return smooth(P)+' L'+P[P.length-1][0].toFixed(1)+' '+base.toFixed(1)+' L'+P[0][0].toFixed(1)+' '+base.toFixed(1)+' Z';
-  };
+  const pts=(key,fn)=>ser.map(p=>[x(p.t),fn(p[key])]);
+  const areaOf=(key,fn,base)=>{const P=pts(key,fn);return smooth(P)+' L'+P[P.length-1][0].toFixed(1)+' '+base.toFixed(1)+' L'+P[0][0].toFixed(1)+' '+base.toFixed(1)+' Z';};
   let g='<svg viewBox="0 0 '+W+' '+H+'" width="100%" height="'+H+'" style="display:block" preserveAspectRatio="none">';
   g+='<defs>'+
-    '<linearGradient id="regG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--green)" stop-opacity=".18"/><stop offset="1" stop-color="var(--green)" stop-opacity="0"/></linearGradient>'+
-    '<linearGradient id="regR" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="var(--red)" stop-opacity=".18"/><stop offset="1" stop-color="var(--red)" stop-opacity="0"/></linearGradient>'+
+    '<linearGradient id="regG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--green)" stop-opacity=".22"/><stop offset="1" stop-color="var(--green)" stop-opacity="0"/></linearGradient>'+
+    '<linearGradient id="regR" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="var(--red)" stop-opacity=".22"/><stop offset="1" stop-color="var(--red)" stop-opacity="0"/></linearGradient>'+
     '<filter id="regGlow"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>'+
     '</defs>';
-  [premMax,premMax/2,0,-premMax/2,-premMax].forEach(v=>{
-    const y=yP(v);
-    g+='<line x1="'+PL+'" y1="'+y.toFixed(1)+'" x2="'+(W-PR)+'" y2="'+y.toFixed(1)+'" stroke="rgba(126,166,214,'+(v===0?'.22':'.045')+')"'+(v===0?' stroke-dasharray="3 4"':'')+'/>';
-    g+='<text x="'+(PL-8)+'" y="'+(y+3).toFixed(1)+'" fill="rgba(160,174,196,.5)" font-size="9.5" text-anchor="end" font-family="JetBrains Mono">'+fmtK(v)+'</text>';
-  });
+  // faint band separators
+  [PT+BAND,PT+IH-BAND].forEach(y=>{g+='<line x1="'+PL+'" y1="'+y.toFixed(1)+'" x2="'+(W-PR)+'" y2="'+y.toFixed(1)+'" stroke="rgba(126,166,214,.07)" stroke-dasharray="2 5"/>';});
+  // band scale labels (left)
+  g+='<text x="'+(PL-8)+'" y="'+(PT+9)+'" fill="rgba(52,211,153,.6)" font-size="8.5" text-anchor="end" font-family="JetBrains Mono">'+fmtK(cMax)+'</text>';
+  g+='<text x="'+(PL-8)+'" y="'+(PT+BAND+3).toFixed(1)+'" fill="rgba(52,211,153,.35)" font-size="8.5" text-anchor="end" font-family="JetBrains Mono">'+fmtK(cMin)+'</text>';
+  g+='<text x="'+(PL-8)+'" y="'+(PT+IH-BAND+3).toFixed(1)+'" fill="rgba(248,113,113,.35)" font-size="8.5" text-anchor="end" font-family="JetBrains Mono">'+fmtK(pMin)+'</text>';
+  g+='<text x="'+(PL-8)+'" y="'+(PT+IH).toFixed(1)+'" fill="rgba(248,113,113,.6)" font-size="8.5" text-anchor="end" font-family="JetBrains Mono">'+fmtK(pMax)+'</text>';
   // price axis: 5 clean ticks (right side, cyan = the hero axis)
   [0,0.25,0.5,0.75,1].forEach(f=>{const v=sHi-f*(sHi-sLo);g+='<text x="'+(W-PR+8)+'" y="'+(yS(v)+3).toFixed(1)+'" fill="rgba(124,196,236,.9)" font-size="9.5" text-anchor="start" font-family="JetBrains Mono">'+v.toFixed(dp)+'</text>';});
   [0,0.33,0.66,1].forEach(f=>{const t=t0+tspan*f;g+='<text x="'+x(t).toFixed(1)+'" y="'+(H-8)+'" fill="rgba(110,122,140,.8)" font-size="9" text-anchor="middle" font-family="JetBrains Mono">'+clk(t)+'</text>';});
-  // premium fills — CONTEXT ONLY, dimmed so they don't wall off the chart
-  g+='<path d="'+areaFrom('cpr',1,zeroY)+'" fill="url(#regG)"/>';
-  g+='<path d="'+areaFrom('ppr',-1,zeroY)+'" fill="url(#regR)"/>';
-  g+='<path d="'+smooth(pts('cpr',yP,1))+'" fill="none" stroke="var(--green)" stroke-width="1.3" stroke-opacity=".55"/>';
-  g+='<path d="'+smooth(pts('ppr',yP,-1))+'" fill="none" stroke="var(--red)" stroke-width="1.3" stroke-opacity=".55"/>';
+  // premium curves — context, each in its own band
+  g+='<path d="'+areaOf('cpr',yC,PT+BAND)+'" fill="url(#regG)"/>';
+  g+='<path d="'+areaOf('ppr',yPut,PT+IH-BAND)+'" fill="url(#regR)"/>';
+  g+='<path d="'+smooth(pts('cpr',yC))+'" fill="none" stroke="var(--green)" stroke-width="1.6" stroke-opacity=".8"/>';
+  g+='<path d="'+smooth(pts('ppr',yPut))+'" fill="none" stroke="var(--red)" stroke-width="1.6" stroke-opacity=".8"/>';
   // SPOT — the hero. Drawn LAST (on top), bright solid cyan + glow + white core.
-  const spotPath=smooth(pts('spot',yS,1));
+  const spotPath=smooth(pts('spot',yS));
   g+='<path d="'+spotPath+'" fill="none" stroke="#22d3ee" stroke-width="3" stroke-opacity=".9" filter="url(#regGlow)"/>';
   g+='<path d="'+spotPath+'" fill="none" stroke="#eafcff" stroke-width="1.2"/>';
   const last=ser[ser.length-1];
@@ -1366,8 +1390,57 @@ function renderRegimeChart(sym){
   // price pill
   g+='<rect x="'+(lx+7).toFixed(1)+'" y="'+(lyS-8).toFixed(1)+'" width="54" height="16" rx="3" fill="#0a141c" stroke="#22d3ee" stroke-opacity=".6"/>';
   g+='<text x="'+(lx+11).toFixed(1)+'" y="'+(lyS+3.5).toFixed(1)+'" fill="#22d3ee" font-size="9.5" font-family="JetBrains Mono" font-weight="700">'+last.spot.toFixed(dp)+'</text>';
+  // crosshair layer (driven by the pointer handlers below — no re-render)
+  g+='<g id="regXh" style="display:none">'+
+     '<line id="regXhV" x1="0" x2="0" y1="'+PT+'" y2="'+(PT+IH)+'" stroke="rgba(234,252,255,.4)" stroke-width="1" stroke-dasharray="2 3"/>'+
+     '<circle id="regXhC" r="3.5" fill="var(--green)" stroke="#08120d" stroke-width="1.5"/>'+
+     '<circle id="regXhP" r="3.5" fill="var(--red)" stroke="#120808" stroke-width="1.5"/>'+
+     '<circle id="regXhS" r="4.5" fill="#eafcff" stroke="#0a141c" stroke-width="1.5"/>'+
+     '</g>';
   g+='</svg>';
   host.innerHTML=g;
+  /* ---- Nexus-grade inspection: hover / touch scrubs the session. Readout
+     shows time, spot, NET CALL $, NET PUT $, NET at that sample, plus the
+     change SINCE THE PRIOR SAMPLE — how flow was building, tick by tick. ---- */
+  host.style.position='relative';
+  const tip=document.createElement('div');tip.className='reg-tip';tip.style.display='none';host.appendChild(tip);
+  const svgEl=host.querySelector('svg');
+  if(svgEl){
+    svgEl.style.touchAction='pan-y';
+    const xhG=svgEl.querySelector('#regXh'),xhV=svgEl.querySelector('#regXhV'),
+          xhC=svgEl.querySelector('#regXhC'),xhP=svgEl.querySelector('#regXhP'),xhS=svgEl.querySelector('#regXhS');
+    const fmtD=v=>(v>=0?'+':'\u2212')+fmtK(Math.abs(v));
+    const hide=()=>{xhG.style.display='none';tip.style.display='none';};
+    const scrub=ev=>{
+      const r=svgEl.getBoundingClientRect();
+      const fx=(ev.clientX-r.left)/(r.width||1)*W;
+      if(fx<PL||fx>W-PR){hide();return;}
+      const tt=t0+(fx-PL)/IW*tspan;
+      let lo=0,hi=ser.length-1;
+      while(hi-lo>1){const m2=(lo+hi)>>1;if(ser[m2].t<tt)lo=m2;else hi=m2;}
+      const i=(Math.abs(ser[lo].t-tt)<=Math.abs(ser[hi].t-tt))?lo:hi;
+      const p=ser[i],prev=ser[Math.max(0,i-1)];
+      const px=x(p.t);
+      xhG.style.display='';
+      xhV.setAttribute('x1',px.toFixed(1));xhV.setAttribute('x2',px.toFixed(1));
+      xhC.setAttribute('cx',px.toFixed(1));xhC.setAttribute('cy',yC(p.cpr).toFixed(1));
+      xhP.setAttribute('cx',px.toFixed(1));xhP.setAttribute('cy',yPut(p.ppr).toFixed(1));
+      xhS.setAttribute('cx',px.toFixed(1));xhS.setAttribute('cy',yS(p.spot).toFixed(1));
+      const net=p.cpr-p.ppr;
+      tip.innerHTML='<b>'+clk(p.t)+'</b> \u00b7 <span style="color:#7cc4ec">'+(+p.spot).toFixed(dp)+'</span>'+
+        '<span class="rt-row"><i style="color:var(--green)">CALLS</i> '+fmtK(p.cpr)+(i>0?' <em>'+fmtD(p.cpr-prev.cpr)+'</em>':'')+'</span>'+
+        '<span class="rt-row"><i style="color:var(--red)">PUTS</i> '+fmtK(p.ppr)+(i>0?' <em>'+fmtD(p.ppr-prev.ppr)+'</em>':'')+'</span>'+
+        '<span class="rt-row"><i style="color:'+(net>=0?'var(--green)':'var(--red)')+'">NET</i> '+fmtK(net)+'</span>';
+      tip.style.display='';
+      const pxScreen=px/W*(r.width||1);
+      const tw=tip.offsetWidth||150;
+      tip.style.left=Math.max(4,Math.min((r.width||300)-tw-4,pxScreen+12))+'px';
+      tip.style.top='6px';
+    };
+    svgEl.addEventListener('pointermove',scrub);
+    svgEl.addEventListener('pointerdown',scrub);
+    svgEl.addEventListener('pointerleave',hide);
+  }
   if(meta){
     const net=last.cpr-last.ppr;
     meta.innerHTML='NCP <b style="color:var(--green)">'+fmtK(last.cpr)+'</b> \u00b7 NPP <b style="color:var(--red)">'+fmtK(last.ppr)+'</b> \u00b7 NET <b style="color:'+(net>=0?'var(--green)':'var(--red)')+'">'+fmtK(net)+'</b> \u00b7 '+ser.length+' samples';
@@ -1514,6 +1587,27 @@ function openDeep(sym){
   document.getElementById('modal').classList.add('open');
 }
 
+/* WARM PAINT: on a cold load, pull the last server field snapshot for each
+   visible symbol and draw a provisional ladder in well under a second, so the
+   screen is never blank while multi-MB chains stream in. Real data replaces it
+   the moment it lands (state.data wins over state.warmData in renderTrinity). */
+async function warmPaint(){
+  if(!(window.KairosBackend&&window.KairosBackend.enabled))return;
+  state.warmData=state.warmData||{};
+  const list=(state.view==='single'?[state.focus]:state.trinityTickers).slice(0,6);
+  await Promise.all(list.map(async sym=>{
+    if(state.data[sym]||state.warmData[sym])return;
+    try{
+      const cols=await window.KairosBackend.fieldColumns(sym);
+      if(!cols||!cols.length)return;
+      const col=cols[cols.length-1];
+      if(state.data[sym]||!col.nodes||!col.nodes.length)return;
+      state.warmData[sym]={sym,spot:col.spot,strikes:col.nodes.map(n=>({k:n.k,gex:n.g})),warm:true,t:col.t*1000};
+      if(state.view==='trinity'||state.view==='single')renderTrinity();
+    }catch(e){}
+  }));
+}
+setTimeout(warmPaint,0);
 async function refresh(force){
   if(state.refreshing){state.pendingRefresh=true;if(force)state.pendingForce=true;return;} // queue it — never drop a tab-hop refresh
   state.refreshing=true;
@@ -1569,6 +1663,9 @@ async function refresh(force){
     else b=`● NO DATA — all sources failed (token? network?)`;
     const si=sessionInfo();
     if(sources.some(s=>s==='tradier-live'))b+=` <span style="color:var(--muted)">\u00b7 Session <b style="color:var(--text)">${si.sess}</b> \u00b7 OI as-of <b style="color:var(--text)">${si.oi}</b>${phase!=='rth'?' \u00b7 <b style="color:var(--gold)">extended-hours pricing</b>':''}</span>`;
+    const vt=state._vixTerm;
+    if(vt&&vt.vix){const bk=vt.state==='backwardation';
+      b+=` <span style="color:var(--muted)">\u00b7</span> <span class="mono" data-tip="CBOE vol term structure, refreshed ~2 min. Contango (VIX below VIX3M) = calm regime; backwardation = near-term stress bid over the back months. 9D vs 3M shows where the pressure sits on the curve.">VIX <b style="color:${bk?'var(--red)':'var(--text)'}">${vt.vix.toFixed(1)}</b>${vt.vix9d?` <i style="color:var(--muted);font-style:normal">9D ${vt.vix9d.toFixed(1)}</i>`:''}${vt.vix3m?` <i style="color:var(--muted);font-style:normal">3M ${vt.vix3m.toFixed(1)}</i>`:''} <b style="font-size:.6rem;color:${bk?'var(--red)':'var(--green)'}">${bk?'BACKWARDATION':'CONTANGO'}</b></span>`;}
     document.getElementById('bannerText').innerHTML=b;
     const se=document.getElementById('sessInfo');if(se)se.innerHTML='';
     const lu=document.getElementById('lastUp');if(lu)lu.textContent='';
@@ -1834,10 +1931,18 @@ document.addEventListener('visibilitychange',()=>{
 });
 window.addEventListener('beforeunload',()=>persistHistory(true));
 
-if(!state.tradierToken&&!(window.KairosBackend&&window.KairosBackend.enabled))document.getElementById('bannerText').innerHTML='Delayed CBOE mode \u2014 add a free Tradier token in <b>Settings</b> for live data';
+/* startup banner: decide on a 0ms timer so kairos-backend.js (loaded AFTER
+   core) has registered — this used to race it and flash "Delayed CBOE mode"
+   even when the live backend was connected. */
+setTimeout(function(){
+  if(state.tradierToken)return;
+  var bt=document.getElementById('bannerText');if(!bt)return;
+  if(window.KairosBackend&&window.KairosBackend.enabled)bt.innerHTML='<span class="live">\u25cf</span> connecting \u2014 live via Kairos backend\u2026';
+  else bt.innerHTML='Delayed CBOE mode \u2014 add a free Tradier token in <b>Settings</b> for live data';
+},0);
 
 renderTrinity();renderCards();
 refresh(false).finally(schedule);
 function schedule(){clearTimeout(state._t);if(document.hidden)return;state._t=setTimeout(async()=>{await refresh(false);schedule();},state.pollSec*1000);}
 window.Kairos={state,refresh,getSym,kingOf,buildFromChains,buildImbalance,flowLean,exposureProfile};
-console.log('%cKairos v10.3 \u2014 full backend cutover: token server-side, history hydrated from D1, session replay, extended-hours pricing.','color:#f2c14e;font-weight:bold');
+console.log('%cKairos v11.0 \u2014 instant warm-paint from server cache, Regime crosshair inspection, pinch zoom, engine status, subtle NFA.','color:#f2c14e;font-weight:bold');

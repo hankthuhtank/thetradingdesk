@@ -471,8 +471,9 @@ footer{text-align:center;padding:12px;font-size:.65rem;color:#3f4656;border-top:
 .hm-xh i{font-style:normal;font-size:.66rem;font-weight:600}
 .hm-xh s{font-size:.6rem;font-weight:500}
 
-/* ---- NFA bar ---- */
-.nfa-bar{font-size:.62rem;line-height:1.5;color:#b98b4a;background:rgba(242,193,78,.06);border:1px solid rgba(242,193,78,.22);border-radius:6px;padding:6px 10px;margin-bottom:8px;letter-spacing:.01em}
+/* ---- NFA — deliberately subtle ---- */
+.nfa-sub{font-size:.56rem;color:var(--muted);opacity:.65;text-align:center;padding:8px 4px 2px;letter-spacing:.03em}
+.nfa-min{display:inline-block;font-size:.52rem;letter-spacing:.08em;font-weight:800;color:#b98b4a;border:1px solid rgba(242,193,78,.3);border-radius:8px;padding:0 5px;vertical-align:1px;margin-right:2px}
 
 /* ---- "took it" checkbox on cards ---- */
 .lg-take{display:inline-flex;align-items:center;gap:5px;font-size:.58rem;letter-spacing:.06em;font-weight:700;color:var(--muted);cursor:pointer;user-select:none;padding:2px 6px;border:1px solid var(--border);border-radius:11px;white-space:nowrap}
@@ -508,3 +509,22 @@ footer{text-align:center;padding:12px;font-size:.65rem;color:#3f4656;border-top:
 .lg-b.del:hover{border-color:var(--red);color:var(--red)}
 .lg-empty{padding:14px 11px;color:var(--muted);font-size:.66rem}
 @media(max-width:760px){.lg-con{width:auto}.lg-meta,.lg-date{display:none}}
+
+
+/* ---- regime crosshair readout ---- */
+.reg-tip{position:absolute;z-index:5;pointer-events:none;background:rgba(8,13,20,.94);border:1px solid rgba(124,196,236,.35);border-radius:7px;padding:6px 9px;font-family:'JetBrains Mono';font-size:.64rem;color:var(--text);display:flex;flex-direction:column;gap:2px;box-shadow:0 4px 18px rgba(0,0,0,.5)}
+.reg-tip b{color:#eafcff}
+.reg-tip .rt-row{display:flex;gap:6px;align-items:baseline}
+.reg-tip .rt-row i{font-style:normal;font-size:.54rem;letter-spacing:.06em;width:38px}
+.reg-tip .rt-row em{font-style:normal;font-size:.56rem;color:var(--muted)}
+
+/* ---- aether engine status ---- */
+.eng-status{font-size:.62rem;letter-spacing:.05em;color:var(--muted);font-family:'JetBrains Mono';padding:5px 9px;border:1px solid var(--border);border-radius:7px;background:var(--panel2)}
+.eng-status b{font-weight:800}
+
+/* ---- mobile: keep the doctrine + disclosures compact ---- */
+@media(max-width:760px){
+  .zhon{font-size:.55rem;line-height:1.45;color:var(--muted)}
+  .nfa-sub{font-size:.52rem}
+  .eng-status{font-size:.56rem}
+}

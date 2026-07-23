@@ -35,8 +35,14 @@ const Z={
   ROSTER:['SPXW','SPY','QQQ','IWM','DIA','NVDA','TSLA','AAPL','AMZN','META','MSFT','GOOGL','AMD','PLTR','COIN','MSTR','NFLX','AVGO'],
   UNI:['SPXW','SPY','QQQ','IWM'],   // live-qualified each session by zQualify()
   MIN_SCORE:60,
-  D_FADE:0.48, D_MOMO:0.42,          // target |delta| (research: 0.45-0.55 ATM-ish beats OTM lottos on theta drag)
-  D_LO:0.35, D_HI:0.62,
+  /* 0DTE contract doctrine: CHEAP OTM convexity, on purpose. A same-day thesis
+     is a gamma trade — the payoff comes from a fast structure move multiplying
+     a small debit, so the picker targets \u0394~0.30 (fades a touch higher, they
+     resolve nearer the wall). Bounds \u03940.20\u20130.42 keep it OUT of two traps:
+     ITM (\u0394>0.45 pays intrinsic you don't need for a day trade and caps R:R)
+     and deep-lotto (\u0394<0.20, where PoP collapses and the tape must be perfect). */
+  D_FADE:0.34, D_MOMO:0.30,          // target |delta| — OTM in the trade's direction
+  D_LO:0.20, D_HI:0.42,
   MAX_SPREAD:0.10,                   // reject contracts wider than 10% of mid
   MIN_LIQ:150,                       // oi+vol floor
   VOL_W:0.5,                         // 0DTE book = OI + 0.5*volume (same-day positioning proxy; OI alone is prior-day)
@@ -166,7 +172,7 @@ function zBook(sym){
   return{spot,e0,dte,is0:dte<=0.8,cs,strikes,king,cw,pw,flip:flipO?flipO.k:null,net1,tot,em,ivATM,cp,pp,lean,src:ch.src};
 }
 
-/* ---- contract picker: liquid, tight, ATM-ish delta ---- */
+/* ---- contract picker: liquid, tight, cheap-OTM delta (see doctrine above) ---- */
 function zPick(cs,call,targetD,spot){
   const cands=[];
   for(const c of cs){
@@ -182,7 +188,7 @@ function zPick(cs,call,targetD,spot){
     cands.push({c,mid,spr,dl});
   }
   if(!cands.length)return null;
-  cands.sort((a,b)=>Math.abs(a.dl-targetD)-Math.abs(b.dl-targetD));
+  cands.sort((a,b)=>{const d=Math.abs(a.dl-targetD)-Math.abs(b.dl-targetD);return Math.abs(d)>0.02?d:a.mid-b.mid;});
   const p=cands[0];
   return{k:p.c.k,e:p.c.e,call,T:p.c.T,iv:p.c.iv,oi:p.c.oi||0,vol:p.c.vol||0,mid:p.mid,bid:p.c.bid||0,ask:p.c.ask||0,dl:p.dl,spr:p.spr};
 }
@@ -503,7 +509,7 @@ function zRender(){
   }
   cards.sort((a,b)=>b.score-a.score);
   h+='<div class="zgrid">'+cards.map(c=>c.html).join('')+'</div>';
-  h+='<div class="zhon"><b>NOT FINANCIAL ADVICE</b> \u00b7 <b>RISK PROTOCOL</b> \u2014 0DTE is the highest-gamma, highest-theta contract on the board: positions can go +100%/\u2212100% in minutes. Risk \u22640.5\u20131% of the account per card and size off max loss (the full premium), not off the stop. Hard stop \u2212'+Z.PREM_STOP+'% premium or the structure stop; '+Z.TIME_STOP+'-minute time stop if T1 hasn\u2019t printed; never add to a loser; two stops = done for the day; flat by 15:30 ET. This engine sees dealer structure and tape \u2014 it does NOT see the econ calendar (10:00/14:00 releases) or headlines. Cards are context to grade your own read, not signals. No backtest exists yet \u2014 paper trade it and grade the journal first.</div>';
+  h+='<div class="zhon"><span class="nfa-min">NFA</span> <b>RISK PROTOCOL</b> \u2014 0DTE is the highest-gamma, highest-theta contract on the board: positions can go +100%/\u2212100% in minutes. Risk \u22640.5\u20131% of the account per card and size off max loss (the full premium), not off the stop. Hard stop \u2212'+Z.PREM_STOP+'% premium or the structure stop; '+Z.TIME_STOP+'-minute time stop if T1 hasn\u2019t printed; never add to a loser; two stops = done for the day; flat by 15:30 ET. This engine sees dealer structure and tape \u2014 it does NOT see the econ calendar (10:00/14:00 releases) or headlines. Cards are context to grade your own read, not signals. No backtest exists yet \u2014 paper trade it and grade the journal first.</div>';
   wrap.innerHTML=h;
 }
 
@@ -1568,6 +1574,30 @@ function aChips(){
   const up=e=>{if(aDrag){aDrag=null;cv.style.cursor='crosshair';}};
   cv.addEventListener('pointerup',up);cv.addEventListener('pointercancel',up);
   cv.addEventListener('pointerleave',()=>{aMouse=null;});
+  /* --- mobile pinch: two-finger spread/squeeze zooms the time window.
+     Registered after the pan handlers, so when the second finger lands we
+     cancel the in-flight drag and the gesture becomes a clean zoom. --- */
+  const aPtrs=new Map();let aPinch=null;
+  cv.addEventListener('pointerdown',e=>{
+    aPtrs.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    if(aPtrs.size===2){
+      aDrag=null;cv.style.cursor='crosshair';
+      const p=[...aPtrs.values()];
+      aPinch={d0:Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y)||1,w0:aWin};
+    }
+  });
+  cv.addEventListener('pointermove',e=>{
+    if(!aPtrs.has(e.pointerId))return;
+    aPtrs.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    if(aPinch&&aPtrs.size===2){
+      const p=[...aPtrs.values()];
+      const d=Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y)||1;
+      const w=Math.max(AR.WINMIN,Math.min(AR.WINMAX,aPinch.w0*(aPinch.d0/d)));
+      if(Math.abs(w-aWin)>0.5){aWin=w;aFKey='';aChips();}
+    }
+  });
+  const aPtrGone=e=>{aPtrs.delete(e.pointerId);if(aPtrs.size<2)aPinch=null;};
+  cv.addEventListener('pointerup',aPtrGone);cv.addEventListener('pointercancel',aPtrGone);
   cv.addEventListener('dblclick',()=>{aGoLive();aSetWin(30);aYFit();});
   cv.addEventListener('wheel',e=>{
     if(!aVM)return;
@@ -1776,7 +1806,7 @@ const SW_CORE={
   TERM_INV:1.08,                        // front/back ATM IV ratio implying an event
   MIN_RR:1.5, MIN_RRP:1.2,
   VOL_SHOCK:5,                          // vol points for the crush disclosure
-  LABEL:'CORE', DESC:'deep-ITM \u00b7 low theta drag \u00b7 capital-heavy'
+  LABEL:'ITM', DESC:'deep-ITM \u00b7 low theta drag \u00b7 capital-heavy'
 };
 /* AGILE — the small/mid-account profile. Cheaper debit per contract, so a
    position is sizeable on a small account and the R:R reads properly.
@@ -1787,18 +1817,28 @@ const SW_CORE={
    look cheap but their probability of profit collapses and the theta burn is
    proportionally brutal. Wider spread ceiling because OTM books are thinner. */
 const SW_AGILE={
-  DTE_LO:40, DTE_HI:75, DTE_TGT:55,
+  /* OTM — the asymmetric-R:R profile, built the way winning OTM buyers
+     actually structure it (not lottos):
+       \u2022 45\u201375 DTE: enough runway that the thesis, not theta, decides the
+         trade — 30\u201345 DTE is the seller's window and is deliberately avoided.
+       \u2022 \u03940.25\u20130.42 (target 0.32): a fraction of the ITM debit, so the same
+         dollars buy real size and a structure move multiplies the premium.
+         Below ~0.25\u0394 probability of profit collapses — that line is held.
+       \u2022 Exit by 14 DTE, win or lose: OTM extrinsic evaporates fastest at the end.
+       \u2022 Higher bars everywhere else: R:R \u2265 2.0 demanded (lower PoP must be
+         paid for), IV screened vs realised so you're not buying a crush. */
+  DTE_LO:45, DTE_HI:75, DTE_TGT:60,
   EXIT_DTE:14,
-  D_LO:0.32, D_HI:0.52, D_TGT:0.42,
-  MAX_SPREAD:0.11,
+  D_LO:0.25, D_HI:0.42, D_TGT:0.32,
+  MAX_SPREAD:0.12,
   MIN_OI:150,
   MIN_SCORE:58,
-  HOLD:18,
-  IV_RICH:1.30, IV_CHEAP:0.92,
+  HOLD:16,
+  IV_RICH:1.25, IV_CHEAP:0.92,
   TERM_INV:1.08,
-  MIN_RR:1.8, MIN_RRP:1.5,             // demand MORE reward, since PoP is lower
+  MIN_RR:2.0, MIN_RRP:1.7,
   VOL_SHOCK:5,
-  LABEL:'AGILE', DESC:'slightly-OTM \u00b7 smaller debit \u00b7 account-friendly'
+  LABEL:'OTM', DESC:'OTM runners \u00b7 small debit \u00b7 asymmetric R:R'
 };
 let SW=Object.assign({},localStorage.getItem('kairos_sw_mode')==='agile'?SW_AGILE:SW_CORE);
 function swSetMode(mode){
@@ -2244,8 +2284,18 @@ renderCards=function(){
     return;
   }
   el.classList.add('zgrid');el.classList.remove('cards');
-  el.innerHTML=fired.map(sCardHtml).join('')+idle.map(sStandbyHtml).join('')+
-    '<div class="zhon" style="grid-column:1/-1"><b>NOT FINANCIAL ADVICE</b> \u00b7 <b>SWING DOCTRINE</b> \u2014 duration is '+SW.DTE_LO+'\u2013'+SW.DTE_HI+' DTE on purpose. 30\u201345 DTE is the option <b>seller\u2019s</b> window: roughly half of an ATM option\u2019s extrinsic value burns in the final 30 days, versus ~15\u201320% between 90 and 60 DTE. A buyer entering at 30\u201345 DTE is buying the theta cliff. Strikes are \u0394'+SW.D_LO+'\u2013'+SW.D_HI+' (ITM) because extrinsic value is the only part theta can eat \u2014 a 0.70\u0394 contract is mostly intrinsic, tracks the underlying ~70c on the dollar, and bleeds far less than ATM. Long premium is <b>long vega</b>: every card shows what a \u2212'+SW.VOL_SHOCK+'-vol move costs. IV is judged against the stock\u2019s own realised vol (HV20) rather than raw IV, and the IV rank matures as this browser accrues sessions. Prefer a smaller debit? When a fired card shows a <b>BUDGET</b> line, the same long leg is paired with a short leg sold at the T2 node \u2014 the structure already says the move stalls there, so the cap costs little thesis while the debit drops sharply. <b>Not modelled:</b> the econ calendar, headlines, or dividends \u2014 and term-structure inversion only <i>infers</i> an event, it does not read an earnings date. Context to grade your own read, not signals.</div>';
+  /* engine status strip: how many evaluated, how many fired, and WHICH gates
+     are holding the rest back — so a quiet board reads as a decision, not a bug. */
+  const gateFails={};
+  reads.forEach(r=>{if(!r.fire&&r.gates)r.gates.forEach(g=>{if(!g.ok)gateFails[g.n]=(gateFails[g.n]||0)+1;});});
+  const topFails=Object.entries(gateFails).sort((a,b)=>b[1]-a[1]).slice(0,3)
+    .map(([n,x])=>n+' \u00d7'+x).join(' \u00b7 ');
+  const engStatus='<div class="eng-status" style="grid-column:1/-1">SWING ENGINE \u00b7 '+reads.length+' evaluated \u00b7 '+
+    (fired.length?('<b style="color:var(--gold)">'+fired.length+' fired</b>'):'<b>0 fired</b>')+
+    (topFails?' \u00b7 holding back: '+topFails:'')+
+    ' \u00b7 profile <b style="color:var(--teal)">'+SW.LABEL+'</b></div>';
+  el.innerHTML=engStatus+fired.map(sCardHtml).join('')+idle.map(sStandbyHtml).join('')+
+    '<div class="zhon" style="grid-column:1/-1"><span class="nfa-min">NFA</span> <b>SWING DOCTRINE</b> \u2014 duration is '+SW.DTE_LO+'\u2013'+SW.DTE_HI+' DTE on purpose. 30\u201345 DTE is the option <b>seller\u2019s</b> window: roughly half of an ATM option\u2019s extrinsic value burns in the final 30 days, versus ~15\u201320% between 90 and 60 DTE. A buyer entering at 30\u201345 DTE is buying the theta cliff. Strikes are \u0394'+SW.D_LO+'\u2013'+SW.D_HI+' ('+SW.LABEL+'). '+(SW.LABEL==='ITM'?'ITM is intrinsic-heavy \u2014 extrinsic is the only part theta can eat, so a 0.70\u0394 contract tracks the underlying ~70c on the dollar and bleeds far less than ATM.':'OTM is convexity-first \u2014 a ~0.32\u0394 contract costs a fraction of ITM, so the same dollars buy more contracts and a structure move can multiply the debit. The trade-offs are lower probability of profit and faster end-of-life theta, which is why this profile demands R:R \u2265 2 and exits by '+SW.EXIT_DTE+' DTE.')+' Long premium is <b>long vega</b>: every card shows what a \u2212'+SW.VOL_SHOCK+'-vol move costs. IV is judged against the stock\u2019s own realised vol (HV20) rather than raw IV, and the IV rank matures as this browser accrues sessions. Prefer a smaller debit? When a fired card shows a <b>BUDGET</b> line, the same long leg is paired with a short leg sold at the T2 node \u2014 the structure already says the move stalls there, so the cap costs little thesis while the debit drops sharply. <b>Not modelled:</b> the econ calendar, headlines, or dividends \u2014 and term-structure inversion only <i>infers</i> an event, it does not read an earnings date. Context to grade your own read, not signals.</div>';
 };
 if(state.view==='ideas'&&state.zTab!=='zero')renderCards();
 /* swing thumbnails expand/collapse on click (delegated; swing sets innerHTML directly) */

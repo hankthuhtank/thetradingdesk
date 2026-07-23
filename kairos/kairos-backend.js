@@ -63,8 +63,12 @@
           t: r.t, spot: r.spot, cpr: r.cpr, ppr: r.ppr,
           cbought: r.c_bought, csold: r.c_sold, pbought: r.p_bought, psold: r.p_sold,
         }));
-        window.Kairos.state.regSeries[sym] = ser;
-        return ser.length;
+        const cur = window.Kairos.state.regSeries[sym] || [];
+        const seen = new Set(cur.map(p => p.t));
+        ser.forEach(p => { if (!seen.has(p.t)) cur.push(p); });
+        cur.sort((a, b) => a.t - b.t);
+        window.Kairos.state.regSeries[sym] = cur;
+        return cur.length;
       } catch (e) { return 0; }
     },
     // IV history -> seed KairosQuant's localStorage IV series (merge, dedupe by day).

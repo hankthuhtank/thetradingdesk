@@ -67,7 +67,7 @@
       <div class="orr-grid">
         <div class="orr-stage">
           <canvas id="orrCanvas"></canvas>
-          <div class="orr-wait" id="orrWait">Loading the market\u2026<br><span style="color:var(--faint)">pulling daily bars for every sector, theme and leader</span></div>
+          <div class="orr-wait" id="orrWait">Loading the market…<br><span style="color:var(--faint)">pulling daily bars for every sector, theme and leader</span></div>
         </div>
         <div class="orr-rail" id="orrRail"></div>
       </div>
@@ -130,16 +130,16 @@
         <button data-a="swing" class="on" data-tip="Multi-day swing ideas — GEX regime × daily trend × opening flow, with a researched contract: 60–90 DTE (the buyer's window, not the seller's 30–45), Δ0.55–0.82 ITM, and IV judged against the stock's own realised vol.">Swing</button>
         <button data-a="zero" data-tip="Kairos Zero — same-day (0DTE/1DTE) setups built on the 0DTE-only dealer book, the live tape, and the session clock. Long premium only, journaled fires.">0DTE</button>
       </div>
-      <div class="mtoggle" id="swModeSel" data-tip="Contract profile. CORE buys deep-ITM (\u03940.55\u20130.82, 55\u2013100 DTE): low theta drag but a large debit. AGILE buys slightly-OTM (\u03940.32\u20130.52, 40\u201375 DTE): a much smaller debit per contract so it sizes on a small account, and it demands a higher R:R to compensate for the lower probability of profit.">
-        <button data-swm="core" class="on">CORE</button>
-        <button data-swm="agile">AGILE</button>
+      <div class="mtoggle" id="swModeSel" data-tip="Contract profile. ITM buys deep-in-the-money (Δ0.55–0.82, 55–100 DTE): low theta drag but a large debit. OTM buys Δ0.25–0.42 runners at 45–75 DTE: a fraction of the debit, real asymmetry on a structure move, and it demands R:R ≥ 2 to pay for the lower probability of profit.">
+        <button data-swm="core" class="on">ITM</button>
+        <button data-swm="agile">OTM</button>
       </div>
       <span id="zeroClock" class="hidden" style="margin-left:auto;font-size:.66rem;color:var(--muted);font-family:'JetBrains Mono'"></span>
     </div>
-    <div class="nfa-bar">NOT FINANCIAL ADVICE \u00b7 Kairos surfaces dealer-positioning structure and computed contract candidates for you to grade against your own read. It does not know your account, risk tolerance, or the news. Nothing here is a recommendation to buy or sell any security. Options carry substantial risk of total loss.</div>
     <div id="aetherPulse" class="aether-pulse"></div>
     <div class="cards" id="cards"></div>
     <div id="ledgerBox" class="ledger"></div>
+    <div class="nfa-sub">Not financial advice · computed context to grade your own read · options carry substantial risk of total loss</div>
     <div id="zeroWrap" class="hidden"></div>
   </div>
 </main>
