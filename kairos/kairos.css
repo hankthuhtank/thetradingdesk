@@ -470,3 +470,41 @@ footer{text-align:center;padding:12px;font-size:.65rem;color:#3f4656;border-top:
 .hm-xh{display:flex;align-items:baseline;gap:7px;font-family:'JetBrains Mono';font-size:.78rem;font-weight:700}
 .hm-xh i{font-style:normal;font-size:.66rem;font-weight:600}
 .hm-xh s{font-size:.6rem;font-weight:500}
+
+/* ---- NFA bar ---- */
+.nfa-bar{font-size:.62rem;line-height:1.5;color:#b98b4a;background:rgba(242,193,78,.06);border:1px solid rgba(242,193,78,.22);border-radius:6px;padding:6px 10px;margin-bottom:8px;letter-spacing:.01em}
+
+/* ---- "took it" checkbox on cards ---- */
+.lg-take{display:inline-flex;align-items:center;gap:5px;font-size:.58rem;letter-spacing:.06em;font-weight:700;color:var(--muted);cursor:pointer;user-select:none;padding:2px 6px;border:1px solid var(--border);border-radius:11px;white-space:nowrap}
+.lg-take:hover{border-color:var(--teal);color:var(--teal)}
+.lg-take.on{border-color:var(--green);color:var(--green);background:rgba(52,211,153,.1)}
+.lg-cb{display:inline-flex;align-items:center;justify-content:center;width:12px;height:12px;border:1px solid currentColor;border-radius:3px;font-size:.6rem;line-height:1}
+
+/* ---- trade ledger ---- */
+.ledger{margin-top:14px;border:1px solid var(--border);border-radius:9px;background:var(--panel2);overflow:hidden}
+.lg-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 11px;border-bottom:1px solid var(--border)}
+.lg-title{font-size:.6rem;letter-spacing:.12em;font-weight:800;color:var(--text)}
+.lg-tab{background:transparent;border:1px solid var(--border);color:var(--muted);font-size:.58rem;letter-spacing:.07em;font-weight:700;padding:3px 9px;border-radius:11px;cursor:pointer;font-family:inherit}
+.lg-tab i{font-style:normal;opacity:.7}
+.lg-tab.on{border-color:var(--teal);color:var(--teal);background:rgba(45,212,191,.1)}
+.lg-rate{font-size:.64rem;color:var(--muted);font-family:'JetBrains Mono'}
+.lg-rate i{font-style:normal;opacity:.7}
+.lg-note{margin-left:auto;font-size:.56rem;color:var(--muted);letter-spacing:.04em}
+.lg-row{display:flex;align-items:center;gap:9px;padding:6px 11px;border-bottom:1px solid #141922;font-size:.68rem}
+.lg-row:last-child{border-bottom:none}
+.lg-row.lg-win{background:rgba(52,211,153,.05)}
+.lg-row.lg-loss{background:rgba(248,113,113,.05)}
+.lg-sym{font-weight:800;width:58px;flex-shrink:0}
+.lg-con{color:var(--cyan);width:150px;flex-shrink:0;font-size:.66rem}
+.lg-dir{font-size:.55rem;letter-spacing:.06em;font-weight:800;padding:1px 5px;border-radius:8px}
+.lg-dir.up{color:var(--green);background:rgba(52,211,153,.13)}
+.lg-dir.dn{color:var(--red);background:rgba(248,113,113,.13)}
+.lg-meta{color:var(--muted);font-size:.62rem;flex:1;font-family:'JetBrains Mono'}
+.lg-date{color:var(--muted);font-size:.58rem;font-family:'JetBrains Mono'}
+.lg-acts{display:flex;gap:4px;flex-shrink:0}
+.lg-b{background:transparent;border:1px solid var(--border);color:var(--muted);font-size:.55rem;letter-spacing:.05em;font-weight:700;padding:2px 7px;border-radius:9px;cursor:pointer;font-family:inherit}
+.lg-b.win:hover{border-color:var(--green);color:var(--green)}
+.lg-b.loss:hover{border-color:var(--red);color:var(--red)}
+.lg-b.del:hover{border-color:var(--red);color:var(--red)}
+.lg-empty{padding:14px 11px;color:var(--muted);font-size:.66rem}
+@media(max-width:760px){.lg-con{width:auto}.lg-meta,.lg-date{display:none}}

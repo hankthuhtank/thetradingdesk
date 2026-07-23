@@ -503,7 +503,7 @@ function zRender(){
   }
   cards.sort((a,b)=>b.score-a.score);
   h+='<div class="zgrid">'+cards.map(c=>c.html).join('')+'</div>';
-  h+='<div class="zhon"><b>RISK PROTOCOL</b> \u2014 0DTE is the highest-gamma, highest-theta contract on the board: positions can go +100%/\u2212100% in minutes. Risk \u22640.5\u20131% of the account per card and size off max loss (the full premium), not off the stop. Hard stop \u2212'+Z.PREM_STOP+'% premium or the structure stop; '+Z.TIME_STOP+'-minute time stop if T1 hasn\u2019t printed; never add to a loser; two stops = done for the day; flat by 15:30 ET. This engine sees dealer structure and tape \u2014 it does NOT see the econ calendar (10:00/14:00 releases) or headlines. Cards are context to grade your own read, not signals. No backtest exists yet \u2014 paper trade it and grade the journal first.</div>';
+  h+='<div class="zhon"><b>NOT FINANCIAL ADVICE</b> \u00b7 <b>RISK PROTOCOL</b> \u2014 0DTE is the highest-gamma, highest-theta contract on the board: positions can go +100%/\u2212100% in minutes. Risk \u22640.5\u20131% of the account per card and size off max loss (the full premium), not off the stop. Hard stop \u2212'+Z.PREM_STOP+'% premium or the structure stop; '+Z.TIME_STOP+'-minute time stop if T1 hasn\u2019t printed; never add to a loser; two stops = done for the day; flat by 15:30 ET. This engine sees dealer structure and tape \u2014 it does NOT see the econ calendar (10:00/14:00 releases) or headlines. Cards are context to grade your own read, not signals. No backtest exists yet \u2014 paper trade it and grade the journal first.</div>';
   wrap.innerHTML=h;
 }
 
@@ -618,7 +618,6 @@ let aRaf=0,aT=0,aTweenSpot=null,aParts=[],aBursts=[],aShake=0,aHudT=0,aStamp='',
 let aTrail={},aHistT={},aBloom=null,aScan=0;
 let aWin=Math.max(AR.WINMIN,Math.min(AR.WINMAX,parseInt(localStorage.getItem('kairos_nx_win'))||30));
 let aPan=0,aCandle=localStorage.getItem('kairos_nx_candle')==='1';
-let aReplay=false,aReplayClk=0; // session playback
 let aCandleInt=parseInt(localStorage.getItem('kairos_nx_candleint'))||0; /* 0=auto, else minutes */
 let aMouse=null,aDrag=null,aVM=null,aDeepT={};
 let aField={},aFieldStamp={},aFieldT={},aFCv=null,aFKey='';
@@ -656,7 +655,6 @@ async function aHydrateField(sym){
 }
 function aFrame(ts){
   const dt=aT?Math.min(0.05,(ts-aT)/1000):0.016;aT=ts;
-  aReplayAdvance();
   aDraw(dt);
   if(ts-aHudT>420){aHudT=ts;aHud(false);}
   aRaf=requestAnimationFrame(aFrame);
@@ -1503,52 +1501,6 @@ function aSetWin(m){
   if(aWin>420)aHist(state.focus,true);
 }
 function aGoLive(){aPan=0;aFKey='';aChips();}
-/* --- SESSION REPLAY: animate the time-pan from the open back to live, so the
-   recorded gamma field plays forward through the day. Reuses the existing pan
-   machinery (aPan) rather than a parallel render path. Ends at the live edge. */
-function aReplayToggle(){
-  aReplay=!aReplay;
-  if(aReplay){
-    // jump to the start of what we have, then let the loop advance forward
-    const sym=state.focus;const col=(aField[sym]||[]);
-    const now=Date.now();
-    // set pan to the oldest recorded column within the 5D cap
-    if(col.length){
-      // widen window so the whole session is visible while replaying
-      aReplaySpan=aSpanMs();
-    }
-    aPan=aReplayMaxPan();aReplayClk=performance.now();
-  }
-  aFKey='';aChips();
-}
-let aReplaySpan=0;
-function aReplayMaxPan(){
-  // pan (in trading-time ms) that lands on the oldest visible column
-  const sym=state.focus;const col=(aField[sym]||[]);
-  if(!col.length)return 0;
-  const span=aSpanMs();
-  const oldest=col[0].t, now=Date.now();
-  return Math.max(0,(now-oldest)-span*0.5);
-}
-function aReplayAdvance(){
-  if(!aReplay)return;
-  const nowP=performance.now();
-  const dt=aReplayClk?(nowP-aReplayClk)/1000:0;aReplayClk=nowP;
-  // playback speed: cover a full session (~6.5h) in ~30s => ~13 real-min per sec
-  const speed=13*60000;
-  aPan=Math.max(0,aPan-speed*dt);
-  if(aPan<=0){aReplay=false;aPan=0;aChips();}
-}
-function aFocusReset(sym){
-  /* full arena reset when the focus symbol changes from ANY path (tab or input) */
-  aTweenSpot=null;aParts=[];aBursts=[];aSeen={};
-  aPan=0;aYManual=false;aYCenterM=null;aYHalfM=null;aYC=null;aYH=null;aFKey='';aEdgeF=null;
-  if(sym){delete aHistT[sym];delete aHistT[sym+'|d'];}
-  const ti=document.getElementById('arenaTicker');if(ti&&sym)ti.value=sym;
-  if(state.view==='arena'){aChips();aHist(sym,aWin>420);aDBLoad(sym);setTimeout(function(){aReconBuild(sym);},1200);}
-}
-window.__kairosArenaFocus=aFocusReset;
-function aYFit(){aYManual=false;aYCenterM=null;aYHalfM=null;aFKey='';aChips();}
 function aChips(){
   const el=document.getElementById('nxWins');if(!el)return;
   const wins=[['30M',30],['1H',60],['2H',120],['DAY',390],['5D',1950]];
@@ -1560,7 +1512,6 @@ function aChips(){
         return '<button data-ci="'+iv+'"'+(on?' class="on ciBtn"':' class="ciBtn"')+' data-tip="'+(iv==='auto'?'Pick the finest interval that stays readable for this window':iv+'-minute candles')+'">'+lab+'</button>';
       }).join(''):'')+
     (aPan>30000?'<button data-w="live" class="livebtn" data-tip="Snap back to the live edge (double-click the canvas does the same)">\u25c9 LIVE</button>':'')+
-    '<button data-w="replay"'+(aReplay?' class="on livebtn"':' class="livebtn"')+' data-tip="Play the session back from the open. Scrubs through the recorded gamma field over time — server-stored, so it works even if this tab was closed while the market ran.">'+(aReplay?'\u25a0 STOP':'\u25b6 REPLAY')+'</button>'+
     (aYManual?'<button data-w="yfit" class="livebtn" data-tip="Auto-fit the price axis again. Drag up/down pans price; Shift+wheel (or wheel over the strikes) zooms it.">\u2921 FIT Y</button>':'');
 }
 (function(){
@@ -1573,9 +1524,8 @@ function aChips(){
   row.addEventListener('click',e=>{
     const b=e.target.closest('button');if(!b)return;
     const w=b.dataset.w;
-    if(w==='live'){aReplay=false;aGoLive();return;}
+    if(w==='live'){aGoLive();return;}
     if(w==='yfit'){aYFit();return;}
-    if(w==='replay'){aReplayToggle();return;}
     if(b.dataset.ci!==undefined){
       var civ=b.dataset.ci;aCandleInt=(civ==='auto')?0:parseInt(civ);
       try{localStorage.setItem('kairos_nx_candleint',String(aCandleInt));}catch(x){}
@@ -1814,7 +1764,7 @@ console.log('%cKairos Nexus \u2014 THE CHRONICLE. The field now remembers: pan, 
    or the dealer book. Structure is context, not a signal.
    ===================================================================== */
 'use strict';
-const SW={
+const SW_CORE={
   DTE_LO:55, DTE_HI:100, DTE_TGT:75,   // buyers live here; sellers live at 30-45
   EXIT_DTE:21,                          // close before theta accelerates
   D_LO:0.55, D_HI:0.82, D_TGT:0.70,     // ITM: intrinsic-heavy, low theta drag
@@ -1825,8 +1775,39 @@ const SW={
   IV_RICH:1.30, IV_CHEAP:0.92,          // IV / realised vol
   TERM_INV:1.08,                        // front/back ATM IV ratio implying an event
   MIN_RR:1.5, MIN_RRP:1.2,
-  VOL_SHOCK:5                           // vol points for the crush disclosure
+  VOL_SHOCK:5,                          // vol points for the crush disclosure
+  LABEL:'CORE', DESC:'deep-ITM \u00b7 low theta drag \u00b7 capital-heavy'
 };
+/* AGILE — the small/mid-account profile. Cheaper debit per contract, so a
+   position is sizeable on a small account and the R:R reads properly.
+   Research basis: for a BUYER, 45-70 DTE keeps you off the worst of the theta
+   cliff (the 30-45 window is the seller's edge), while \u03940.35-0.50 (slightly
+   OTM to ATM) costs a fraction of a 0.70\u0394 contract and still carries real
+   directional delta. We deliberately do NOT go below ~0.30\u0394: far-OTM "lottos"
+   look cheap but their probability of profit collapses and the theta burn is
+   proportionally brutal. Wider spread ceiling because OTM books are thinner. */
+const SW_AGILE={
+  DTE_LO:40, DTE_HI:75, DTE_TGT:55,
+  EXIT_DTE:14,
+  D_LO:0.32, D_HI:0.52, D_TGT:0.42,
+  MAX_SPREAD:0.11,
+  MIN_OI:150,
+  MIN_SCORE:58,
+  HOLD:18,
+  IV_RICH:1.30, IV_CHEAP:0.92,
+  TERM_INV:1.08,
+  MIN_RR:1.8, MIN_RRP:1.5,             // demand MORE reward, since PoP is lower
+  VOL_SHOCK:5,
+  LABEL:'AGILE', DESC:'slightly-OTM \u00b7 smaller debit \u00b7 account-friendly'
+};
+let SW=Object.assign({},localStorage.getItem('kairos_sw_mode')==='agile'?SW_AGILE:SW_CORE);
+function swSetMode(mode){
+  const src=mode==='agile'?SW_AGILE:SW_CORE;
+  Object.keys(SW).forEach(k=>delete SW[k]);
+  Object.assign(SW,src);
+  try{localStorage.setItem('kairos_sw_mode',mode);}catch(e){}
+}
+window.swSetMode=swSetMode;
 
 /* ---- greeks the app didn't have yet (r=q=0, matches everything else) ---- */
 function nPdf(x){return Math.exp(-0.5*x*x)/Math.sqrt(2*Math.PI);}
@@ -2156,7 +2137,8 @@ async function swFeed(force){
       await new Promise(r=>setTimeout(r,90));
     }
   }finally{swFeeding=false;}
-  if(state.view==='ideas'&&state.zTab!=='zero')renderCards();
+  if(typeof renderLedger==='function')renderLedger();
+if(state.view==='ideas'&&state.zTab!=='zero')renderCards();
 }
 setTimeout(function(){swFeed(true);},4000);
 setInterval(function(){if(!document.hidden)swFeed(false);},60000);
@@ -2213,8 +2195,17 @@ function sCardHtml(r){
     '<div style="display:flex;gap:5px;flex-wrap:wrap;margin:6px 0 3px">'+(r.drivers||[]).map(x=>'<span class="drv'+(/rich|diverges|event|vs today/.test(x)?' warn':'')+'">'+x+'</span>').join('')+'</div>'+
     '<div class="zwhy">'+r.why+'</div>'+
     '<div class="zfoot">limit at mid, never market \u00b7 '+Math.round(c.dte)+'D contract, close by '+SW.EXIT_DTE+' DTE \u00b7 stop on a DAILY close beyond '+(+r.stop).toFixed(dp)+', not an intraday wick \u00b7 size off max loss (full premium)</div>'):'';
+  const lgRec=encodeURIComponent(JSON.stringify({
+    sym:r.sym, contract:c.e+' '+c.k+(c.call?'C':'P'), dir:r.bias>0?'LONG':'SHORT',
+    entry:+(+r.entry||0).toFixed(dp)||null, stop:+(+r.stop||0).toFixed(dp)||null,
+    t1:r.t1!=null?+(+r.t1).toFixed(dp):null, t2:r.t2!=null?+(+r.t2).toFixed(dp):null,
+    rr:r.rr||null, score:r.score, mode:SW.LABEL
+  }));
+  const took=(window.KairosLedger&&window.KairosLedger.lgHas(r.sym,c.e+' '+c.k+(c.call?'C':'P')));
+  const takeBox='<label class="lg-take'+(took?' on':'')+'" data-lgtake="'+lgRec+'" title="Log this contract in your ledger — it files itself into Winners or Losers when you mark it.">'+
+    '<span class="lg-cb">'+(took?'\u2713':'')+'</span>took it</label>';
   return '<div class="zcard scard idea-thumb'+(open?' open':'')+'" data-swsym="'+r.sym+'">'+rib+
-    '<div class="zhead"><div><span class="card-sym">'+r.sym+'</span>'+sideTag+'<span class="zsetup">'+r.setup+'</span></div><div class="score">'+r.score+'</div></div>'+
+    '<div class="zhead"><div><span class="card-sym">'+r.sym+'</span>'+sideTag+'<span class="zsetup">'+r.setup+'</span></div><div style="display:flex;align-items:center;gap:8px">'+takeBox+'<div class="score">'+r.score+'</div></div></div>'+
     thumb+body+
     '</div>';
 }
@@ -2254,7 +2245,7 @@ renderCards=function(){
   }
   el.classList.add('zgrid');el.classList.remove('cards');
   el.innerHTML=fired.map(sCardHtml).join('')+idle.map(sStandbyHtml).join('')+
-    '<div class="zhon" style="grid-column:1/-1"><b>SWING DOCTRINE</b> \u2014 duration is '+SW.DTE_LO+'\u2013'+SW.DTE_HI+' DTE on purpose. 30\u201345 DTE is the option <b>seller\u2019s</b> window: roughly half of an ATM option\u2019s extrinsic value burns in the final 30 days, versus ~15\u201320% between 90 and 60 DTE. A buyer entering at 30\u201345 DTE is buying the theta cliff. Strikes are \u0394'+SW.D_LO+'\u2013'+SW.D_HI+' (ITM) because extrinsic value is the only part theta can eat \u2014 a 0.70\u0394 contract is mostly intrinsic, tracks the underlying ~70c on the dollar, and bleeds far less than ATM. Long premium is <b>long vega</b>: every card shows what a \u2212'+SW.VOL_SHOCK+'-vol move costs. IV is judged against the stock\u2019s own realised vol (HV20) rather than raw IV, and the IV rank matures as this browser accrues sessions. Prefer a smaller debit? When a fired card shows a <b>BUDGET</b> line, the same long leg is paired with a short leg sold at the T2 node \u2014 the structure already says the move stalls there, so the cap costs little thesis while the debit drops sharply. <b>Not modelled:</b> the econ calendar, headlines, or dividends \u2014 and term-structure inversion only <i>infers</i> an event, it does not read an earnings date. Context to grade your own read, not signals.</div>';
+    '<div class="zhon" style="grid-column:1/-1"><b>NOT FINANCIAL ADVICE</b> \u00b7 <b>SWING DOCTRINE</b> \u2014 duration is '+SW.DTE_LO+'\u2013'+SW.DTE_HI+' DTE on purpose. 30\u201345 DTE is the option <b>seller\u2019s</b> window: roughly half of an ATM option\u2019s extrinsic value burns in the final 30 days, versus ~15\u201320% between 90 and 60 DTE. A buyer entering at 30\u201345 DTE is buying the theta cliff. Strikes are \u0394'+SW.D_LO+'\u2013'+SW.D_HI+' (ITM) because extrinsic value is the only part theta can eat \u2014 a 0.70\u0394 contract is mostly intrinsic, tracks the underlying ~70c on the dollar, and bleeds far less than ATM. Long premium is <b>long vega</b>: every card shows what a \u2212'+SW.VOL_SHOCK+'-vol move costs. IV is judged against the stock\u2019s own realised vol (HV20) rather than raw IV, and the IV rank matures as this browser accrues sessions. Prefer a smaller debit? When a fired card shows a <b>BUDGET</b> line, the same long leg is paired with a short leg sold at the T2 node \u2014 the structure already says the move stalls there, so the cap costs little thesis while the debit drops sharply. <b>Not modelled:</b> the econ calendar, headlines, or dividends \u2014 and term-structure inversion only <i>infers</i> an event, it does not read an earnings date. Context to grade your own read, not signals.</div>';
 };
 if(state.view==='ideas'&&state.zTab!=='zero')renderCards();
 /* swing thumbnails expand/collapse on click (delegated; swing sets innerHTML directly) */
@@ -2271,3 +2262,124 @@ if(state.view==='ideas'&&state.zTab!=='zero')renderCards();
 window.KairosSwing={SW,swingRead,sPick,sModel,sSpread,sTerm,sIvRank,sIvRecord,bsVega,bsThetaDay,
   ivLog:function(){return swIv;}};
 console.log('%cKairos Swing \u2014 60\u201390 DTE, \u03940.55\u20130.82 ITM, IV vs realised. The 30\u201345 DTE window belongs to sellers.','color:#f2c14e;font-weight:bold');
+
+/* =====================================================================
+   KAIROS LEDGER — taken-trade tracking for Aether
+   Tick a card to log the contract you actually took. The ledger then tracks
+   it as OPEN until you mark it a win or a loss, and files it into the right
+   tab. Entries keep for 7 days, then age out. Local to this device.
+   Nothing here is advice or a recommendation — it is a record of what YOU
+   chose to do, kept so the engine's hit-rate can be graded honestly.
+   ===================================================================== */
+const LG_KEY='kairos_ledger_v1';
+const LG_KEEP_DAYS=7;
+function lgLoad(){try{return JSON.parse(localStorage.getItem(LG_KEY)||'[]');}catch(e){return [];}}
+function lgSave(a){
+  const cut=Date.now()-LG_KEEP_DAYS*86400000;
+  try{localStorage.setItem(LG_KEY,JSON.stringify(a.filter(x=>x.t>=cut).slice(-300)));}catch(e){}
+}
+function lgSession(){ // US/Eastern trading day
+  try{return new Intl.DateTimeFormat('en-CA',{timeZone:'America/New_York',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());}
+  catch(e){return new Date().toISOString().slice(0,10);}
+}
+function lgId(sym,contract){return sym+'|'+contract+'|'+lgSession();}
+function lgHas(sym,contract){const id=lgId(sym,contract);return lgLoad().some(x=>x.id===id);}
+function lgAdd(rec){
+  const a=lgLoad();
+  const id=lgId(rec.sym,rec.contract);
+  if(a.some(x=>x.id===id))return false;
+  a.push({id,sym:rec.sym,contract:rec.contract,dir:rec.dir||'',entry:rec.entry??null,
+          stop:rec.stop??null,t1:rec.t1??null,t2:rec.t2??null,rr:rec.rr??null,
+          score:rec.score??null,mode:rec.mode||'',d:lgSession(),t:Date.now(),
+          status:'open',result:null});
+  lgSave(a);return true;
+}
+function lgMark(id,result){
+  const a=lgLoad();const x=a.find(z=>z.id===id);if(!x)return;
+  if(result===null){x.status='open';x.result=null;delete x.tClose;}
+  else{x.status='closed';x.result=result;x.tClose=Date.now();}
+  lgSave(a);
+}
+function lgRemove(id){lgSave(lgLoad().filter(x=>x.id!==id));}
+function lgStats(){
+  const a=lgLoad();
+  const open=a.filter(x=>x.status==='open');
+  const win=a.filter(x=>x.result==='win');
+  const loss=a.filter(x=>x.result==='loss');
+  const closed=win.length+loss.length;
+  return{all:a,open,win,loss,closed,rate:closed?win.length/closed*100:null};
+}
+window.KairosLedger={lgLoad,lgAdd,lgMark,lgRemove,lgStats,lgHas,lgId,lgSession};
+
+/* ---- ledger UI ---- */
+let lgTab=localStorage.getItem('kairos_lg_tab')||'open';
+function lgRowHtml(x){
+  const cls=x.result==='win'?'lg-win':x.result==='loss'?'lg-loss':'lg-open';
+  return '<div class="lg-row '+cls+'">'+
+    '<span class="lg-sym">'+x.sym+'</span>'+
+    '<span class="lg-con mono">'+x.contract+'</span>'+
+    (x.dir?'<span class="lg-dir '+(x.dir==='LONG'?'up':'dn')+'">'+x.dir+'</span>':'')+
+    '<span class="lg-meta">'+(x.entry!=null?'entry '+x.entry:'')+(x.rr?' \u00b7 R:R '+x.rr:'')+(x.mode?' \u00b7 '+x.mode:'')+'</span>'+
+    '<span class="lg-date">'+x.d+'</span>'+
+    '<span class="lg-acts">'+
+      (x.status==='open'
+        ? '<button class="lg-b win" data-lgwin="'+x.id+'">WIN</button><button class="lg-b loss" data-lgloss="'+x.id+'">LOSS</button>'
+        : '<button class="lg-b undo" data-lgundo="'+x.id+'">undo</button>')+
+      '<button class="lg-b del" data-lgdel="'+x.id+'" title="Remove">\u00d7</button>'+
+    '</span></div>';
+}
+function renderLedger(){
+  const host=document.getElementById('ledgerBox');if(!host)return;
+  const s=lgStats();
+  const list=lgTab==='win'?s.win:lgTab==='loss'?s.loss:s.open;
+  const tab=(k,label,n)=>'<button class="lg-tab'+(lgTab===k?' on':'')+'" data-lgtab="'+k+'">'+label+' <i>'+n+'</i></button>';
+  host.innerHTML=
+    '<div class="lg-head">'+
+      '<span class="lg-title">TRADE LEDGER</span>'+
+      tab('open','OPEN',s.open.length)+tab('win','WINNERS',s.win.length)+tab('loss','LOSERS',s.loss.length)+
+      (s.rate!=null?'<span class="lg-rate">hit rate <b style="color:'+(s.rate>=50?'var(--green)':'var(--gold)')+'">'+s.rate.toFixed(0)+'%</b> <i>('+s.win.length+'/'+s.closed+')</i></span>':'')+
+      '<span class="lg-note">your record \u00b7 kept 7 days \u00b7 this device</span>'+
+    '</div>'+
+    (list.length?list.map(lgRowHtml).join('')
+      :'<div class="lg-empty">'+(lgTab==='open'?'Tick a card\u2019s checkbox to log a contract you actually took.':'Nothing filed here yet.')+'</div>');
+}
+window.renderLedger=renderLedger;
+(function(){
+  document.addEventListener('click',function(e){
+    const t=e.target;
+    const tb=t.closest('[data-lgtab]');
+    if(tb){lgTab=tb.dataset.lgtab;try{localStorage.setItem('kairos_lg_tab',lgTab);}catch(x){}renderLedger();return;}
+    const w=t.closest('[data-lgwin]');if(w){lgMark(w.dataset.lgwin,'win');renderLedger();return;}
+    const l=t.closest('[data-lgloss]');if(l){lgMark(l.dataset.lgloss,'loss');renderLedger();return;}
+    const u=t.closest('[data-lgundo]');if(u){lgMark(u.dataset.lgundo,null);renderLedger();return;}
+    const d=t.closest('[data-lgdel]');if(d){lgRemove(d.dataset.lgdel);renderLedger();return;}
+    // the "took it" checkbox on a card
+    const cb=t.closest('[data-lgtake]');
+    if(cb){
+      try{
+        const rec=JSON.parse(decodeURIComponent(cb.dataset.lgtake));
+        if(lgHas(rec.sym,rec.contract)){/* untick = remove today's entry */lgRemove(lgId(rec.sym,rec.contract));}
+        else lgAdd(rec);
+        renderLedger();
+        if(typeof renderCards==='function')renderCards();
+      }catch(x){}
+      e.stopPropagation();
+    }
+  },true);
+})();
+console.log('%cKairos Ledger \u2014 tick what you took; winners and losers file themselves. Your record, not advice.','color:#34d399;font-weight:bold');
+
+/* ---- swing contract-profile toggle (CORE / AGILE) ---- */
+(function(){
+  const sel=document.getElementById('swModeSel');
+  if(!sel)return;
+  const cur=localStorage.getItem('kairos_sw_mode')==='agile'?'agile':'core';
+  sel.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.swm===cur));
+  sel.addEventListener('click',function(e){
+    const b=e.target.closest('button[data-swm]');if(!b)return;
+    sel.querySelectorAll('button').forEach(x=>x.classList.remove('on'));b.classList.add('on');
+    swSetMode(b.dataset.swm);
+    if(typeof renderCards==='function')renderCards();
+  });
+})();
+if(typeof renderLedger==='function')renderLedger();

@@ -1840,4 +1840,4 @@ renderTrinity();renderCards();
 refresh(false).finally(schedule);
 function schedule(){clearTimeout(state._t);if(document.hidden)return;state._t=setTimeout(async()=>{await refresh(false);schedule();},state.pollSec*1000);}
 window.Kairos={state,refresh,getSym,kingOf,buildFromChains,buildImbalance,flowLean,exposureProfile};
-console.log('%cKairos v10.2 \u2014 full backend cutover: token server-side, history hydrated from D1, session replay, extended-hours pricing.','color:#f2c14e;font-weight:bold');
+console.log('%cKairos v10.3 \u2014 full backend cutover: token server-side, history hydrated from D1, session replay, extended-hours pricing.','color:#f2c14e;font-weight:bold');
