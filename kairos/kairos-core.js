@@ -830,9 +830,6 @@ function renderTrinity(){
         '<div class="strikes">'+rows+'</div>';
       el.appendChild(p);return;
     }
-    const _ch=state.chains[sym];
-    const _prov=_ch?('<span class="prov" data-tip="How deep the book feeding these numbers actually is: expiries loaded, contracts parsed, and whether this is a full live chain or the server relay. GEX is summed across every expiry shown here.">'
-      +(_ch.dates?_ch.dates.length:0)+'exp \u00b7 '+(_ch.list?_ch.list.length:0)+'c'+(_ch.srv?' \u00b7 srv':'')+'</span>'):'';
     const kg=kingOf(d.strikes);
     const cw=callWallBand(d.strikes,d.spot),pw=putWallBand(d.strikes,d.spot);
     const maxAbs=Math.max(...(d.strikes||[]).map(x=>Math.abs(mval(x))),1);
@@ -889,7 +886,7 @@ function renderTrinity(){
           <div class="p-left">
             <input class="ticker-sel" list="tickerList" data-old="${sym}" value="${sym}" style="width:86px" autocomplete="off" data-tip="Type any optionable ticker — or pick from your roster">
             <span class="price mono">$${(d.spot||0).toFixed(2)}</span>
-            <span class="badge-src ${srcMap[d.source]||'demo'}">${srcTxt[d.source]||d.source}</span>${staleB}${_prov}
+            <span class="badge-src ${srcMap[d.source]||'demo'}">${srcTxt[d.source]||d.source}</span>${staleB}
           </div>
           ${headStrip}
           <div class="king-pill ${pillCls()}${kg&&mval(kg)<0?' kneg':''}" data-tip="Biggest absolute ${metricLabel(state.metric)} node — the magnet for that force. Strike first: that is the level price is drawn to. Exposure size is secondary.">★ ${mlab} ${kg?kg.k:'\u2014'}${kg?` <i style="font-style:normal;opacity:.66;font-weight:600">${mdisp(mval(kg),d.spot)}</i>`:''}</div>
@@ -1267,7 +1264,6 @@ function renderNova(id){
   const el=document.getElementById(id);if(!el)return;
   const spec=NOVA_MOUNTS[id];if(!spec)return;
   const a=state._ai||{};
-  el.classList.remove('hidden');
   let h='<div class="nova-hd"><span class="nova-dot"></span><b>NOVA</b><i>reads the same computed state you see</i></div>';
   let any='';
   spec.forEach(([k,title,open])=>{
@@ -2065,6 +2061,9 @@ function setView(v){
   }
   const _jt=document.getElementById('juncTabs');
   if(_jt)_jt.classList.toggle('hidden',v!=='single');
+  const _onJ=(v==='single'&&state._juncTab!=='vix'), _onV=(v==='single'&&state._juncTab==='vix');
+  const _nj=document.getElementById('novaJunction');if(_nj)_nj.classList.toggle('hidden',!_onJ);
+  const _nv=document.getElementById('novaVix');if(_nv)_nv.classList.toggle('hidden',!_onV);
   const _vd2=document.getElementById('vixDesk');
   if(_vd2)_vd2.classList.toggle('hidden',!(v==='single'&&state._juncTab==='vix'));
   const _tr2=document.getElementById('trinity');
@@ -2244,7 +2243,7 @@ setTimeout(function(){
 },0);
 function schedule(){clearTimeout(state._t);if(document.hidden)return;state._t=setTimeout(async()=>{await refresh(false);schedule();},state.pollSec*1000);}
 window.Kairos={state,refresh,getSym,kingOf,buildFromChains,buildImbalance,flowLean,exposureProfile};
-console.log('%cKairos v4.0 \u2014 Net Delta Flow (directional pressure), interpolated gamma-flip line, shared-board hold, token fully server-side. Base GEX math unchanged.','color:#f2c14e;font-weight:bold');
+console.log('%cKairos v4.1 \u2014 Net Delta Flow (directional pressure), interpolated gamma-flip line, shared-board hold, token fully server-side. Base GEX math unchanged.','color:#f2c14e;font-weight:bold');
 
 state._juncTab=state._juncTab||'ladder';
 (function(){var jt=document.getElementById('juncTabs');if(!jt)return;

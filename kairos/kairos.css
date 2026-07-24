@@ -595,3 +595,6 @@ footer{text-align:center;padding:12px;font-size:.65rem;color:#3f4656;border-top:
   .or-body{font-size:.68rem;line-height:1.6}
   .or-block summary{font-size:.58rem}
 }
+
+#novaJunction,#novaVix{margin-top:0}
+#novaJunction .or-body,#novaVix .or-body{max-height:190px;overflow:auto}
