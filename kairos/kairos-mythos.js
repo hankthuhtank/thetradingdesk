@@ -82,7 +82,7 @@ window.orrSeed=function(map){
   Object.keys(map).forEach(k=>{
     if(!orrCloses[k]||!orrCloses[k].length){orrCloses[k]=map[k];orrFetchT[k]=Date.now();n++;}
   });
-  if(n){orrDSave();try{if(typeof orrCompute==='function'&&document.getElementById('orrCanvas'))orrCompute();}catch(e){}}
+  if(n)orrDSave();
   return n;
 };
 function orrDSave(){const now=Date.now();if(now-orrDSaveT<4000)return;orrDSaveT=now;try{localStorage.setItem(ORR_DCACHE,JSON.stringify({day:new Date().toISOString().slice(0,10),c:orrCloses}));}catch(e){}}
@@ -163,8 +163,16 @@ function orrCentroid(results){
   }
   return {x,y,tail,ret};
 }
+let orrSeeded=false;
+async function orrSeedFromServer(){
+  if(orrSeeded)return;orrSeeded=true;
+  if(!(window.KairosBackend&&window.KairosBackend.enabled&&window.KairosBackend.mythos))return;
+  try{const d=await window.KairosBackend.mythos();if(d&&d.c&&window.orrSeed)window.orrSeed(d.c);}catch(e){}
+}
 async function orrCompute(){
   orrLoading=true;
+  /* one payload from the server instead of ~108 daily-history round trips */
+  await orrSeedFromServer();
   orrRenderRail(); // paint the loading state immediately
   // --- collect EVERY symbol we'll need up front, then fetch in parallel waves.
   //     Previously each sector/basket fetched serially (~44 round-trips) which

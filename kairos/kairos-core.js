@@ -1745,7 +1745,6 @@ function openDeep(sym){
 function applyBootstrap(bs){
   if(!bs)return 0;let n=0;
   if(bs.plays&&bs.plays.html)state._srvPlays=bs.plays;
-  if(bs.myth&&bs.myth.c&&window.orrSeed){try{window.orrSeed(bs.myth.c);}catch(e){}}
   if(bs.ladders){
     Object.keys(bs.ladders).forEach(sym=>{
       if(state.data[sym])return;
@@ -2196,7 +2195,7 @@ setTimeout(function(){
 },0);
 function schedule(){clearTimeout(state._t);if(document.hidden)return;state._t=setTimeout(async()=>{await refresh(false);schedule();},state.pollSec*1000);}
 window.Kairos={state,refresh,getSym,kingOf,buildFromChains,buildImbalance,flowLean,exposureProfile};
-console.log('%cKairos v2.3 \u2014 Net Delta Flow (directional pressure), interpolated gamma-flip line, shared-board hold, token fully server-side. Base GEX math unchanged.','color:#f2c14e;font-weight:bold');
+console.log('%cKairos v2.4 \u2014 Net Delta Flow (directional pressure), interpolated gamma-flip line, shared-board hold, token fully server-side. Base GEX math unchanged.','color:#f2c14e;font-weight:bold');
 
 state._juncTab=state._juncTab||'ladder';
 (function(){var jt=document.getElementById('juncTabs');if(!jt)return;

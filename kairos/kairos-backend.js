@@ -53,6 +53,7 @@
 
     bootstrap() { return getJSON('/bootstrap'); },
     getChain(sym) { return getJSON('/chain?sym=' + encodeURIComponent(sym)); },
+    mythos() { return getJSON('/mythos'); },
     async publishPlays(html, profile, tab, count) {
       try {
         const r = await fetch(api('/plays'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ html, profile, tab, count }) });
