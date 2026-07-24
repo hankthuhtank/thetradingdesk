@@ -598,3 +598,13 @@ footer{text-align:center;padding:12px;font-size:.65rem;color:#3f4656;border-top:
 
 #novaJunction,#novaVix{margin-top:0}
 #novaJunction .or-body,#novaVix .or-body{max-height:190px;overflow:auto}
+
+
+/* ---- guide ---- */
+.guide-lede{font-size:.74rem;line-height:1.7;color:var(--muted);margin:6px 0 14px}
+.guide-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:9px;margin-bottom:18px}
+.guide-item{border:1px solid var(--border);border-radius:8px;padding:9px 11px;background:var(--panel2)}
+.guide-item b{display:block;font-size:.66rem;letter-spacing:.13em;color:var(--teal);margin-bottom:4px}
+.guide-item span{display:block;font-size:.71rem;line-height:1.62;color:var(--text)}
+.guide-item i{color:var(--gold);font-style:normal}
+@media(max-width:760px){.guide-grid{grid-template-columns:1fr}.guide-item span{font-size:.68rem}}

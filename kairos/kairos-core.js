@@ -762,6 +762,21 @@ function rowStyle(s,maxAbs){
   const a=0.30+Math.min(0.58,(ratio-0.32)/0.68*0.58);
   return v>=0?`background:rgba(45,212,191,${a});`:`background:rgba(147,51,234,${a});`;
 }
+/* nearest-strike fallback: find the row whose leading number is closest to
+   spot, so centring never depends on a strike existing exactly at spot. */
+function nearestRow(root,rowSel,cellSel,spot){
+  if(!root||!spot)return null;
+  let best=null,bd=Infinity;
+  root.querySelectorAll(rowSel).forEach(tr=>{
+    const cell=tr.querySelector(cellSel)||tr;
+    const raw=(cell.getAttribute&&cell.getAttribute('data-k'))||cell.textContent||'';
+    const v=parseFloat(String(raw).replace(/[^0-9.\-]/g,''));
+    if(!isFinite(v))return;
+    const dd=Math.abs(v-spot);
+    if(dd<bd){bd=dd;best=tr;}
+  });
+  return best;
+}
 function centerIn(wrap,el2){
   if(!wrap||!el2)return;
   const r=el2.getBoundingClientRect(),wr=wrap.getBoundingClientRect();
@@ -943,9 +958,10 @@ function renderTrinity(){
       wrap.innerHTML=h;
       if(state.scrolled[key]&&prevScroll[key]){wrap.scrollTop=prevScroll[key].top;wrap.scrollLeft=prevScroll[key].left||0;}
       else{
-        const sr=wrap.querySelector('.spotrow'),kr=wrap.querySelector('.kingrow');
+        let sr=wrap.querySelector('.spotrow');const kr=wrap.querySelector('.kingrow');
+        if(!sr)sr=nearestRow(wrap,'tbody tr','.sk',m.spot);
         const tgt=state.centerOn==='king'?(kr||sr):(sr||kr);
-        if(tgt){centerIn(wrap,tgt);requestAnimationFrame(()=>{try{centerIn(wrap,tgt);}catch(e){}});setTimeout(()=>{try{centerIn(wrap,tgt);}catch(e){}},120);}state.scrolled[key]=true;
+        if(tgt){centerIn(wrap,tgt);requestAnimationFrame(()=>{try{centerIn(wrap,tgt);}catch(e){}});setTimeout(()=>{try{centerIn(wrap,tgt);}catch(e){}},120);state.scrolled[key]=true;}
       }
       return;
     }
@@ -1000,7 +1016,11 @@ function renderTrinity(){
       listEl.appendChild(row);
     });
     if(state.scrolled[key]&&prevScroll[key])listEl.scrollTop=prevScroll[key].top;
-    else{const tgt=state.centerOn==='king'?(kingRow||spotRow):(spotRow||kingRow);if(tgt){centerIn(listEl,tgt);requestAnimationFrame(()=>{try{centerIn(listEl,tgt);}catch(e){}});setTimeout(()=>{try{centerIn(listEl,tgt);}catch(e){}},120);}state.scrolled[key]=true;}
+    else{
+      const sRow=spotRow||nearestRow(listEl,'.srow,.strike-row,[data-k]','[data-k],.sk,.k',d.spot);
+      const tgt=state.centerOn==='king'?(kingRow||sRow):(sRow||kingRow);
+      if(tgt){centerIn(listEl,tgt);requestAnimationFrame(()=>{try{centerIn(listEl,tgt);}catch(e){}});setTimeout(()=>{try{centerIn(listEl,tgt);}catch(e){}},120);state.scrolled[key]=true;}
+    }
   });
 }
 
@@ -2243,7 +2263,7 @@ setTimeout(function(){
 },0);
 function schedule(){clearTimeout(state._t);if(document.hidden)return;state._t=setTimeout(async()=>{await refresh(false);schedule();},state.pollSec*1000);}
 window.Kairos={state,refresh,getSym,kingOf,buildFromChains,buildImbalance,flowLean,exposureProfile};
-console.log('%cKairos v4.1 \u2014 Net Delta Flow (directional pressure), interpolated gamma-flip line, shared-board hold, token fully server-side. Base GEX math unchanged.','color:#f2c14e;font-weight:bold');
+console.log('%cKairos v4.2 \u2014 Net Delta Flow (directional pressure), interpolated gamma-flip line, shared-board hold, token fully server-side. Base GEX math unchanged.','color:#f2c14e;font-weight:bold');
 
 state._juncTab=state._juncTab||'ladder';
 (function(){var jt=document.getElementById('juncTabs');if(!jt)return;
