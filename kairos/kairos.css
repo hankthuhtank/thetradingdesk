@@ -204,6 +204,11 @@ footer{text-align:center;padding:12px;font-size:.65rem;color:#3f4656;border-top:
   /* keep all three Triad panels side by side — skinny is intentional */
   .trinity{grid-template-columns:repeat(3,1fr);gap:2px}
   .panel{height:auto;min-height:0;max-height:70vh}
+  /* A flex child defaults to min-height:auto, so .strikes grew to full content
+     height instead of scrolling — the panel just clipped it. With min-height:0
+     the child can shrink and its own overflow-y takes over, which is what makes
+     programmatic centring possible on mobile at all. */
+  .panel .strikes,.panel .sgrid-wrap{min-height:0}
   .chart-area{grid-template-columns:1fr}
   .levels{max-height:180px}
   .settings{width:100%;right:-100%}

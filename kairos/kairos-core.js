@@ -778,9 +778,26 @@ function nearestRow(root,rowSel,cellSel,spot){
   return best;
 }
 function centerIn(wrap,el2){
-  if(!wrap||!el2)return;
+  if(!wrap||!el2)return false;
+  // not scrollable yet (layout still settling, common on iOS) — report failure
+  if(wrap.scrollHeight<=wrap.clientHeight+2)return false;
   const r=el2.getBoundingClientRect(),wr=wrap.getBoundingClientRect();
-  wrap.scrollTop=Math.max(0,wrap.scrollTop+(r.top-wr.top)-(wrap.clientHeight/2-r.height/2));
+  const want=Math.max(0,wrap.scrollTop+(r.top-wr.top)-(wrap.clientHeight/2-r.height/2));
+  wrap.scrollTop=want;
+  return true;
+}
+/* Keep trying until the container is genuinely scrollable and centred. iOS
+   lays out later than desktop, so a single rAF was landing before .strikes had
+   a height — which is why Junction centred on desktop but not on iPhone. */
+function centerSticky(wrap,el2,key){
+  let n=0;
+  const tick=()=>{
+    if(!wrap||!el2||!wrap.isConnected)return;
+    if(centerIn(wrap,el2)){if(key)state.scrolled[key]=true;return;}
+    if(++n<16)setTimeout(tick,n<6?50:200);
+  };
+  tick();
+  requestAnimationFrame(tick);
 }
 function skeletonPanel(sym,label){
   const p=document.createElement('div');p.className='panel'+(state.view==='single'?' single-mode':'');
@@ -961,7 +978,7 @@ function renderTrinity(){
         let sr=wrap.querySelector('.spotrow');const kr=wrap.querySelector('.kingrow');
         if(!sr)sr=nearestRow(wrap,'tbody tr','.sk',m.spot);
         const tgt=state.centerOn==='king'?(kr||sr):(sr||kr);
-        if(tgt){centerIn(wrap,tgt);requestAnimationFrame(()=>{try{centerIn(wrap,tgt);}catch(e){}});setTimeout(()=>{try{centerIn(wrap,tgt);}catch(e){}},120);state.scrolled[key]=true;}
+        if(tgt)centerSticky(wrap,tgt,key);
       }
       return;
     }
@@ -1019,7 +1036,7 @@ function renderTrinity(){
     else{
       const sRow=spotRow||nearestRow(listEl,'.srow,.strike-row,[data-k]','[data-k],.sk,.k',d.spot);
       const tgt=state.centerOn==='king'?(kingRow||sRow):(sRow||kingRow);
-      if(tgt){centerIn(listEl,tgt);requestAnimationFrame(()=>{try{centerIn(listEl,tgt);}catch(e){}});setTimeout(()=>{try{centerIn(listEl,tgt);}catch(e){}},120);state.scrolled[key]=true;}
+      if(tgt)centerSticky(listEl,tgt,key);
     }
   });
 }
@@ -2263,7 +2280,7 @@ setTimeout(function(){
 },0);
 function schedule(){clearTimeout(state._t);if(document.hidden)return;state._t=setTimeout(async()=>{await refresh(false);schedule();},state.pollSec*1000);}
 window.Kairos={state,refresh,getSym,kingOf,buildFromChains,buildImbalance,flowLean,exposureProfile};
-console.log('%cKairos v4.2 \u2014 Net Delta Flow (directional pressure), interpolated gamma-flip line, shared-board hold, token fully server-side. Base GEX math unchanged.','color:#f2c14e;font-weight:bold');
+console.log('%cKairos v4.3 \u2014 Net Delta Flow (directional pressure), interpolated gamma-flip line, shared-board hold, token fully server-side. Base GEX math unchanged.','color:#f2c14e;font-weight:bold');
 
 state._juncTab=state._juncTab||'ladder';
 (function(){var jt=document.getElementById('juncTabs');if(!jt)return;

@@ -223,15 +223,10 @@
 
 <div class="settings" id="settings">
   <h3 style="margin-bottom:14px">Settings</h3>
-  <div class="fg">
-    <label>Tradier API token</label>
-    <div style="font-size:.68rem;color:var(--muted);line-height:1.55;padding:4px 0">Live data is <b style="color:var(--teal)">integrated</b> — the Tradier connection lives server-side in the Kairos backend now. Nothing to paste, nothing stored in this browser.</div><input type="password" id="tok" style="display:none" autocomplete="off">
-    <div class="hint">Free at tradier.com (a sandbox token works). Leave empty to run on delayed CBOE data. Never hard-code or share a token inside this file — each person pastes their own here.</div>
-  </div>
+  <input type="password" id="tok" style="display:none" autocomplete="off">
   <div class="fg"><label>Refresh every (seconds)</label><input type="text" id="poll" value="10" style="width:80px" data-tip="10 is the floor. Scheduled polls only tick live quotes (1 batched request) — chains re-pull every ~90s — well under Tradier's 120 req/min limit."></div>
   <div class="fg"><label>Map shows</label><select id="sizeBasis" style="width:100%"><option value="oi">Standing positions — open interest, updates daily</option><option value="vol">Today's flow — volume traded so far this session</option></select></div>
   <button class="btn primary" style="width:100%;margin-top:8px" id="save">Save</button>
-  <div class="method">Everything else is locked to the most accurate setup: live spot quotes, exposure re-priced from spot + IV on every tick, standard dealer convention. Chains/OI/IV cache ~90s, keeping request volume ~80% lower and the UI smooth. Full explanation under <b>?</b>.</div>
 </div>
 <footer>Kairos · Aether · Mythos · Nexus · All Powered by Tradier Live · Structure is context, not a signal</footer>
 
