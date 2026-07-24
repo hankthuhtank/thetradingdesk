@@ -578,3 +578,5 @@ footer{text-align:center;padding:12px;font-size:.65rem;color:#3f4656;border-top:
 .or-body li{margin:2px 0}
 .or-foot{margin-top:7px;padding-top:6px;border-top:1px solid rgba(126,166,214,.1);font-size:.55rem;color:var(--muted);opacity:.75}
 @media(max-width:760px){.or-body{font-size:.68rem}}
+
+.prov{font-family:'JetBrains Mono';font-size:.55rem;color:var(--muted);opacity:.7;border:1px solid var(--border);border-radius:8px;padding:1px 5px;margin-left:6px;white-space:nowrap}

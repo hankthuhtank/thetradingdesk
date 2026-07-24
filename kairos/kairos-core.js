@@ -830,6 +830,9 @@ function renderTrinity(){
         '<div class="strikes">'+rows+'</div>';
       el.appendChild(p);return;
     }
+    const _ch=state.chains[sym];
+    const _prov=_ch?('<span class="prov" data-tip="How deep the book feeding these numbers actually is: expiries loaded, contracts parsed, and whether this is a full live chain or the server relay. GEX is summed across every expiry shown here.">'
+      +(_ch.dates?_ch.dates.length:0)+'exp \u00b7 '+(_ch.list?_ch.list.length:0)+'c'+(_ch.srv?' \u00b7 srv':'')+'</span>'):'';
     const kg=kingOf(d.strikes);
     const cw=callWallBand(d.strikes,d.spot),pw=putWallBand(d.strikes,d.spot);
     const maxAbs=Math.max(...(d.strikes||[]).map(x=>Math.abs(mval(x))),1);
@@ -886,7 +889,7 @@ function renderTrinity(){
           <div class="p-left">
             <input class="ticker-sel" list="tickerList" data-old="${sym}" value="${sym}" style="width:86px" autocomplete="off" data-tip="Type any optionable ticker — or pick from your roster">
             <span class="price mono">$${(d.spot||0).toFixed(2)}</span>
-            <span class="badge-src ${srcMap[d.source]||'demo'}">${srcTxt[d.source]||d.source}</span>${staleB}
+            <span class="badge-src ${srcMap[d.source]||'demo'}">${srcTxt[d.source]||d.source}</span>${staleB}${_prov}
           </div>
           ${headStrip}
           <div class="king-pill ${pillCls()}${kg&&mval(kg)<0?' kneg':''}" data-tip="Biggest absolute ${metricLabel(state.metric)} node — the magnet for that force. Strike first: that is the level price is drawn to. Exposure size is secondary.">★ ${mlab} ${kg?kg.k:'\u2014'}${kg?` <i style="font-style:normal;opacity:.66;font-weight:600">${mdisp(mval(kg),d.spot)}</i>`:''}</div>
@@ -1244,8 +1247,6 @@ window.renderVixDesk=renderVixDesk;
 function renderOracle(){
   const el=document.getElementById('oracle');if(!el)return;
   const a=state._ai||{};
-  const brief=a.brief,read=a.read;
-  if(!brief&&!read){el.classList.add('hidden');return;}
   el.classList.remove('hidden');
   const age=t=>{const s=Math.max(0,Math.round(Date.now()/1000-t));return s<90?s+'s':s<5400?Math.round(s/60)+'m':Math.round(s/3600)+'h';};
   const md=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;')
@@ -1253,9 +1254,16 @@ function renderOracle(){
     .replace(/^\s*[-\u2022]\s+(.*)$/gm,'<li>$1</li>')
     .replace(/(<li>[\s\S]*<\/li>)/,'<ul>$1</ul>')
     .replace(/\n{2,}/g,'<br><br>');
-  let h='';
-  if(read)h+='<div class="or-block"><div class="or-head"><b>MARKET READ</b><i>'+age(read.t)+' ago \u00b7 '+(read.model||'')+'</i></div><div class="or-body">'+md(read.text)+'</div></div>';
-  if(brief)h+='<details class="or-block"'+(read?'':' open')+'><summary><b>PREMARKET BRIEF</b> <i>'+age(brief.t)+' ago</i></summary><div class="or-body">'+md(brief.text)+'</div></details>';
+  const block=(k,title,open)=>{
+    const b=a[k];if(!b||!b.text)return '';
+    return '<details class="or-block"'+(open?' open':'')+'><summary><b>'+title+'</b> <i>'+age(b.t)+' ago \u00b7 '+(b.model||'')+'</i></summary><div class="or-body">'+md(b.text)+'</div></details>';
+  };
+  let h=block('read','MARKET READ',1)+block('zero','SAME-DAY \u00b7 0DTE',0)+block('aether','PLAY REVIEW',0)+block('brief','PREMARKET BRIEF',0);
+  if(!h){
+    const ph=typeof marketPhase==='function'?marketPhase():'rth';
+    const nxt={rth:'the next quarter-hour',pre:'8:00 AM ET',post:'shortly after the close',overnight:'8:00 AM ET',closed:'the next session'}[ph]||'the next run';
+    h='<div class="or-body" style="color:var(--muted)">Oracle is scheduled \u2014 first analysis writes at <b style="color:var(--teal)">'+nxt+'</b>. It runs on the server, so it appears here the moment it is written, on every device.</div>';
+  }
   h+='<div class="or-foot">AI reads the same computed state you see \u00b7 it ranks and explains, it never invents a number \u00b7 not financial advice</div>';
   el.innerHTML=h;
 }
@@ -2220,7 +2228,7 @@ setTimeout(function(){
 },0);
 function schedule(){clearTimeout(state._t);if(document.hidden)return;state._t=setTimeout(async()=>{await refresh(false);schedule();},state.pollSec*1000);}
 window.Kairos={state,refresh,getSym,kingOf,buildFromChains,buildImbalance,flowLean,exposureProfile};
-console.log('%cKairos v3.0 \u2014 Net Delta Flow (directional pressure), interpolated gamma-flip line, shared-board hold, token fully server-side. Base GEX math unchanged.','color:#f2c14e;font-weight:bold');
+console.log('%cKairos v3.1 \u2014 Net Delta Flow (directional pressure), interpolated gamma-flip line, shared-board hold, token fully server-side. Base GEX math unchanged.','color:#f2c14e;font-weight:bold');
 
 state._juncTab=state._juncTab||'ladder';
 (function(){var jt=document.getElementById('juncTabs');if(!jt)return;
