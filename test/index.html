@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="dark">
+<title>Kairos</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='0.9em' font-size='90' fill='%23f2c14e'%3E%E2%97%86%3C/text%3E%3C/svg%3E">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="kairos.css">
+</head>
+<body>
+<datalist id="tickerList"></datalist>
+<header>
+  <div class="logo"><span>◆</span> Kairos</div>
+  <nav class="hdr-nav" id="hdrNav">
+    <button class="btn active" id="btnTrinity" data-tip="Three lenses in balance — SPXW · SPY · QQQ. Alignment = conviction, divergence = size down or pass.">Triad</button>
+    <button class="btn" id="btnSingle">Junction</button>
+    <button class="btn" id="btnChart" data-tip="Mythos — the market's rotating bodies. Sectors and themes plotted by relative strength and momentum vs SPY. Click one to drill into its names, click a name for its full options picture.">Mythos</button>
+    <button class="btn" id="btnIdeas">Aether</button>
+    <button class="btn" id="btnImb">Regime</button>
+    <button class="btn" id="btnTape" data-tip="Opening-flow tape — where fresh option dollars are hitting today, ranked by premium.">Tape</button>
+    <button class="btn" id="btnArena" data-tip="The hedging field, animated live. Same numbers as the ladder — rendered as forces instead of rows.">Nexus</button>
+  </nav>
+  <div class="hdr-tools">
+    <div class="mtoggle" id="mtoggle" data-tip="Which exposure the map shows. GEX=gamma (pin/momentum). VEX=vanna (how walls move when IV moves).">
+      <button data-m="gex" class="on">GEX</button>
+      <button data-m="vex">VEX</button>
+    </div>
+    <div class="mtoggle" id="centertoggle" data-tip="Where the ladder auto-scrolls to center. Spot = live price. King = biggest node.">
+      <button data-c="spot">◎ Spot</button>
+      <button data-c="king">★ King</button>
+    </div>
+    <select id="expiryFilter" data-tip="Which expirations feed the map. 0DTE = today only; All = first 5 expirations stacked. Switching re-filters cached chains instantly."><option value="all">All</option><option value="0dte">0DTE</option><option value="7d">≤7D</option><option value="30d">≤30D</option></select>
+    <button class="btn" id="btnHelp" data-tip="How to read and use Kairos">?</button>
+    <button class="btn" id="btnSettings">Settings</button>
+    <button class="btn primary" id="btnRefresh" data-tip="Hard reload — re-pulls chains, OI and IV now. Scheduled polls only tick quotes and re-price locally.">Refresh <span id="spin" class="hidden loader"></span></button>
+  </div>
+</header>
+<div class="banner">
+  <div id="bannerText">Loading…</div>
+  <div id="sessInfo" data-tip="Spot and quotes are live for the current session. Open interest is OCC's prior-settlement figure, published pre-market — so the map's standing structure is as-of the prior close. No vendor has intraday OI."></div>
+  <div id="lastUp">—</div>
+</div>
+<main>
+  <div id="presetBar" class="hidden"></div>
+  <div id="trinityWrap"><div class="trinity" id="trinity"></div></div>
+  <div class="chart-area hidden" id="chartSec">
+    <div class="orrery" id="orrerySec">
+      <div class="orr-top">
+        <div class="orr-title">◍ MYTHOS <span class="orr-sub">market rotation · RS vs SPY</span></div>
+        <div class="orr-controls">
+          <div class="mtoggle" id="orrCatSel" data-tip="Filter the field: classic sectors, high-conviction themes, or everything.">
+            <button data-cat="all" class="on">ALL</button>
+            <button data-cat="sector">SECTORS</button>
+            <button data-cat="theme">THEMES</button>
+          </div>
+          <div class="mtoggle" id="orrTf" data-tip="Momentum lookback for the rotation. Faster = more sensitive, more noise.">
+            <button data-tf="5" class="on">1W</button>
+            <button data-tf="10">2W</button>
+            <button data-tf="21">1M</button>
+          </div>
+          <span id="orrMeta" class="orr-meta"></span>
+          <button class="btn" id="orrBack" style="display:none;border-color:var(--border)">← All</button>
+        </div>
+      </div>
+      <div class="orr-grid">
+        <div class="orr-stage">
+          <canvas id="orrCanvas"></canvas>
+          <div class="orr-wait" id="orrWait">Loading the market\u2026<br><span style="color:var(--faint)">pulling daily bars for every sector, theme and leader</span></div>
+        </div>
+        <div class="orr-rail" id="orrRail"></div>
+      </div>
+      <div class="orr-drill" id="orrDrill"></div>
+      <div class="orr-note">Each body is plotted by <b>relative strength</b> (x — is it out/under-performing SPY) and <b>relative momentum</b> (y — is that strength building or fading). Bodies rotate <b>clockwise</b> through four phases: <span style="color:var(--green)">Leading</span> (strong &amp; accelerating) → <span style="color:var(--gold)">Weakening</span> (strong but fading) → <span style="color:#e879f9">Lagging</span> (weak &amp; falling) → <span style="color:var(--cyan)">Improving</span> (weak but turning up). The tail is the recent path. This is the classic Relative Rotation Graph, computed from daily closes — leadership, not a signal.</div>
+    </div>
+  </div>
+  <div class="imb hidden" id="imbSec">
+    <div class="imb-top">
+      <input id="imbTicker" class="ticker-sel" list="tickerList" value="SPY" style="width:92px" autocomplete="off" data-tip="Type any optionable ticker">
+      <span id="imbMeta" style="font-size:.68rem;color:var(--muted)"></span>
+    </div>
+    <div class="imb-stats" id="imbStats"></div>
+    <div id="regChartWrap" style="margin:14px 0 4px">
+      <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:6px">
+        <div class="rail-h" style="margin:0" data-tip="Net call premium, net put premium, and spot — recorded live this session (in-memory; resets each day).">FLOW THROUGH THE DAY</div>
+        <span class="reg-lg"><s style="background:var(--green)"></s>NET CALL $</span>
+        <span class="reg-lg"><s style="background:var(--red)"></s>NET PUT $</span>
+        <span class="reg-lg"><s style="background:var(--cyan)"></s>SPOT</span>
+        <span id="regChartMeta" style="font-size:.6rem;color:var(--muted);margin-left:auto"></span>
+      </div>
+      <div id="regChart"></div>
+    </div>
+    <div style="text-align:center;font-size:.62rem;color:var(--muted);margin:10px 0 5px;letter-spacing:.08em">CALLS ← → PUTS · bright = today's volume · faint = open interest</div>
+    <div id="imbBars"></div>
+    <div id="imbNote" style="font-size:.62rem;color:var(--muted);margin-top:9px;line-height:1.5"></div>
+  </div>
+  <div class="tape hidden" id="tapeSec">
+    <div class="imb-top">
+      <input id="tapeTicker" class="ticker-sel" list="tickerList" value="SPY" style="width:92px" autocomplete="off" data-tip="Type any optionable ticker">
+      <span id="tapeMeta" style="font-size:.68rem;color:var(--muted)"></span>
+    </div>
+    <div class="imb-stats" id="tapeStats"></div>
+    <div id="tapeBody"></div>
+    <div id="tapeNote" style="font-size:.62rem;color:var(--muted);margin-top:10px;line-height:1.55"></div>
+  </div>
+  <div class="arena hidden" id="arenaSec">
+    <div class="a-top">
+      <input id="arenaTicker" class="ticker-sel" list="tickerList" value="SPY" style="width:92px" autocomplete="off" data-tip="Type any optionable ticker">
+      <span id="arenaMeta" style="font-size:.68rem;color:var(--muted)"></span>
+      <span class="a-legend">
+        <span class="a-lg" data-tip="Positive exposure. Dealers fade moves, so price is held — the field resists."><s class="aeg"></s>AEGIS · +</span>
+        <span class="a-lg" data-tip="Negative exposure. Dealers chase, so moves accelerate — the field pulls."><s class="mae"></s>MAELSTROM · −</span>
+        <span class="a-lg" data-tip="Time-at-price from the real path on screen — a live market profile."><s class="scorch"></s>TIME @ PRICE</span>
+        <span class="a-lg" data-tip="The Reach — ±1σ/±2σ implied by ATM IV over the next 18 minutes. The implied distribution, not a forecast."><s class="reach"></s>THE REACH</span>
+        <span class="a-lg" data-tip="The Standard — live spot at the head of the front."><i class="std"></i>THE STANDARD</span>
+      </span>
+    </div>
+    <div class="a-stage">
+      <canvas id="arenaCanvas"></canvas>
+      <div class="a-wait" id="arenaWait">Waiting on the first chain for this ticker…<br><span style="color:var(--faint)">the field draws as soon as strikes land</span></div>
+    </div>
+    <div class="a-hud" id="arenaHud"></div>
+    <div id="arenaNote" class="a-note">Exposure lives on the <b>price</b> axis, time belongs to the tape. <b>The field</b> is one continuous gradient across the strike ladder — colour and opacity <em>are</em> the exposure, and it fades to black through the zero crossing because that is where the field genuinely cancels. <b>Aegis</b> (+) holds price because dealers fade moves; <em>Maelstrom</em> (−) pulls because they chase. The white trace is the <b>real price path</b> from Tradier 1-minute bars, anchored to the last real bar when the market is closed. <u>Time @ price</u> is a genuine profile. <q>The Reach</q> is the ±1σ/±2σ cone implied by ATM IV over the next 18 minutes — the implied distribution, not a prediction. Nothing here is a signal. <b>The Chronicle:</b> the field is recorded (~60s columns, full ladder, GEX+VEX) while a Kairos tab is open and kept ~7 days in this browser — past columns show the field <em>as it was</em>; before the first recording, only the tape draws. Drag to pan time <em>and</em> price; wheel zooms time, Shift+wheel (or wheel over the strike ladder) zooms price; double-click snaps back to live + auto-fit. 30M–5D windows; 1-min bars reach back 20 days (Tradier's limit). <b>The Echo:</b> because OI is fixed all session (OCC prior-settlement), today's field before recording began is <em>reconstructed</em> — the same Black-Scholes × OI pipeline evaluated at each minute's real spot, with current IV (drift not replayed) on an OI basis. Reconstructed columns render dimmer, are tagged in the Lens, and are never persisted — recorded columns always win. <b>The Undertow</b> (bottom pane) is net ±1% exposure through time; the thin gold/teal/magenta tracks are where Crown and the walls actually sat.</div>
+  </div>
+  <div class="surfaced hidden" id="ideasSec">
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px">
+      <h3 style="margin-bottom:0">Surfaced Ideas</h3>
+      <div class="mtoggle" id="aetherTabs">
+        <button data-a="swing" class="on" data-tip="Multi-day swing ideas — GEX regime × daily trend × opening flow, with a researched contract: 60–90 DTE (the buyer's window, not the seller's 30–45), Δ0.55–0.82 ITM, and IV judged against the stock's own realised vol.">Swing</button>
+        <button data-a="zero" data-tip="Kairos Zero — same-day (0DTE/1DTE) setups built on the 0DTE-only dealer book, the live tape, and the session clock. Long premium only, journaled fires.">0DTE</button>
+      </div>
+      <span id="zeroClock" class="hidden" style="margin-left:auto;font-size:.66rem;color:var(--muted);font-family:'JetBrains Mono'"></span>
+    </div>
+    <div id="aetherPulse" class="aether-pulse"></div>
+    <div class="cards" id="cards"></div>
+    <div id="zeroWrap" class="hidden"></div>
+  </div>
+</main>
+
+<div class="modal-bg" id="helpModal">
+  <div class="modal help">
+    <button class="close" id="closeHelp">×</button>
+    <h2>How to use Kairos</h2>
+    <h3>The two lenses — GEX / VEX</h3>
+    <p>The <b>GEX / VEX</b> toggle up top swaps what every map shows. They are two different Greek exposures, and their walls sit in <em>different strikes</em> — that's the whole point.</p>
+    <ul>
+      <li><strong>GEX (gamma)</strong> — the dollar hedging load at each strike. Positive (teal) = dealers fade the move (pin/range); negative (purple) = dealers chase it (momentum). Gamma peaks near the money. This is the classic map.</li>
+      <li><strong>VEX (vanna)</strong> — how dealer delta shifts when <em>IV</em> moves. Vanna peaks out in the wings (~15–25Δ), so the vanna King is usually nowhere near the gamma King. +VEX near spot: rising IV makes dealers sell into strength / falling IV hands the market a bid — the "vanna tailwind" that quietly lifts grinding, low-vol tape and caps vol spikes. −VEX: dealers chase IV, moves amplify on a vol expansion.</li>
+    </ul>
+    <p>Read them together: when the gamma King and vanna King <strong>cluster at the same strike</strong>, that strike is a super-magnet. The deep-dive modal shows both and flags tight confluence.</p>
+    <h3>Node taxonomy</h3>
+    <ul>
+      <li><strong>King</strong> — largest |exposure| for the active metric. The market's primary magnet for that force.</li>
+      <li><strong>Call / Put Wall</strong> — largest positive node above and largest negative node below spot, tagged <span class="wtag cw">CW</span> / <span class="wtag pw">PW</span>.</li>
+      <li><strong>Zero Flip</strong> — where net exposure crosses zero (from the Black-Scholes re-priced profile). Computed per metric.</li>
+      <li><strong>Spot row</strong> — the cyan-framed row with the live price pill. That's where price is trading right now; everything above it is overhead structure, everything below is support.</li>
+    </ul>
+    <h3>Flow Tape</h3>
+    <p>Ranks today's <strong>opening premium</strong> — contracts where volume is running ≥70% of open interest (new positioning, not churn), sized by real dollars (mid × volume × 100). <strong>Honest limits:</strong> Tradier's REST feed reports total contract volume, not per-trade aggressor side, so this is <em>not</em> tick-level buy/sell or sweep detection, and puts may be hedges. What it does capture cleanly: where fresh option dollars are opening, which walls are being built vs. stale, and a directional dollar lean that feeds the Ideas score.</p>
+    <h3>The Δ chips</h3>
+    <p>The ▲/▼ percentages flag nodes building or unwinding vs. <strong>~12 minutes ago</strong>. A node must be ≥8% of the King and have moved ≥8% to earn one — that kills the far-OTM tail noise. Chips track whichever metric is active.</p>
+    <h3>Imbalance</h3>
+    <p>Per-strike call vs put pressure — bright bars are today's volume, faint bars are standing OI. Call Wall / Put Wall are the strikes with the highest call-side and put-side <em>gamma</em> (OI × Γ) inside the visible band — the industry-standard ceiling/floor. Gamma-weighting is deliberate: it's highest at-the-money and decays with distance, so a far-OTM tail hedge can't masquerade as support/resistance the way raw OI would. Sentiment blends volume ratio with premium ratio.</p>
+    <h3>Workflow (Skylit doctrine)</h3>
+    <p>Chart first, map second. Build your thesis from price, then use the map to confirm or deny. Full Triad alignment = highest conviction; divergence = size down or pass. Structure is context, not a signal.</p>
+    <h3>Units &amp; honesty</h3>
+    <p>GEX is <strong>$ per 1-pt move</strong> (Heatseeker scale). VEX is <strong>$ delta per vol-point</strong>. OI updates daily pre-market; Greeks/IV refresh ~hourly; quotes are real-time. Chains cache ~90s and every metric is re-priced from live spot on each tick. Signs assume the standard dealer position (long calls / short puts).</p>
+  </div>
+</div>
+<div class="modal-bg" id="modal">
+  <div class="modal">
+    <button class="close" id="closeM">×</button>
+    <h2 id="mTitle">Deep Analysis</h2>
+    <div class="g2">
+      <div>
+        <div class="st">Snapshot</div><div id="mGex"></div>
+        <div class="st" data-tip="Net dealer exposure for the active metric re-priced across a ±7% spot grid. Gold dash = flip, white dash = spot.">Exposure Profile ⓘ</div><div class="prof" id="prof"></div>
+        <div id="mNotes" class="hidden"></div>
+      </div>
+      <div>
+        <div class="st">The Play</div><div id="mRecs"></div>
+        <div class="st">Top Nodes</div><div id="mNodes"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="settings" id="settings">
+  <h3 style="margin-bottom:14px">Settings</h3>
+  <div class="fg">
+    <label>Tradier API token</label>
+    <input type="password" id="tok" style="width:100%" placeholder="paste your token (stored only in this browser)" autocomplete="off">
+    <div class="hint">Free at tradier.com (a sandbox token works). Leave empty to run on delayed CBOE data. Never hard-code or share a token inside this file — each person pastes their own here.</div>
+  </div>
+  <div class="fg"><label>Refresh every (seconds)</label><input type="text" id="poll" value="10" style="width:80px" data-tip="10 is the floor. Scheduled polls only tick live quotes (1 batched request) — chains re-pull every ~90s — well under Tradier's 120 req/min limit."></div>
+  <div class="fg"><label>Map shows</label><select id="sizeBasis" style="width:100%"><option value="oi">Standing positions — open interest, updates daily</option><option value="vol">Today's flow — volume traded so far this session</option></select></div>
+  <button class="btn primary" style="width:100%;margin-top:8px" id="save">Save</button>
+  <div class="method">Everything else is locked to the most accurate setup: live spot quotes, exposure re-priced from spot + IV on every tick, standard dealer convention. Chains/OI/IV cache ~90s, keeping request volume ~80% lower and the UI smooth. Full explanation under <b>?</b>.</div>
+</div>
+<footer>Kairos v9.2 · GEX/VEX/Charm · Aether v2 · Mythos · Quant flow classification · Structure is context, not a signal</footer>
+
+<script src="kairos-core.js"></script>
+<script src="kairos-quant.js"></script>
+<script src="kairos-modules.js"></script>
+<script src="kairos-mythos.js"></script>
+</body>
+</html>
