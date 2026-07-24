@@ -1,27 +1,3 @@
-
-    <h2 style="margin-top:0">The seven screens</h2>
-    <p class="guide-lede">Kairos reads dealer positioning — where market makers are hedged, and what that implies about how price behaves around those levels. Every number is computed from live option chains. Nothing here is a signal or advice.</p>
-    <div class="guide-grid">
-      <div class="guide-item"><b>Triad</b><span>Three ladders side by side — SPXW, SPY, QQQ. Use it to check <i>agreement</i>: when all three point the same way, structure is aligned. When they diverge, size down or pass.</span></div>
-      <div class="guide-item"><b>Junction</b><span>One symbol, full depth. The strike ladder plus a strike × expiry grid showing where gamma sits per expiration. Opens centred on spot. The VIX Desk tab holds the whole volatility picture — term structure, regime, VIX's own option ladder, daily pivots.</span></div>
-      <div class="guide-item"><b>Mythos</b><span>Sector and theme rotation versus SPY, plotted as relative strength (x) against momentum (y). Bodies rotate clockwise: Leading → Weakening → Lagging → Improving. Use it for leadership context, not entries.</span></div>
-      <div class="guide-item"><b>Aether</b><span>The idea engine. It scores every roster symbol through a gate chain and surfaces contract candidates in two profiles — <b>Investor</b> (deep ITM, high probability, larger debit) and <b>Degen</b> (far OTM with long runway, small debit, low probability). Tick <i>took it</i> to log a contract to your ledger; mark it win or loss and it files itself.</span></div>
-      <div class="guide-item"><b>Regime</b><span>Flow through the day. Net call and put premium (bought minus sold) plus net delta flow, the directional pressure, all against spot. Hover or drag anywhere on the chart to scrub the session tick by tick.</span></div>
-      <div class="guide-item"><b>Tape</b><span>Where today's option dollars actually went, ranked by premium. Cross-reference it against the ladder — premium clustering at a structural level means something different than premium scattered away from it.</span></div>
-      <div class="guide-item"><b>Nexus</b><span>The same exposure rendered as a living field over time rather than rows. Drag to pan, wheel or pinch to zoom, double-click to snap back to live.</span></div>
-    </div>
-
-    <h2>Nova</h2>
-    <p class="guide-lede">Nova is the analyst layer. It runs on the server on a schedule, reads the same computed state you see, and writes to every screen — so the analysis is identical on every device and never makes you wait. Nova ranks and explains the numbers the engine produced; it never originates one, and it never tells you what to do.</p>
-
-    <h2>Reading the ladder</h2>
-    <div class="guide-grid">
-      <div class="guide-item"><b>King ★</b><span>The largest absolute exposure node. In positive gamma price tends to gravitate toward it; in negative gamma it accelerates away.</span></div>
-      <div class="guide-item"><b>Call wall / Put wall</b><span>Largest positive and negative nodes. They behave like resistance and support — but a put wall that breaks tends to break hard, because the hedging flips direction.</span></div>
-      <div class="guide-item"><b>Positive vs negative gamma</b><span>Positive means dealers hedge <i>against</i> moves — pinning, mean reversion, quieter tape. Negative means they hedge <i>with</i> moves — trending, amplified, faster.</span></div>
-    </div>
-
-    <h2>The reference</h2>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -177,6 +153,30 @@
   <div class="modal help">
     <button class="close" id="closeHelp">×</button>
     <h2>How to use Kairos</h2>
+
+    <h2>The seven screens</h2>
+    <p class="guide-lede">Kairos reads dealer positioning — where market makers are hedged, and what that implies about how price behaves around those levels. Every number is computed from live option chains. Nothing here is a signal or advice.</p>
+    <div class="guide-grid">
+      <div class="guide-item"><b>Triad</b><span>Three ladders side by side — SPXW, SPY, QQQ. Use it to check <i>agreement</i>: when all three point the same way, structure is aligned. When they diverge, size down or pass.</span></div>
+      <div class="guide-item"><b>Junction</b><span>One symbol, full depth. The strike ladder plus a strike × expiry grid showing where gamma sits per expiration. Opens centred on spot. The VIX Desk tab holds the whole volatility picture — term structure, regime, VIX's own option ladder, daily pivots.</span></div>
+      <div class="guide-item"><b>Mythos</b><span>Sector and theme rotation versus SPY, plotted as relative strength (x) against momentum (y). Bodies rotate clockwise: Leading → Weakening → Lagging → Improving. Use it for leadership context, not entries.</span></div>
+      <div class="guide-item"><b>Aether</b><span>The idea engine. It scores every roster symbol through a gate chain and surfaces contract candidates in two profiles — <b>Investor</b> (deep ITM, high probability, larger debit) and <b>Degen</b> (far OTM with long runway, small debit, low probability). Tick <i>took it</i> to log a contract to your ledger; mark it win or loss and it files itself.</span></div>
+      <div class="guide-item"><b>Regime</b><span>Flow through the day. Net call and put premium (bought minus sold) plus net delta flow, the directional pressure, all against spot. Hover or drag anywhere on the chart to scrub the session tick by tick.</span></div>
+      <div class="guide-item"><b>Tape</b><span>Where today's option dollars actually went, ranked by premium. Cross-reference it against the ladder — premium clustering at a structural level means something different than premium scattered away from it.</span></div>
+      <div class="guide-item"><b>Nexus</b><span>The same exposure rendered as a living field over time rather than rows. Drag to pan, wheel or pinch to zoom, double-click to snap back to live.</span></div>
+    </div>
+
+    <h2>Nova</h2>
+    <p class="guide-lede">Nova is the analyst layer. It runs on the server on a schedule, reads the same computed state you see, and writes to every screen — so the analysis is identical on every device and never makes you wait. Nova ranks and explains the numbers the engine produced; it never originates one, and it never tells you what to do.</p>
+
+    <h2>Reading the ladder</h2>
+    <div class="guide-grid">
+      <div class="guide-item"><b>King ★</b><span>The largest absolute exposure node. In positive gamma price tends to gravitate toward it; in negative gamma it accelerates away.</span></div>
+      <div class="guide-item"><b>Call wall / Put wall</b><span>Largest positive and negative nodes. They behave like resistance and support — but a put wall that breaks tends to break hard, because the hedging flips direction.</span></div>
+      <div class="guide-item"><b>Positive vs negative gamma</b><span>Positive means dealers hedge <i>against</i> moves — pinning, mean reversion, quieter tape. Negative means they hedge <i>with</i> moves — trending, amplified, faster.</span></div>
+    </div>
+
+    <h2>The reference</h2>
     <h3>The two lenses — GEX / VEX</h3>
     <p>The <b>GEX / VEX</b> toggle up top swaps what every map shows. They are two different Greek exposures, and their walls sit in <em>different strikes</em> — that's the whole point.</p>
     <ul>
