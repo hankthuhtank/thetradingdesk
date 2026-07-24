@@ -1244,30 +1244,45 @@ window.renderVixDesk=renderVixDesk;
    AI analysis computed by the Worker on a schedule and served to every device.
    It never originates a number - it selects, ranks and explains the values the
    deterministic pipeline already produced. */
-function renderOracle(){
-  const el=document.getElementById('oracle');if(!el)return;
+/* ================= NOVA =================
+   One analyst across every screen. Written by the Worker on a schedule, served
+   through /bootstrap, painted instantly and identically on every device. Nova
+   ranks and explains the numbers the deterministic pipeline produced; it never
+   originates one. */
+const NOVA_MOUNTS={
+  oracle:[['read','MARKET READ',1],['zero','SAME-DAY \u00b7 0DTE',0],['aether','PLAY REVIEW',0],['brief','PREMARKET BRIEF',0]],
+  novaJunction:[['junction','LADDER READ',1],['read','MARKET READ',0]],
+  novaVix:[['vix','VOLATILITY READ',1]],
+  novaMythos:[['mythos','ROTATION READ',1]],
+  novaRegime:[['regime','FLOW READ',1],['read','MARKET READ',0]],
+  novaTape:[['tape','TAPE READ',1]]
+};
+function novaAge(t){const s=Math.max(0,Math.round(Date.now()/1000-t));return s<90?s+'s':s<5400?Math.round(s/60)+'m':Math.round(s/3600)+'h';}
+function novaMd(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;')
+  .replace(/\*\*([^*]+)\*\*/g,'<b>$1</b>')
+  .replace(/^\s*[-\u2022]\s+(.*)$/gm,'<li>$1</li>')
+  .replace(/(<li>[\s\S]*<\/li>)/,'<ul>$1</ul>')
+  .replace(/\n{2,}/g,'<br><br>');}
+function renderNova(id){
+  const el=document.getElementById(id);if(!el)return;
+  const spec=NOVA_MOUNTS[id];if(!spec)return;
   const a=state._ai||{};
   el.classList.remove('hidden');
-  const age=t=>{const s=Math.max(0,Math.round(Date.now()/1000-t));return s<90?s+'s':s<5400?Math.round(s/60)+'m':Math.round(s/3600)+'h';};
-  const md=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;')
-    .replace(/\*\*([^*]+)\*\*/g,'<b>$1</b>')
-    .replace(/^\s*[-\u2022]\s+(.*)$/gm,'<li>$1</li>')
-    .replace(/(<li>[\s\S]*<\/li>)/,'<ul>$1</ul>')
-    .replace(/\n{2,}/g,'<br><br>');
-  const block=(k,title,open)=>{
-    const b=a[k];if(!b||!b.text)return '';
-    return '<details class="or-block"'+(open?' open':'')+'><summary><b>'+title+'</b> <i>'+age(b.t)+' ago \u00b7 '+(b.model||'')+'</i></summary><div class="or-body">'+md(b.text)+'</div></details>';
-  };
-  let h=block('read','MARKET READ',1)+block('zero','SAME-DAY \u00b7 0DTE',0)+block('aether','PLAY REVIEW',0)+block('brief','PREMARKET BRIEF',0);
-  if(!h){
+  let h='<div class="nova-hd"><span class="nova-dot"></span><b>NOVA</b><i>reads the same computed state you see</i></div>';
+  let any='';
+  spec.forEach(([k,title,open])=>{
+    const b=a[k];if(!b||!b.text)return;
+    any+='<details class="or-block"'+(open?' open':'')+'><summary><b>'+title+'</b> <i>'+novaAge(b.t)+' ago \u00b7 '+(b.model||'')+'</i></summary><div class="or-body">'+novaMd(b.text)+'</div></details>';
+  });
+  if(!any){
     const ph=typeof marketPhase==='function'?marketPhase():'rth';
-    const nxt={rth:'the next quarter-hour',pre:'8:00 AM ET',post:'shortly after the close',overnight:'8:00 AM ET',closed:'the next session'}[ph]||'the next run';
-    h='<div class="or-body" style="color:var(--muted)">Oracle is scheduled \u2014 first analysis writes at <b style="color:var(--teal)">'+nxt+'</b>. It runs on the server, so it appears here the moment it is written, on every device.</div>';
+    const nxt={rth:'the next few minutes',pre:'8:00 AM ET',post:'shortly after the close',overnight:'the next scheduled run',closed:'the next session'}[ph]||'the next run';
+    any='<div class="or-body" style="color:var(--muted)">Nova is scheduled \u2014 first analysis for this view writes at <b style="color:var(--teal)">'+nxt+'</b>. It runs on the server, so it appears here the moment it is written, on every device.</div>';
   }
-  h+='<div class="or-foot">AI reads the same computed state you see \u00b7 it ranks and explains, it never invents a number \u00b7 not financial advice</div>';
-  el.innerHTML=h;
+  el.innerHTML=h+any+'<div class="or-foot">Nova ranks and explains \u00b7 it never invents a number \u00b7 not financial advice</div>';
 }
-window.renderOracle=renderOracle;
+function renderOracle(){Object.keys(NOVA_MOUNTS).forEach(id=>{try{renderNova(id);}catch(e){}});}
+window.renderNova=renderNova;window.renderOracle=renderOracle;
 function renderAetherPulse(){
   const el=document.getElementById('aetherPulse');if(!el)return;
   const Q=window.KairosQuant;
@@ -2062,7 +2077,8 @@ function setView(v){
     if(stale)refresh(false);
   }
   if(v==='single'&&state.singleLoading)refresh(false);
-  if(v==='ideas'){renderCards();try{renderOracle();}catch(e){}
+  try{renderOracle();}catch(e){}
+  if(v==='ideas'){renderCards();
     
     const spF=state._srvPlays&&(Date.now()/1000-state._srvPlays.t)<600;
     if(spF){clearTimeout(state._swpT);state._swpT=setTimeout(()=>ideasSweep(false),45000);}
@@ -2228,7 +2244,7 @@ setTimeout(function(){
 },0);
 function schedule(){clearTimeout(state._t);if(document.hidden)return;state._t=setTimeout(async()=>{await refresh(false);schedule();},state.pollSec*1000);}
 window.Kairos={state,refresh,getSym,kingOf,buildFromChains,buildImbalance,flowLean,exposureProfile};
-console.log('%cKairos v3.1 \u2014 Net Delta Flow (directional pressure), interpolated gamma-flip line, shared-board hold, token fully server-side. Base GEX math unchanged.','color:#f2c14e;font-weight:bold');
+console.log('%cKairos v4.0 \u2014 Net Delta Flow (directional pressure), interpolated gamma-flip line, shared-board hold, token fully server-side. Base GEX math unchanged.','color:#f2c14e;font-weight:bold');
 
 state._juncTab=state._juncTab||'ladder';
 (function(){var jt=document.getElementById('juncTabs');if(!jt)return;

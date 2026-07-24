@@ -44,7 +44,7 @@
 </div>
 <main>
   <div id="presetBar" class="hidden"></div>
-  <div id="trinityWrap"><div id="juncTabs" class="mtoggle hidden" style="margin:0 0 8px"><button data-j="ladder" class="on">Ladder</button><button data-j="vix" data-tip="Everything VIX: term structure, vol regime, the VIX options GEX ladder, and daily pivots.">VIX Desk</button></div><div class="trinity" id="trinity"></div><div id="vixDesk" class="vixdesk hidden"></div></div>
+  <div id="trinityWrap"><div id="juncTabs" class="mtoggle hidden" style="margin:0 0 8px"><button data-j="ladder" class="on">Ladder</button><button data-j="vix" data-tip="Everything VIX: term structure, vol regime, the VIX options GEX ladder, and daily pivots.">VIX Desk</button></div><div class="trinity" id="trinity"></div><div id="novaJunction" class="nova hidden"></div><div id="vixDesk" class="vixdesk hidden"></div><div id="novaVix" class="nova hidden"></div></div>
   <div class="chart-area hidden" id="chartSec">
     <div class="orrery" id="orrerySec">
       <div class="orr-top">
@@ -72,6 +72,7 @@
         <div class="orr-rail" id="orrRail"></div>
       </div>
       <div class="orr-drill" id="orrDrill"></div>
+      <div id="novaMythos" class="nova"></div>
       <div class="orr-note">Each body is plotted by <b>relative strength</b> (x — is it out/under-performing SPY) and <b>relative momentum</b> (y — is that strength building or fading). Bodies rotate <b>clockwise</b> through four phases: <span style="color:var(--green)">Leading</span> (strong &amp; accelerating) → <span style="color:var(--gold)">Weakening</span> (strong but fading) → <span style="color:#e879f9">Lagging</span> (weak &amp; falling) → <span style="color:var(--cyan)">Improving</span> (weak but turning up). The tail is the recent path. This is the classic Relative Rotation Graph, computed from daily closes — leadership, not a signal.</div>
     </div>
   </div>
@@ -93,6 +94,7 @@
       <div id="regChart"></div>
     </div>
     <div style="text-align:center;font-size:.62rem;color:var(--muted);margin:10px 0 5px;letter-spacing:.08em">CALLS ← → PUTS · bright = today's volume · faint = open interest</div>
+    <div id="novaRegime" class="nova"></div>
     <div id="imbBars"></div>
     <div id="imbNote" style="font-size:.62rem;color:var(--muted);margin-top:9px;line-height:1.5"></div>
   </div>
@@ -102,6 +104,7 @@
       <span id="tapeMeta" style="font-size:.68rem;color:var(--muted)"></span>
     </div>
     <div class="imb-stats" id="tapeStats"></div>
+    <div id="novaTape" class="nova"></div>
     <div id="tapeBody"></div>
     <div id="tapeNote" style="font-size:.62rem;color:var(--muted);margin-top:10px;line-height:1.55"></div>
   </div>
@@ -137,7 +140,7 @@
       </div>
       <span id="zeroClock" class="hidden" style="margin-left:auto;font-size:.66rem;color:var(--muted);font-family:'JetBrains Mono'"></span>
     </div>
-    <div id="oracle" class="oracle hidden"></div>
+    <div id="oracle" class="oracle nova"></div>
     <div id="aetherPulse" class="aether-pulse"></div>
     <div class="cards" id="cards"></div>
     <div id="ledgerBox" class="ledger"></div>

@@ -580,3 +580,18 @@ footer{text-align:center;padding:12px;font-size:.65rem;color:#3f4656;border-top:
 @media(max-width:760px){.or-body{font-size:.68rem}}
 
 .prov{font-family:'JetBrains Mono';font-size:.55rem;color:var(--muted);opacity:.7;border:1px solid var(--border);border-radius:8px;padding:1px 5px;margin-left:6px;white-space:nowrap}
+
+
+/* ---- Nova ---- */
+.nova{margin:10px 0;border:1px solid rgba(45,212,191,.2);border-radius:9px;background:linear-gradient(180deg,rgba(45,212,191,.045),rgba(45,212,191,.01));padding:9px 12px}
+.nova-hd{display:flex;align-items:center;gap:7px;margin-bottom:6px}
+.nova-hd b{font-size:.62rem;letter-spacing:.18em;color:var(--teal)}
+.nova-hd i{font-style:normal;font-size:.54rem;color:var(--muted);opacity:.8}
+.nova-dot{width:6px;height:6px;border-radius:50%;background:var(--teal);box-shadow:0 0 7px var(--teal);animation:novaPulse 2.6s ease-in-out infinite}
+@keyframes novaPulse{0%,100%{opacity:.45}50%{opacity:1}}
+@media(max-width:760px){
+  .nova{padding:8px 10px;margin:8px 0}
+  .nova-hd i{display:none}
+  .or-body{font-size:.68rem;line-height:1.6}
+  .or-block summary{font-size:.58rem}
+}
