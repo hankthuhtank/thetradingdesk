@@ -697,7 +697,13 @@ async function aHist(sym,deep){
   aHistT[key]=Date.now();
   const u=underOf(sym);
   try{
-    const s=aNY(new Date(Date.now()-(deep?AR.DEEP_DAYS*86400000:9*3600000))),e=aNY(new Date());
+    /* A rolling 9-hour window is right during the session, but overnight and at
+       weekends it covers only closed-market time, which is why the field
+       collapsed to a ~20 minute sliver with no price path. When the market is
+       shut, reach back far enough to include the whole previous session. */
+    const _closed=(typeof marketPhase==='function'?marketPhase():'rth')!=='rth';
+    const _back=deep?AR.DEEP_DAYS*86400000:(_closed?4*86400000:9*3600000);
+    const s=aNY(new Date(Date.now()-_back)),e=aNY(new Date());
     if(!s||!e)return;
     const j=await tFetch('/markets/timesales?symbol='+encodeURIComponent(u)+'&interval=1min&start='+encodeURIComponent(s)+'&end='+encodeURIComponent(e)+'&session_filter=open');
     let dd=j&&j.series&&j.series.data;if(!dd)return;

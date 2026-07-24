@@ -613,3 +613,14 @@ footer{text-align:center;padding:12px;font-size:.65rem;color:#3f4656;border-top:
 .guide-item span{display:block;font-size:.71rem;line-height:1.62;color:var(--text)}
 .guide-item i{color:var(--gold);font-style:normal}
 @media(max-width:760px){.guide-grid{grid-template-columns:1fr}.guide-item span{font-size:.68rem}}
+
+
+/* ---- modal close button: keep it inside the viewport on phones ---- */
+.modal-bg .modal,.modal-bg .modal.help{position:relative}
+.close{z-index:5}
+@media(max-width:760px){
+  .modal-bg{padding:10px}
+  .modal-bg .modal,.modal-bg .modal.help{max-height:88vh;overflow:auto;padding-top:44px;-webkit-overflow-scrolling:touch}
+  .close{position:fixed;top:14px;right:18px;font-size:1.7rem;line-height:1;background:rgba(10,14,20,.92);border:1px solid var(--border);border-radius:50%;width:38px;height:38px;display:flex;align-items:center;justify-content:center;color:var(--text)}
+  .settings{max-height:88vh;overflow:auto}
+}

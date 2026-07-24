@@ -1307,6 +1307,11 @@ function renderNova(id){
     const b=a[k];if(!b||!b.text)return;
     any+='<details class="or-block"'+(open?' open':'')+'><summary><b>'+title+'</b> <i>'+novaAge(b.t)+' ago \u00b7 '+(b.model||'')+'</i></summary><div class="or-body">'+novaMd(b.text)+'</div></details>';
   });
+  if(!any&&state._aiErr&&state._aiErr.text){
+    any='<div class="or-body" style="color:var(--red)"><b>Nova could not run.</b><br>'+
+      String(state._aiErr.text).replace(/</g,'&lt;')+
+      '<br><span style="color:var(--muted);font-size:.62rem">Most often this means the Workers AI binding is missing \u2014 check that <b>wrangler.toml</b> contains an <b>[ai]</b> section and redeploy. Full diagnostics: <b>/diag?test=1</b> on your Worker URL.</span></div>';
+  }
   if(!any){
     const ph=typeof marketPhase==='function'?marketPhase():'rth';
     const nxt={rth:'the next few minutes',pre:'8:00 AM ET',post:'shortly after the close',overnight:'the next scheduled run',closed:'the next session'}[ph]||'the next run';
@@ -1824,6 +1829,7 @@ function openDeep(sym){
 function applyBootstrap(bs){
   if(!bs)return 0;let n=0;
   if(bs.plays&&bs.plays.html)state._srvPlays=bs.plays;
+  if(bs.aiError)state._aiErr=bs.aiError;
   if(bs.ai){state._ai=bs.ai;try{renderOracle();}catch(e){}}
   if(bs.ladders){
     Object.keys(bs.ladders).forEach(sym=>{
@@ -2280,7 +2286,7 @@ setTimeout(function(){
 },0);
 function schedule(){clearTimeout(state._t);if(document.hidden)return;state._t=setTimeout(async()=>{await refresh(false);schedule();},state.pollSec*1000);}
 window.Kairos={state,refresh,getSym,kingOf,buildFromChains,buildImbalance,flowLean,exposureProfile};
-console.log('%cKairos v4.3 \u2014 Net Delta Flow (directional pressure), interpolated gamma-flip line, shared-board hold, token fully server-side. Base GEX math unchanged.','color:#f2c14e;font-weight:bold');
+console.log('%cKairos v4.4 \u2014 Net Delta Flow (directional pressure), interpolated gamma-flip line, shared-board hold, token fully server-side. Base GEX math unchanged.','color:#f2c14e;font-weight:bold');
 
 state._juncTab=state._juncTab||'ladder';
 (function(){var jt=document.getElementById('juncTabs');if(!jt)return;
