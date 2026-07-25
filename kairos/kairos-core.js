@@ -1292,11 +1292,32 @@ const NOVA_MOUNTS={
   novaTape:[['tape','TAPE READ',1]]
 };
 function novaAge(t){const s=Math.max(0,Math.round(Date.now()/1000-t));return s<90?s+'s':s<5400?Math.round(s/60)+'m':Math.round(s/3600)+'h';}
-function novaMd(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;')
-  .replace(/\*\*([^*]+)\*\*/g,'<b>$1</b>')
-  .replace(/^\s*[-\u2022]\s+(.*)$/gm,'<li>$1</li>')
-  .replace(/(<li>[\s\S]*<\/li>)/,'<ul>$1</ul>')
-  .replace(/\n{2,}/g,'<br><br>');}
+const NOVA_TICK=/\b(SPXW|SPX|SPY|QQQ|IWM|NVDA|TSLA|AAPL|MSFT|META|AMZN|GOOGL|AMD|VIX9D|VIX3M|VIX6M|VIX|SMH|XL[A-Z])\b/;
+const NOVA_TERM=/\b(negative gamma|positive gamma|short gamma|long gamma|backwardation|contango|call wall|put wall|gamma flip|King|pinning|trending)\b/i;
+/* Presentational only: the model's text is never rewritten, just marked up so
+   levels and tickers read as data instead of prose. */
+function novaMd(s){
+  let t=String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;');
+  const RX=new RegExp([
+    '\\*\\*[^*]+\\*\\*',
+    '\\$-?[\\d,]+(?:\\.\\d+)?[MBKmbk]?',
+    '-?\\d+(?:\\.\\d+)?%',
+    NOVA_TICK.source,
+    NOVA_TERM.source,
+    '\\b\\d{2,5}(?:\\.\\d{1,2})?\\b'
+  ].join('|'),'g');
+  t=t.replace(RX,m=>{
+    if(/^\*\*/.test(m))return '<b>'+m.slice(2,-2)+'</b>';
+    if(/^\$/.test(m))return '<span class="nv-usd">'+m+'</span>';
+    if(/%$/.test(m))return '<span class="nv-pct">'+m+'</span>';
+    if(new RegExp('^(?:'+NOVA_TICK.source+')$').test(m))return '<span class="nv-tick">'+m+'</span>';
+    if(new RegExp('^(?:'+NOVA_TERM.source+')$','i').test(m))return '<span class="nv-term">'+m+'</span>';
+    return '<span class="nv-lvl">'+m+'</span>';
+  });
+  return t.replace(/^\s*[-\u2022]\s+(.*)$/gm,'<li>$1</li>')
+    .replace(/(<li>[\s\S]*<\/li>)/,'<ul>$1</ul>')
+    .replace(/\n{2,}/g,'<br><br>');
+}
 function renderNova(id){
   const el=document.getElementById(id);if(!el)return;
   const spec=NOVA_MOUNTS[id];if(!spec)return;
@@ -1305,7 +1326,7 @@ function renderNova(id){
   let any='';
   spec.forEach(([k,title,open])=>{
     const b=a[k];if(!b||!b.text)return;
-    any+='<details class="or-block"'+(open?' open':'')+'><summary><b>'+title+'</b> <i>'+novaAge(b.t)+' ago \u00b7 '+(b.model||'')+'</i></summary><div class="or-body">'+novaMd(b.text)+'</div></details>';
+    any+='<details class="or-block nv-'+k+'"'+(open?' open':'')+'><summary><span class="nv-tag">'+title+'</span><i>'+novaAge(b.t)+' \u00b7 '+(b.model||'').replace(/-instruct.*$/,'')+'</i></summary><div class="or-body">'+novaMd(b.text)+'</div></details>';
   });
   if(!any&&state._aiErr&&state._aiErr.text){
     any='<div class="or-body" style="color:var(--red)"><b>Nova could not run.</b><br>'+
@@ -1522,7 +1543,17 @@ function renderRegimeChart(sym){
   const cVals=ser.map(p=>p._c),pVals=ser.map(p=>p._p);
   const cMin=Math.min(...cVals),cMax=Math.max(...cVals);
   const pMin=Math.min(...pVals),pMax=Math.max(...pVals);
-  const BAND=IH*0.38;
+  /* NDF LANE. Net delta flow is notional exposure (delta x shares x price);
+     premium flow is dollars actually spent. NDF runs two to three orders of
+     magnitude larger, so sharing one axis crushed the premium curves to a flat
+     line. NDF now owns a dedicated lane below the main chart with its own
+     scale — both series stay readable and neither is misrepresented. */
+  const hasNdf=ser.some(p=>p._n!=null);
+  const LANE=hasNdf?Math.round(IH*0.26):0;
+  const GAP=hasNdf?10:0;
+  const MH=IH-LANE-GAP;                 // main chart height
+  const LT=PT+MH+GAP;                   // lane top
+  const BAND=MH*0.38;
   /* CLASSIFIED mode matches Flowseeker exactly: NCP (call bought-sold) and
      NPP (put bought-sold) share ONE zero-centered axis and oscillate around
      $0, with spot on the right axis. The split-band layout only remains as
@@ -1530,12 +1561,12 @@ function renderRegimeChart(sym){
   let yC,yPut,shared=false,shMax=1;
   if(classified){
     shared=true;
-    shMax=Math.max(1,...ser.map(p=>Math.max(Math.abs(p._c),Math.abs(p._p),p._n!=null?Math.abs(p._n):0)));
-    const yF=v=>PT+(shMax-v)/(2*shMax)*IH;
+    shMax=Math.max(1,...ser.map(p=>Math.max(Math.abs(p._c),Math.abs(p._p))));  // NDF excluded: it has its own lane
+    const yF=v=>PT+(shMax-v)/(2*shMax)*MH;
     yC=yF;yPut=yF;
   }else{
     yC=v=>PT+((cMax>cMin)?(cMax-v)/(cMax-cMin):0.5)*BAND;
-    yPut=v=>PT+IH-BAND+((pMax>pMin)?(v-pMin)/(pMax-pMin):0.5)*BAND;
+    yPut=v=>PT+MH-BAND+((pMax>pMin)?(v-pMin)/(pMax-pMin):0.5)*BAND;
   }
   const sMin=Math.min(...ser.map(p=>p.spot)),sMax=Math.max(...ser.map(p=>p.spot));
   const sMid=(sMin+sMax)/2;
@@ -1543,7 +1574,7 @@ function renderRegimeChart(sym){
   const sPad=sRange*0.22;
   const sLo=sMin-sPad,sHi=sMax+sPad;
   const x=t=>PL+(t-t0)/tspan*IW;
-  const yS=v=>PT+(sHi-v)/((sHi-sLo)||1)*IH;
+  const yS=v=>PT+(sHi-v)/((sHi-sLo)||1)*MH;
   const fmtK=v=>{const a=Math.abs(v);return (v<0?'-':'')+'$'+(a>=1e9?(a/1e9).toFixed(2)+'B':a>=1e6?(a/1e6).toFixed(2)+'M':a>=1e3?(a/1e3).toFixed(0)+'K':a.toFixed(0));};
   const clk=t=>{try{return new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',hour:'numeric',minute:'2-digit',hour12:false}).format(new Date(t*1000));}catch(e){return '';}};
   const dp=sHi>=1000?0:sHi>=100?1:2;
@@ -1577,11 +1608,11 @@ function renderRegimeChart(sym){
       g+='<text x="'+(PL-8)+'" y="'+(y+3).toFixed(1)+'" fill="rgba(160,174,196,'+(0.3+0.2*pr[1])+')" font-size="8.5" text-anchor="end" font-family="JetBrains Mono">'+fmtK(v)+'</text>';
     });
   }else{
-    [PT+BAND,PT+IH-BAND].forEach(y=>{g+='<line x1="'+PL+'" y1="'+y.toFixed(1)+'" x2="'+(W-PR)+'" y2="'+y.toFixed(1)+'" stroke="rgba(126,166,214,.07)" stroke-dasharray="2 5"/>';});
+    [PT+BAND,PT+MH-BAND].forEach(y=>{g+='<line x1="'+PL+'" y1="'+y.toFixed(1)+'" x2="'+(W-PR)+'" y2="'+y.toFixed(1)+'" stroke="rgba(126,166,214,.07)" stroke-dasharray="2 5"/>';});
     g+='<text x="'+(PL-8)+'" y="'+(PT+9)+'" fill="rgba(52,211,153,.6)" font-size="8.5" text-anchor="end" font-family="JetBrains Mono">'+fmtK(cMax)+'</text>';
     g+='<text x="'+(PL-8)+'" y="'+(PT+BAND+3).toFixed(1)+'" fill="rgba(52,211,153,.35)" font-size="8.5" text-anchor="end" font-family="JetBrains Mono">'+fmtK(cMin)+'</text>';
-    g+='<text x="'+(PL-8)+'" y="'+(PT+IH-BAND+3).toFixed(1)+'" fill="rgba(248,113,113,.35)" font-size="8.5" text-anchor="end" font-family="JetBrains Mono">'+fmtK(pMin)+'</text>';
-    g+='<text x="'+(PL-8)+'" y="'+(PT+IH).toFixed(1)+'" fill="rgba(248,113,113,.6)" font-size="8.5" text-anchor="end" font-family="JetBrains Mono">'+fmtK(pMax)+'</text>';
+    g+='<text x="'+(PL-8)+'" y="'+(PT+MH-BAND+3).toFixed(1)+'" fill="rgba(248,113,113,.35)" font-size="8.5" text-anchor="end" font-family="JetBrains Mono">'+fmtK(pMin)+'</text>';
+    g+='<text x="'+(PL-8)+'" y="'+(PT+MH).toFixed(1)+'" fill="rgba(248,113,113,.6)" font-size="8.5" text-anchor="end" font-family="JetBrains Mono">'+fmtK(pMax)+'</text>';
   }
   // price axis: 5 clean ticks (right side, cyan = the hero axis)
   [0,0.25,0.5,0.75,1].forEach(f=>{const v=sHi-f*(sHi-sLo);g+='<text x="'+(W-PR+8)+'" y="'+(yS(v)+3).toFixed(1)+'" fill="rgba(124,196,236,.9)" font-size="9.5" text-anchor="start" font-family="JetBrains Mono">'+v.toFixed(dp)+'</text>';});
@@ -1612,8 +1643,24 @@ function renderRegimeChart(sym){
   g+='<path d="'+areaOf('_p',yPut,pBase)+'" fill="url(#regR)"/>';
   g+='<path d="'+smooth(pts('_c',yC))+'" fill="none" stroke="var(--green)" stroke-width="1.6" stroke-opacity=".8"/>';
   g+='<path d="'+smooth(pts('_p',yPut))+'" fill="none" stroke="var(--red)" stroke-width="1.6" stroke-opacity=".8"/>';
-  const nPts=ser.filter(p=>p._n!=null).map(p=>[x(p.t),yC(p._n)]);
-  if(shared&&nPts.length>1)g+='<path d="'+smooth(nPts)+'" fill="none" stroke="#f2c14e" stroke-width="1.4" stroke-opacity=".85"/>';
+  /* ---- NDF lane ---- */
+  var yN=null;
+  if(hasNdf){
+    const nv=ser.filter(p=>p._n!=null).map(p=>p._n);
+    const nMax=Math.max(1,...nv.map(Math.abs));
+    yN=v=>LT+(nMax-v)/(2*nMax)*LANE;
+    const zy=yN(0);
+    g+='<rect x="'+PL+'" y="'+LT+'" width="'+IW+'" height="'+LANE+'" fill="rgba(242,193,78,.028)" rx="3"/>';
+    g+='<line x1="'+PL+'" y1="'+zy.toFixed(1)+'" x2="'+(W-PR)+'" y2="'+zy.toFixed(1)+'" stroke="rgba(242,193,78,.28)" stroke-dasharray="3 3"/>';
+    const nP=ser.filter(p=>p._n!=null).map(p=>[x(p.t),yN(p._n)]);
+    if(nP.length>1){
+      g+='<path d="'+smooth(nP)+' L'+nP[nP.length-1][0].toFixed(1)+' '+zy.toFixed(1)+' L'+nP[0][0].toFixed(1)+' '+zy.toFixed(1)+' Z" fill="rgba(242,193,78,.14)"/>';
+      g+='<path d="'+smooth(nP)+'" fill="none" stroke="#f2c14e" stroke-width="1.5" stroke-opacity=".95"/>';
+    }
+    g+='<text x="'+(PL+5)+'" y="'+(LT+11)+'" fill="rgba(242,193,78,.75)" font-size="8" font-family="JetBrains Mono" letter-spacing="1">NET DELTA FLOW</text>';
+    g+='<text x="'+(PL-8)+'" y="'+(LT+9)+'" fill="rgba(242,193,78,.5)" font-size="8" text-anchor="end" font-family="JetBrains Mono">'+fmtK(nMax)+'</text>';
+    g+='<text x="'+(PL-8)+'" y="'+(LT+LANE).toFixed(1)+'" fill="rgba(242,193,78,.5)" font-size="8" text-anchor="end" font-family="JetBrains Mono">'+fmtK(-nMax)+'</text>';
+  }
   // SPOT — the hero. Drawn LAST (on top), bright solid cyan + glow + white core.
   const spotPath=smooth(pts('spot',yS));
   g+='<path d="'+spotPath+'" fill="none" stroke="#22d3ee" stroke-width="3" stroke-opacity=".9" filter="url(#regGlow)"/>';
@@ -1631,6 +1678,7 @@ function renderRegimeChart(sym){
      '<circle id="regXhC" r="3.5" fill="var(--green)" stroke="#08120d" stroke-width="1.5"/>'+
      '<circle id="regXhP" r="3.5" fill="var(--red)" stroke="#120808" stroke-width="1.5"/>'+
      '<circle id="regXhS" r="4.5" fill="#eafcff" stroke="#0a141c" stroke-width="1.5"/>'+
+     '<circle id="regXhN" r="3.5" fill="#f2c14e" stroke="#1a1408" stroke-width="1.5" style="display:none"/>'+
      '</g>';
   g+='</svg>';
   host.innerHTML=g;
@@ -1643,7 +1691,7 @@ function renderRegimeChart(sym){
   if(svgEl){
     svgEl.style.touchAction='pan-y';
     const xhG=svgEl.querySelector('#regXh'),xhV=svgEl.querySelector('#regXhV'),
-          xhC=svgEl.querySelector('#regXhC'),xhP=svgEl.querySelector('#regXhP'),xhS=svgEl.querySelector('#regXhS');
+          xhC=svgEl.querySelector('#regXhC'),xhP=svgEl.querySelector('#regXhP'),xhS=svgEl.querySelector('#regXhS'),xhN=svgEl.querySelector('#regXhN');
     const fmtD=v=>(v>=0?'+':'\u2212')+fmtK(Math.abs(v));
     const hide=()=>{xhG.style.display='none';tip.style.display='none';};
     const scrub=ev=>{
@@ -1661,6 +1709,7 @@ function renderRegimeChart(sym){
       xhC.setAttribute('cx',px.toFixed(1));xhC.setAttribute('cy',yC(p._c).toFixed(1));
       xhP.setAttribute('cx',px.toFixed(1));xhP.setAttribute('cy',yPut(p._p).toFixed(1));
       xhS.setAttribute('cx',px.toFixed(1));xhS.setAttribute('cy',yS(p.spot).toFixed(1));
+      if(xhN){if(yN&&p._n!=null){xhN.style.display='';xhN.setAttribute('cx',px.toFixed(1));xhN.setAttribute('cy',yN(p._n).toFixed(1));}else xhN.style.display='none';}
       const net=p._c-p._p;
       tip.innerHTML='<b>'+clk(p.t)+'</b> \u00b7 <span style="color:#7cc4ec">'+(+p.spot).toFixed(dp)+'</span>'+
         '<span class="rt-row"><i style="color:var(--green)">CALLS</i> '+fmtK(p._c)+(i>0?' <em>'+fmtD(p._c-prev._c)+'</em>':'')+'</span>'+
@@ -2286,7 +2335,7 @@ setTimeout(function(){
 },0);
 function schedule(){clearTimeout(state._t);if(document.hidden)return;state._t=setTimeout(async()=>{await refresh(false);schedule();},state.pollSec*1000);}
 window.Kairos={state,refresh,getSym,kingOf,buildFromChains,buildImbalance,flowLean,exposureProfile};
-console.log('%cKairos v4.4 \u2014 Net Delta Flow (directional pressure), interpolated gamma-flip line, shared-board hold, token fully server-side. Base GEX math unchanged.','color:#f2c14e;font-weight:bold');
+console.log('%cKairos v5.0 \u2014 Net Delta Flow (directional pressure), interpolated gamma-flip line, shared-board hold, token fully server-side. Base GEX math unchanged.','color:#f2c14e;font-weight:bold');
 
 state._juncTab=state._juncTab||'ladder';
 (function(){var jt=document.getElementById('juncTabs');if(!jt)return;

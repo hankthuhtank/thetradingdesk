@@ -624,3 +624,27 @@ footer{text-align:center;padding:12px;font-size:.65rem;color:#3f4656;border-top:
   .close{position:fixed;top:14px;right:18px;font-size:1.7rem;line-height:1;background:rgba(10,14,20,.92);border:1px solid var(--border);border-radius:50%;width:38px;height:38px;display:flex;align-items:center;justify-content:center;color:var(--text)}
   .settings{max-height:88vh;overflow:auto}
 }
+
+
+/* ---- Nova v2: instrument readout ---- */
+.nova{position:relative;overflow:hidden}
+.nova::before{content:'';position:absolute;left:0;top:0;bottom:0;width:2px;background:linear-gradient(180deg,var(--teal),rgba(45,212,191,.05));opacity:.8}
+.or-block{border-top:1px solid rgba(126,166,214,.07)}
+.or-block:first-of-type{border-top:none}
+.or-block summary{display:flex;align-items:center;gap:8px;cursor:pointer;list-style:none;padding:5px 0}
+.or-block summary::-webkit-details-marker{display:none}
+.nv-tag{font-size:.55rem;letter-spacing:.16em;font-weight:800;color:var(--teal);border:1px solid rgba(45,212,191,.3);border-radius:3px;padding:2px 6px;background:rgba(45,212,191,.07);white-space:nowrap}
+.or-block summary i{font-style:normal;font-size:.52rem;color:var(--muted);opacity:.75;font-family:'JetBrains Mono'}
+.or-block summary::after{content:'\25be';margin-left:auto;opacity:.4;font-size:.6rem}
+.or-block[open] summary::after{content:'\25b4'}
+.nv-zero .nv-tag{color:#f2c14e;border-color:rgba(242,193,78,.32);background:rgba(242,193,78,.07)}
+.nv-regime .nv-tag,.nv-tape .nv-tag{color:#c084fc;border-color:rgba(192,132,252,.32);background:rgba(192,132,252,.07)}
+.nv-brief .nv-tag,.nv-mythos .nv-tag{color:#7cc4ec;border-color:rgba(124,196,236,.32);background:rgba(124,196,236,.07)}
+.or-body{font-size:.73rem;line-height:1.75;color:var(--text);padding:2px 0 6px}
+/* inline data chips — the analysis reads like the terminal around it */
+.nv-lvl{font-family:'JetBrains Mono';font-size:.7rem;color:#eafcff;background:rgba(124,196,236,.1);border-bottom:1px solid rgba(124,196,236,.35);padding:0 3px;border-radius:2px}
+.nv-usd{font-family:'JetBrains Mono';font-size:.7rem;color:#34d399;background:rgba(52,211,153,.09);padding:0 3px;border-radius:2px}
+.nv-pct{font-family:'JetBrains Mono';font-size:.7rem;color:#f2c14e;padding:0 2px}
+.nv-tick{font-family:'JetBrains Mono';font-size:.69rem;font-weight:700;color:var(--text);background:rgba(126,166,214,.13);border:1px solid rgba(126,166,214,.22);padding:0 4px;border-radius:3px;letter-spacing:.04em}
+.nv-term{color:#c084fc;font-weight:600}
+@media(max-width:760px){.or-body{font-size:.69rem;line-height:1.7}.nv-tag{font-size:.5rem}}

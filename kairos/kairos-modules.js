@@ -624,6 +624,8 @@ const AR={SPAN:30*60000,FWD:18,NOWF:0.62,MINR:0.04,MAXP:150,TOPB:4,TOPN:11,
 let aRaf=0,aT=0,aTweenSpot=null,aParts=[],aBursts=[],aShake=0,aHudT=0,aStamp='',aSeen={},aPrevReg=null,aRegFlash=0;
 let aTrail={},aHistT={},aBloom=null,aScan=0;
 let aWin=Math.max(AR.WINMIN,Math.min(AR.WINMAX,parseInt(localStorage.getItem('kairos_nx_win'))||30));
+/* set once you pick a window: your choice then wins over the data-fit assist */
+let aWinExplicit=false;
 let aPan=0,aCandle=localStorage.getItem('kairos_nx_candle')==='1';
 let aCandleInt=parseInt(localStorage.getItem('kairos_nx_candleint'))||0; /* 0=auto, else minutes */
 let aMouse=null,aDrag=null,aVM=null,aDeepT={};
@@ -951,7 +953,7 @@ function aScene(){
      room on the right), but never below a sane floor so a handful of ticks
      still reads. This is what makes the chart populate from history. */
   const dataTT=Math.max(0,ttAnchor-ttFirst);
-  if(aPan<30000&&dataTT>0){
+  if(aPan<30000&&dataTT>0&&!aWinExplicit){
     const floor=Math.min(span,20*60000);           // at least ~20 min of view
     const fit=Math.max(floor,dataTT*1.08);          // fit data + 8% right margin
     span=Math.min(span,fit);                        // never wider than requested
@@ -1509,6 +1511,7 @@ function aRound(ctx,x,y,w,h,r){
 
 /* ---- THE WINDOW: chips + pan/zoom interactions ---- */
 function aSetWin(m){
+  aWinExplicit=true;
   aWin=Math.max(AR.WINMIN,Math.min(AR.WINMAX,m));
   try{localStorage.setItem('kairos_nx_win',String(Math.round(aWin)));}catch(e){}
   aFKey='';aChips();
