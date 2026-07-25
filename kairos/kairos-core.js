@@ -1318,28 +1318,68 @@ function novaMd(s){
     .replace(/(<li>[\s\S]*<\/li>)/,'<ul>$1</ul>')
     .replace(/\n{2,}/g,'<br><br>');
 }
+function novaPeek(t){
+  const s=String(t||'').replace(/\s+/g,' ').trim();
+  const cut=s.slice(0,150);
+  const stop=cut.lastIndexOf('. ');
+  return (stop>60?cut.slice(0,stop+1):cut)+(s.length>cut.length?'\u2026':'');
+}
 function renderNova(id){
   const el=document.getElementById(id);if(!el)return;
   const spec=NOVA_MOUNTS[id];if(!spec)return;
   const a=state._ai||{};
-  let h='<div class="nova-hd"><span class="nova-dot"></span><b>NOVA</b><i>reads the same computed state you see</i></div>';
-  let any='';
-  spec.forEach(([k,title,open])=>{
-    const b=a[k];if(!b||!b.text)return;
-    any+='<details class="or-block nv-'+k+'"'+(open?' open':'')+'><summary><span class="nv-tag">'+title+'</span><i>'+novaAge(b.t)+' \u00b7 '+(b.model||'').replace(/-instruct.*$/,'')+'</i></summary><div class="or-body">'+novaMd(b.text)+'</div></details>';
-  });
-  if(!any&&state._aiErr&&state._aiErr.text){
-    any='<div class="or-body" style="color:var(--red)"><b>Nova could not run.</b><br>'+
-      String(state._aiErr.text).replace(/</g,'&lt;')+
-      '<br><span style="color:var(--muted);font-size:.62rem">Most often this means the Workers AI binding is missing \u2014 check that <b>wrangler.toml</b> contains an <b>[ai]</b> section and redeploy. Full diagnostics: <b>/diag?test=1</b> on your Worker URL.</span></div>';
+  const have=spec.filter(s=>a[s[0]]&&a[s[0]].text);
+  state._novaTab=state._novaTab||{};
+  state._novaOpen=state._novaOpen||{};
+  if(state._novaOpen[id]===undefined){
+    try{state._novaOpen[id]=localStorage.getItem('kairos_nv_'+id)==='1';}catch(e){state._novaOpen[id]=false;}
   }
-  if(!any){
+  if(!have.length){
     const ph=typeof marketPhase==='function'?marketPhase():'rth';
     const nxt={rth:'the next few minutes',pre:'8:00 AM ET',post:'shortly after the close',overnight:'the next scheduled run',closed:'the next session'}[ph]||'the next run';
-    any='<div class="or-body" style="color:var(--muted)">Nova is scheduled \u2014 first analysis for this view writes at <b style="color:var(--teal)">'+nxt+'</b>. It runs on the server, so it appears here the moment it is written, on every device.</div>';
+    el.innerHTML='<div class="nv-strip nv-wait"><span class="nova-dot"></span><b>NOVA</b>'+
+      '<span class="nv-peek">standing by \u2014 next analysis writes at '+nxt+'</span></div>';
+    return;
   }
-  el.innerHTML=h+any+'<div class="or-foot">Nova ranks and explains \u00b7 it never invents a number \u00b7 not financial advice</div>';
+  let active=state._novaTab[id];
+  if(!active||!have.some(h=>h[0]===active))active=have[0][0];
+  state._novaTab[id]=active;
+  const cur=a[active],curTitle=(have.find(h=>h[0]===active)||[])[1]||'';
+  const open=state._novaOpen[id];
+  let h='<button class="nv-strip" data-nvtoggle="'+id+'">'+
+    '<span class="nova-dot"></span><b>NOVA</b>'+
+    '<span class="nv-tag nv-t-'+active+'">'+curTitle+'</span>'+
+    '<span class="nv-peek">'+novaPeek(cur.text)+'</span>'+
+    '<span class="nv-chev">'+(open?'\u25b4':'\u25be')+'</span></button>';
+  if(open){
+    h+='<div class="nv-body">'+
+      '<div class="nv-tabs">'+have.map(([k,title])=>
+        '<button class="nv-tab'+(k===active?' on':'')+' nv-t-'+k+'" data-nvtab="'+id+'|'+k+'">'+title+
+        '<i>'+novaAge(a[k].t)+'</i></button>').join('')+'</div>'+
+      '<div class="nv-content"><div class="or-body">'+novaMd(cur.text)+'</div>'+
+      '<div class="or-foot">'+(cur.model||'').replace(/-instruct.*$/,'')+' \u00b7 '+novaAge(cur.t)+' ago \u00b7 ranks and explains, never invents a number \u00b7 not financial advice</div></div>'+
+      '</div>';
+  }
+  el.innerHTML=h;
 }
+(function(){
+  document.addEventListener('click',function(e){
+    const t=e.target.closest('[data-nvtoggle]');
+    if(t){
+      const id=t.dataset.nvtoggle;
+      state._novaOpen=state._novaOpen||{};
+      state._novaOpen[id]=!state._novaOpen[id];
+      try{localStorage.setItem('kairos_nv_'+id,state._novaOpen[id]?'1':'0');}catch(x){}
+      renderNova(id);return;
+    }
+    const tb=e.target.closest('[data-nvtab]');
+    if(tb){
+      const [id,k]=tb.dataset.nvtab.split('|');
+      state._novaTab=state._novaTab||{};state._novaTab[id]=k;
+      renderNova(id);
+    }
+  },false);
+})();
 function renderOracle(){Object.keys(NOVA_MOUNTS).forEach(id=>{try{renderNova(id);}catch(e){}});}
 window.renderNova=renderNova;window.renderOracle=renderOracle;
 function renderAetherPulse(){
@@ -1879,7 +1919,15 @@ function applyBootstrap(bs){
   if(!bs)return 0;let n=0;
   if(bs.plays&&bs.plays.html)state._srvPlays=bs.plays;
   if(bs.aiError)state._aiErr=bs.aiError;
-  if(bs.ai){state._ai=bs.ai;try{renderOracle();}catch(e){}}
+  if(bs.ai&&Object.keys(bs.ai).length){
+    /* merge, never replace — an empty or partial payload must not blank
+       analyses that are already on screen */
+    const merged=Object.assign({},state._ai||{});
+    Object.keys(bs.ai).forEach(k=>{const nv=bs.ai[k];if(nv&&nv.text)merged[k]=nv;});
+    state._ai=merged;
+    try{localStorage.setItem('kairos_nova_v1',JSON.stringify(merged));}catch(e){}
+    try{renderOracle();}catch(e){}
+  }
   if(bs.ladders){
     Object.keys(bs.ladders).forEach(sym=>{
       if(state.data[sym])return;
@@ -1915,6 +1963,12 @@ async function serverChains(){
   }));
   if(state.view==='trinity'||state.view==='single')renderTrinity();
 }
+/* last known-good Nova, so the panels are populated on the very first paint
+   and survive any bootstrap that comes back thin */
+(function(){try{
+  const s=JSON.parse(localStorage.getItem('kairos_nova_v1')||'null');
+  if(s&&typeof s==='object')state._ai=s;
+}catch(e){}})();
 async function warmPaint(){
   try{ await warmPaintInner(); } finally { if(typeof kickLive==='function')kickLive(); }
 }
@@ -2335,7 +2389,7 @@ setTimeout(function(){
 },0);
 function schedule(){clearTimeout(state._t);if(document.hidden)return;state._t=setTimeout(async()=>{await refresh(false);schedule();},state.pollSec*1000);}
 window.Kairos={state,refresh,getSym,kingOf,buildFromChains,buildImbalance,flowLean,exposureProfile};
-console.log('%cKairos v5.0 \u2014 Net Delta Flow (directional pressure), interpolated gamma-flip line, shared-board hold, token fully server-side. Base GEX math unchanged.','color:#f2c14e;font-weight:bold');
+console.log('%cKairos v5.1 \u2014 Net Delta Flow (directional pressure), interpolated gamma-flip line, shared-board hold, token fully server-side. Base GEX math unchanged.','color:#f2c14e;font-weight:bold');
 
 state._juncTab=state._juncTab||'ladder';
 (function(){var jt=document.getElementById('juncTabs');if(!jt)return;
