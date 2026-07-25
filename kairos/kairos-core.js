@@ -1426,16 +1426,40 @@ function renderFlowConsole(sym){
 window.renderFlowConsole=renderFlowConsole;
 
 /* ═══ NOVA HUB ═══ the command view */
+/* ═══ NOVA COMMAND DECK ═══
+   The AI face of the terminal. Everything on this page is either live computed
+   state or Nova's own synthesis — the per-screen reads stay on their screens. */
 function novaCore(live){
-  return '<svg viewBox="0 0 200 200" class="nv-core'+(live?' live':'')+'">'+
-    '<defs><radialGradient id="ncG"><stop offset="0" stop-color="#2dd4bf" stop-opacity=".55"/><stop offset="1" stop-color="#2dd4bf" stop-opacity="0"/></radialGradient></defs>'+
-    '<circle cx="100" cy="100" r="66" fill="url(#ncG)"/>'+
-    '<g class="nc-r1"><circle cx="100" cy="100" r="78" fill="none" stroke="rgba(45,212,191,.28)" stroke-width="1" stroke-dasharray="3 9"/></g>'+
-    '<g class="nc-r2"><circle cx="100" cy="100" r="60" fill="none" stroke="rgba(45,212,191,.45)" stroke-width="1.5" stroke-dasharray="42 120"/></g>'+
-    '<g class="nc-r3"><circle cx="100" cy="100" r="44" fill="none" stroke="rgba(124,196,236,.5)" stroke-width="1" stroke-dasharray="14 26"/></g>'+
-    '<circle cx="100" cy="100" r="26" fill="none" stroke="rgba(45,212,191,.6)" stroke-width="1"/>'+
-    '<circle cx="100" cy="100" r="9" fill="#2dd4bf" class="nc-pulse"/>'+
+  return '<svg viewBox="0 0 220 220" class="nv-core'+(live?' live':'')+'">'+
+    '<defs>'+
+      '<radialGradient id="ncG"><stop offset="0" stop-color="#2dd4bf" stop-opacity=".5"/><stop offset="1" stop-color="#2dd4bf" stop-opacity="0"/></radialGradient>'+
+      '<linearGradient id="ncSweep" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#2dd4bf" stop-opacity="0"/><stop offset="1" stop-color="#2dd4bf" stop-opacity=".55"/></linearGradient>'+
+    '</defs>'+
+    '<circle cx="110" cy="110" r="72" fill="url(#ncG)"/>'+
+    '<g class="nc-sweep"><path d="M110 110 L110 22 A88 88 0 0 1 172 48 Z" fill="url(#ncSweep)" opacity=".5"/></g>'+
+    '<g class="nc-r1"><circle cx="110" cy="110" r="92" fill="none" stroke="rgba(45,212,191,.22)" stroke-width="1" stroke-dasharray="2 10"/></g>'+
+    '<g class="nc-r2"><circle cx="110" cy="110" r="72" fill="none" stroke="rgba(45,212,191,.4)" stroke-width="1.5" stroke-dasharray="46 132"/></g>'+
+    '<g class="nc-r3"><circle cx="110" cy="110" r="54" fill="none" stroke="rgba(124,196,236,.45)" stroke-width="1" stroke-dasharray="12 24"/></g>'+
+    '<circle cx="110" cy="110" r="34" fill="none" stroke="rgba(45,212,191,.5)" stroke-width="1"/>'+
+    '<circle cx="110" cy="110" r="20" fill="none" stroke="rgba(45,212,191,.25)" stroke-width="6"/>'+
+    '<circle cx="110" cy="110" r="10" fill="#2dd4bf" class="nc-pulse"/>'+
     '</svg>';
+}
+/* Live vitals, computed from state — not from the model. */
+function novaVitals(){
+  const syms=Object.keys(state.data||{});
+  let pos=0,neg=0,tot=0;
+  const rows=[];
+  syms.forEach(s=>{
+    const d=state.data[s];if(!d||!d.strikes||!d.strikes.length)return;
+    const net=d.strikes.reduce((a,x)=>a+(x.gex||0),0);
+    if(net>=0)pos++;else neg++;tot++;
+    const king=d.strikes.reduce((a,b)=>Math.abs(b.gex)>Math.abs(a.gex)?b:a,d.strikes[0]);
+    const dist=d.spot&&king?((king.k-d.spot)/d.spot*100):null;
+    rows.push({s,net,spot:d.spot,king:king?king.k:null,dist});
+  });
+  rows.sort((a,b)=>Math.abs(b.net)-Math.abs(a.net));
+  return {rows,pos,neg,tot};
 }
 function renderNovaHub(){
   const el=document.getElementById('novaSec');if(!el)return;
@@ -1443,35 +1467,82 @@ function renderNovaHub(){
   const hub=a.hub;
   const phase=typeof marketPhase==='function'?marketPhase():'rth';
   const phLab={rth:'MARKET OPEN',pre:'PRE-MARKET',post:'AFTER HOURS',overnight:'OVERNIGHT',closed:'CLOSED'}[phase]||'\u2014';
+  const V=novaVitals();
+  const vt=state._vixTerm;
   const sec=(txt,name)=>{
     const rx=new RegExp('##\\s*'+name+'\\s*([\\s\\S]*?)(?=##\\s*[A-Z]|$)','i');
     const mm=rx.exec(txt||'');return mm?mm[1].trim():'';
   };
-  let h='<div class="nv-hub">';
-  h+='<div class="nv-hero">'+novaCore(!!hub)+
-     '<div class="nv-hero-txt"><h2>NOVA</h2><p>'+(hub
-       ?'The only view that reads the headlines, the sector rotation, the volatility curve and every ticker together. Synthesis, not a summary of the other screens.'
-       :'Standing by. The command briefing writes on the next scheduled run \u2014 it is the heaviest pass, so it runs less often than the others.')+'</p>'+
-     '<div class="nv-status"><span class="nv-st'+(phase==='rth'?' on':'')+'">'+phLab+'</span>'+
-     (hub?'<span class="nv-st on">BRIEFING '+novaAge(hub.t)+' AGO</span>':'<span class="nv-st">AWAITING BRIEFING</span>')+
-     '</div></div></div>';
-  if(hub&&hub.text){
-    const blocks=[['PULSE','MARKET PULSE','pu'],['CATALYSTS','CATALYSTS \u00b7 EVENTS','ca'],
-                  ['ROTATION','WHERE MONEY IS MOVING','ro'],['STANDOUTS','STANDOUTS','so'],
-                  ['MECHANICS','DEALER MECHANICS','me'],['WATCH','WHAT TO WATCH','wa']];
-    let any=false,inner='';
-    blocks.forEach(([key,title,cls])=>{
-      const body=sec(hub.text,key);if(!body)return;any=true;
-      inner+='<div class="nv-card nv-c-'+cls+'"><div class="nv-card-hd">'+title+'</div><div class="or-body">'+novaMd(body)+'</div></div>';
+  const breadth=V.tot?Math.round(V.pos/V.tot*100):null;
+
+  let h='<div class="nv-deck">';
+
+  /* ── HERO ── */
+  h+='<div class="nv-hero">'+
+     '<div class="nv-hero-core">'+novaCore(!!hub)+'</div>'+
+     '<div class="nv-hero-txt">'+
+       '<div class="nv-wordmark">NOVA</div>'+
+       '<div class="nv-sub">command deck \u00b7 the analyst with eyes on every screen</div>'+
+       '<div class="nv-status">'+
+         '<span class="nv-st'+(phase==='rth'?' on':'')+'"><i></i>'+phLab+'</span>'+
+         (hub?'<span class="nv-st on"><i></i>BRIEFING '+novaAge(hub.t)+' AGO</span>':'<span class="nv-st"><i></i>AWAITING BRIEFING</span>')+
+         '<span class="nv-st"><i></i>'+V.tot+' SYMBOLS TRACKED</span>'+
+       '</div>'+
+     '</div>'+
+     '<div class="nv-gauges">'+
+       (breadth!=null?'<div class="nv-g"><div class="nv-g-lab">GAMMA BREADTH</div><div class="nv-g-bar"><div style="width:'+breadth+'%"></div></div><div class="nv-g-val">'+V.pos+' pinning \u00b7 '+V.neg+' trending</div></div>':'')+
+       (vt&&vt.vix?'<div class="nv-g"><div class="nv-g-lab">VOLATILITY</div><div class="nv-g-val big" style="color:'+(vt.state==='backwardation'?'var(--red)':'var(--green)')+'">'+vt.vix.toFixed(2)+'</div><div class="nv-g-val">'+(vt.state==='backwardation'?'BACKWARDATION':'CONTANGO')+'</div></div>':'')+
+     '</div>'+
+     '</div>';
+
+  /* ── CONSTELLATION: every tracked symbol, live, clickable ── */
+  if(V.rows.length){
+    h+='<div class="nv-const"><div class="nv-const-hd"><b>THE BOARD</b><span>every tracked symbol \u00b7 colour = gamma regime \u00b7 click to open it in Junction</span></div><div class="nv-tiles">';
+    V.rows.forEach(r=>{
+      const cls=r.net>=0?'pos':'neg';
+      const mag=Math.min(1,Math.abs(r.net)/Math.max(1,Math.abs(V.rows[0].net)));
+      h+='<button class="nv-tile '+cls+'" data-novasym="'+r.s+'" style="--mag:'+mag.toFixed(3)+'">'+
+         '<span class="nv-tile-s">'+r.s+'</span>'+
+         '<span class="nv-tile-p">'+(r.spot?r.spot.toFixed(r.spot>1000?0:2):'\u2014')+'</span>'+
+         '<span class="nv-tile-k">\u2605 '+(r.king!=null?r.king:'\u2014')+(r.dist!=null?' <i>'+(r.dist>=0?'+':'')+r.dist.toFixed(1)+'%</i>':'')+'</span>'+
+         '</button>';
     });
-    h+= any ? '<div class="nv-grid">'+inner+'</div>'
-            : '<div class="nv-card"><div class="or-body">'+novaMd(hub.text)+'</div></div>';
-    h+='<div class="nv-src">'+(hub.model||'').replace(/-instruct.*$/,'')+' \u00b7 written '+novaAge(hub.t)+' ago \u00b7 per-screen reads live on their own tabs</div>';
+    h+='</div></div>';
   }
+
+  /* ── BRIEFING ── */
+  if(hub&&hub.text){
+    const blocks=[
+      ['PULSE','MARKET PULSE','pu','\u25c9'],
+      ['CATALYSTS','CATALYSTS \u00b7 EVENTS','ca','\u26a1'],
+      ['ROTATION','WHERE MONEY IS MOVING','ro','\u21bb'],
+      ['STANDOUTS','STANDOUTS','so','\u2726'],
+      ['MECHANICS','DEALER MECHANICS','me','\u2699'],
+      ['WATCH','WHAT TO WATCH','wa','\u25b3']];
+    let inner='',any=false;
+    blocks.forEach(([key,title,cls,ic])=>{
+      const body=sec(hub.text,key);if(!body)return;any=true;
+      inner+='<div class="nv-card nv-c-'+cls+'"><div class="nv-card-hd"><span class="nv-ic">'+ic+'</span>'+title+'</div><div class="or-body">'+novaMd(body)+'</div></div>';
+    });
+    h+='<div class="nv-brief-hd"><b>THE BRIEFING</b><span>headlines \u00b7 rotation \u00b7 volatility \u00b7 positioning, read together</span></div>';
+    h+= any?'<div class="nv-grid">'+inner+'</div>'
+           :'<div class="nv-card"><div class="or-body">'+novaMd(hub.text)+'</div></div>';
+    h+='<div class="nv-src">'+(hub.model||'').replace(/-instruct.*$/,'')+' \u00b7 written '+novaAge(hub.t)+' ago \u00b7 per-screen reads live on their own tabs</div>';
+  }else{
+    h+='<div class="nv-card nv-await"><div class="nv-scan"></div><div class="or-body">Nova is composing the command briefing. It is the heaviest pass \u2014 it reads the headlines, the sector rotation, the volatility curve and every ticker together \u2014 so it writes less often than the per-screen reads. The board above is live in the meantime.</div></div>';
+  }
+
   h+='<div class="nfa-sub">Nova ranks and explains what the engine computed \u00b7 it never invents a number \u00b7 not financial advice</div></div>';
   el.innerHTML=h;
 }
 window.renderNovaHub=renderNovaHub;
+document.addEventListener('click',function(e){
+  const t=e.target.closest('[data-novasym]');if(!t)return;
+  state.focus=t.dataset.novasym;state._juncTab='ladder';
+  const jt=document.getElementById('juncTabs');
+  if(jt)jt.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.j==='ladder'));
+  setView('single');
+},false);
 function renderAetherPulse(){
   const el=document.getElementById('aetherPulse');if(!el)return;
   const Q=window.KairosQuant;
@@ -2301,7 +2372,7 @@ function setView(v){
   if(_ns){
     _ns.classList.toggle('hidden',v!=='nova');
     if(v==='nova'){
-      const hs=(state._ai&&state._ai.hub?state._ai.hub.t:0)+'|'+(typeof marketPhase==='function'?marketPhase():'');
+      const hs=(state._ai&&state._ai.hub?state._ai.hub.t:0)+'|'+Object.keys(state.data||{}).length+'|'+(typeof marketPhase==='function'?marketPhase():'');
       if(state._hubSig!==hs){state._hubSig=hs;try{renderNovaHub();}catch(e){}}
     }
   }
@@ -2324,7 +2395,24 @@ function setView(v){
     _jr.classList.toggle('hidden',!_onR);
     if(_onR){
       const sig=state.focus+'|'+(state.dataAge[state.focus]||0)+'|'+(state.regSeries[state.focus]||[]).length;
-      if(state._regSig!==sig){state._regSig=sig;try{renderImb(state.focus);renderTape(state.focus);}catch(e){}}
+      if(state._regSig!==sig){
+        state._regSig=sig;
+        try{
+          renderImb(state.focus);renderTape(state.focus);
+          /* centre the ladder on the heaviest strike rather than leaving it at
+             the top — that is where the activity actually is */
+          requestAnimationFrame(()=>{
+            try{
+              const box=document.getElementById('imbBars');
+              const d=state.data[state.focus];
+              if(!box||!d||!d.strikes||!d.strikes.length)return;
+              const king=d.strikes.reduce((x,y)=>Math.abs(y.gex)>Math.abs(x.gex)?y:x,d.strikes[0]);
+              const row=nearestRow(box,'[data-k],.irow,div','[data-k],.ik',king.k);
+              if(row)centerIn(box,row);
+            }catch(x){}
+          });
+        }catch(e){}
+      }
       try{renderFlowConsole(state.focus);}catch(e){}
     }
   }
@@ -2487,7 +2575,7 @@ setTimeout(function(){
 },0);
 function schedule(){clearTimeout(state._t);if(document.hidden)return;state._t=setTimeout(async()=>{await refresh(false);schedule();},state.pollSec*1000);}
 window.Kairos={state,refresh,getSym,kingOf,buildFromChains,buildImbalance,flowLean,exposureProfile};
-console.log('%cKairos v6.1 \u2014 Net Delta Flow (directional pressure), interpolated gamma-flip line, shared-board hold, token fully server-side. Base GEX math unchanged.','color:#f2c14e;font-weight:bold');
+console.log('%cKairos v6.2 \u2014 Net Delta Flow (directional pressure), interpolated gamma-flip line, shared-board hold, token fully server-side. Base GEX math unchanged.','color:#f2c14e;font-weight:bold');
 
 state._juncTab=state._juncTab||'ladder';
 (function(){var jt=document.getElementById('juncTabs');if(!jt)return;
