@@ -704,26 +704,46 @@ span.nv-tag{flex-shrink:0}
 }
 
 /* ═══════════ FLOW CONSOLE (Junction · Regime) ═══════════ */
-.flowcon{border:1px solid var(--border);border-radius:10px;background:var(--panel2);padding:11px 13px 13px;margin-bottom:10px}
-.fc-head{display:flex;align-items:baseline;gap:10px;margin-bottom:4px}
-.fc-head b{font-size:.66rem;letter-spacing:.18em;color:var(--text)}
+.flowcon{border:1px solid var(--border);border-radius:10px;background:var(--panel2);padding:12px 16px 14px;margin-bottom:10px}
+.fc-head{display:flex;align-items:baseline;gap:10px;margin-bottom:12px}
+.fc-head b{font-size:.62rem;letter-spacing:.18em;color:var(--text)}
 .fc-head span{font-size:.56rem;color:var(--muted);font-family:'JetBrains Mono'}
-.fc-dials{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px}
-.fc-dial{border:1px solid var(--border);border-radius:8px;background:var(--panel);padding:7px 10px;
-  display:flex;flex-direction:column;gap:2px}
-.fc-dial i{font-style:normal;font-size:.5rem;letter-spacing:.12em;color:var(--muted)}
-.fc-dial b{font-family:'JetBrains Mono';font-size:.82rem;font-weight:700}
+.fc-ends{display:flex;justify-content:space-between;font-family:'JetBrains Mono';font-size:.58rem;
+  letter-spacing:.1em;margin-bottom:5px}
+.fc-put-l{color:rgba(248,113,113,.75)} .fc-call-l{color:rgba(52,211,153,.75)}
+.fc-ends b{font-size:.68rem;font-weight:700}
+.fc-put-l b{color:#f87171} .fc-call-l b{color:#34d399}
+.fc-track{position:relative;display:flex;height:20px;border-radius:4px;overflow:hidden;background:rgba(126,166,214,.05)}
+.fc-fill{height:100%}
+.fc-fill.fc-put{background:linear-gradient(90deg,rgba(248,113,113,.85),rgba(248,113,113,.2))}
+.fc-fill.fc-call{background:linear-gradient(90deg,rgba(52,211,153,.2),rgba(52,211,153,.85))}
+.fc-mid{position:absolute;left:50%;top:0;bottom:0;width:1px;background:rgba(126,166,214,.3)}
+.fc-fulcrum{position:absolute;top:-4px;bottom:-4px;width:2px;background:#eafcff;
+  box-shadow:0 0 8px rgba(234,252,255,.6);transform:translateX(-1px)}
+.fc-balance{text-align:center;font-family:'JetBrains Mono';font-size:.56rem;letter-spacing:.12em;
+  color:var(--muted);margin-top:7px}
+.fc-balance b{color:#eafcff;font-weight:700}
+.fc-dials{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:13px}
+.fc-dial{border:1px solid var(--border);border-radius:8px;background:var(--panel);padding:8px 11px;
+  display:flex;flex-direction:column;gap:3px;min-width:0}
+.fc-dial i{font-style:normal;font-size:.5rem;letter-spacing:.12em;color:var(--muted);white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis}
+.fc-dial b{font-family:'JetBrains Mono';font-size:.86rem;font-weight:700;letter-spacing:-.01em}
 
-/* Regime split — tape beside imbalance */
-.reg-split{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.reg-col{border:1px solid var(--border);border-radius:10px;background:var(--panel2);padding:10px 11px;min-width:0;overflow:hidden}
-.reg-hd{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:8px;
-  padding-bottom:7px;border-bottom:1px solid rgba(126,166,214,.09)}
-.reg-hd b{font-size:.6rem;letter-spacing:.16em;color:var(--teal)}
-.reg-hd span{font-size:.53rem;color:var(--muted)}
-.reg-col #imbBars,.reg-col #tapeBody{max-height:none}
+/* Regime split — the tape needs more room than the bars */
+.reg-split{display:grid;grid-template-columns:0.95fr 1.25fr;gap:10px;align-items:start}
+.reg-col{border:1px solid var(--border);border-radius:10px;background:var(--panel2);padding:11px 12px;min-width:0;overflow:hidden}
+.reg-hd{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:9px;
+  padding-bottom:8px;border-bottom:1px solid rgba(126,166,214,.09)}
+.reg-hd b{font-size:.58rem;letter-spacing:.16em;color:var(--teal)}
+.reg-hd span{font-size:.52rem;color:var(--muted)}
 .reg-note{font-size:.6rem;color:var(--muted);margin-top:9px;line-height:1.55}
-
+/* tape table, compacted for a column instead of a full page */
+.reg-col table{width:100%;font-size:.63rem}
+.reg-col th{font-size:.52rem!important;letter-spacing:.06em;padding:4px 3px!important;white-space:nowrap}
+.reg-col td{padding:3px 3px!important;white-space:nowrap}
+.reg-col #tapeBody{max-height:560px;overflow:auto}
+.reg-col #imbBars{max-height:560px;overflow:auto}
 /* ═══════════ NOVA HUB ═══════════ */
 .novasec{padding:0}
 .nv-hub{display:flex;flex-direction:column;gap:12px}
@@ -775,4 +795,15 @@ span.nv-tag{flex-shrink:0}
 }
 @media(prefers-reduced-motion:reduce){
   .nc-r1,.nc-r2,.nc-r3,.nc-pulse{animation:none}
+}
+
+/* hub source line */
+.nv-src{font-family:'JetBrains Mono';font-size:.52rem;color:var(--muted);opacity:.7;letter-spacing:.05em}
+@media(max-width:860px){
+  .fc-ends{font-size:.52rem}
+  .fc-ends b{font-size:.62rem}
+  .fc-dials{grid-template-columns:repeat(2,1fr)}
+  .flowcon{padding:10px 12px 12px}
+  .reg-col table{font-size:.6rem}
+  .reg-col #tapeBody,.reg-col #imbBars{max-height:420px}
 }

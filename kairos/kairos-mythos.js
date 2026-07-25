@@ -512,7 +512,7 @@ function orrCanvasInit(){
     if(v!=='chart'){orrStop();return __sv(v);}
     // Orrery owns the (renamed) Chart view
     state.view='chart';
-    ['btnTrinity','btnSingle','btnIdeas','btnImb','btnTape','btnArena'].forEach(id=>{const b=document.getElementById(id);if(b)b.classList.remove('active');});
+    if(window.clearNav)window.clearNav();
     const cb=document.getElementById('btnChart');if(cb)cb.classList.add('active');
     ['trinityWrap','ideasSec','imbSec','tapeSec','arenaSec'].forEach(id=>{const e=document.getElementById(id);if(e)e.classList.add('hidden');});
     if(cs)cs.classList.remove('hidden');

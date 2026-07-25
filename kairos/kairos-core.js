@@ -1398,31 +1398,24 @@ function renderFlowConsole(sym){
   const nd=last&&last.ndf!=null?last.ndf:null;
   const net=cf-pf;
   const tot=Math.abs(cf)+Math.abs(pf)||1;
-  const share=Math.max(.02,Math.min(.98,Math.abs(cf)/tot));   // call side of the beam
+  const callShare=Math.max(2,Math.min(98,Math.abs(cf)/tot*100));
   const fmt=v=>{const a=Math.abs(v);return (v<0?'-':'')+'$'+(a>=1e9?(a/1e9).toFixed(2)+'B':a>=1e6?(a/1e6).toFixed(1)+'M':a>=1e3?(a/1e3).toFixed(0)+'K':a.toFixed(0));};
-  const W=900,H=132,PL=14,IW=W-PL*2;
-  const bx=PL+IW*share;
-  let g='<svg viewBox="0 0 '+W+' '+H+'" width="100%" height="'+H+'" preserveAspectRatio="none" style="display:block">';
-  g+='<defs><linearGradient id="fcP" x1="0" x2="1"><stop offset="0" stop-color="#f87171" stop-opacity=".85"/><stop offset="1" stop-color="#f87171" stop-opacity=".18"/></linearGradient>'+
-     '<linearGradient id="fcC" x1="1" x2="0"><stop offset="0" stop-color="#34d399" stop-opacity=".85"/><stop offset="1" stop-color="#34d399" stop-opacity=".18"/></linearGradient></defs>';
-  // the beam
-  const BY=52,BH=22;
-  g+='<rect x="'+PL+'" y="'+BY+'" width="'+(bx-PL).toFixed(1)+'" height="'+BH+'" fill="url(#fcP)" rx="3"/>';
-  g+='<rect x="'+bx.toFixed(1)+'" y="'+BY+'" width="'+(PL+IW-bx).toFixed(1)+'" height="'+BH+'" fill="url(#fcC)" rx="3"/>';
-  // fulcrum
-  g+='<line x1="'+bx.toFixed(1)+'" y1="'+(BY-9)+'" x2="'+bx.toFixed(1)+'" y2="'+(BY+BH+9)+'" stroke="#eafcff" stroke-width="2"/>';
-  g+='<polygon points="'+(bx-6).toFixed(1)+','+(BY+BH+9)+' '+(bx+6).toFixed(1)+','+(BY+BH+9)+' '+bx.toFixed(1)+','+(BY+BH+18)+'" fill="#eafcff"/>';
-  // midline reference
-  const mid=PL+IW/2;
-  g+='<line x1="'+mid+'" y1="'+(BY-4)+'" x2="'+mid+'" y2="'+(BY+BH+4)+'" stroke="rgba(126,166,214,.35)" stroke-dasharray="2 3"/>';
-  g+='<text x="'+PL+'" y="'+(BY-14)+'" fill="rgba(248,113,113,.9)" font-size="10" font-family="JetBrains Mono" letter-spacing="1.5">PUT PRESSURE '+fmt(pf)+'</text>';
-  g+='<text x="'+(PL+IW)+'" y="'+(BY-14)+'" fill="rgba(52,211,153,.9)" font-size="10" text-anchor="end" font-family="JetBrains Mono" letter-spacing="1.5">CALL PRESSURE '+fmt(cf)+'</text>';
-  g+='<text x="'+bx.toFixed(1)+'" y="'+(BY+BH+32)+'" fill="rgba(234,252,255,.75)" font-size="9" text-anchor="middle" font-family="JetBrains Mono">BALANCE '+(share*100).toFixed(0)+'% CALLS</text>';
-  g+='</svg>';
-  const dial=(lab,val,col,tip)=>'<div class="fc-dial" data-tip="'+tip+'"><i>'+lab+'</i><b style="color:'+col+'">'+val+'</b></div>';
   const cp=d&&d.putVol&&d.callVol?(d.putVol/Math.max(1,d.callVol)):null;
   const reg=d&&d.strikes?d.strikes.reduce((a,s)=>a+(s.gex||0),0):null;
-  el.innerHTML='<div class="fc-head"><b>FLOW CONSOLE</b><span>'+sym+(last?' \u00b7 '+ser.length+' samples this session':' \u00b7 waiting for the first sample')+'</span></div>'+g+
+  const dial=(lab,val,col,tip)=>'<div class="fc-dial" data-tip="'+tip+'"><i>'+lab+'</i><b style="color:'+col+'">'+val+'</b></div>';
+  el.innerHTML=
+    '<div class="fc-head"><b>FLOW CONSOLE</b><span>'+sym+(last?' \u00b7 '+ser.length+' samples this session':' \u00b7 waiting for the first sample')+'</span></div>'+
+    '<div class="fc-beam">'+
+      '<div class="fc-ends"><span class="fc-put-l">PUT PRESSURE <b>'+fmt(pf)+'</b></span>'+
+      '<span class="fc-call-l">CALL PRESSURE <b>'+fmt(cf)+'</b></span></div>'+
+      '<div class="fc-track">'+
+        '<div class="fc-fill fc-put" style="width:'+(100-callShare).toFixed(1)+'%"></div>'+
+        '<div class="fc-fill fc-call" style="width:'+callShare.toFixed(1)+'%"></div>'+
+        '<div class="fc-mid"></div>'+
+        '<div class="fc-fulcrum" style="left:'+(100-callShare).toFixed(1)+'%"></div>'+
+      '</div>'+
+      '<div class="fc-balance">BALANCE \u00b7 <b>'+callShare.toFixed(0)+'% CALLS</b></div>'+
+    '</div>'+
     '<div class="fc-dials">'+
       dial('NET PREMIUM',fmt(net),net>=0?'var(--green)':'var(--red)','Call premium bought minus sold, less the same for puts. Positive means net call buying is paying up.')+
       dial('NET DELTA FLOW',nd!=null?fmt(nd):'\u2014',nd==null?'var(--muted)':nd>=0?'var(--green)':'var(--red)','Directional pressure of classified flow: each increment of volume multiplied by its signed delta and spot.')+
@@ -1456,29 +1449,24 @@ function renderNovaHub(){
   };
   let h='<div class="nv-hub">';
   h+='<div class="nv-hero">'+novaCore(!!hub)+
-     '<div class="nv-hero-txt"><h2>NOVA</h2><p>'+(hub?'Synthesising the whole board on a schedule. Ranks and explains what the engine computed \u2014 never invents a number.':'Standing by. The command briefing writes on the next scheduled run.')+'</p>'+
+     '<div class="nv-hero-txt"><h2>NOVA</h2><p>'+(hub
+       ?'The only view that reads the headlines, the sector rotation, the volatility curve and every ticker together. Synthesis, not a summary of the other screens.'
+       :'Standing by. The command briefing writes on the next scheduled run \u2014 it is the heaviest pass, so it runs less often than the others.')+'</p>'+
      '<div class="nv-status"><span class="nv-st'+(phase==='rth'?' on':'')+'">'+phLab+'</span>'+
      (hub?'<span class="nv-st on">BRIEFING '+novaAge(hub.t)+' AGO</span>':'<span class="nv-st">AWAITING BRIEFING</span>')+
-     '<span class="nv-st">'+Object.keys(a).filter(k=>a[k]&&a[k].text).length+' ANALYSES LIVE</span></div></div></div>';
+     '</div></div></div>';
   if(hub&&hub.text){
-    const blocks=[['STATE','MARKET STATE','st'],['STANDOUTS','STANDOUTS','so'],['MECHANICS','MECHANICS','me'],['WATCH','WHAT TO WATCH','wa']];
-    h+='<div class="nv-grid">';
+    const blocks=[['PULSE','MARKET PULSE','pu'],['CATALYSTS','CATALYSTS \u00b7 EVENTS','ca'],
+                  ['ROTATION','WHERE MONEY IS MOVING','ro'],['STANDOUTS','STANDOUTS','so'],
+                  ['MECHANICS','DEALER MECHANICS','me'],['WATCH','WHAT TO WATCH','wa']];
+    let any=false,inner='';
     blocks.forEach(([key,title,cls])=>{
-      const body=sec(hub.text,key);if(!body)return;
-      h+='<div class="nv-card nv-c-'+cls+'"><div class="nv-card-hd">'+title+'</div><div class="or-body">'+novaMd(body)+'</div></div>';
+      const body=sec(hub.text,key);if(!body)return;any=true;
+      inner+='<div class="nv-card nv-c-'+cls+'"><div class="nv-card-hd">'+title+'</div><div class="or-body">'+novaMd(body)+'</div></div>';
     });
-    h+='</div>';
-    if(!/##\s*(STATE|STANDOUTS|MECHANICS|WATCH)/i.test(hub.text))
-      h+='<div class="nv-card"><div class="or-body">'+novaMd(hub.text)+'</div></div>';
-  }
-  // every other analysis, as a feed
-  const feed=[['read','MARKET READ'],['zero','SAME-DAY \u00b7 0DTE'],['aether','PLAY CONDITIONS'],['junction','JUNCTION READ'],['regime','FLOW READ'],['tape','TAPE READ'],['vix','VOLATILITY READ'],['mythos','ROTATION READ'],['brief','PREMARKET BRIEF']].filter(f=>a[f[0]]&&a[f[0]].text);
-  if(feed.length){
-    h+='<div class="nv-feed-hd">TRANSMISSIONS</div><div class="nv-feed">';
-    feed.forEach(([k,t])=>{
-      h+='<details class="nv-tx"><summary><span class="nv-tag nv-t-'+k+'">'+t+'</span><i>'+novaAge(a[k].t)+' ago</i></summary><div class="or-body">'+novaMd(a[k].text)+'</div></details>';
-    });
-    h+='</div>';
+    h+= any ? '<div class="nv-grid">'+inner+'</div>'
+            : '<div class="nv-card"><div class="or-body">'+novaMd(hub.text)+'</div></div>';
+    h+='<div class="nv-src">'+(hub.model||'').replace(/-instruct.*$/,'')+' \u00b7 written '+novaAge(hub.t)+' ago \u00b7 per-screen reads live on their own tabs</div>';
   }
   h+='<div class="nfa-sub">Nova ranks and explains what the engine computed \u00b7 it never invents a number \u00b7 not financial advice</div></div>';
   el.innerHTML=h;
@@ -2292,9 +2280,17 @@ async function pickPreset(t){
 }
 document.getElementById('presetBar').addEventListener('click',e=>{const c=e.target.closest('.pchip');if(c)pickPreset(c.dataset.t);});
 
+/* Every nav button, derived from the DOM rather than a hand-kept list, so a
+   future nav change cannot desynchronise the highlight again. */
+function navButtons(){
+  return Array.prototype.slice.call(document.querySelectorAll('.btn[id^="btn"]'))
+    .filter(b=>!/Help|Refresh|Settings/.test(b.id));
+}
+function clearNav(){navButtons().forEach(b=>b.classList.remove('active'));}
+window.clearNav=clearNav;
 function setView(v){
   state.view=v;
-  ['btnTrinity','btnSingle','btnChart','btnIdeas','btnNova'].forEach(id=>document.getElementById(id).classList.remove('active'));
+  clearNav();
   const bmap={trinity:'btnTrinity',single:'btnSingle',chart:'btnChart',ideas:'btnIdeas',nova:'btnNova'};
   if(bmap[v]&&document.getElementById(bmap[v]))document.getElementById(bmap[v]).classList.add('active');
   document.getElementById('trinityWrap').classList.toggle('hidden',v!=='trinity'&&v!=='single');
@@ -2302,7 +2298,13 @@ function setView(v){
   document.getElementById('ideasSec').classList.toggle('hidden',v!=='ideas');
   document.getElementById('imbSec').classList.toggle('hidden',true);
   const _ns=document.getElementById('novaSec');
-  if(_ns){_ns.classList.toggle('hidden',v!=='nova');if(v==='nova')try{renderNovaHub();}catch(e){}}
+  if(_ns){
+    _ns.classList.toggle('hidden',v!=='nova');
+    if(v==='nova'){
+      const hs=(state._ai&&state._ai.hub?state._ai.hub.t:0)+'|'+(typeof marketPhase==='function'?marketPhase():'');
+      if(state._hubSig!==hs){state._hubSig=hs;try{renderNovaHub();}catch(e){}}
+    }
+  }
   document.getElementById('tapeSec').classList.toggle('hidden',true);
   document.getElementById('mtoggle').classList.toggle('dim',v==='ideas'||v==='imb'||v==='tape');
   const showPresets=['single','chart'].includes(v);
@@ -2320,7 +2322,11 @@ function setView(v){
   const _jr=document.getElementById('juncRegime');
   if(_jr){
     _jr.classList.toggle('hidden',!_onR);
-    if(_onR){try{renderImb(state.focus);renderTape(state.focus);renderFlowConsole(state.focus);}catch(e){}}
+    if(_onR){
+      const sig=state.focus+'|'+(state.dataAge[state.focus]||0)+'|'+(state.regSeries[state.focus]||[]).length;
+      if(state._regSig!==sig){state._regSig=sig;try{renderImb(state.focus);renderTape(state.focus);}catch(e){}}
+      try{renderFlowConsole(state.focus);}catch(e){}
+    }
   }
   const _nj=document.getElementById('novaJunction');if(_nj)_nj.classList.toggle('hidden',!_onJ);
   const _nv=document.getElementById('novaVix');if(_nv)_nv.classList.toggle('hidden',!_onV);
@@ -2481,7 +2487,7 @@ setTimeout(function(){
 },0);
 function schedule(){clearTimeout(state._t);if(document.hidden)return;state._t=setTimeout(async()=>{await refresh(false);schedule();},state.pollSec*1000);}
 window.Kairos={state,refresh,getSym,kingOf,buildFromChains,buildImbalance,flowLean,exposureProfile};
-console.log('%cKairos v6.0 \u2014 Net Delta Flow (directional pressure), interpolated gamma-flip line, shared-board hold, token fully server-side. Base GEX math unchanged.','color:#f2c14e;font-weight:bold');
+console.log('%cKairos v6.1 \u2014 Net Delta Flow (directional pressure), interpolated gamma-flip line, shared-board hold, token fully server-side. Base GEX math unchanged.','color:#f2c14e;font-weight:bold');
 
 state._juncTab=state._juncTab||'ladder';
 (function(){var jt=document.getElementById('juncTabs');if(!jt)return;

@@ -1684,6 +1684,7 @@ function aHud(){
 (function(){
   const __sv=setView;
   setView=function(v){
+    if(window.clearNav)window.clearNav();
     const ab=document.getElementById('btnArena'),as=document.getElementById('arenaSec');
     if(v!=='arena'){if(ab)ab.classList.remove('active');if(as)as.classList.add('hidden');aStop();return __sv(v);}
     state.view='arena';
