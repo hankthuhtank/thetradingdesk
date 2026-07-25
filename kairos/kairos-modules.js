@@ -41,8 +41,13 @@ const Z={
      resolve nearer the wall). Bounds \u03940.20\u20130.42 keep it OUT of two traps:
      ITM (\u0394>0.45 pays intrinsic you don't need for a day trade and caps R:R)
      and deep-lotto (\u0394<0.20, where PoP collapses and the tape must be perfect). */
-  D_FADE:0.34, D_MOMO:0.30,          // target |delta| — OTM in the trade's direction
-  D_LO:0.20, D_HI:0.42,
+  /* A same-day fade back to a magnet and a run through a barrier are different
+     trades and want different contracts. A fade resolves near a known level, so
+     a closer-to-the-money strike converts a small move into real premium. A
+     momentum run needs convexity, so it sits further out. The band is wide
+     enough to reach ITM when the setup genuinely calls for it. */
+  D_FADE:0.45, D_MOMO:0.30,          // target |delta| — OTM in the trade's direction
+  D_LO:0.15, D_HI:0.62,
   MAX_SPREAD:0.10,                   // reject contracts wider than 10% of mid
   MIN_LIQ:150,                       // oi+vol floor
   VOL_W:0.5,                         // 0DTE book = OI + 0.5*volume (same-day positioning proxy; OI alone is prior-day)
@@ -174,7 +179,7 @@ function zBook(sym){
 
 /* ---- contract picker: liquid, tight, cheap-OTM delta (see doctrine above) ---- */
 function zPick(cs,call,targetD,spot){
-  const cands=[];
+  let cands=[];
   for(const c of cs){
     if(c.call!==call)continue;
     const mid=c.mid||(((c.bid||0)+(c.ask||0))/2);
@@ -1467,7 +1472,7 @@ function aDraw(dt){
     }
     const rows=[aClk(tm)+' \u00b7 '+aDayLab(tm),'$'+py.toFixed(sc.spot>2000?1:2)+(bar&&bd<120000?' \u00b7 close $'+(+bar.px).toFixed(2):'')];
     if(fLine)rows.push(fLine);
-    ctx.font='600 10px "JetBrains Mono",monospace';
+    ctx.font='600 11px "JetBrains Mono",monospace';
     let mw=0;for(const r of rows)mw=Math.max(mw,ctx.measureText(r).width);
     const bxx=Math.min(aMouse.x+12,W-mw-22),byy=Math.max(AR.PADY+4,Math.min(aMouse.y-10,mainB-16*rows.length-10));
     ctx.fillStyle='rgba(5,7,12,.92)';aRound(ctx,bxx,byy,mw+14,16*rows.length+8,4);ctx.fill();
@@ -1501,7 +1506,7 @@ function aPriceTicks(lo,hi,target){
   return {ticks:out,step};
 }
 function aLab(ctx,t,x,y,col,align,size){
-  ctx.font='600 '+(size||9)+'px "JetBrains Mono",monospace';
+  ctx.font='600 '+(size||11)+'px "JetBrains Mono",monospace';
   ctx.fillStyle=col;ctx.textAlign=align||'left';ctx.fillText(t,x,y);ctx.textAlign='left';
 }
 function aRound(ctx,x,y,w,h,r){
@@ -1814,18 +1819,28 @@ console.log('%cKairos Nexus \u2014 THE CHRONICLE. The field now remembers: pan, 
    ===================================================================== */
 'use strict';
 const SW_CORE={
-  DTE_LO:55, DTE_HI:100, DTE_TGT:75,   // buyers live here; sellers live at 30-45
-  EXIT_DTE:21,                          // close before theta accelerates
-  D_LO:0.55, D_HI:0.82, D_TGT:0.70,     // ITM: intrinsic-heavy, low theta drag
-  MAX_SPREAD:0.07,                      // deep ITM is thinner — but 7% is the ceiling
-  MIN_OI:200,
+  /* INVESTOR — built to grow a sub-10k account, which changes everything. The
+     binding constraint is not probability, it is DEBIT: a contract that costs
+     $2,000 cannot be sized responsibly against $10k no matter how good the
+     structure. So this profile deliberately leaves the deep-ITM book alone and
+     buys 14-90 DTE at moderate delta, where the contract still tracks the
+     underlying meaningfully but costs a few hundred dollars instead of a few
+     thousand. Delta 0.30-0.55 keeps real directional participation without
+     paying for intrinsic value the account cannot afford; the 14-day floor
+     keeps a thesis from dying to theta before it resolves. */
+  DTE_LO:14, DTE_HI:90, DTE_TGT:45,
+  EXIT_DTE:10,
+  D_LO:0.30, D_HI:0.55, D_TGT:0.42,
+  MAX_MID:8.0,                          // ~$800/contract ceiling for a sub-10k account
+  MAX_SPREAD:0.10,
+  MIN_OI:150,
   MIN_SCORE:58,
-  HOLD:21,                              // calendar days modelled to T2
-  IV_RICH:1.30, IV_CHEAP:0.92,          // IV / realised vol
-  TERM_INV:1.08,                        // front/back ATM IV ratio implying an event
-  MIN_RR:1.5, MIN_RRP:1.2,
-  VOL_SHOCK:5,                          // vol points for the crush disclosure
-  LABEL:'INVESTOR', DESC:'deep-ITM \u00b7 probability + staying power \u00b7 costs more per contract, on purpose'
+  HOLD:20,
+  IV_RICH:1.30, IV_CHEAP:0.92,
+  TERM_INV:1.08,
+  MIN_RR:2.0, MIN_RRP:1.6,
+  VOL_SHOCK:5,
+  LABEL:'INVESTOR', DESC:'14-90 DTE \u00b7 room to run \u00b7 debit sized for a small account'
 };
 /* AGILE — the small/mid-account profile. Cheaper debit per contract, so a
    position is sizeable on a small account and the R:R reads properly.
@@ -1946,7 +1961,10 @@ function sPick(sym,call){
       cands.push({c,mid,spr,dl,intr,ext:Math.max(0,mid-intr)});
     }
     if(!cands.length)continue;
-    cands.sort((a,b)=>{const d=Math.abs(a.dl-SW.D_TGT)-Math.abs(b.dl-SW.D_TGT);return (SW.LABEL==='DEGEN'&&Math.abs(d)<=0.05)?a.mid-b.mid:d;});
+      /* honour the debit ceiling: a structurally perfect contract the account
+     cannot size is not a usable idea */
+  if(SW.MAX_MID){const aff=cands.filter(x=>x.mid<=SW.MAX_MID);if(aff.length)cands=aff;}
+  cands.sort((a,b)=>{const d=Math.abs(a.dl-SW.D_TGT)-Math.abs(b.dl-SW.D_TGT);return Math.abs(d)<=0.06?a.mid-b.mid:d;});
     const p=cands[0];
     return{k:p.c.k,e:p.c.e,call,T:p.c.T,dte:exps[e],iv:p.c.iv,oi:p.c.oi||0,vol:p.c.vol||0,
       mid:p.mid,bid:p.c.bid||0,ask:p.c.ask||0,dl:p.dl,spr:p.spr,intr:p.intr,ext:p.ext,

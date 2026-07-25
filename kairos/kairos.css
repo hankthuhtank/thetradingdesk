@@ -702,3 +702,77 @@ span.nv-tag{flex-shrink:0}
   .nv-content{padding:9px 11px 11px}
   .nv-content .or-body{font-size:.69rem;line-height:1.68}
 }
+
+/* ═══════════ FLOW CONSOLE (Junction · Regime) ═══════════ */
+.flowcon{border:1px solid var(--border);border-radius:10px;background:var(--panel2);padding:11px 13px 13px;margin-bottom:10px}
+.fc-head{display:flex;align-items:baseline;gap:10px;margin-bottom:4px}
+.fc-head b{font-size:.66rem;letter-spacing:.18em;color:var(--text)}
+.fc-head span{font-size:.56rem;color:var(--muted);font-family:'JetBrains Mono'}
+.fc-dials{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px}
+.fc-dial{border:1px solid var(--border);border-radius:8px;background:var(--panel);padding:7px 10px;
+  display:flex;flex-direction:column;gap:2px}
+.fc-dial i{font-style:normal;font-size:.5rem;letter-spacing:.12em;color:var(--muted)}
+.fc-dial b{font-family:'JetBrains Mono';font-size:.82rem;font-weight:700}
+
+/* Regime split — tape beside imbalance */
+.reg-split{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.reg-col{border:1px solid var(--border);border-radius:10px;background:var(--panel2);padding:10px 11px;min-width:0;overflow:hidden}
+.reg-hd{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:8px;
+  padding-bottom:7px;border-bottom:1px solid rgba(126,166,214,.09)}
+.reg-hd b{font-size:.6rem;letter-spacing:.16em;color:var(--teal)}
+.reg-hd span{font-size:.53rem;color:var(--muted)}
+.reg-col #imbBars,.reg-col #tapeBody{max-height:none}
+.reg-note{font-size:.6rem;color:var(--muted);margin-top:9px;line-height:1.55}
+
+/* ═══════════ NOVA HUB ═══════════ */
+.novasec{padding:0}
+.nv-hub{display:flex;flex-direction:column;gap:12px}
+.nv-hero{display:flex;align-items:center;gap:20px;border:1px solid rgba(45,212,191,.2);border-radius:12px;
+  background:radial-gradient(120% 140% at 10% 50%,rgba(45,212,191,.08),rgba(45,212,191,.01) 60%);padding:16px 20px}
+.nv-core{width:132px;height:132px;flex-shrink:0}
+.nc-r1{animation:ncSpin 34s linear infinite;transform-origin:100px 100px}
+.nc-r2{animation:ncSpin 19s linear infinite reverse;transform-origin:100px 100px}
+.nc-r3{animation:ncSpin 11s linear infinite;transform-origin:100px 100px}
+@keyframes ncSpin{to{transform:rotate(360deg)}}
+.nc-pulse{animation:ncP 2.8s ease-in-out infinite}
+@keyframes ncP{0%,100%{opacity:.5;r:8}50%{opacity:1;r:11}}
+.nv-core.live .nc-pulse{filter:drop-shadow(0 0 9px #2dd4bf)}
+.nv-hero-txt{min-width:0}
+.nv-hero-txt h2{font-size:1.5rem;letter-spacing:.42em;margin:0 0 5px;color:var(--teal);font-weight:800}
+.nv-hero-txt p{font-size:.72rem;line-height:1.65;color:var(--muted);margin:0 0 9px;max-width:62ch}
+.nv-status{display:flex;flex-wrap:wrap;gap:6px}
+.nv-st{font-family:'JetBrains Mono';font-size:.53rem;letter-spacing:.1em;color:var(--muted);
+  border:1px solid var(--border);border-radius:20px;padding:3px 10px}
+.nv-st.on{color:var(--teal);border-color:rgba(45,212,191,.4);background:rgba(45,212,191,.08)}
+.nv-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:10px}
+.nv-card{border:1px solid var(--border);border-radius:10px;background:var(--panel2);padding:11px 13px}
+.nv-card-hd{font-size:.56rem;letter-spacing:.18em;font-weight:800;color:var(--teal);margin-bottom:7px;
+  padding-bottom:6px;border-bottom:1px solid rgba(126,166,214,.09)}
+.nv-c-so{border-color:rgba(242,193,78,.24)} .nv-c-so .nv-card-hd{color:#f2c14e;border-color:rgba(242,193,78,.16)}
+.nv-c-me{border-color:rgba(192,132,252,.24)} .nv-c-me .nv-card-hd{color:#c084fc;border-color:rgba(192,132,252,.16)}
+.nv-c-wa{border-color:rgba(124,196,236,.24)} .nv-c-wa .nv-card-hd{color:#7cc4ec;border-color:rgba(124,196,236,.16)}
+.nv-feed-hd{font-size:.55rem;letter-spacing:.22em;color:var(--muted);margin-top:4px}
+.nv-feed{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:8px}
+.nv-tx{border:1px solid var(--border);border-radius:9px;background:var(--panel2);padding:8px 11px}
+.nv-tx summary{display:flex;align-items:center;gap:8px;cursor:pointer;list-style:none}
+.nv-tx summary::-webkit-details-marker{display:none}
+.nv-tx summary::after{content:'\25be';margin-left:auto;opacity:.4;font-size:.6rem}
+.nv-tx[open] summary::after{content:'\25b4'}
+.nv-tx summary i{font-style:normal;font-size:.5rem;color:var(--muted);font-family:'JetBrains Mono'}
+.nv-tx .or-body{margin-top:8px;padding-top:8px;border-top:1px solid rgba(126,166,214,.08)}
+
+/* ═══════════ MOBILE ═══════════ */
+@media(max-width:860px){
+  .reg-split{grid-template-columns:1fr}
+  .fc-dials{grid-template-columns:repeat(2,1fr)}
+  .nv-hero{flex-direction:column;text-align:center;gap:12px;padding:14px}
+  .nv-core{width:104px;height:104px}
+  .nv-hero-txt h2{font-size:1.2rem;letter-spacing:.32em}
+  .nv-status{justify-content:center}
+  .nv-grid,.nv-feed{grid-template-columns:1fr}
+  .flowcon{padding:9px 10px 11px}
+  .reg-col{padding:9px 10px}
+}
+@media(prefers-reduced-motion:reduce){
+  .nc-r1,.nc-r2,.nc-r3,.nc-pulse{animation:none}
+}

@@ -1382,6 +1382,108 @@ function renderNova(id){
 })();
 function renderOracle(){Object.keys(NOVA_MOUNTS).forEach(id=>{try{renderNova(id);}catch(e){}});}
 window.renderNova=renderNova;window.renderOracle=renderOracle;
+/* ═══ FLOW CONSOLE ═══
+   The session's flow rendered as forces rather than a line chart: a balance
+   beam whose fulcrum sits where call and put premium actually balance, and a
+   set of dials for the derived state. Same numbers the ladder is built from. */
+function renderFlowConsole(sym){
+  const el=document.getElementById('flowConsole');if(!el)return;
+  const ser=(state.regSeries[sym]||[]);
+  const d=state.data[sym];
+  const last=ser.length?ser[ser.length-1]:null;
+  const okc=p=>p&&p.cbought!=null&&p.csold!=null&&Math.abs(p.cbought-p.csold)>1;
+  const okp=p=>p&&p.pbought!=null&&p.psold!=null&&Math.abs(p.pbought-p.psold)>1;
+  const cf=last?(okc(last)?last.cbought-last.csold:last.cpr||0):0;
+  const pf=last?(okp(last)?last.pbought-last.psold:last.ppr||0):0;
+  const nd=last&&last.ndf!=null?last.ndf:null;
+  const net=cf-pf;
+  const tot=Math.abs(cf)+Math.abs(pf)||1;
+  const share=Math.max(.02,Math.min(.98,Math.abs(cf)/tot));   // call side of the beam
+  const fmt=v=>{const a=Math.abs(v);return (v<0?'-':'')+'$'+(a>=1e9?(a/1e9).toFixed(2)+'B':a>=1e6?(a/1e6).toFixed(1)+'M':a>=1e3?(a/1e3).toFixed(0)+'K':a.toFixed(0));};
+  const W=900,H=132,PL=14,IW=W-PL*2;
+  const bx=PL+IW*share;
+  let g='<svg viewBox="0 0 '+W+' '+H+'" width="100%" height="'+H+'" preserveAspectRatio="none" style="display:block">';
+  g+='<defs><linearGradient id="fcP" x1="0" x2="1"><stop offset="0" stop-color="#f87171" stop-opacity=".85"/><stop offset="1" stop-color="#f87171" stop-opacity=".18"/></linearGradient>'+
+     '<linearGradient id="fcC" x1="1" x2="0"><stop offset="0" stop-color="#34d399" stop-opacity=".85"/><stop offset="1" stop-color="#34d399" stop-opacity=".18"/></linearGradient></defs>';
+  // the beam
+  const BY=52,BH=22;
+  g+='<rect x="'+PL+'" y="'+BY+'" width="'+(bx-PL).toFixed(1)+'" height="'+BH+'" fill="url(#fcP)" rx="3"/>';
+  g+='<rect x="'+bx.toFixed(1)+'" y="'+BY+'" width="'+(PL+IW-bx).toFixed(1)+'" height="'+BH+'" fill="url(#fcC)" rx="3"/>';
+  // fulcrum
+  g+='<line x1="'+bx.toFixed(1)+'" y1="'+(BY-9)+'" x2="'+bx.toFixed(1)+'" y2="'+(BY+BH+9)+'" stroke="#eafcff" stroke-width="2"/>';
+  g+='<polygon points="'+(bx-6).toFixed(1)+','+(BY+BH+9)+' '+(bx+6).toFixed(1)+','+(BY+BH+9)+' '+bx.toFixed(1)+','+(BY+BH+18)+'" fill="#eafcff"/>';
+  // midline reference
+  const mid=PL+IW/2;
+  g+='<line x1="'+mid+'" y1="'+(BY-4)+'" x2="'+mid+'" y2="'+(BY+BH+4)+'" stroke="rgba(126,166,214,.35)" stroke-dasharray="2 3"/>';
+  g+='<text x="'+PL+'" y="'+(BY-14)+'" fill="rgba(248,113,113,.9)" font-size="10" font-family="JetBrains Mono" letter-spacing="1.5">PUT PRESSURE '+fmt(pf)+'</text>';
+  g+='<text x="'+(PL+IW)+'" y="'+(BY-14)+'" fill="rgba(52,211,153,.9)" font-size="10" text-anchor="end" font-family="JetBrains Mono" letter-spacing="1.5">CALL PRESSURE '+fmt(cf)+'</text>';
+  g+='<text x="'+bx.toFixed(1)+'" y="'+(BY+BH+32)+'" fill="rgba(234,252,255,.75)" font-size="9" text-anchor="middle" font-family="JetBrains Mono">BALANCE '+(share*100).toFixed(0)+'% CALLS</text>';
+  g+='</svg>';
+  const dial=(lab,val,col,tip)=>'<div class="fc-dial" data-tip="'+tip+'"><i>'+lab+'</i><b style="color:'+col+'">'+val+'</b></div>';
+  const cp=d&&d.putVol&&d.callVol?(d.putVol/Math.max(1,d.callVol)):null;
+  const reg=d&&d.strikes?d.strikes.reduce((a,s)=>a+(s.gex||0),0):null;
+  el.innerHTML='<div class="fc-head"><b>FLOW CONSOLE</b><span>'+sym+(last?' \u00b7 '+ser.length+' samples this session':' \u00b7 waiting for the first sample')+'</span></div>'+g+
+    '<div class="fc-dials">'+
+      dial('NET PREMIUM',fmt(net),net>=0?'var(--green)':'var(--red)','Call premium bought minus sold, less the same for puts. Positive means net call buying is paying up.')+
+      dial('NET DELTA FLOW',nd!=null?fmt(nd):'\u2014',nd==null?'var(--muted)':nd>=0?'var(--green)':'var(--red)','Directional pressure of classified flow: each increment of volume multiplied by its signed delta and spot.')+
+      dial('C/P RATIO',cp?cp.toFixed(2):'\u2014','var(--gold)','Put volume over call volume. Above 1 means puts are trading more actively.')+
+      dial('GAMMA REGIME',reg==null?'\u2014':(reg>=0?'POSITIVE':'NEGATIVE'),reg==null?'var(--muted)':reg>=0?'var(--green)':'#c084fc','Positive: dealers hedge against moves, price pins. Negative: they hedge with moves, price trends.')+
+    '</div>';
+}
+window.renderFlowConsole=renderFlowConsole;
+
+/* ═══ NOVA HUB ═══ the command view */
+function novaCore(live){
+  return '<svg viewBox="0 0 200 200" class="nv-core'+(live?' live':'')+'">'+
+    '<defs><radialGradient id="ncG"><stop offset="0" stop-color="#2dd4bf" stop-opacity=".55"/><stop offset="1" stop-color="#2dd4bf" stop-opacity="0"/></radialGradient></defs>'+
+    '<circle cx="100" cy="100" r="66" fill="url(#ncG)"/>'+
+    '<g class="nc-r1"><circle cx="100" cy="100" r="78" fill="none" stroke="rgba(45,212,191,.28)" stroke-width="1" stroke-dasharray="3 9"/></g>'+
+    '<g class="nc-r2"><circle cx="100" cy="100" r="60" fill="none" stroke="rgba(45,212,191,.45)" stroke-width="1.5" stroke-dasharray="42 120"/></g>'+
+    '<g class="nc-r3"><circle cx="100" cy="100" r="44" fill="none" stroke="rgba(124,196,236,.5)" stroke-width="1" stroke-dasharray="14 26"/></g>'+
+    '<circle cx="100" cy="100" r="26" fill="none" stroke="rgba(45,212,191,.6)" stroke-width="1"/>'+
+    '<circle cx="100" cy="100" r="9" fill="#2dd4bf" class="nc-pulse"/>'+
+    '</svg>';
+}
+function renderNovaHub(){
+  const el=document.getElementById('novaSec');if(!el)return;
+  const a=state._ai||{};
+  const hub=a.hub;
+  const phase=typeof marketPhase==='function'?marketPhase():'rth';
+  const phLab={rth:'MARKET OPEN',pre:'PRE-MARKET',post:'AFTER HOURS',overnight:'OVERNIGHT',closed:'CLOSED'}[phase]||'\u2014';
+  const sec=(txt,name)=>{
+    const rx=new RegExp('##\\s*'+name+'\\s*([\\s\\S]*?)(?=##\\s*[A-Z]|$)','i');
+    const mm=rx.exec(txt||'');return mm?mm[1].trim():'';
+  };
+  let h='<div class="nv-hub">';
+  h+='<div class="nv-hero">'+novaCore(!!hub)+
+     '<div class="nv-hero-txt"><h2>NOVA</h2><p>'+(hub?'Synthesising the whole board on a schedule. Ranks and explains what the engine computed \u2014 never invents a number.':'Standing by. The command briefing writes on the next scheduled run.')+'</p>'+
+     '<div class="nv-status"><span class="nv-st'+(phase==='rth'?' on':'')+'">'+phLab+'</span>'+
+     (hub?'<span class="nv-st on">BRIEFING '+novaAge(hub.t)+' AGO</span>':'<span class="nv-st">AWAITING BRIEFING</span>')+
+     '<span class="nv-st">'+Object.keys(a).filter(k=>a[k]&&a[k].text).length+' ANALYSES LIVE</span></div></div></div>';
+  if(hub&&hub.text){
+    const blocks=[['STATE','MARKET STATE','st'],['STANDOUTS','STANDOUTS','so'],['MECHANICS','MECHANICS','me'],['WATCH','WHAT TO WATCH','wa']];
+    h+='<div class="nv-grid">';
+    blocks.forEach(([key,title,cls])=>{
+      const body=sec(hub.text,key);if(!body)return;
+      h+='<div class="nv-card nv-c-'+cls+'"><div class="nv-card-hd">'+title+'</div><div class="or-body">'+novaMd(body)+'</div></div>';
+    });
+    h+='</div>';
+    if(!/##\s*(STATE|STANDOUTS|MECHANICS|WATCH)/i.test(hub.text))
+      h+='<div class="nv-card"><div class="or-body">'+novaMd(hub.text)+'</div></div>';
+  }
+  // every other analysis, as a feed
+  const feed=[['read','MARKET READ'],['zero','SAME-DAY \u00b7 0DTE'],['aether','PLAY CONDITIONS'],['junction','JUNCTION READ'],['regime','FLOW READ'],['tape','TAPE READ'],['vix','VOLATILITY READ'],['mythos','ROTATION READ'],['brief','PREMARKET BRIEF']].filter(f=>a[f[0]]&&a[f[0]].text);
+  if(feed.length){
+    h+='<div class="nv-feed-hd">TRANSMISSIONS</div><div class="nv-feed">';
+    feed.forEach(([k,t])=>{
+      h+='<details class="nv-tx"><summary><span class="nv-tag nv-t-'+k+'">'+t+'</span><i>'+novaAge(a[k].t)+' ago</i></summary><div class="or-body">'+novaMd(a[k].text)+'</div></details>';
+    });
+    h+='</div>';
+  }
+  h+='<div class="nfa-sub">Nova ranks and explains what the engine computed \u00b7 it never invents a number \u00b7 not financial advice</div></div>';
+  el.innerHTML=h;
+}
+window.renderNovaHub=renderNovaHub;
 function renderAetherPulse(){
   const el=document.getElementById('aetherPulse');if(!el)return;
   const Q=window.KairosQuant;
@@ -1537,6 +1639,9 @@ function renderImb(sym){
    Flowseeker-style: filled area bands for call/put premium on the left axis,
    price as a bright line on the right axis. Recorded live in-memory. */
 function renderRegimeChart(sym){
+  /* the chart has been replaced by the Flow Console; this stays as a guarded
+     no-op so any legacy call site is harmless */
+  if(!document.getElementById('regChart'))return;
   const host=document.getElementById('regChart'),meta=document.getElementById('regChartMeta');
   if(!host)return;
   const raw=(state.regSeries[sym]||[]).filter(p=>p&&isFinite(p.cpr)&&isFinite(p.ppr));
@@ -1927,6 +2032,7 @@ function applyBootstrap(bs){
     state._ai=merged;
     try{localStorage.setItem('kairos_nova_v1',JSON.stringify(merged));}catch(e){}
     try{renderOracle();}catch(e){}
+    try{if(state.view==='nova')renderNovaHub();}catch(e){}
   }
   if(bs.ladders){
     Object.keys(bs.ladders).forEach(sym=>{
@@ -2188,16 +2294,18 @@ document.getElementById('presetBar').addEventListener('click',e=>{const c=e.targ
 
 function setView(v){
   state.view=v;
-  ['btnTrinity','btnSingle','btnChart','btnIdeas','btnImb','btnTape'].forEach(id=>document.getElementById(id).classList.remove('active'));
-  const bmap={trinity:'btnTrinity',single:'btnSingle',chart:'btnChart',ideas:'btnIdeas',imb:'btnImb',tape:'btnTape'};
+  ['btnTrinity','btnSingle','btnChart','btnIdeas','btnNova'].forEach(id=>document.getElementById(id).classList.remove('active'));
+  const bmap={trinity:'btnTrinity',single:'btnSingle',chart:'btnChart',ideas:'btnIdeas',nova:'btnNova'};
   if(bmap[v]&&document.getElementById(bmap[v]))document.getElementById(bmap[v]).classList.add('active');
   document.getElementById('trinityWrap').classList.toggle('hidden',v!=='trinity'&&v!=='single');
   document.getElementById('chartSec').classList.toggle('hidden',v!=='chart');
   document.getElementById('ideasSec').classList.toggle('hidden',v!=='ideas');
-  document.getElementById('imbSec').classList.toggle('hidden',v!=='imb');
-  document.getElementById('tapeSec').classList.toggle('hidden',v!=='tape');
+  document.getElementById('imbSec').classList.toggle('hidden',true);
+  const _ns=document.getElementById('novaSec');
+  if(_ns){_ns.classList.toggle('hidden',v!=='nova');if(v==='nova')try{renderNovaHub();}catch(e){}}
+  document.getElementById('tapeSec').classList.toggle('hidden',true);
   document.getElementById('mtoggle').classList.toggle('dim',v==='ideas'||v==='imb'||v==='tape');
-  const showPresets=['single','chart','imb','tape'].includes(v);
+  const showPresets=['single','chart'].includes(v);
   document.getElementById('presetBar').classList.toggle('hidden',!showPresets);
   document.getElementById('centertoggle').classList.toggle('dim',!(v==='trinity'||v==='single'));
   if(showPresets)renderPresets();
@@ -2207,13 +2315,19 @@ function setView(v){
   }
   const _jt=document.getElementById('juncTabs');
   if(_jt)_jt.classList.toggle('hidden',v!=='single');
-  const _onJ=(v==='single'&&state._juncTab!=='vix'), _onV=(v==='single'&&state._juncTab==='vix');
+  const _tab=state._juncTab||'ladder';
+  const _onJ=(v==='single'&&_tab==='ladder'), _onV=(v==='single'&&_tab==='vix'), _onR=(v==='single'&&_tab==='regime');
+  const _jr=document.getElementById('juncRegime');
+  if(_jr){
+    _jr.classList.toggle('hidden',!_onR);
+    if(_onR){try{renderImb(state.focus);renderTape(state.focus);renderFlowConsole(state.focus);}catch(e){}}
+  }
   const _nj=document.getElementById('novaJunction');if(_nj)_nj.classList.toggle('hidden',!_onJ);
   const _nv=document.getElementById('novaVix');if(_nv)_nv.classList.toggle('hidden',!_onV);
   const _vd2=document.getElementById('vixDesk');
-  if(_vd2)_vd2.classList.toggle('hidden',!(v==='single'&&state._juncTab==='vix'));
+  if(_vd2)_vd2.classList.toggle('hidden',!_onV);
   const _tr2=document.getElementById('trinity');
-  if(_tr2)_tr2.classList.toggle('hidden',v==='single'&&state._juncTab==='vix');
+  if(_tr2)_tr2.classList.toggle('hidden',v==='single'&&_tab!=='ladder');
   if(v==='single'&&state._juncTab==='vix')try{renderVixDesk();}catch(e){}
   if(v==='trinity'||v==='single')renderTrinity();
   if(v==='trinity'){
@@ -2233,12 +2347,10 @@ function setView(v){
   if(v==='imb'){renderImb(state.focus);if(!state.chains[state.focus]||Date.now()-(state.chains[state.focus].t||0)>CHAIN_TTL)refresh(false);}
   if(v==='tape'){renderTape(state.focus);if(!state.chains[state.focus]||Date.now()-(state.chains[state.focus].t||0)>CHAIN_TTL)refresh(false);}
 }
-document.getElementById('btnTrinity').onclick=()=>setView('trinity');
-document.getElementById('btnSingle').onclick=()=>setView('single');
-document.getElementById('btnChart').onclick=()=>setView('chart');
-document.getElementById('btnIdeas').onclick=()=>setView('ideas');
-document.getElementById('btnImb').onclick=()=>setView('imb');
-document.getElementById('btnTape').onclick=()=>setView('tape');
+(function(){var b=document.getElementById('btnTrinity');if(b)b.onclick=function(){setView('trinity');};})();
+(function(){var b=document.getElementById('btnSingle');if(b)b.onclick=function(){setView('single');};})();
+(function(){var b=document.getElementById('btnChart');if(b)b.onclick=function(){setView('chart');};})();
+(function(){var b=document.getElementById('btnIdeas');if(b)b.onclick=function(){setView('ideas');};})();
 
 const chartSel=document.getElementById('chartTicker');
 if(chartSel)chartSel.onchange=async()=>{
@@ -2252,28 +2364,8 @@ if(chartSel)chartSel.onchange=async()=>{
   }
   updateChart(v);
 };
-document.getElementById('imbTicker').onchange=async()=>{
-  const el=document.getElementById('imbTicker');
-  const v=cleanSym(el.value);if(!v){el.value=state.focus;return;}
-  el.value=v;state.focus=v;
-  if(!state.chains[v]){
-    document.getElementById('spin').classList.remove('hidden');
-    try{const r=await getSym(v);if(r){state.data[v]=r;state.dataAge[v]=Date.now();}}catch(e){}
-    document.getElementById('spin').classList.add('hidden');
-  }
-  renderImb(v);
-};
-document.getElementById('tapeTicker').onchange=async()=>{
-  const el=document.getElementById('tapeTicker');
-  const v=cleanSym(el.value);if(!v){el.value=state.focus;return;}
-  el.value=v;state.focus=v;
-  if(!state.chains[v]){
-    document.getElementById('spin').classList.remove('hidden');
-    try{const r=await getSym(v);if(r){state.data[v]=r;state.dataAge[v]=Date.now();}}catch(e){}
-    document.getElementById('spin').classList.add('hidden');
-  }
-  renderTape(v);
-};
+
+
 
 /* ---- custom ticker combobox ---- */
 const comboPop=document.createElement('div');comboPop.className='combo-pop';comboPop.style.display='none';document.body.appendChild(comboPop);
@@ -2389,7 +2481,7 @@ setTimeout(function(){
 },0);
 function schedule(){clearTimeout(state._t);if(document.hidden)return;state._t=setTimeout(async()=>{await refresh(false);schedule();},state.pollSec*1000);}
 window.Kairos={state,refresh,getSym,kingOf,buildFromChains,buildImbalance,flowLean,exposureProfile};
-console.log('%cKairos v5.1 \u2014 Net Delta Flow (directional pressure), interpolated gamma-flip line, shared-board hold, token fully server-side. Base GEX math unchanged.','color:#f2c14e;font-weight:bold');
+console.log('%cKairos v6.0 \u2014 Net Delta Flow (directional pressure), interpolated gamma-flip line, shared-board hold, token fully server-side. Base GEX math unchanged.','color:#f2c14e;font-weight:bold');
 
 state._juncTab=state._juncTab||'ladder';
 (function(){var jt=document.getElementById('juncTabs');if(!jt)return;
@@ -2399,3 +2491,5 @@ state._juncTab=state._juncTab||'ladder';
     setView('single');
   });
 })();
+
+var _bn=document.getElementById('btnNova');if(_bn)_bn.onclick=function(){setView('nova');};
