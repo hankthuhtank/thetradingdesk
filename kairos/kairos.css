@@ -732,7 +732,7 @@ span.nv-tag{flex-shrink:0}
 
 /* Regime split — the tape needs more room than the bars */
 .reg-split{display:grid;grid-template-columns:0.95fr 1.25fr;gap:10px;align-items:stretch}
-.reg-col{border:1px solid var(--border);border-radius:10px;background:var(--panel2);padding:11px 12px;min-width:0;overflow:hidden;display:flex;flex-direction:column}
+.reg-col{border:1px solid var(--border);border-radius:10px;background:var(--panel2);padding:11px 12px;min-width:0;overflow:hidden;display:flex;flex-direction:column;max-height:760px}
 .reg-hd{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:9px;
   padding-bottom:8px;border-bottom:1px solid rgba(126,166,214,.09)}
 .reg-hd b{font-size:.58rem;letter-spacing:.16em;color:var(--teal)}
@@ -742,8 +742,10 @@ span.nv-tag{flex-shrink:0}
 .reg-col table{width:100%;font-size:.63rem}
 .reg-col th{font-size:.52rem!important;letter-spacing:.06em;padding:4px 3px!important;white-space:nowrap}
 .reg-col td{padding:3px 3px!important;white-space:nowrap}
-/* both panes fill the row so neither leaves a gap at the bottom */
-.reg-col #tapeBody,.reg-col #imbBars{flex:1;min-height:0;max-height:620px;overflow:auto}
+/* Height is capped on the COLUMN, not the scroll child — capping the child
+   left the shorter column (imbalance, which has no stat boxes above it) with
+   dead space under the bars while the grid stretched the row to the tape. */
+.reg-col #tapeBody,.reg-col #imbBars{flex:1 1 auto;min-height:0;overflow:auto}
 .reg-col #tapeStats{flex:0 0 auto}
 /* ═══════════ NOVA HUB ═══════════ */
 .novasec{padding:0}
@@ -806,7 +808,7 @@ span.nv-tag{flex-shrink:0}
   .fc-dials{grid-template-columns:repeat(2,1fr)}
   .flowcon{padding:10px 12px 12px}
   .reg-col table{font-size:.6rem}
-  .reg-col #tapeBody,.reg-col #imbBars{max-height:420px}
+  .reg-col{max-height:560px}
 }
 
 /* ═══════════════ NOVA COMMAND DECK ═══════════════ */

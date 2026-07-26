@@ -7,7 +7,7 @@
 <title>Kairos</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='0.9em' font-size='90' fill='%23f2c14e'%3E%E2%97%86%3C/text%3E%3C/svg%3E">
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="kairos.css">
+<link rel="stylesheet" href="kairos.css?v=6.3.0">
 </head>
 <body>
 <datalist id="tickerList"></datalist>
@@ -205,6 +205,7 @@
 
 <div class="settings" id="settings">
   <h3 style="margin-bottom:14px">Settings</h3>
+  <div class="fg" style="opacity:.7"><label>Build</label><div style="font-family:'JetBrains Mono';font-size:.72rem;color:var(--teal)">v6.3.0</div></div>
   <input type="password" id="tok" style="display:none" autocomplete="off">
   <div class="fg"><label>Refresh every (seconds)</label><input type="text" id="poll" value="10" style="width:80px" data-tip="10 is the floor. Scheduled polls only tick live quotes (1 batched request) — chains re-pull every ~90s — well under Tradier's 120 req/min limit."></div>
   <div class="fg"><label>Map shows</label><select id="sizeBasis" style="width:100%"><option value="oi">Standing positions — open interest, updates daily</option><option value="vol">Today's flow — volume traded so far this session</option></select></div>
@@ -212,10 +213,10 @@
 </div>
 <footer>Kairos · Aether · Mythos · Nexus · All Powered by Tradier Live · Structure is context, not a signal</footer>
 
-<script src="kairos-core.js"></script>
-<script src="kairos-backend.js"></script>
-<script src="kairos-quant.js"></script>
-<script src="kairos-modules.js"></script>
-<script src="kairos-mythos.js"></script>
+<script src="kairos-core.js?v=6.3.0"></script>
+<script src="kairos-backend.js?v=6.3.0"></script>
+<script src="kairos-quant.js?v=6.3.0"></script>
+<script src="kairos-modules.js?v=6.3.0"></script>
+<script src="kairos-mythos.js?v=6.3.0"></script>
 </body>
 </html>
