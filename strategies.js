@@ -20,9 +20,21 @@ window.TDESK = window.TDESK || {};
 window.TDESK.STRAT_FAMS = [
   ['all',      'All'],
   ['intraday', 'Intraday'],
+  ['gex',      'Dealer flow \u00b7 GEX'],
   ['swing',    'Swing'],
   ['position', 'Position'],
   ['core',     'Long-term core']
+];
+
+/* Rendering order + the header that sits above each group.
+   The list is sorted by time horizon; dealer-flow trades sit after the
+   plain intraday setups because that is where they live on the clock. */
+window.TDESK.STRAT_GROUPS = [
+  ['intraday','Intraday','Minutes to the closing bell','Opened and closed inside one session. Highest decision count, highest cost drag, most regime-dependent.'],
+  ['gex','Dealer Flow \u00b7 GEX','Intraday to a couple of weeks','Trades built on where option dealers are forced to hedge \u2014 the one structural map on this page with peer-reviewed mechanics behind it.'],
+  ['swing','Swing','Days to a few months','Held through overnight gaps. Fewer decisions, bigger per-trade risk, earnings become a real variable.'],
+  ['position','Position','Weeks to a year','Rules-based rotation. The rebalance is the trade; the individual name barely matters.'],
+  ['core','Long-term Core','Years to decades','Compounding rather than trading. Behaviour is the whole edge \u2014 the mechanics are almost trivially simple.']
 ];
 
 window.TDESK.STRAT_GRADES = {
@@ -38,22 +50,22 @@ window.TDESK.STRATEGIES = [
 {
   id:'orb', n:'Opening Range Breakout', alias:'ORB · Initial Balance break',
   fam:'intraday', grade:'A', hold:[15,390], risk:3,
-  tf:'5-min range, 1–5 min execution', market:'SPY · QQQ · ES/NQ · high-RVOL single names',
+  tf:'15- or 30-min opening range, 1–5 min execution', market:'SPY · QQQ · ES/NQ · high-RVOL single names',
   gradeNote:'Tested on thousands of US equities across multiple years in published research.',
   thesis:'The first minutes of the session are where overnight news, gaps and institutional repositioning get priced. If that first push is abnormally large relative to the stock\u2019s own history, the imbalance behind it usually isn\u2019t finished — the opening range becomes a decision line the rest of the day trades around.',
   rules:[
-    'Mark the high and low of the first 5 minutes (some traders use 15 or 30; the research favours 5).',
+    'Mark the high and low of the opening range. 15 and 30 minutes are what desks actually trade — the 60-minute initial balance (9:30–10:30 ET) is the slower, higher-conviction cousin.',
     'Only trade names that are actually in play — relative volume well above their own average, usually on a catalyst.',
     'Direction is set by the opening candle: above the range you only take longs, below it only shorts.',
     'Enter on the break of the range in that direction, not on the retest fantasy.',
     'Size from ATR so a 14-day-range stock and a quiet one risk the same dollars.',
     'Flat by the close. This is a session trade, not a swing.'
   ],
-  entry:'Break of the 5-minute range in the direction of the opening drive.',
-  stop:'Opposite side of the opening range, or an ATR-scaled distance — whichever is tighter.',
+  entry:'Break of the 15- or 30-minute opening range, in the direction of the opening drive.',
+  stop:'Opposite side of the opening range, or an ATR-scaled distance — whichever is tighter. A 30-minute range gives a wider, more expensive stop than a 15; size for it rather than shading the stop in.',
   target:'Trail with VWAP or a short EMA and exit at the bell. Fixed 1R–2R targets cap the outlier days that pay for the strategy.',
   size:'Risk a fixed % of account, converted to shares by ATR. Never by "feel".',
-  evidence:'This is the rare retail setup with real research behind it. Zarattini, Barbon and Aziz tested a 5-minute ORB across a large US equity universe and found the edge comes almost entirely from restricting it to "stocks in play" — names with abnormal opening volume. A public QuantConnect replication of that work reported a Sharpe above 2 with near-zero beta to the market. Two honest caveats: the headline returns assume leverage and clean fills, and independent reviewers have flagged that the results look strong enough to warrant your own testing before trusting them.',
+  evidence:'This is the rare retail setup with real research behind it. Zarattini, Barbon and Aziz tested a 5-minute ORB across a large US equity universe and found the edge comes almost entirely from restricting it to "stocks in play" — names with abnormal opening volume. A public QuantConnect replication of that work reported a Sharpe above 2 with near-zero beta to the market. Worth knowing where the published work and common practice part ways: the research tested a 5-minute range and found it best, while almost every discretionary trader runs 15 or 30. Longer ranges fire fewer, cleaner signals with a wider stop — fewer whipsaws, more paid per loss. Two further caveats: the headline returns assume leverage and clean fills, and independent reviewers have flagged that the results look strong enough to warrant your own testing before trusting them.',
   cite:[
     {t:'Zarattini, Barbon & Aziz — ORB research (Concretum papers)', u:'https://concretumgroup.com/papers/'},
     {t:'QuantConnect — public replication, ORB for stocks in play', u:'https://www.quantconnect.com/research/18444/opening-range-breakout-for-stocks-in-play/'},
@@ -171,6 +183,118 @@ window.TDESK.STRATEGIES = [
   fails:'Low-float names where the spread and the halts eat the edge, and any day where nothing has a real catalyst — on those days the correct trade is none.',
   trap:'Confusing volatility with opportunity. A stock moving 20% with a 3% spread is not tradable, it is a slot machine with fees.',
   claim:'Classic and still heavily used. The screening is 90% of it; the entry pattern is the last 10%.'
+},
+
+/* ================= DEALER FLOW \u00b7 GEX ================= */
+{
+  id:'gexneg', n:'Negative-Gamma Continuation', alias:'Trade with the hedge, below the flip',
+  fam:'gex', grade:'A', hold:[30,390], risk:3,
+  tf:'5\u201315 min execution, GEX map refreshed intraday', market:'SPX / SPY \u00b7 QQQ \u00b7 index futures',
+  gradeNote:'The amplification mechanism is documented in the Journal of Financial Economics.',
+  thesis:'When dealers are net short gamma, staying delta-neutral forces them to sell into weakness and buy into strength. Their hedging becomes pro-cyclical \u2014 it pushes price the way it is already going. In that regime you stop fading extremes and start trading continuation, because there is a mechanical bid or offer chasing the move.',
+  rules:[
+    'Establish the regime first: net GEX negative, and spot trading below the zero-gamma flip level.',
+    'Drop mean-reversion setups entirely while that holds. Fading is the wrong trade in this regime.',
+    'Take breaks of intraday structure in the direction of the prevailing move \u2014 opening range, prior day levels, VWAP loss or reclaim.',
+    'Expect larger ranges and faster travel. Size down, not up, for the same dollar risk.',
+    'The last 30 minutes are where hedging flow concentrates \u2014 the documented momentum effect is strongest into the close.',
+    'Re-check the map when spot crosses the flip level. The regime, not your bias, is what changed.'
+  ],
+  entry:'Continuation break of intraday structure while spot sits below the gamma flip.',
+  stop:'Back inside the broken structure. Wide ranges mean the stop must be paid for with smaller size.',
+  target:'Next liquidity or GEX cluster, or trail into the close where hedging flow concentrates.',
+  size:'Cut normal size roughly in half. Negative gamma is a volatility regime before it is a direction.',
+  evidence:'This is the best-supported idea in the whole dealer-flow family. Baltussen, Da, Lammers and Martens, publishing in the Journal of Financial Economics, examined intraday returns across more than 60 futures markets from 1974 to 2020 and found that the final 30 minutes before the close is positively predicted by the return over the rest of the day. Critically, they tied the effect to hedging: using a direct proxy for dealers\u2019 negative gamma exposure, intraday momentum showed up when that exposure was negative and grew stronger as it became more negative. Barbon and Buraschi found the same hedging fingerprint in single stocks.',
+  cite:[
+    {t:'Baltussen, Da, Lammers & Martens \u2014 Hedging Demand and Market Intraday Momentum (JFE)', u:'https://www.sciencedirect.com/science/article/abs/pii/S0304405X21001598'},
+    {t:'Full working-paper text (Notre Dame)', u:'https://academicweb.nd.edu/~zda/intramom.pdf'},
+    {t:'Alpha Architect \u2014 plain-language summary of the finding', u:'https://alphaarchitect.com/hot-topic-does-gamma-hedging-actually-affect-stock-prices/'}
+  ],
+  fails:'When positioning flips positive mid-session and you keep trading the old regime. Also on quiet negative-gamma days where the exposure is only mildly negative \u2014 the effect scales with how short dealers are, so a small negative reading is not a licence to press.',
+  trap:'Treating negative gamma as a direction. It is not bearish \u2014 it is an amplifier. It makes rallies violent too, and traders who read it as \u201csell\u201d get run over on the up days.',
+  claim:'Posted constantly as \u201cbelow the flip, only shorts.\u201d The research says amplified, not down.'
+},
+{
+  id:'gexpin', n:'Positive-Gamma Range Fade', alias:'Fading between the walls',
+  fam:'gex', grade:'B', hold:[45,390], risk:2,
+  tf:'5\u201315 min execution', market:'SPX / SPY \u00b7 large-cap names with heavy option interest',
+  gradeNote:'Pinning near heavy strikes is documented; the tradability of the fade is the untested part.',
+  thesis:'When dealers are net long gamma, hedging works against price \u2014 they sell strength and buy weakness. That damping pins the tape between the largest call strike above and the largest put strike below, and turns the day into a range until something big enough breaks it.',
+  rules:[
+    'Confirm net GEX is clearly positive and spot is above the zero-gamma flip.',
+    'Mark the call wall (largest positive gamma strike above) and the put wall below. Those are the range edges.',
+    'Fade approaches to the walls rather than chasing breaks \u2014 in this regime, breaks mostly fail.',
+    'Require price confirmation at the wall: rejection wick, failed break, or a loss of momentum. Never a naked limit at the level.',
+    'Target the middle of the range or the opposing wall. Do not hold for a trend that the regime is actively suppressing.',
+    'Abandon the whole approach the moment spot loses the flip level or a macro catalyst lands.'
+  ],
+  entry:'Confirmed rejection at a wall, back into the range.',
+  stop:'Beyond the wall by a defined buffer \u2014 clean break means the premise is gone.',
+  target:'Mid-range first, opposing wall as the stretch. Scale, do not hold and hope.',
+  size:'Normal to slightly reduced. The win rate is decent and the losses come in clusters when the range finally breaks.',
+  evidence:'The underlying pinning effect is real and peer-reviewed. Ni, Pearson and Poteshman, in the Journal of Financial Economics, showed that on expiration dates the closing prices of optionable stocks cluster at strike prices, shifting returns by at least 16.5 basis points on average and attributing it directly to market-maker hedge rebalancing. Simulation work by Buis and co-authors found that higher net gamma positioning among dynamic hedgers reduces volatility and stabilises markets \u2014 the damping half of the same mechanism. What none of that establishes is that fading the walls is profitable after costs; that part is industry practice, not published result.',
+  cite:[
+    {t:'Ni, Pearson & Poteshman \u2014 Stock Price Clustering on Option Expiration Dates (JFE)', u:'https://www.sciencedirect.com/science/article/abs/pii/S0304405X05000577'},
+    {t:'SSRN listing for the same paper', u:'https://papers.ssrn.com/sol3/papers.cfm?abstract_id=519044'},
+    {t:'Follow-up work on weekly vs monthly expirations and pinning strength', u:'https://www.wpunj.edu/Weekly%20Options%20on%20Stock%20Pinning%20upto%20page%208.pdf'}
+  ],
+  fails:'Macro days. A CPI print or an FOMC statement overwhelms hedging flow instantly, and every fade you took becomes a loss at the same moment.',
+  trap:'The pinning research is strongest for monthly expirations \u2014 follow-up work found weekly expirations pin noticeably less. Borrowing monthly-OPEX confidence for a random Tuesday is the standard mistake.',
+  claim:'\u201cMax pain\u201d posts treat the pin as a target price. The research describes a tendency in a closing print, not a magnet you can trade all week.'
+},
+{
+  id:'gexflip', n:'The Gamma Flip as the Line', alias:'Zero-gamma level as regime bias',
+  fam:'gex', grade:'C', hold:[390,9750], risk:2,
+  tf:'Daily bias, checked each morning', market:'SPX / SPY \u00b7 QQQ',
+  gradeNote:'The regime split is well grounded; the specific level is a model output, not an observed price.',
+  thesis:'One number does most of the work: the spot price at which aggregate dealer gamma crosses zero. Above it, hedging damps moves and ranges compress. Below it, hedging amplifies and ranges expand. You are not predicting direction \u2014 you are deciding which of your own strategies is allowed to run today.',
+  rules:[
+    'Compute or read the flip level before the open. Treat it as the day\u2019s dividing line.',
+    'Above the flip: enable mean-reversion, premium selling, and range fades. Expect smaller ranges.',
+    'Below the flip: enable breakout and continuation setups. Disable fading. Cut size for the wider ranges.',
+    'Within roughly a quarter of a percent of the line, trade nothing new \u2014 that is the coin-flip zone.',
+    'Re-derive the level whenever open interest changes materially, and always after an expiration.',
+    'Log the level daily against the realised range. Six weeks of that tells you whether your map is any good.'
+  ],
+  entry:'Not an entry signal. It is the switch that decides which playbook is live.',
+  stop:'A sustained cross of the level invalidates the regime, not the position.',
+  target:'N/A \u2014 the level governs strategy selection, not targets.',
+  size:'Size scales with the regime: smaller below the flip, normal above.',
+  evidence:'The regime split rests on the same JFE work behind negative-gamma continuation, plus simulation evidence that positive net gamma among hedgers reduces volatility while negative positioning increases it and makes markets more fragile. The weak link is measurement, not mechanism: every published flip level is a model output built on a dealer-positioning assumption and prior-day open interest. Different vendors publish different levels for the same day. Treat it as a well-motivated estimate, not a printed price.',
+  cite:[
+    {t:'Baltussen et al. \u2014 the gamma-hedging channel (JFE)', u:'https://www.sciencedirect.com/science/article/abs/pii/S0304405X21001598'},
+    {t:'How GEX regimes and flip levels are constructed in practice', u:'https://www.insiderfinance.io/resources/the-ultimate-guide-to-gamma-exposure-gex'}
+  ],
+  fails:'Around large expirations, when open interest rolls off and the level jumps overnight. Also on any day where a macro event is the actual driver.',
+  trap:'Quoting the flip to two decimal places. Every input is an assumption \u2014 the sign of the regime is the signal, the exact number is false precision.',
+  claim:'Sold as a magic line on chart screenshots. It is a regime switch, and it is only as good as the positioning assumption underneath it.'
+},
+{
+  id:'gexwall', n:'Wall Rejection & Reclaim', alias:'Trading the heaviest strikes as structure',
+  fam:'gex', grade:'C', hold:[15,390], risk:3,
+  tf:'1\u201315 min execution', market:'SPX / SPY \u00b7 QQQ \u00b7 heavily optioned single names',
+  gradeNote:'Strike-level clustering is documented; using individual walls as tradable levels is practitioner method.',
+  thesis:'Gamma is not spread evenly \u2014 it stacks at a handful of strikes. Those clusters are where hedging pressure concentrates, which makes them behave like support and resistance that exists for a mechanical reason rather than because people drew a line there.',
+  rules:[
+    'Rank strikes by gamma concentration and mark only the top two or three. More lines than that is noise.',
+    'Wait for price to reach a wall. Do not anticipate it.',
+    'Two valid trades only: rejection (fade back into the range) or reclaim (accept and trade through after price holds the other side).',
+    'Require a confirmation candle. Walls get tested repeatedly before they resolve.',
+    'Cross-check against the regime \u2014 in positive gamma expect rejection, in negative gamma expect walls to break more often.',
+    'Walls decay with time. A level built on next Friday\u2019s expiry matters less today than one expiring this afternoon.'
+  ],
+  entry:'Confirmed rejection at, or reclaim of, a top-ranked gamma strike.',
+  stop:'The other side of the wall plus a buffer for the noise around it.',
+  target:'Next gamma cluster, or the flip level.',
+  size:'Reduced. Walls are zones, and a zone-based stop is wider than it looks on the chart.',
+  evidence:'Ni, Pearson and Poteshman established that hedge rebalancing pulls prices toward heavy strikes at expiration, and later work on inelastic hedging demand found the hedging impact clusters at optionable strikes and intensifies as duration shortens. That supports strikes mattering. It does not establish that a discretionary rejection entry at a wall has positive expectancy after costs \u2014 that step is yours to test.',
+  cite:[
+    {t:'Ni, Pearson & Poteshman \u2014 hedge rebalancing clusters price at strikes (JFE)', u:'https://www.sciencedirect.com/science/article/abs/pii/S0304405X05000577'},
+    {t:'Park & Zhao \u2014 Inelastic Hedging Demand and Intraday Momentum', u:'https://portal.northernfinanceassociation.org/viewp.php?n=2240183764'}
+  ],
+  fails:'Thin open interest, where the \u201cwall\u201d is a rounding artefact, and macro sessions where hedging is not the dominant flow.',
+  trap:'Marking every strike with visible gamma. Ten levels on a chart guarantees price is always near one, which guarantees you always have a reason to trade.',
+  claim:'Wall screenshots circulate constantly with the winners circled. The walls that broke are rarely posted.'
 },
 
 /* ================= SWING / POSITION ================= */
@@ -309,6 +433,32 @@ window.TDESK.STRATEGIES = [
   claim:'The most recommended approach anywhere, and the least exciting. Those two facts are related.'
 }
 ];
+
+/* ---- The dealer-flow briefing that sits above the GEX group ---- */
+window.TDESK.GEX_BRIEF = {
+  intro:'Every option a dealer sells leaves them with risk they do not want, so they hedge it in the underlying \u2014 and they must keep re-hedging as price moves. That forced, mechanical flow is measurable. Gamma exposure is the map of it: where dealers are pushed to buy, where they are pushed to sell, and how hard. It is the only structural read on this page whose mechanism has been documented in peer-reviewed finance rather than inferred from screenshots.',
+  mechanics:[
+    ['Positive gamma damps','When dealers are net long gamma, hedging runs against price \u2014 selling strength, buying weakness. Ranges compress, breakouts fail more often, and the tape gets sticky around heavy strikes.'],
+    ['Negative gamma amplifies','When dealers are net short gamma, hedging runs with price \u2014 selling weakness, buying strength. Ranges expand, moves travel further than they should, and the last 30 minutes get violent.'],
+    ['The flip is the switch','The spot level where aggregate gamma crosses zero separates those two worlds. It decides which of your strategies should be live today \u2014 not which direction to take.'],
+    ['Walls are where it stacks','Gamma concentrates at a few strikes rather than spreading evenly. Those clusters behave like support and resistance with an actual mechanical cause behind them.'],
+    ['Time decays the map','Gamma rises sharply as expiry approaches, so a 0DTE chain dominates today\u2019s structure while next month\u2019s barely registers. After an expiration the whole map is rebuilt.']
+  ],
+  workflow:[
+    ['Read the regime before the open','One question first: positive or negative net gamma, and which side of the flip is spot on? That answer alone decides whether you are fading or chasing today. Getting this backwards is the single most expensive GEX mistake.'],
+    ['Mark three levels, not ten','The flip, the nearest call wall, the nearest put wall. A chart with ten gamma lines guarantees price is always near one, which guarantees you can always justify a trade.'],
+    ['Let the regime pick the playbook','Above the flip, enable range fades and premium selling. Below it, enable breakouts and continuation and disable fading entirely. This is what the map is genuinely good at.'],
+    ['Size to the regime, not the setup','Negative gamma is a volatility forecast before it is a direction. Same dollar risk, fewer contracts, wider stop.'],
+    ['Never trade the map alone','GEX tells you how the tape will behave around a level, not whether the level will be reached. It needs price confirmation \u2014 it is context, not a trigger.'],
+    ['Refresh on a schedule and log it','Chains update, open interest shifts, and every expiration rebuilds the structure. Log the flip level against the day\u2019s realised range for six weeks; that record tells you whether your map is worth trading before your account does.']
+  ],
+  caveats:[
+    'GEX is modelled, not observed. Dealer positioning is assumed \u2014 usually long calls, short puts \u2014 and the inputs are prior-day open interest. Two vendors can publish two different flip levels for the same session.',
+    'It says nothing about direction. Both regimes are direction-neutral; one damps and one amplifies.',
+    'Macro events overwhelm it. On CPI and FOMC days, hedging flow is not the dominant force and the map should be set aside.',
+    'The published evidence covers the mechanism \u2014 that hedging moves prices. It does not cover any specific retail entry built on top of it.'
+  ]
+};
 
 /* ---- Cross-cutting: what the data says actually decides outcomes ---- */
 window.TDESK.STRAT_TRUTHS = [
