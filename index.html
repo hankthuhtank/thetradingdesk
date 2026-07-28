@@ -625,7 +625,7 @@ body.paged .section{padding-top:40px}
 .gexb-cav{margin-top:26px;border-left:2px solid var(--gold);padding:4px 0 4px 15px}
 .gexb-cav b{display:block;font-family:var(--mono);font-size:.55rem;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);margin-bottom:9px}
 .gexb-cav li{list-style:none;color:var(--dim);font-size:.84rem;line-height:1.58;margin-bottom:7px;position:relative;padding-left:14px}
-.gexb-cav li::before{content:"\u2014";position:absolute;left:0;color:var(--faint)}
+.gexb-cav li::before{content:"—";position:absolute;left:0;color:var(--faint)}
 .gexb-go{display:inline-flex;align-items:center;gap:9px;margin-top:22px;font-family:var(--mono);font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--violet);border:1px solid var(--violet);border-radius:8px;padding:10px 15px;transition:background .2s}
 .gexb-go:hover{background:rgba(168,85,247,.12)}
 @media(max-width:600px){.gexb{padding:20px}.gexs-bar span{font-size:.5rem;padding:0 9px}}
@@ -642,6 +642,37 @@ body.paged .section{padding-top:40px}
 .tl-tx{font-family:var(--mono);font-size:.66rem;font-weight:600;letter-spacing:.15em;text-transform:uppercase;color:var(--tl);text-align:left}
 .tl-go{margin-left:auto;font-family:var(--mono);font-size:.7rem;color:var(--tl);opacity:.5;transition:opacity .2s,transform .2s}
 .tlight:hover .tl-go{opacity:1;transform:translateX(3px)}
+
+
+/* ---- the sessions portal reads as the page CTA, so it spans the row ---- */
+.portal.wide{grid-column:1/-1;flex-direction:row;align-items:center;gap:22px;padding:20px 24px}
+.portal.wide .pic{margin-bottom:0}
+.portal.wide .pwt{flex:1;min-width:0;position:relative;display:flex;flex-direction:column;gap:5px}
+.portal.wide .pwh{display:flex;align-items:center;gap:11px;flex-wrap:wrap}
+.portal.wide h4{margin-bottom:0}
+.portal.wide p{flex:none}
+.portal.wide .pgo{margin-top:0;flex:0 0 auto;white-space:nowrap}
+@media(max-width:700px){
+  .portal.wide{flex-direction:column;align-items:flex-start;gap:14px}
+  .portal.wide .pgo{margin-top:2px}
+}
+
+/* ---- strategy modal: three panes instead of one wall of text ---- */
+.stabs{display:flex;gap:6px;margin:20px 0 22px;border-bottom:1px solid var(--line);padding-bottom:0}
+.stabs button{font-family:var(--mono);font-size:.6rem;letter-spacing:.13em;text-transform:uppercase;color:var(--dim);padding:10px 14px;border-bottom:2px solid transparent;margin-bottom:-1px;transition:color .18s,border-color .18s;white-space:nowrap}
+.stabs button:hover{color:var(--text)}
+.stabs button.on{color:var(--cyan);border-bottom-color:var(--cyan)}
+.stabs button i{font-style:normal;color:var(--faint);margin-left:6px;font-size:.55rem}
+.stabs button.on i{color:var(--cyan-dim)}
+.spane{display:none;animation:panefade .22s ease}
+.spane.on{display:block}
+@keyframes panefade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.sd-lead{font-size:.98rem;line-height:1.68;color:var(--text);border-left:2px solid var(--cyan);padding:2px 0 2px 16px;margin-bottom:22px}
+.sd-h{font-family:var(--mono);font-size:.55rem;letter-spacing:.17em;text-transform:uppercase;color:var(--faint);margin:24px 0 11px}
+.spane .sd-h:first-child{margin-top:0}
+.sd-body{color:var(--dim);font-size:.9rem;line-height:1.66}
+.sd-body b{color:var(--text)}
+@media(max-width:520px){.stabs{gap:2px}.stabs button{padding:10px 9px;font-size:.55rem;letter-spacing:.08em}.stabs button i{display:none}}
 
 @media(prefers-reduced-motion:reduce){
   html{scroll-behavior:auto}
@@ -682,8 +713,7 @@ body.paged .section{padding-top:40px}
       <li><a href="#encyclopedia">Encyclopedia</a></li>
       <li><a href="#patterns">Candlesticks</a></li>
       <li><a href="#strategies">Strategies</a></li>
-      <li><a href="#learn">Learn</a></li>
-      <li><a href="#sessions">1:1</a></li>
+      <li><a href="#sessions">1:1 Sessions</a></li>
     </ul>
     <button class="nav-cmd" onclick="openCmdk()">Search <kbd>/</kbd></button>
   </div>
@@ -883,26 +913,21 @@ body.paged .section{padding-top:40px}
   </div>
 </section>
 
-<!-- LEARN -->
-<section class="section page-view hidden" id="learn" data-page="learn">
+<!-- SESSIONS — the path, and the optional human in the loop -->
+<section class="section band page-view hidden" id="sessions" data-page="sessions">
   <div class="wrap">
     <div class="sec-head reveal">
-      <div class="eyebrow">THE LEARNING PATH · 08 STAGES, IN ORDER</div>
+      <div class="eyebrow">THE PATH · 08 STAGES, IN ORDER</div>
       <h2 class="disp">Zero to a <span class="c">written plan.</span></h2>
-      <p>The full arc, in order — free to read, track your own progress as you go. Numbered because the sequence is the point: each stage assumes the last. When all eight click, you’ll have your own trading constitution.</p>
+      <p>The full arc, in order — free to read, and yours to track as you go. Numbered because the sequence is the point: each stage assumes the last. When all eight click, you’ll have your own trading constitution. Work through it alone and it costs nothing — the 1:1 sessions further down follow this exact arc, with someone answering the “but why” as you go.</p>
       <div id="currProgress"></div>
     </div>
     <div class="curr reveal" id="currGrid"></div>
-  </div>
-</section>
 
-<!-- SESSIONS / PRICING -->
-<section class="section band page-view hidden" id="sessions" data-page="sessions">
-  <div class="wrap">
-    <div class="sec-head reveal" style="text-align:center;max-width:none">
+    <div class="sec-head reveal" style="text-align:center;max-width:none;margin:88px 0 0">
       <div class="eyebrow" style="justify-content:center">WANT A HUMAN IN THE LOOP?</div>
       <h2 class="disp">Optional <span class="g">1:1 help.</span></h2>
-      <p style="margin:14px auto 0">Everything above is free and always will be. If you want someone to walk you through it live — answer the "but why," catch the mistakes before they cost you — that’s what a session is for.</p>
+      <p style="margin:14px auto 0">Everything above — and everything else on this site — is free and always will be. If you want someone to walk you through the eight stages live, answer the "but why," and catch the mistakes before they cost you, that’s what a session is for.</p>
     </div>
     <div class="tiers reveal">
       <div class="tier t1">
@@ -1779,7 +1804,7 @@ const CMDS=[
   {label:'Encyclopedia',kind:'page',run:()=>location.hash='encyclopedia'},
   {label:'Candlestick Analysis',kind:'page',run:()=>location.hash='patterns'},
   {label:'Strategies',kind:'page',run:()=>location.hash='strategies'},
-  {label:'Learning Path',kind:'page',run:()=>location.hash='learn'},
+  {label:'1:1 Sessions & Learning Path',kind:'page',run:()=>location.hash='sessions'},
   {label:'Book a Session',kind:'page',run:()=>location.hash='sessions'},
   ...STRATEGIES.map((x,i)=>({label:x.n,kind:'strategy',run:()=>openStrat(i)})),
   ...ENC.map((e,i)=>({label:e.t,kind:'term',run:()=>openEnc(i)})),
@@ -1823,32 +1848,36 @@ const SECTIONS=[
    ic:'M3 20h18M6 20V10M12 20V4M18 20v-7',
    desc:'Day trading through decade holding — full playbooks with entry, stop, target, failure regime, and a grade for the evidence behind each one.',
    count:()=>STRATEGIES.length+' playbooks'},
-  {id:'learn', name:'Learning Path', crumb:'THE LEARNING PATH', kind:'course',
-   accent:'var(--cyan)', fade:'rgba(34,211,238,.13)',
-   ic:'M12 4 2 9l10 5 10-5zM6 12v5c0 1.5 3 3 6 3s6-1.5 6-3v-5',
-   desc:'Zero to a written trading plan, in order — free to read, with your own progress tracked as you go.',
-   count:()=>SESSIONS.length+' stages'},
-  {id:'sessions', name:'1:1 Sessions', crumb:'WORK WITH THE DESK', kind:'optional',
+  {id:'sessions', name:'1:1 Sessions', crumb:'THE PATH \u00b7 1:1 SESSIONS', kind:'the path + 1:1', wide:true,
    accent:'var(--gold)', fade:'rgba(245,185,66,.13)',
-   ic:'M16 20v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 6a4 4 0 1 1 0 8 4 4 0 0 1 0-8M19 8v6M22 11h-6',
-   desc:'Everything else here is free forever. If you want a human to walk you through it live, that\u2019s what a session is for.',
-   count:()=>'optional'}
+   ic:'M12 4 2 9l10 5 10-5zM6 12v5c0 1.5 3 3 6 3s6-1.5 6-3v-5',
+   desc:'Zero to a written trading plan in eight stages \u2014 free to read and track. The optional live sessions follow the same arc.',
+   count:()=>SESSIONS.length+' stages \u00b7 free'}
 ];
 const SEC_BY_ID=Object.fromEntries(SECTIONS.map(x=>[x.id,x]));
 const PAGE_IDS=SECTIONS.map(x=>x.id);
+const PAGE_ALIAS={learn:'sessions'};   /* the learning path lives on the sessions page now */
 const icon=(d,sz)=>`<svg width="${sz}" height="${sz}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${d}"/></svg>`;
 
 /* ---- left rail ---- */
 $('#railNav').innerHTML=SECTIONS.map((x,i)=>
-  `${i===4?'<div class="rail-sep"></div>':''}<a class="rail-btn" href="#${x.id}" data-go="${x.id}"><span class="rail-ic">${icon(x.ic,19)}</span><span class="rail-tx"><b>${x.name}</b><small>${x.kind}</small></span></a>`
+  `${i===SECTIONS.length-1?'<div class="rail-sep"></div>':''}<a class="rail-btn" href="#${x.id}" data-go="${x.id}"><span class="rail-ic">${icon(x.ic,19)}</span><span class="rail-tx"><b>${x.name}</b><small>${x.kind}</small></span></a>`
 ).join('');
 
 /* ---- front-page portals ---- */
-$('#portalGrid').innerHTML=SECTIONS.map(x=>
-  `<a class="portal" href="#${x.id}" style="--accent:${x.accent};--accent-fade:${x.fade}">
-     <span class="ptop"><span class="pic">${icon(x.ic,19)}</span><span class="pcount">${x.count()}</span></span>
-     <h4>${x.name}</h4><p>${x.desc}</p><span class="pgo">Open →</span>
-   </a>`).join('');
+$('#portalGrid').innerHTML=SECTIONS.map(x=>x.wide
+  ? `<a class="portal wide" href="#${x.id}" style="--accent:${x.accent};--accent-fade:${x.fade}">
+       <span class="pic">${icon(x.ic,19)}</span>
+       <span class="pwt">
+         <span class="pwh"><h4>${x.name}</h4><span class="pcount">${x.count()}</span></span>
+         <p>${x.desc}</p>
+       </span>
+       <span class="pgo">Open \u2192</span>
+     </a>`
+  : `<a class="portal" href="#${x.id}" style="--accent:${x.accent};--accent-fade:${x.fade}">
+       <span class="ptop"><span class="pic">${icon(x.ic,19)}</span><span class="pcount">${x.count()}</span></span>
+       <h4>${x.name}</h4><p>${x.desc}</p><span class="pgo">Open \u2192</span>
+     </a>`).join('');
 
 /* ---- page headers (injected once, so every view has a way home) ---- */
 $$('.page-view').forEach(sec=>{
@@ -1864,7 +1893,8 @@ $$('.page-view').forEach(sec=>{
 const BASE_TITLE=document.title;
 function currentPage(){
   const h=(location.hash||'').replace(/^#\/?/,'');
-  return PAGE_IDS.includes(h)?h:'';
+  const id=PAGE_ALIAS[h]||h;
+  return PAGE_IDS.includes(id)?id:'';
 }
 function route(){
   const p=currentPage();
@@ -1985,27 +2015,55 @@ function renderStrats(){
   }).join('') || `<p class="mnote">No strategy matches \u201c${esc(sQuery)}\u201d. Try \u201cbreakout\u201d, \u201cgamma\u201d, or \u201cmomentum\u201d.</p>`;
   $('#sCount').textContent=`${list.length} of ${STRATEGIES.length} playbooks \u00b7 sorted by how long the trade lives \u2014 open any card for the full read`;
 }
+function stratTab(n){
+  $$('#sdBody .stabs button').forEach((b,i)=>b.classList.toggle('on',i===n));
+  $$('#sdBody .spane').forEach((p,i)=>p.classList.toggle('on',i===n));
+  const win=$('#m-strat .mbody'); if(win) win.scrollTop=0;
+}
 function openStrat(i){
   const x=STRATEGIES[i];
   $('#sd-bar').textContent='STRATEGY // '+x.n.toUpperCase();
   $('#sdBody').innerHTML=`
     <h3>${esc(x.n)}</h3>
     <p class="msub">${esc(x.alias)}</p>
-    <div class="pd-meta">${gradeChip(x.grade,true)}<span>${FAM_LABEL[x.fam]||x.fam}</span><span>${esc(x.tf)}</span>${riskDots(x.risk)}</div>
-    <div class="horizon" style="margin-bottom:8px">${horizonRail(x.hold)}</div>
-    <div class="pd-row"><span class="k">Typical hold</span><span class="v"><b>${holdTxt(x.hold)}</b> \u00b7 ${esc(x.market)}</span></div>
-    <div class="pd-row"><span class="k">The thesis</span><span class="v">${esc(x.thesis)}</span></div>
-    <div class="pd-row"><span class="k">How it\u2019s traded</span><span class="v"><ol class="sd-rules">${x.rules.map(r=>`<li>${esc(r)}</li>`).join('')}</ol></span></div>
-    <div class="sd-trio">
-      <div><div class="k">Entry</div><div class="v">${esc(x.entry)}</div></div>
-      <div><div class="k">Stop</div><div class="v">${esc(x.stop)}</div></div>
-      <div><div class="k">Target</div><div class="v">${esc(x.target)}</div></div>
+    <div class="pd-meta">${gradeChip(x.grade,true)}<span>${FAM_LABEL[x.fam]||x.fam}</span><span>${holdTxt(x.hold)}</span><span>${esc(x.tf)}</span>${riskDots(x.risk)}</div>
+    <div class="horizon">${horizonRail(x.hold)}</div>
+
+    <div class="stabs">
+      <button class="on" onclick="stratTab(0)">Playbook</button>
+      <button onclick="stratTab(1)">Evidence<i>${x.grade}</i></button>
+      <button onclick="stratTab(2)">Risk &amp; traps</button>
     </div>
-    <div class="pd-row"><span class="k">Sizing</span><span class="v">${esc(x.size)}</span></div>
-    <div class="pd-row"><span class="k">What the evidence says</span><span class="v">${esc(x.evidence)}<div class="sd-cites">${(x.cite||[]).map(c=>`<a href="${esc(c.u)}" target="_blank" rel="noopener">${esc(c.t)} \u2197</a>`).join('')}</div></span></div>
-    <div class="pd-row"><span class="k">When it fails</span><span class="v">${esc(x.fails)}</span></div>
-    <div class="pd-row"><span class="k">The trap</span><span class="v"><b>${esc(x.trap)}</b></span></div>
-    <div class="sd-claim"><b>What gets claimed online</b>${esc(x.claim)}</div>
+
+    <div class="spane on">
+      <p class="sd-lead">${esc(x.thesis)}</p>
+      <div class="sd-h">Where it\u2019s traded</div>
+      <p class="sd-body">${esc(x.market)}</p>
+      <div class="sd-h">How it\u2019s traded</div>
+      <ol class="sd-rules">${x.rules.map(r=>`<li>${esc(r)}</li>`).join('')}</ol>
+      <div class="sd-trio">
+        <div><div class="k">Entry</div><div class="v">${esc(x.entry)}</div></div>
+        <div><div class="k">Stop</div><div class="v">${esc(x.stop)}</div></div>
+        <div><div class="k">Target</div><div class="v">${esc(x.target)}</div></div>
+      </div>
+      <div class="sd-h">Sizing</div>
+      <p class="sd-body">${esc(x.size)}</p>
+    </div>
+
+    <div class="spane">
+      <div class="sd-h">What the evidence actually says</div>
+      <p class="sd-body">${esc(x.evidence)}</p>
+      <div class="sd-cites">${(x.cite||[]).map(c=>`<a href="${esc(c.u)}" target="_blank" rel="noopener">${esc(c.t)} \u2197</a>`).join('')}</div>
+      <div class="sd-claim"><b>What gets claimed online</b>${esc(x.claim)}</div>
+    </div>
+
+    <div class="spane">
+      <div class="sd-h">When it fails</div>
+      <p class="sd-body">${esc(x.fails)}</p>
+      <div class="sd-h">The trap</div>
+      <p class="sd-body"><b>${esc(x.trap)}</b></p>
+    </div>
+
     <p class="mnote">Evidence grades describe how well a strategy has been <em>tested in public</em> \u2014 not how well it will work for you. Nothing here is a recommendation. Test any idea on your own data and inside your own written rules before it touches real money.</p>`;
   openModal('m-strat');
 }
