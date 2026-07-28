@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>The Trading Desk — The All-In-One Trading Terminal</title>
-<meta name="description" content="A free, all-in-one terminal for traders: live market data, a sector heatmap, an earnings calendar, dealer-positioning and prediction-market tools, a full trading encyclopedia, a candlestick pattern library, and risk calculators. Structure over signals.">
+<meta name="description" content="A free, all-in-one terminal for traders: live market data, a sector heatmap, an earnings calendar, dealer-positioning and prediction-market tools, a full trading encyclopedia, a candlestick pattern library, an evidence-graded strategy playbook, and risk calculators. Structure over signals.">
 <meta name="theme-color" content="#070a0f">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -477,6 +477,119 @@ body.locked{overflow:hidden}
 .mwk-rest{font-family:var(--mono);font-size:.66rem;color:var(--faint);margin-top:9px;line-height:1.6}
 .mwk-quiet{font-family:var(--mono);font-size:.72rem;color:var(--faint)}
 
+
+/* ============================================================
+   LEFT RAIL — the section navigator
+   ============================================================ */
+#rail{position:fixed;left:0;top:0;bottom:0;width:64px;z-index:90;background:rgba(9,12,18,.94);backdrop-filter:blur(12px) saturate(1.2);border-right:1px solid var(--line);display:none;flex-direction:column;transition:width .22s cubic-bezier(.16,.8,.3,1);overflow:hidden}
+#rail:hover,#rail:focus-within{width:242px;box-shadow:26px 0 70px rgba(0,0,0,.6)}
+.rail-top{height:65px;display:flex;align-items:center;gap:16px;padding:0 20px;border-bottom:1px solid var(--line);flex:0 0 auto}
+.rail-mark{width:24px;height:24px;flex:0 0 auto;display:grid;place-items:center;color:var(--cyan)}
+.rail-lab{font-family:var(--mono);font-size:.55rem;letter-spacing:.24em;text-transform:uppercase;color:var(--faint);white-space:nowrap;opacity:0;transition:opacity .18s}
+#rail:hover .rail-lab,#rail:focus-within .rail-lab{opacity:1}
+.rail-nav{display:flex;flex-direction:column;padding:14px 0;gap:1px;flex:1;overflow-y:auto;overflow-x:hidden}
+.rail-nav::-webkit-scrollbar{width:0}
+.rail-sep{margin:13px 20px 9px;height:1px;background:var(--line-2);flex:0 0 auto}
+.rail-btn{display:flex;align-items:center;gap:16px;padding:12px 20px;position:relative;white-space:nowrap;color:var(--dim);transition:color .18s,background .18s;width:100%;text-align:left}
+.rail-btn::before{content:"";position:absolute;left:0;top:7px;bottom:7px;width:2px;background:var(--cyan);opacity:0;transition:opacity .18s}
+.rail-btn:hover{color:var(--text);background:rgba(34,211,238,.045)}
+.rail-btn.on{color:var(--cyan)}
+.rail-btn.on::before{opacity:1}
+.rail-ic{width:24px;height:24px;flex:0 0 auto;display:grid;place-items:center}
+.rail-tx{display:flex;flex-direction:column;gap:3px;opacity:0;transition:opacity .18s;min-width:0}
+#rail:hover .rail-tx,#rail:focus-within .rail-tx{opacity:1}
+.rail-tx b{font-family:var(--disp);font-weight:600;font-size:.86rem;text-transform:uppercase;letter-spacing:.015em;line-height:1}
+.rail-tx small{font-family:var(--mono);font-size:.53rem;letter-spacing:.14em;color:var(--faint);text-transform:uppercase;line-height:1}
+.rail-foot{padding:15px 20px;border-top:1px solid var(--line);font-family:var(--mono);font-size:.5rem;letter-spacing:.2em;color:var(--faint);text-transform:uppercase;white-space:nowrap;opacity:0;transition:opacity .18s;flex:0 0 auto;line-height:1.9}
+#rail:hover .rail-foot,#rail:focus-within .rail-foot{opacity:1}
+@media(min-width:1100px){
+  #rail{display:flex}
+  body{padding-left:64px}
+  .modal{padding-left:80px}
+  #cmdk{padding-left:64px}
+}
+
+/* ============================================================
+   SECTION PORTALS — the rest of the desk, from the front page
+   ============================================================ */
+.portals{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:16px}
+.portal{position:relative;border:1px solid var(--line);border-radius:13px;background:linear-gradient(160deg,var(--panel-2),var(--panel));padding:20px;text-align:left;display:flex;flex-direction:column;overflow:hidden;transition:transform .25s,border-color .25s}
+.portal::before{content:"";position:absolute;inset:0;background:radial-gradient(120% 80% at 100% 0%,var(--accent-fade,rgba(34,211,238,.13)),transparent 62%);pointer-events:none}
+.portal:hover{transform:translateY(-4px);border-color:var(--accent,var(--cyan))}
+.portal .ptop{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px;position:relative}
+.portal .pic{width:40px;height:40px;border-radius:10px;display:grid;place-items:center;border:1px solid var(--accent,var(--cyan));color:var(--accent,var(--cyan));background:var(--accent-fade,rgba(34,211,238,.13))}
+.portal .pcount{font-family:var(--mono);font-size:.53rem;letter-spacing:.13em;text-transform:uppercase;color:var(--faint);border:1px solid var(--line-2);border-radius:5px;padding:4px 8px;white-space:nowrap}
+.portal h4{font-family:var(--disp);font-weight:700;text-transform:uppercase;font-size:1.06rem;line-height:1.05;margin-bottom:7px;position:relative}
+.portal p{color:var(--dim);font-size:.85rem;flex:1;position:relative}
+.portal .pgo{margin-top:14px;font-family:var(--mono);font-size:.61rem;letter-spacing:.12em;color:var(--accent,var(--cyan));text-transform:uppercase;position:relative}
+@media(max-width:1000px){.portals{grid-template-columns:1fr 1fr}}
+@media(max-width:520px){.portals{grid-template-columns:1fr}}
+
+/* ============================================================
+   ROUTED PAGE VIEWS
+   ============================================================ */
+.page-head{display:flex;align-items:center;gap:13px;margin-bottom:28px;flex-wrap:wrap}
+.back-desk{display:inline-flex;align-items:center;gap:9px;font-family:var(--mono);font-size:.63rem;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);border:1px solid var(--line);border-radius:8px;padding:9px 14px;background:var(--panel);transition:border-color .2s,color .2s}
+.back-desk:hover{border-color:var(--cyan);color:var(--cyan)}
+.page-crumb{font-family:var(--mono);font-size:.58rem;letter-spacing:.18em;text-transform:uppercase;color:var(--faint)}
+body.paged .section{padding-top:40px}
+
+/* ============================================================
+   STRATEGY PLAYBOOK
+   ============================================================ */
+.gkey{display:flex;flex-wrap:wrap;gap:8px;margin:-8px 0 22px}
+.gkey span{font-family:var(--mono);font-size:.54rem;letter-spacing:.09em;text-transform:uppercase;border:1px solid;border-radius:5px;padding:5px 9px}
+.sgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.scard{border:1px solid var(--line);border-radius:13px;background:var(--panel);padding:20px;text-align:left;display:flex;flex-direction:column;gap:12px;transition:border-color .2s,transform .2s}
+.scard:hover{border-color:var(--cyan);transform:translateY(-3px)}
+.scard .sh{display:flex;align-items:flex-start;gap:12px}
+.scard .sn{font-family:var(--disp);font-weight:700;text-transform:uppercase;font-size:1.1rem;line-height:1.08;flex:1}
+.scard .sn em{display:block;font-family:var(--mono);font-weight:400;font-style:normal;font-size:.57rem;letter-spacing:.1em;color:var(--faint);margin-top:6px;text-transform:none}
+.grade{font-family:var(--mono);font-size:.55rem;letter-spacing:.1em;text-transform:uppercase;border:1px solid;border-radius:5px;padding:5px 8px;white-space:nowrap;flex:0 0 auto}
+.scard .sdesc{color:var(--dim);font-size:.86rem;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.scard .smeta{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.scard .smeta span{font-family:var(--mono);font-size:.54rem;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);border:1px solid var(--line-2);border-radius:5px;padding:4px 8px}
+.scard .sgo{font-family:var(--mono);font-size:.6rem;letter-spacing:.12em;color:var(--cyan);text-transform:uppercase;margin-top:auto}
+@media(max-width:820px){.sgrid{grid-template-columns:1fr}}
+
+/* signature: the horizon rail — where a trade lives on the clock.
+   The bar is an SVG stretched on x only (fixed 14px height, so stroke weight
+   never changes); the scale labels are HTML, so type stays crisp at any width. */
+.horizon{display:block;border:1px solid var(--line-2);border-radius:9px;background:var(--bg-2);padding:11px 12px 9px}
+.horizon svg{display:block;width:100%;height:14px}
+.hz-ticks{display:block;position:relative;height:10px;margin-top:6px}
+.hz-ticks i{position:absolute;top:0;transform:translateX(-50%);font-family:var(--mono);font-style:normal;font-size:.5rem;letter-spacing:.05em;color:var(--faint);white-space:nowrap;line-height:1;transition:color .2s}
+.hz-ticks i.lit{color:var(--cyan)}
+.risk-dots{display:inline-flex;gap:3px;align-items:center;padding:4px 8px;border:1px solid var(--line-2);border-radius:5px}
+.risk-dots u{width:5px;height:5px;border-radius:50%;background:var(--panel-3);display:block;text-decoration:none}
+.risk-dots u.on{background:var(--gold);box-shadow:0 0 6px var(--gold-glow)}
+
+/* strategy detail modal */
+.sd-rules{display:flex;flex-direction:column;gap:9px;margin-top:2px;counter-reset:sr}
+.sd-rules li{list-style:none;counter-increment:sr;position:relative;padding-left:36px;font-size:.9rem;color:var(--dim);line-height:1.55}
+.sd-rules li::before{content:counter(sr,decimal-leading-zero);position:absolute;left:0;top:1px;font-family:var(--mono);font-size:.58rem;font-weight:600;color:var(--cyan);border:1px solid rgba(34,211,238,.28);border-radius:4px;padding:2px 5px;background:var(--cyan-glow)}
+.sd-trio{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:14px 0 4px}
+.sd-trio div{border:1px solid var(--line);border-radius:10px;padding:13px 14px;background:var(--bg-2)}
+.sd-trio .k{font-family:var(--mono);font-size:.54rem;letter-spacing:.14em;text-transform:uppercase;margin-bottom:6px}
+.sd-trio .v{font-size:.83rem;color:var(--dim);line-height:1.5}
+.sd-trio div:nth-child(1) .k{color:var(--green)}
+.sd-trio div:nth-child(2) .k{color:var(--red)}
+.sd-trio div:nth-child(3) .k{color:var(--gold)}
+@media(max-width:600px){.sd-trio{grid-template-columns:1fr}}
+.sd-cites{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+.sd-cites a{display:block;font-family:var(--mono);font-size:.63rem;line-height:1.55;color:var(--cyan);border-left:2px solid var(--line);padding-left:12px;transition:border-color .2s}
+.sd-cites a:hover{border-color:var(--cyan)}
+.sd-claim{margin-top:16px;border:1px dashed var(--line);border-radius:10px;padding:14px 16px;font-size:.84rem;color:var(--dim);line-height:1.6}
+.sd-claim b{color:var(--gold);font-family:var(--mono);font-size:.55rem;letter-spacing:.14em;text-transform:uppercase;display:block;margin-bottom:7px}
+
+/* the base-rate panel */
+.truths{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.truth{border:1px solid var(--line);border-radius:13px;background:var(--bg-2);padding:22px}
+.truth .tth{font-family:var(--disp);font-weight:700;text-transform:uppercase;font-size:1rem;line-height:1.12;margin-bottom:11px}
+.truth p{color:var(--dim);font-size:.87rem;line-height:1.62}
+.truth .tk{margin-top:13px;border-left:2px solid var(--gold);padding:6px 0 6px 13px;font-size:.83rem;color:var(--text)}
+@media(max-width:820px){.truths{grid-template-columns:1fr}}
+
 @media(prefers-reduced-motion:reduce){
   html{scroll-behavior:auto}
   .reveal{opacity:1;transform:none;transition:none}
@@ -492,6 +605,15 @@ body.locked{overflow:hidden}
   <div class="bg-grid"></div><div class="bg-glow g-cyan"></div><div class="bg-glow g-gold"></div><div class="bg-glow g-violet"></div>
 </div>
 
+<aside id="rail" aria-label="Desk sections">
+  <a class="rail-top" href="#top" aria-label="Back to the front desk">
+    <span class="rail-mark"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><line x1="5" y1="2" x2="5" y2="18" stroke="#f87171" stroke-width="1.6"/><rect x="2.5" y="6" width="5" height="6" fill="#f87171"/><line x1="14" y1="2" x2="14" y2="18" stroke="#34d399" stroke-width="1.6"/><rect x="11.5" y="7" width="5" height="7" fill="#34d399"/></svg></span>
+    <span class="rail-lab">The Desk</span>
+  </a>
+  <nav class="rail-nav" id="railNav"></nav>
+  <div class="rail-foot">Structure over signals<br>Educational only</div>
+</aside>
+
 <div class="tape" aria-hidden="true"><div class="tape-track" id="tapeTrack"></div></div>
 
 <nav id="nav" aria-label="Main">
@@ -505,7 +627,8 @@ body.locked{overflow:hidden}
       <li><a href="#terminal">Terminal</a></li>
       <li><a href="#tools">Tools</a></li>
       <li><a href="#encyclopedia">Encyclopedia</a></li>
-      <li><a href="#patterns">Patterns</a></li>
+      <li><a href="#patterns">Candlesticks</a></li>
+      <li><a href="#strategies">Strategies</a></li>
       <li><a href="#learn">Learn</a></li>
       <li><a href="#sessions">1:1</a></li>
     </ul>
@@ -519,10 +642,10 @@ body.locked{overflow:hidden}
       <div class="badge"><b>◆</b> FREE · EDUCATIONAL ONLY · NO SIGNALS, EVER</div>
       <h1 class="disp">One <span class="c">terminal</span> for the whole trader’s desk.</h1>
       <p class="sub">Live market data, a breathing sector heatmap, this week’s earnings, dealer-positioning and prediction-market tools, a full trading encyclopedia, the pattern library, and the risk math — <b>all in one place, all free.</b></p>
-      <p class="micro">// live data · kairos + delphi · encyclopedia · pattern library · options + futures tools</p>
+      <p class="micro">// live data · kairos + delphi · encyclopedia · candlesticks · strategy playbook · options + futures tools</p>
       <div class="cta-row">
         <a class="btn btn-primary" href="#terminal">Open the terminal</a>
-        <a class="btn btn-ghost" href="#encyclopedia">Browse the encyclopedia</a>
+        <a class="btn btn-ghost" href="#strategies">Read the strategy playbook</a>
       </div>
     </div>
     <div class="command reveal" aria-label="Live market command center">
@@ -613,14 +736,21 @@ body.locked{overflow:hidden}
         <div class="board-tap" style="--accent:var(--gold)">Open the wire →</div>
       </button>
     </div>
+
+    <div class="sec-head reveal" style="margin:78px 0 0">
+      <div class="eyebrow">02 // THE REST OF THE DESK</div>
+      <h2 class="disp">Everything else lives <span class="g">one click away.</span></h2>
+      <p>The reference library, the risk math, and the playbooks don’t belong on a page you check every morning — so they each get their own. Open one here, or reach any of them from the rail on the left.</p>
+    </div>
+    <div class="portals reveal" id="portalGrid"></div>
   </div>
 </section>
 
 <!-- TOOLS -->
-<section class="section band" id="tools">
+<section class="section band page-view hidden" id="tools" data-page="tools">
   <div class="wrap">
     <div class="sec-head reveal">
-      <div class="eyebrow">02 // THE TOOLKIT</div>
+      <div class="eyebrow">THE TOOLKIT</div>
       <h2 class="disp">The math, <span class="g">done right.</span></h2>
       <p>Every calculator a stock, options, or futures trader reaches for — sizing, expectancy, options payoff, expected move, futures specs, and the discipline tools that keep an account alive. No login, nothing fake.</p>
     </div>
@@ -629,10 +759,10 @@ body.locked{overflow:hidden}
 </section>
 
 <!-- ENCYCLOPEDIA -->
-<section class="section" id="encyclopedia">
+<section class="section page-view hidden" id="encyclopedia" data-page="encyclopedia">
   <div class="wrap">
     <div class="sec-head reveal">
-      <div class="eyebrow">03 // THE ENCYCLOPEDIA</div>
+      <div class="eyebrow">THE ENCYCLOPEDIA</div>
       <h2 class="disp">Every term, <span class="c">for today’s market.</span></h2>
       <p>Not a dusty glossary — the vocabulary of the market as it actually trades now, from the greeks and order types to 0DTE, gamma exposure, PFOF, dark pools, and prediction markets. Each entry: what it is, why it matters, and the trap most people miss.</p>
     </div>
@@ -649,10 +779,10 @@ body.locked{overflow:hidden}
 </section>
 
 <!-- PATTERNS -->
-<section class="section band" id="patterns">
+<section class="section band page-view hidden" id="patterns" data-page="patterns">
   <div class="wrap">
     <div class="sec-head reveal">
-      <div class="eyebrow">04 // THE PATTERN LIBRARY</div>
+      <div class="eyebrow">CANDLESTICK ANALYSIS</div>
       <h2 class="disp">Every candle <span class="g">tells on somebody.</span></h2>
       <p>The full reference — single candles to chart structures — each with what it shows, where it actually matters, and the trap that catches beginners. Patterns are clues, never commands.</p>
     </div>
@@ -668,11 +798,38 @@ body.locked{overflow:hidden}
   </div>
 </section>
 
-<!-- LEARN -->
-<section class="section" id="learn">
+<!-- STRATEGIES -->
+<section class="section page-view hidden" id="strategies" data-page="strategies">
   <div class="wrap">
     <div class="sec-head reveal">
-      <div class="eyebrow">05 // THE LEARNING PATH</div>
+      <div class="eyebrow">THE STRATEGY PLAYBOOK</div>
+      <h2 class="disp">Ten ways people actually trade — <span class="c">graded by evidence.</span></h2>
+      <p>From a fifteen-minute breakout to a thirty-year buying schedule, each one written the way a desk would write it: the thesis, the rules, entry, stop, target, and the market state where it quietly stops working. Every strategy carries a grade for how strong the <b>public evidence</b> behind it actually is — because “everyone posts about it” and “it has been tested” are very different claims.</p>
+    </div>
+    <div class="enc-controls reveal">
+      <div class="enc-filters" id="sFilters"></div>
+      <label class="enc-search">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4-4"/></svg>
+        <input type="search" id="sSearch" placeholder="Search strategies…" aria-label="Search strategies">
+      </label>
+    </div>
+    <div class="gkey reveal" id="gradeKey"></div>
+    <div class="sgrid reveal" id="sGrid"></div>
+    <div class="enc-count" id="sCount"></div>
+
+    <div class="sec-head reveal" style="margin:76px 0 30px">
+      <div class="eyebrow">BEFORE YOU PICK ONE</div>
+      <h2 class="disp" style="font-size:clamp(1.7rem,3.6vw,2.6rem)">The four facts that decide <span class="g">more than the setup does.</span></h2>
+    </div>
+    <div class="truths reveal" id="truthGrid"></div>
+  </div>
+</section>
+
+<!-- LEARN -->
+<section class="section page-view hidden" id="learn" data-page="learn">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div class="eyebrow">THE LEARNING PATH · 08 STAGES, IN ORDER</div>
       <h2 class="disp">Zero to a <span class="c">written plan.</span></h2>
       <p>The full arc, in order — free to read, track your own progress as you go. Numbered because the sequence is the point: each stage assumes the last. When all eight click, you’ll have your own trading constitution.</p>
       <div id="currProgress"></div>
@@ -682,10 +839,10 @@ body.locked{overflow:hidden}
 </section>
 
 <!-- SESSIONS / PRICING -->
-<section class="section band" id="sessions">
+<section class="section band page-view hidden" id="sessions" data-page="sessions">
   <div class="wrap">
     <div class="sec-head reveal" style="text-align:center;max-width:none">
-      <div class="eyebrow" style="justify-content:center">06 // WANT A HUMAN IN THE LOOP?</div>
+      <div class="eyebrow" style="justify-content:center">WANT A HUMAN IN THE LOOP?</div>
       <h2 class="disp">Optional <span class="g">1:1 help.</span></h2>
       <p style="margin:14px auto 0">Everything above is free and always will be. If you want someone to walk you through it live — answer the "but why," catch the mistakes before they cost you — that’s what a session is for.</p>
     </div>
@@ -740,12 +897,15 @@ body.locked{overflow:hidden}
         <p class="book-foot">Goes directly to <b>The Trading Desk</b> · no spam, no mailing lists</p>
       </form>
     </div>
-    <div class="disc reveal">
-      <div class="dh">⚠ Educational purposes only — not financial advice</div>
-      <p>The Trading Desk and all associated content, tools, sessions, and materials are strictly for educational and informational purposes. Nothing here constitutes financial, investment, trading, or professional advice of any kind, and no tool output is a recommendation to buy or sell anything. Trading and investing involve substantial risk of loss and are not suitable for everyone. Past performance is not indicative of future results. Consult a qualified financial advisor, attorney, or tax professional before making financial decisions. Only risk capital you can afford to lose. The Trading Desk and Safi Solutions assume no liability for losses or damages of any kind.</p>
-    </div>
   </div>
 </section>
+
+<div class="wrap">
+  <div class="disc reveal">
+    <div class="dh">⚠ Educational purposes only — not financial advice</div>
+    <p>The Trading Desk and all associated content, tools, sessions, strategy playbooks, and materials are strictly for educational and informational purposes. Nothing here constitutes financial, investment, trading, or professional advice of any kind, and no tool output, strategy description, or research citation is a recommendation to buy or sell anything. Trading and investing involve substantial risk of loss and are not suitable for everyone. Past performance is not indicative of future results. Consult a qualified financial advisor, attorney, or tax professional before making financial decisions. Only risk capital you can afford to lose. The Trading Desk and Safi Solutions assume no liability for losses or damages of any kind.</p>
+  </div>
+</div>
 </main>
 
 <footer class="site">
@@ -899,6 +1059,8 @@ body.locked{overflow:hidden}
 
 <div class="modal" id="m-enc" role="dialog" aria-modal="true" aria-label="Encyclopedia entry"><div class="mwin"><div class="mbar"><span class="dots"><s></s><s></s><s></s></span><span class="mt" id="enc-bar">ENCYCLOPEDIA</span><button class="mx" onclick="closeModal('m-enc')" aria-label="Close">×</button></div><div class="mbody" id="encBody"></div></div></div>
 
+<div class="modal" id="m-strat" role="dialog" aria-modal="true" aria-label="Strategy detail"><div class="mwin wide"><div class="mbar"><span class="dots"><s></s><s></s><s></s></span><span class="mt" id="sd-bar">STRATEGY</span><button class="mx" onclick="closeModal('m-strat')" aria-label="Close">×</button></div><div class="mbody" id="sdBody"></div></div></div>
+
 <div id="cmdk" role="dialog" aria-modal="true" aria-label="Quick search"><div class="cmdk-win">
   <div class="cmdk-in"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22d3ee" stroke-width="2.4" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4-4"/></svg><input id="cmdkInput" type="text" placeholder="Jump to a tool, term, pattern, or section…" autocomplete="off"></div>
   <div class="cmdk-list" id="cmdkList"></div>
@@ -907,12 +1069,14 @@ body.locked{overflow:hidden}
 <script src="patterns.js"></script>
 <script src="encyclopedia.js"></script>
 <script src="reference.js"></script>
+<script src="strategies.js"></script>
 <script>
 'use strict';
 const $=(s,el=document)=>el.querySelector(s);
 const $$=(s,el=document)=>[...el.querySelectorAll(s)];
 const T=window.TDESK||{};
 const PATTERNS=T.PATTERNS||[], ENC=T.ENCYCLOPEDIA||[], ENC_CATS=T.ENC_CATS||[['all','All']], FUTURES=T.FUTURES||[], SECTORS=T.SECTORS||[], SESSIONS=T.SESSIONS||[];
+const STRATEGIES=T.STRATEGIES||[], STRAT_FAMS=T.STRAT_FAMS||[['all','All']], STRAT_GRADES=T.STRAT_GRADES||{}, STRAT_TRUTHS=T.STRAT_TRUTHS||[];
 const GREEN='#34d399', RED='#f87171', CYAN='#22d3ee', GOLD='#f5b942', VIOLET='#a855f7', DIM='#8a94a6', FAINT='#586173';
 const reduceMotion=matchMedia('(prefers-reduced-motion: reduce)').matches;
 const FINNHUB_KEY='d8mhpk1r01qkisoa50a0d8mhpk1r01qkisoa50ag';
@@ -1486,11 +1650,14 @@ const CMDS=[
   {label:'Market Pulse — indices + volatility',kind:'live',run:()=>openModal('m-market')},
   {label:'Cross-Asset — bonds, dollar, metals, crypto',kind:'live',run:()=>openModal('m-cross')},
   {label:'The Wire — market headlines',kind:'live',run:()=>openModal('m-wire')},
-  {label:'The Terminal',kind:'section',run:()=>location.hash='terminal'},
-  {label:'Encyclopedia',kind:'section',run:()=>location.hash='encyclopedia'},
-  {label:'Pattern Library',kind:'section',run:()=>location.hash='patterns'},
-  {label:'Learning Path',kind:'section',run:()=>location.hash='learn'},
-  {label:'Book a Session',kind:'section',run:()=>location.hash='sessions'},
+  {label:'The Terminal',kind:'page',run:()=>location.hash='terminal'},
+  {label:'Tools & Calculators',kind:'page',run:()=>location.hash='tools'},
+  {label:'Encyclopedia',kind:'page',run:()=>location.hash='encyclopedia'},
+  {label:'Candlestick Analysis',kind:'page',run:()=>location.hash='patterns'},
+  {label:'Strategies',kind:'page',run:()=>location.hash='strategies'},
+  {label:'Learning Path',kind:'page',run:()=>location.hash='learn'},
+  {label:'Book a Session',kind:'page',run:()=>location.hash='sessions'},
+  ...STRATEGIES.map((x,i)=>({label:x.n,kind:'strategy',run:()=>openStrat(i)})),
   ...ENC.map((e,i)=>({label:e.t,kind:'term',run:()=>openEnc(i)})),
   ...PATTERNS.map((p,i)=>({label:p.n,kind:'pattern',run:()=>openPattern(i)}))
 ];
@@ -1506,7 +1673,195 @@ cmdkInput.addEventListener('keydown',e=>{ if(e.key==='Enter'){const first=$('.cm
 cmdk.addEventListener('mousedown',e=>{if(e.target===cmdk)closeCmdk();});
 document.addEventListener('keydown',e=>{ if(e.key==='/'&&!/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)){ e.preventDefault(); cmdk.classList.contains('open')?closeCmdk():openCmdk(); } });
 
-/* ===== boot live data ===== */
+
+/* ============================================================
+   SECTION MAP — one source of truth for the rail, the portals
+   and the router. Counts are read from the real data arrays.
+   ============================================================ */
+const SECTIONS=[
+  {id:'tools', name:'Tools & Calculators', crumb:'THE TOOLKIT', kind:'calculators',
+   accent:'var(--cyan)', fade:'rgba(34,211,238,.13)',
+   ic:'M4 20h16M6 16l4-6 3 3 5-8',
+   desc:'Position size, expectancy, options payoff, expected move, futures specs, and the discipline tools that keep an account alive.',
+   count:()=>TOOLS.length+' tools'},
+  {id:'encyclopedia', name:'Encyclopedia', crumb:'THE ENCYCLOPEDIA', kind:'reference',
+   accent:'var(--gold)', fade:'rgba(245,185,66,.13)',
+   ic:'M4 4h11a3 3 0 0 1 3 3v13a2 2 0 0 0-2-2H4zM4 4v14M18 7h2v13H8',
+   desc:'The vocabulary of the market as it actually trades now — greeks, order types, 0DTE, gamma exposure, dark pools, prediction markets.',
+   count:()=>ENC.length+' entries'},
+  {id:'patterns', name:'Candlestick Analysis', crumb:'CANDLESTICK ANALYSIS', kind:'reference',
+   accent:'var(--green)', fade:'rgba(52,211,153,.13)',
+   ic:'M6 3v18M6 7h0M4 7h4v7H4zM16 3v18M14 9h4v8h-4z',
+   desc:'Single candles through full chart structures — what each one shows, where it actually matters, and the trap that catches beginners.',
+   count:()=>PATTERNS.length+' patterns'},
+  {id:'strategies', name:'Strategies', crumb:'THE STRATEGY PLAYBOOK', kind:'playbook',
+   accent:'var(--violet)', fade:'rgba(168,85,247,.14)',
+   ic:'M3 20h18M6 20V10M12 20V4M18 20v-7',
+   desc:'Day trading through decade holding — full playbooks with entry, stop, target, failure regime, and a grade for the evidence behind each one.',
+   count:()=>STRATEGIES.length+' playbooks'},
+  {id:'learn', name:'Learning Path', crumb:'THE LEARNING PATH', kind:'course',
+   accent:'var(--cyan)', fade:'rgba(34,211,238,.13)',
+   ic:'M12 4 2 9l10 5 10-5zM6 12v5c0 1.5 3 3 6 3s6-1.5 6-3v-5',
+   desc:'Zero to a written trading plan, in order — free to read, with your own progress tracked as you go.',
+   count:()=>SESSIONS.length+' stages'},
+  {id:'sessions', name:'1:1 Sessions', crumb:'WORK WITH THE DESK', kind:'optional',
+   accent:'var(--gold)', fade:'rgba(245,185,66,.13)',
+   ic:'M16 20v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 6a4 4 0 1 1 0 8 4 4 0 0 1 0-8M19 8v6M22 11h-6',
+   desc:'Everything else here is free forever. If you want a human to walk you through it live, that\u2019s what a session is for.',
+   count:()=>'optional'}
+];
+const SEC_BY_ID=Object.fromEntries(SECTIONS.map(x=>[x.id,x]));
+const PAGE_IDS=SECTIONS.map(x=>x.id);
+const icon=(d,sz)=>`<svg width="${sz}" height="${sz}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${d}"/></svg>`;
+
+/* ---- left rail ---- */
+$('#railNav').innerHTML=SECTIONS.map((x,i)=>
+  `${i===4?'<div class="rail-sep"></div>':''}<a class="rail-btn" href="#${x.id}" data-go="${x.id}"><span class="rail-ic">${icon(x.ic,19)}</span><span class="rail-tx"><b>${x.name}</b><small>${x.kind}</small></span></a>`
+).join('');
+
+/* ---- front-page portals ---- */
+$('#portalGrid').innerHTML=SECTIONS.map(x=>
+  `<a class="portal" href="#${x.id}" style="--accent:${x.accent};--accent-fade:${x.fade}">
+     <span class="ptop"><span class="pic">${icon(x.ic,19)}</span><span class="pcount">${x.count()}</span></span>
+     <h4>${x.name}</h4><p>${x.desc}</p><span class="pgo">Open →</span>
+   </a>`).join('');
+
+/* ---- page headers (injected once, so every view has a way home) ---- */
+$$('.page-view').forEach(sec=>{
+  const meta=SEC_BY_ID[sec.dataset.page]; if(!meta) return;
+  const head=document.createElement('div');
+  head.className='page-head';
+  head.innerHTML=`<a class="back-desk" href="#top"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>The Desk</a><span class="page-crumb">${meta.crumb}</span>`;
+  const wrap=sec.querySelector('.wrap');
+  if(wrap) wrap.insertBefore(head,wrap.firstChild);
+});
+
+/* ---- router: front page is the terminal, everything else is its own view ---- */
+const BASE_TITLE=document.title;
+function currentPage(){
+  const h=(location.hash||'').replace(/^#\/?/,'');
+  return PAGE_IDS.includes(h)?h:'';
+}
+function route(){
+  const p=currentPage();
+  document.body.classList.toggle('paged',!!p);
+  $('#top').classList.toggle('hidden',!!p);
+  $('#terminal').classList.toggle('hidden',!!p);
+  $$('.page-view').forEach(sec=>sec.classList.toggle('hidden',sec.dataset.page!==p));
+  $$('#railNav .rail-btn').forEach(b=>b.classList.toggle('on',b.dataset.go===p));
+  document.title=p?`${SEC_BY_ID[p].name} — The Trading Desk`:BASE_TITLE;
+  /* land at the top of the view, and beat the browser’s own jump to the fragment */
+  const root=document.documentElement, prevSB=root.style.scrollBehavior;
+  root.style.scrollBehavior='auto';
+  window.scrollTo(0,0);
+  setTimeout(()=>{window.scrollTo(0,0);root.style.scrollBehavior=prevSB;},0);
+  /* anything now on screen should be revealed, not stuck mid-fade */
+  requestAnimationFrame(()=>$$('.reveal').forEach(el=>{
+    if(el.offsetParent!==null&&el.getBoundingClientRect().top<innerHeight+40) el.classList.add('in');
+  }));
+}
+addEventListener('hashchange',route);
+
+/* ============================================================
+   STRATEGY PLAYBOOK
+   ============================================================ */
+/* the horizon rail: a log clock from one minute to thirty years.
+   1 trading day = 390 min · 1 week = 1,950 · 1 month = 8,190 · 1 year = 98,280 */
+const HZ_TICKS=[[1,'1m'],[60,'1h'],[390,'1d'],[1950,'1w'],[8190,'1mo'],[98280,'1yr'],[982800,'10y'],[2948400,'30y']];
+const HZ_MAX=Math.log10(2948400);
+function hzX(m,W,pad){ const f=Math.max(0,Math.min(1,Math.log10(Math.max(m,1))/HZ_MAX)); return pad+f*(W-2*pad); }
+function horizonRail(hold){
+  const W=300,H=14,BY=5,PAD=9;
+  const a=hzX(hold[0],W,PAD), b=Math.max(hzX(hold[1],W,PAD),a+3);
+  let g=`<line x1="${PAD}" y1="${BY}" x2="${W-PAD}" y2="${BY}" stroke="#1a2330" stroke-width="3"/>`;
+  g+=`<line x1="${a.toFixed(1)}" y1="${BY}" x2="${b.toFixed(1)}" y2="${BY}" stroke="${CYAN}" stroke-width="3"/>`;
+  /* caliper ends — the readout says "this trade lives between here and here" */
+  g+=`<line x1="${a.toFixed(1)}" y1="0" x2="${a.toFixed(1)}" y2="10" stroke="${CYAN}" stroke-width="1.6"/>`;
+  g+=`<line x1="${b.toFixed(1)}" y1="0" x2="${b.toFixed(1)}" y2="10" stroke="${CYAN}" stroke-width="1.6"/>`;
+  let ticks='';
+  HZ_TICKS.forEach(([m,l])=>{
+    const x=hzX(m,W,PAD), lit=(m>=hold[0]&&m<=hold[1]);
+    g+=`<line x1="${x.toFixed(1)}" y1="11" x2="${x.toFixed(1)}" y2="14" stroke="${lit?'#2f4c5c':'#232d3b'}" stroke-width=".9"/>`;
+    ticks+=`<i class="${lit?'lit':''}" style="left:${(x/W*100).toFixed(2)}%">${l}</i>`;
+  });
+  return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Typical holding period: ${holdTxt(hold)}">${g}</svg><span class="hz-ticks" aria-hidden="true">${ticks}</span>`;
+}
+function durTxt(m){
+  if(m<60) return m+' min';
+  if(m<390) return (Math.round(m/6)/10).toString().replace(/\.0$/,'')+' hr';
+  if(m<1950) return Math.round(m/390)+' day'+(m>=780?'s':'');
+  if(m<8190) return Math.round(m/1950)+' wk';
+  if(m<98280) return Math.round(m/8190)+' mo';
+  return Math.round(m/98280)+' yr';
+}
+function holdTxt(h){ return h[1]>=390&&h[0]<390 ? durTxt(h[0])+' \u2013 close' : durTxt(h[0])+' \u2013 '+durTxt(h[1]); }
+function gradeChip(g,big){
+  const meta=STRAT_GRADES[g]||['Ungraded','var(--dim)'];
+  return `<span class="grade" style="color:${meta[1]};border-color:${meta[1]}">${big?'Evidence '+g+' \u00b7 '+meta[0]:'Evidence '+g}</span>`;
+}
+function riskDots(r){ return `<span class="risk-dots" title="Risk intensity ${r} of 3">${[1,2,3].map(i=>`<u class="${i<=r?'on':''}"></u>`).join('')}</span>`; }
+const FAM_LABEL=Object.fromEntries((STRAT_FAMS||[]).map(f=>f));
+
+$('#gradeKey').innerHTML=['A','B','C','D'].map(g=>{
+  const m=STRAT_GRADES[g]; if(!m) return '';
+  return `<span style="color:${m[1]};border-color:${m[1]}">${g} \u2014 ${m[0]}</span>`;
+}).join('');
+
+let sFam='all', sQuery='';
+$('#sFilters').innerHTML=STRAT_FAMS.map(([k,l])=>`<button data-f="${k}" class="${k==='all'?'on':''}" onclick="setSFilter('${k}',this)">${l}</button>`).join('');
+function setSFilter(k,btn){ sFam=k; $$('#sFilters button').forEach(b=>b.classList.remove('on')); btn.classList.add('on'); renderStrats(); }
+$('#sSearch').addEventListener('input',e=>{ sQuery=e.target.value.toLowerCase(); renderStrats(); });
+function stratMatch(x){
+  if(sFam!=='all'&&x.fam!==sFam) return false;
+  if(!sQuery) return true;
+  return (x.n+' '+x.alias+' '+x.thesis+' '+x.market+' '+x.trap).toLowerCase().includes(sQuery);
+}
+function renderStrats(){
+  const list=STRATEGIES.filter(stratMatch);
+  $('#sGrid').innerHTML=list.map(x=>{
+    const i=STRATEGIES.indexOf(x);
+    return `<button class="scard" onclick="openStrat(${i})" aria-label="${esc(x.n)} playbook">
+      <span class="sh"><span class="sn">${esc(x.n)}<em>${esc(x.alias)}</em></span>${gradeChip(x.grade)}</span>
+      <span class="horizon">${horizonRail(x.hold)}</span>
+      <span class="sdesc">${esc(x.thesis)}</span>
+      <span class="smeta"><span>${FAM_LABEL[x.fam]||x.fam}</span><span>${holdTxt(x.hold)}</span>${riskDots(x.risk)}</span>
+      <span class="sgo">Open the playbook \u2192</span>
+    </button>`;
+  }).join('') || `<p class="mnote" style="grid-column:1/-1">No strategy matches \u201c${esc(sQuery)}\u201d. Try \u201cbreakout\u201d, \u201cpremium\u201d, or \u201cmomentum\u201d.</p>`;
+  $('#sCount').textContent=`${list.length} of ${STRATEGIES.length} playbooks \u2014 open any card for the full read`;
+}
+function openStrat(i){
+  const x=STRATEGIES[i];
+  $('#sd-bar').textContent='STRATEGY // '+x.n.toUpperCase();
+  $('#sdBody').innerHTML=`
+    <h3>${esc(x.n)}</h3>
+    <p class="msub">${esc(x.alias)}</p>
+    <div class="pd-meta">${gradeChip(x.grade,true)}<span>${FAM_LABEL[x.fam]||x.fam}</span><span>${esc(x.tf)}</span>${riskDots(x.risk)}</div>
+    <div class="horizon" style="margin-bottom:8px">${horizonRail(x.hold)}</div>
+    <div class="pd-row"><span class="k">Typical hold</span><span class="v"><b>${holdTxt(x.hold)}</b> \u00b7 ${esc(x.market)}</span></div>
+    <div class="pd-row"><span class="k">The thesis</span><span class="v">${esc(x.thesis)}</span></div>
+    <div class="pd-row"><span class="k">How it\u2019s traded</span><span class="v"><ol class="sd-rules">${x.rules.map(r=>`<li>${esc(r)}</li>`).join('')}</ol></span></div>
+    <div class="sd-trio">
+      <div><div class="k">Entry</div><div class="v">${esc(x.entry)}</div></div>
+      <div><div class="k">Stop</div><div class="v">${esc(x.stop)}</div></div>
+      <div><div class="k">Target</div><div class="v">${esc(x.target)}</div></div>
+    </div>
+    <div class="pd-row"><span class="k">Sizing</span><span class="v">${esc(x.size)}</span></div>
+    <div class="pd-row"><span class="k">What the evidence says</span><span class="v">${esc(x.evidence)}<div class="sd-cites">${(x.cite||[]).map(c=>`<a href="${esc(c.u)}" target="_blank" rel="noopener">${esc(c.t)} \u2197</a>`).join('')}</div></span></div>
+    <div class="pd-row"><span class="k">When it fails</span><span class="v">${esc(x.fails)}</span></div>
+    <div class="pd-row"><span class="k">The trap</span><span class="v"><b>${esc(x.trap)}</b></span></div>
+    <div class="sd-claim"><b>What gets claimed online</b>${esc(x.claim)}</div>
+    <p class="mnote">Evidence grades describe how well a strategy has been <em>tested in public</em> \u2014 not how well it will work for you. Nothing here is a recommendation. Test any idea on your own data and inside your own written rules before it touches real money.</p>`;
+  openModal('m-strat');
+}
+renderStrats();
+
+$('#truthGrid').innerHTML=STRAT_TRUTHS.map(t=>
+  `<div class="truth"><div class="tth">${esc(t[0])}</div><p>${esc(t[1])}</p><div class="tk">${esc(t[2])}</div></div>`
+).join('');
+
+/* ===== boot ===== */
+route();
 loadIdx(); loadHeatmap(); loadEarnWeek();
 setInterval(loadIdx,60000);
 setInterval(loadHeatmap,60000);
