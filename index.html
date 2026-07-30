@@ -224,6 +224,51 @@ header{position:relative;padding:72px 0 40px;border-bottom:1px solid var(--line)
 .leg-add:hover{color:var(--cyan)}
 @media(max-width:640px){.leg-head{display:none}.leg{grid-template-columns:1fr 1fr 30px;gap:5px}}
 /* ---- greeks explorer ---- */
+/* ---- candle primer ---- */
+.cprimer{border:1px solid var(--line);border-radius:14px;background:linear-gradient(150deg,rgba(45,212,191,.04),transparent 55%);margin:0 0 18px;overflow:hidden}
+.cprimer summary{cursor:pointer;list-style:none;padding:15px 20px;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;transition:background .18s}
+.cprimer summary::-webkit-details-marker{display:none}
+.cprimer summary:hover{background:rgba(255,255,255,.02)}
+.cp-s1{font-family:var(--disp);font-weight:600;font-size:1.05rem;color:var(--cyan)}
+.cprimer summary em{font-style:normal;font-family:var(--mono);font-size:.62rem;letter-spacing:.06em;color:var(--faint)}
+.cprimer summary:after{content:'\2015 hide';margin-left:auto;font-family:var(--mono);font-size:.58rem;letter-spacing:.1em;text-transform:uppercase;color:var(--faint)}
+.cprimer:not([open]) summary:after{content:'+ show'}
+.cp-body{padding:4px 20px 22px;border-top:1px solid var(--line)}
+.cp-anat{display:grid;grid-template-columns:minmax(0,300px) 1fr;gap:26px;align-items:center;padding:18px 0 6px}
+.cp-stage{display:flex;justify-content:center}
+#anatSVG{width:100%;max-width:300px;height:auto}
+.cp-presets{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+.cp-presets button{font-family:var(--mono);font-size:.58rem;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);border:1px solid var(--line);border-radius:100px;padding:5px 11px;transition:all .18s}
+.cp-presets button:hover{color:var(--cyan);border-color:var(--cyan)}
+.cp-sl{display:grid;grid-template-columns:52px 1fr;align-items:center;gap:10px;margin-bottom:7px}
+.cp-sl span{font-family:var(--mono);font-size:.58rem;letter-spacing:.1em;text-transform:uppercase;color:var(--faint)}
+.cp-sl input[type=range]{width:100%}
+.cp-read{margin-top:14px;padding:13px 15px;border:1px solid var(--line);border-radius:10px;background:var(--panel)}
+.cr-h{font-family:var(--disp);font-weight:600;font-size:1.02rem}
+.cr-h.up{color:#34d399}.cr-h.dn{color:#f87171}.cr-h.neut{color:var(--cyan)}
+.cr-m{font-family:var(--mono);font-size:.6rem;letter-spacing:.06em;color:var(--faint);margin:3px 0 8px}
+.cr-m b{color:var(--dim)}
+.cp-read p{font-size:.82rem;color:var(--dim);line-height:1.65;margin:0}
+.cp-rule{font-size:.85rem;color:var(--dim);line-height:1.75;padding:15px 0;margin-top:8px;border-top:1px solid var(--line)}
+.ck-b{color:#34d399}.ck-w{color:#7ea6d6}
+.cp-tf{border-top:1px solid var(--line);padding-top:16px}
+.cp-tfh{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px}
+.cp-tft{font-family:var(--mono);font-size:.62rem;letter-spacing:.13em;text-transform:uppercase;color:var(--gold)}
+.cp-tfb{display:flex;gap:5px;margin-left:auto}
+.cp-tfb button{width:26px;height:26px;border:1px solid var(--line);border-radius:7px;font-family:var(--mono);font-size:.66rem;color:var(--dim);transition:all .16s}
+.cp-tfb button:hover{color:var(--gold);border-color:var(--gold)}
+.cp-tfb button.on{background:var(--gold);border-color:var(--gold);color:var(--void);font-weight:700}
+.cp-tfx{font-size:.85rem;color:var(--dim);line-height:1.7;margin:0 0 12px;max-width:82ch}
+.cp-tfstage{display:flex;align-items:center;justify-content:center;gap:22px;flex-wrap:wrap;padding:6px 0}
+.cp-tfside{text-align:center}
+.cp-tfl{font-family:var(--mono);font-size:.55rem;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);margin-bottom:6px}
+.cp-tfeq{font-size:1.5rem;color:var(--gold);opacity:.7}
+.cp-tfn{font-family:var(--mono);font-size:.63rem;letter-spacing:.08em;color:var(--gold);margin-top:6px}
+.cp-tfsay{font-size:.82rem;color:var(--dim);line-height:1.7;margin:12px 0 0;padding:11px 14px;border-left:2px solid var(--gold);background:rgba(245,185,66,.04);border-radius:0 8px 8px 0}
+.cp-tfr{font-size:.82rem;color:var(--dim);line-height:1.75;margin-top:14px;padding-top:13px;border-top:1px solid var(--line)}
+@keyframes tfPop{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){.cp-tfstage rect{animation:none!important}}
+@media(max-width:820px){.cp-anat{grid-template-columns:1fr;gap:16px}.cp-tfstage{gap:12px}.cp-tfeq{transform:rotate(90deg)}}
 .ps-why{font-size:.82rem;color:var(--dim);line-height:1.6;margin:0 0 14px;padding-left:11px;border-left:2px solid var(--cyan)}
 .kl-src{font-family:var(--mono);font-size:.68rem;color:var(--dim);padding:10px 12px;border:1px solid var(--line);border-radius:8px;margin:2px 0 6px;line-height:1.7}
 .kl-src b{color:var(--cyan)}
@@ -1001,6 +1046,48 @@ body.paged .section{padding-top:40px}
       <h2 class="disp">Every candle <span class="g">tells on somebody.</span></h2>
       <p>The full reference — single candles to chart structures — each with what it shows, where it actually matters, and the trap that catches beginners. Patterns are clues, never commands.</p>
     </div>
+    <!-- The primer sits above the library because 48 named patterns are
+         meaningless to someone who has not been told what the rectangle and the
+         two lines actually are. Collapsible, and it remembers being closed. -->
+    <details class="cprimer reveal" id="cPrimer">
+      <summary><span class="cp-s1">How to read a candle</span><em>— one minute, then the whole library makes sense</em></summary>
+      <div class="cp-body">
+
+        <div class="cp-anat">
+          <div class="cp-stage">
+            <svg id="anatSVG" viewBox="0 0 300 260" aria-label="Anatomy of a candlestick"></svg>
+          </div>
+          <div class="cp-ctl">
+            <div class="cp-presets" id="anatPresets"></div>
+            <label class="cp-sl"><span>Open</span><input type="range" id="an-o" min="10" max="90" value="35"></label>
+            <label class="cp-sl"><span>Close</span><input type="range" id="an-c" min="10" max="90" value="68"></label>
+            <label class="cp-sl"><span>High</span><input type="range" id="an-h" min="10" max="98" value="78"></label>
+            <label class="cp-sl"><span>Low</span><input type="range" id="an-l" min="2" max="90" value="26"></label>
+            <div class="cp-read" id="anatRead"></div>
+          </div>
+        </div>
+
+        <div class="cp-rule">
+          <b>One candle = one slice of time.</b> A 5-minute candle is five minutes of trading squeezed into one shape. The <span class="ck-b">body</span> spans where the period opened and closed; the <span class="ck-w">wicks</span> reach out to the furthest price touched in either direction. Green means it closed above where it opened, red means below — that's a convention, not a law, and some charts use different colours.
+        </div>
+
+        <div class="cp-tf">
+          <div class="cp-tfh">
+            <span class="cp-tft">The part almost nobody explains</span>
+            <div class="cp-tfb" id="tfBtns"></div>
+          </div>
+          <p class="cp-tfx">A pattern only exists on the timeframe you're looking at. Four one-hour candles roll into a single four-hour candle, and the shape that appears is often <em>nothing like</em> the four that made it. Watch what these four become:</p>
+          <div class="cp-tfstage">
+            <div class="cp-tfside"><div class="cp-tfl">FOUR 1-HOUR CANDLES</div><svg id="tfSmall" viewBox="0 0 260 170" aria-hidden="true"></svg></div>
+            <div class="cp-tfeq" aria-hidden="true">→</div>
+            <div class="cp-tfside"><div class="cp-tfl">ONE 4-HOUR CANDLE</div><svg id="tfBig" viewBox="0 0 130 170" aria-hidden="true"></svg><div class="cp-tfn" id="tfName">—</div></div>
+          </div>
+          <div class="cp-tfr">The maths is simple and worth memorising: the rolled-up candle <b>opens where the first one opened</b>, <b>closes where the last one closed</b>, and its wicks reach <b>the highest high and the lowest low</b> of the group. Everything that happened in between disappears. That is why a setup you can see on the 5-minute may not exist at all on the hourly — and why "what timeframe?" is the first question to ask about any pattern.</div>
+        </div>
+
+      </div>
+    </details>
+
     <div class="enc-controls reveal">
       <div class="enc-filters" id="pFilters"></div>
       <label class="enc-search">
@@ -2232,6 +2319,127 @@ function chartSVG(p,W,H,big){
   if(p.arr){ const last=p.pts[p.pts.length-1], ax=sx(last[0]), ay=sy(last[1]), up=p.arr==='up', col=up?GREEN:RED, hw=big?7:5, hh=big?10:7, gap=big?5:3; const tip=up?ay-gap-hh:ay+gap+hh, base=up?ay-gap:ay+gap; s+=`<path d="M${ax.toFixed(1)} ${tip.toFixed(1)} L${(ax-hw).toFixed(1)} ${base.toFixed(1)} L${(ax+hw).toFixed(1)} ${base.toFixed(1)} Z" fill="${col}"/>`; }
   return `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" aria-hidden="true">${s}</svg>`;
 }
+/* ===================== CANDLE PRIMER =====================
+   Two ideas, both interactive, because a static labelled diagram teaches the
+   words and not the thing. Dragging a wick until the read flips from
+   "decisive" to "rejected" is what makes the concept stick. */
+
+const AN_PRESETS=[
+  ['Strong up',   {o:22,c:80,h:84,l:19}],
+  ['Strong down', {o:80,c:22,h:83,l:18}],
+  ['Doji',        {o:50,c:51,h:74,l:26}],
+  ['Hammer',      {o:64,c:72,h:76,l:20}],
+  ['Shooting star',{o:32,c:26,h:82,l:22}]
+];
+function anGet(){
+  let o=+$('#an-o').value, c=+$('#an-c').value, hi=+$('#an-h').value, lo=+$('#an-l').value;
+  /* A high below the body or a low above it is not a candle, it is a
+     contradiction - so the sliders clamp rather than draw something impossible. */
+  hi=Math.max(hi,o,c); lo=Math.min(lo,o,c);
+  if(hi-lo<4)hi=lo+4;
+  return {o,c,hi,lo};
+}
+function anSet(v){ $('#an-o').value=v.o; $('#an-c').value=v.c; $('#an-h').value=v.h; $('#an-l').value=v.l; drawAnat(); }
+function anatRead(k){
+  const up=k.c>k.o, flat=Math.abs(k.c-k.o)<2;
+  const body=Math.abs(k.c-k.o), range=(k.hi-k.lo)||1;
+  const upW=k.hi-Math.max(k.o,k.c), dnW=Math.min(k.o,k.c)-k.lo;
+  const bp=body/range;
+  let head, why;
+  if(flat||bp<0.08){ head='Indecision'; why='Price finished the period almost exactly where it started. Buyers and sellers fought to a draw. On its own this means very little \u2014 it only becomes information at a level, or after a long run, where a stall is a change of behaviour.'; }
+  else if(bp>0.7){ head=up?'Decisive buying':'Decisive selling'; why=(up?'Buyers held control from open to close with barely any pushback \u2014 almost the whole range is body.':'Sellers held control from open to close with barely any bounce \u2014 almost the whole range is body.')+' Little wick means little argument.'; }
+  else if(dnW>body*2&&dnW>upW*1.5){ head='Lower rejection'; why='Price was driven well below the body and came back. Someone was waiting down there with size. The long lower wick is the story; the body is almost a footnote.'; }
+  else if(upW>body*2&&upW>dnW*1.5){ head='Upper rejection'; why='Price pushed up into the highs and could not hold them. Sellers met the move and won by the close. The long upper wick is the story.'; }
+  else { head=up?'Modest buying':'Modest selling'; why='A real body with wick on both sides \u2014 both sides showed up, one finished slightly ahead. This is what most candles look like, and most candles are not a signal.'; }
+  const parts=[];
+  parts.push(`body is <b>${(bp*100).toFixed(0)}%</b> of the range`);
+  if(upW>range*0.15)parts.push(`upper wick <b>${(upW/range*100).toFixed(0)}%</b>`);
+  if(dnW>range*0.15)parts.push(`lower wick <b>${(dnW/range*100).toFixed(0)}%</b>`);
+  return {head,why,meta:parts.join(' \u00b7 '),up,flat};
+}
+function drawAnat(){
+  const sv=$('#anatSVG'); if(!sv)return;
+  const k=anGet(), W=300,H=260,pad=26;
+  const y=v=>H-pad-(v/100)*(H-2*pad);
+  const col=k.c>k.o?GREEN:k.c<k.o?RED:CYAN;
+  const cx=104, cw=46;
+  const bt=Math.min(y(k.o),y(k.c)), bh=Math.max(3,Math.abs(y(k.c)-y(k.o)));
+  const lbl=(yy,tx,val)=>`<line x1="${cx+cw/2+6}" y1="${yy}" x2="216" y2="${yy}" stroke="rgba(126,166,214,.28)" stroke-width="1" stroke-dasharray="3 3"/>
+    <text x="222" y="${yy+3.5}" fill="#7ea6d6" font-family="IBM Plex Mono,monospace" font-size="10.5">${tx}</text>`;
+  let s='';
+  // wick + body, same visual language as the library thumbnails
+  s+=`<line x1="${cx}" y1="${y(k.hi)}" x2="${cx}" y2="${y(k.lo)}" stroke="${col}" stroke-width="2.4"/>`;
+  s+=`<rect x="${cx-cw/2}" y="${bt}" width="${cw}" height="${bh}" fill="${col}" rx="2"/>`;
+  // body + wick brackets
+  s+=`<line x1="${cx-cw/2-13}" y1="${bt}" x2="${cx-cw/2-13}" y2="${bt+bh}" stroke="${col}" stroke-width="2" opacity=".55"/>
+      <text x="${cx-cw/2-19}" y="${bt+bh/2+3.5}" fill="${col}" opacity=".9" text-anchor="end" font-family="IBM Plex Mono,monospace" font-size="10.5">body</text>`;
+  if(y(k.hi)<bt-4){ s+=`<text x="${cx-cw/2-19}" y="${(y(k.hi)+bt)/2+3.5}" fill="#7ea6d6" text-anchor="end" font-family="IBM Plex Mono,monospace" font-size="10">wick</text>`; }
+  if(y(k.lo)>bt+bh+4){ s+=`<text x="${cx-cw/2-19}" y="${(y(k.lo)+bt+bh)/2+3.5}" fill="#7ea6d6" text-anchor="end" font-family="IBM Plex Mono,monospace" font-size="10">wick</text>`; }
+  s+=lbl(y(k.hi),'HIGH \u2014 furthest up it traded');
+  s+=lbl(y(k.lo),'LOW \u2014 furthest down it traded');
+  s+=lbl(y(k.o),'OPEN');
+  s+=lbl(y(k.c),'CLOSE');
+  sv.innerHTML=s;
+  const r=anatRead(k);
+  $('#anatRead').innerHTML=`<div class="cr-h ${r.flat?'neut':r.up?'up':'dn'}">${r.head}</div><div class="cr-m">${r.meta}</div><p>${r.why}</p>`;
+}
+
+/* ---- timeframe roll-up ----
+   Chosen so the aggregate genuinely surprises: four candles that read one way
+   individually and roll into something with the opposite message. */
+const TF_SETS=[
+  {n:'Three red candles \u2192 a hammer',
+   c:[[57,50,58,49],[50,42,51,40],[42,30,43,22],[30,68,76,29]],
+   say:'Three red candles then one hard recovery. Rolled up: opens 57, closes 68, dips to 22 and comes all the way back \u2014 a small body sitting on top of a lower wick worth 65% of the range. On the 4-hour that is a textbook hammer at the lows. On the 1-hour it looked like a slide with a bounce at the end.'},
+  {n:'Three green candles \u2192 a shooting star',
+   c:[[45,54,56,44],[54,63,65,53],[63,74,80,62],[74,34,76,26]],
+   say:'Three strong green candles and one that gives it all back. The rolled-up candle opens 45, closes 34, and leaves a tail up at 80 \u2014 upper wick 65% of the range, body 20%. A shooting star. The hourly showed a rally; the four-hour records a failed one.'},
+  {n:'A choppy range \u2192 a doji',
+   c:[[50,58,62,46],[58,44,60,40],[44,56,58,42],[56,50,58,44]],
+   say:'Four candles of genuine back-and-forth compress into one candle with no body at all and wick on both sides. All that intraday movement, and the higher timeframe records it as a single word: undecided.'}
+];
+let TF_I=0;
+function tfSVG(el,arr,W,H){
+  const pad=16;
+  const hi=Math.max(...arr.map(k=>k[2])), lo=Math.min(...arr.map(k=>k[3]));
+  const y=v=>pad+(hi-v)/((hi-lo)||1)*(H-2*pad);
+  const n=arr.length, cw=n>1?30:44, gap=n>1?22:0;
+  const total=n*cw+(n-1)*gap, sx=(W-total)/2;
+  let s='';
+  arr.forEach((k,i)=>{
+    const [o,c,h,l]=k, col=c>o?GREEN:c<o?RED:CYAN;
+    const x=sx+cw/2+i*(cw+gap), bt=Math.min(y(o),y(c)), bh=Math.max(2.5,Math.abs(y(c)-y(o)));
+    s+=`<line x1="${x}" y1="${y(h)}" x2="${x}" y2="${y(l)}" stroke="${col}" stroke-width="2"/>`;
+    s+=`<rect x="${x-cw/2}" y="${bt}" width="${cw}" height="${bh}" fill="${col}" rx="1.5" style="animation:tfPop .32s ${(i*0.06).toFixed(2)}s ease both"/>`;
+  });
+  el.innerHTML=s;
+}
+function rollUp(arr){
+  return [arr[0][0], arr[arr.length-1][1], Math.max(...arr.map(k=>k[2])), Math.min(...arr.map(k=>k[3]))];
+}
+function drawTF(){
+  const set=TF_SETS[TF_I];
+  tfSVG($('#tfSmall'),set.c,260,170);
+  tfSVG($('#tfBig'),[rollUp(set.c)],130,170);
+  $('#tfName').textContent=set.n.split('\u2192')[1].trim();
+  $('#tfBtns').innerHTML=TF_SETS.map((s,i)=>`<button class="${i===TF_I?'on':''}" onclick="setTF(${i})">${i+1}</button>`).join('');
+  const x=$('#tfExplain'); if(x)x.textContent=set.say;
+}
+function setTF(i){ TF_I=i; drawTF(); }
+
+function initPrimer(){
+  const d=$('#cPrimer'); if(!d)return;
+  /* Open by default the first time, because someone who needs it will not go
+     looking for it. Closed forever after, if that is what they chose. */
+  try{ d.open = localStorage.getItem('tdesk_primer')!=='0'; }catch(e){ d.open=true; }
+  d.addEventListener('toggle',()=>{ try{localStorage.setItem('tdesk_primer',d.open?'1':'0');}catch(e){} if(d.open){drawAnat();drawTF();} });
+  $('#anatPresets').innerHTML=AN_PRESETS.map(([n],i)=>`<button onclick="anSet(AN_PRESETS[${i}][1])">${n}</button>`).join('');
+  ['an-o','an-c','an-h','an-l'].forEach(id=>{ const el=$('#'+id); if(el)el.addEventListener('input',drawAnat); });
+  const say=document.createElement('p'); say.className='cp-tfsay'; say.id='tfExplain';
+  const stage=document.querySelector('.cp-tfstage'); if(stage&&stage.parentNode)stage.parentNode.insertBefore(say,stage.nextSibling);
+  drawAnat(); drawTF();
+}
+
 function patternThumb(p,big){ const W=big?380:128, H=big?210:76; return p.c ? candleSVG(p.c,W,H,big) : chartSVG(p,W,H,big); }
 const PFILTERS=[['all','All'],['bull','Bullish'],['bear','Bearish'],['neut','Neutral'],['single','Single'],['double','2-candle'],['multi','3+ candle'],['chart','Chart']];
 let pFilter='all', pQuery='';
@@ -2724,6 +2932,7 @@ async function loadWireStrip(force){
 
 /* ===== boot ===== */
 route();
+initPrimer();
 loadIdx(); loadHeatmap(); loadEarnWeek();
 loadWireStrip();
 setInterval(()=>loadWireStrip(true),300000);
