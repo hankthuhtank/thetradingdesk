@@ -289,7 +289,7 @@ function zeroRead(sym){
     const tgt=dir>0?((b.cw&&b.cw.k>b.spot+buf)?b.cw.k:(bigAbove?bigAbove.k:b.spot+0.8*b.em))
                    :((b.pw&&b.pw.k<b.spot-buf)?b.pw.k:(bigBelow?bigBelow.k:b.spot-0.8*b.em));
     if(Math.abs(tgt-b.spot)>=Z.MIN_ROOM*b.em){
-      setup=crossedFlip?'FLIP BREAK':'MOMO RIDE';side=dir;t2=tgt;
+      setup=crossedFlip?'FLIP BREAK':'TREND EXTEND';side=dir;t2=tgt;
       const ex=zExtremes(sym,Date.now()-15*60000);
       let ref=side>0?(ex?ex.lo:b.spot-0.3*b.em):(ex?ex.hi:b.spot+0.3*b.em);
       if(crossedFlip)ref=side>0?Math.max(ref,b.flip):Math.min(ref,b.flip);
@@ -2064,7 +2064,7 @@ function swingRead(sym){
     }
   }else{
     const mo=intraday!==0?intraday:tBias;
-    if(mo!==0){bias=mo;setup='MOMO RIDE';
+    if(mo!==0){bias=mo;setup='TREND EXTEND';
       why='\u2212GEX regime: dealers chase rather than fade, so moves extend. Riding the '+(mo>0?'up':'down')+' tape toward the next node instead of fading it.';}
   }
   G('Regime',true,(pin?'+GEX \u00b7 mean-revert to King':'\u2212GEX \u00b7 momentum')+' \u00b7 net\u00b11% '+fmtG(ps.net1,spot)+' \u00b7 King '+(kg?kg.k:'\u2014')+' ('+Math.round(conc*100)+'% of book)');

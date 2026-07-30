@@ -851,6 +851,11 @@ function renderTrinity(){
     const w=pn.querySelector('.strikes,.sgrid-wrap');
     if(w)prevScroll[pn.dataset.key]={top:w.scrollTop,left:w.scrollLeft};
   });
+  /* Preserve the RAIL's horizontal scroll. renderTrinity blows away innerHTML on
+     every refresh, which reset scrollLeft to 0 - so on mobile, reading the last
+     pillar snapped you back to the first every poll tick. Per-panel vertical
+     scroll was already saved (prevScroll); the container's own offset was not. */
+  const _keepLeft=el.scrollLeft||0;
   el.innerHTML='';
   const list=state.view==='single'?[state.focus]:state.trinityTickers;
   /* Column count drives BOTH the desktop grid and the mobile swipe rail. CSS
@@ -860,6 +865,7 @@ function renderTrinity(){
   el.dataset.cols=String(_nCols);
   el.style.setProperty('--panth-cols',String(_nCols));
   el.style.gridTemplateColumns=state.view==='single'?'1fr':'';
+  if(_keepLeft>0)requestAnimationFrame(function(){try{el.scrollLeft=_keepLeft;}catch(e){}});
   const mlab=state.metric==='vex'?'Vanna King':'King';
 
   list.forEach((sym,slotIdx)=>{
@@ -1320,13 +1326,16 @@ window.renderVixDesk=renderVixDesk;
    through /bootstrap, painted instantly and identically on every device. Nova
    ranks and explains the numbers the deterministic pipeline produced; it never
    originates one. */
+/* Five written panels, down from ten. The removed ones narrated the chart the
+   reader was already looking at. What survives is only what needs more than one
+   signal to say. */
 const NOVA_MOUNTS={
-  oracle:[['read','MARKET READ',1],['zero','SAME-DAY \u00b7 0DTE',0],['aether','PLAY REVIEW',0],['brief','PREMARKET BRIEF',0]],
-  novaJunction:[['junction','LADDER READ',1],['read','MARKET READ',0]],
+  oracle:[['index','INDEX READ',1],['aether','PLAY CONDITIONS',0],['brief','PREMARKET BRIEF',0],['read','SESSION WRAP',0]],
+  novaJunction:[['index','INDEX READ',1]],
   novaVix:[['vix','VOLATILITY READ',1]],
   novaMythos:[['mythos','ROTATION READ',1]],
-  novaRegime:[['regime','FLOW READ',1],['read','MARKET READ',0]],
-  novaTape:[['tape','TAPE READ',1]]
+  novaRegime:[['index','INDEX READ',1]],
+  novaTape:[['index','INDEX READ',1]]
 };
 function novaAge(t){const s=Math.max(0,Math.round(Date.now()/1000-t));return s<90?s+'s':s<5400?Math.round(s/60)+'m':Math.round(s/3600)+'h';}
 const NOVA_TICK=/\b(SPXW|SPX|SPY|QQQ|IWM|UVXY|VXX|NVDA|TSLA|AAPL|MSFT|META|AMZN|GOOGL|AMD|VIX9D|VIX3M|VIX6M|VIX|SMH|XL[A-Z])\b/;
@@ -2282,6 +2291,23 @@ async function pushRoster(){
 }
 window.pushRoster=pushRoster;
 setTimeout(pushRoster,4000);
+/* Deterministic jump-to-spot. Auto-centring races iOS layout and loses often
+   enough that hunting for spot by hand became the norm on mobile. One tap. */
+(function(){
+  const bar=document.getElementById('juncTabs');
+  if(!bar)return;
+  bar.addEventListener('click',function(e){
+    const b=e.target.closest('button[data-spot]');
+    if(!b)return;
+    e.stopPropagation();
+    const w=document.querySelector('#trinity .panel.single-mode .strikes')
+         ||document.querySelector('#trinity .strikes');
+    if(!w)return;
+    const t=w.querySelector('.spotrow')||w.querySelector('.kingrow')
+         ||nearestRow(w,'tbody tr,.srow','.sk',(state.multi[state.focus]||{}).spot);
+    if(t)centerIn(w,t);
+  });
+})();
 setInterval(pushRoster,300000);
 
 /* ── Pantheon settings wiring ── */

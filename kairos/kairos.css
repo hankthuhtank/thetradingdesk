@@ -224,10 +224,32 @@ footer{text-align:center;padding:12px;font-size:.65rem;color:#3f4656;border-top:
             mask-image:linear-gradient(to right,transparent 0,#000 8px,#000 calc(100% - 8px),transparent 100%);
   }
   .trinity[data-cols="4"]::-webkit-scrollbar,.trinity[data-cols="5"]::-webkit-scrollbar{display:none}
+  /* 32vw puts THREE pillars on screen at once with a sliver of the fourth
+     showing, which is the affordance that tells you to swipe. Each column only
+     carries a strike and a value, so 32vw (~125px on a 390px phone) is enough.
+     snap-align:start rather than centre - centre fights a 3-up layout by always
+     pulling a column into the middle. */
   .trinity[data-cols="4"]>.panel,.trinity[data-cols="5"]>.panel{
-    flex:0 0 47vw;min-width:148px;max-width:none;scroll-snap-align:center;
+    flex:0 0 32vw;min-width:104px;max-width:none;scroll-snap-align:start;
   }
-  .trinity[data-cols="4"] .ticker-sel,.trinity[data-cols="5"] .ticker-sel{max-width:76px}
+  .trinity[data-cols="4"] .ticker-sel,.trinity[data-cols="5"] .ticker-sel{max-width:100%;font-size:.78rem;padding:1px 2px}
+  /* trim the internals so three narrow pillars stay legible rather than clipped */
+  .trinity[data-cols="4"] .p-head,.trinity[data-cols="5"] .p-head{padding:5px 4px;gap:2px}
+  .trinity[data-cols="4"] .p-left,.trinity[data-cols="5"] .p-left{flex-wrap:wrap;gap:2px}
+  .trinity[data-cols="4"] .price,.trinity[data-cols="5"] .price{font-size:.72rem}
+  .trinity[data-cols="4"] .badge-src,.trinity[data-cols="5"] .badge-src{display:none}
+  .trinity[data-cols="4"] .king-pill,.trinity[data-cols="5"] .king-pill{font-size:.55rem;padding:1px 3px}
+  .trinity[data-cols="4"] .sk,.trinity[data-cols="5"] .sk{font-size:.62rem}
+  .trinity[data-cols="4"] .srow,.trinity[data-cols="5"] .srow{padding:1px 3px}
+
+  /* ---- Junction on a phone ----
+     The panel was height:auto, so .strikes was never its own scroll container -
+     the PAGE scrolled instead. centerIn() bails when scrollHeight <= clientHeight,
+     so the centre-on-spot logic silently did nothing on mobile and you had to
+     hunt for spot by hand. Giving the ladder a real height restores it. */
+  .panel.single-mode{height:calc(100vh - 200px);max-height:none;min-height:340px}
+  .panel.single-mode .strikes{flex:1 1 auto;min-height:0;overflow-y:auto}
+  .panel.single-mode .sgrid-wrap{max-height:46vh;overflow:auto}
   .panel{height:auto;min-height:0;max-height:70vh}
   /* A flex child defaults to min-height:auto, so .strikes grew to full content
      height instead of scrolling — the panel just clipped it. With min-height:0
