@@ -46,7 +46,16 @@ select,input{background:var(--panel2);border:1px solid var(--border);color:var(-
 .banner .live{color:var(--green);font-weight:600}
 #sessInfo{color:var(--muted)}
 main{padding:10px;display:flex;flex-direction:column;gap:10px}
-.trinity{display:grid;grid-template-columns:repeat(3,1fr);gap:3px}
+/* ═══ PANTHEON ═══ pillars side by side, never stacked. Count arrives as
+   --panth-cols from renderTrinity so 3, 4 and 5 share one declaration. */
+.trinity{display:grid;grid-template-columns:repeat(var(--panth-cols,3),1fr);gap:3px}
+.trinity[data-cols="5"]{gap:2px}
+/* narrower pillars need a narrower head or the ticker select shoves out the price */
+.trinity[data-cols="4"] .ticker-sel,.trinity[data-cols="5"] .ticker-sel{max-width:70px;font-size:.86rem}
+.trinity[data-cols="5"] .p-head{padding:7px}
+.trinity[data-cols="5"] .price{font-size:.8rem}
+.trinity[data-cols="5"] .king-pill{font-size:.6rem;padding:2px 6px}
+@media(max-width:1400px){.trinity[data-cols="5"] .badge-src{display:none}}
 .panel{background:var(--panel);border:1px solid var(--border);border-radius:12px;display:flex;flex-direction:column;height:calc(100vh - 172px);min-height:540px;overflow:hidden}
 .panel.single-mode{max-height:none;min-height:580px}
 .p-head{padding:8px 10px;background:var(--panel2);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:6px;flex-shrink:0}
@@ -201,8 +210,24 @@ footer{text-align:center;padding:12px;font-size:.65rem;color:#3f4656;border-top:
   #lastUp{display:none}
   .banner{font-size:.6rem;gap:8px;padding:4px 10px}
   main{padding:5px}
-  /* keep all three Triad panels side by side — skinny is intentional */
-  .trinity{grid-template-columns:repeat(3,1fr);gap:2px}
+  /* Up to 3 pillars still fit side by side on a phone (~120px each — skinny is
+     intentional and the ladder stays legible). At 4 and 5 they would fall to
+     90px and 72px, which cannot hold strike + value + bar, so the grid becomes
+     a horizontal snap rail: two pillars visible, swipe for the rest. Nothing
+     stacks vertically, which was the actual constraint. */
+  .trinity{grid-template-columns:repeat(var(--panth-cols,3),1fr);gap:2px}
+  .trinity[data-cols="4"],.trinity[data-cols="5"]{
+    display:flex;gap:6px;overflow-x:auto;overflow-y:hidden;
+    scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch;
+    scrollbar-width:none;padding:0 2px 6px;
+    -webkit-mask-image:linear-gradient(to right,transparent 0,#000 8px,#000 calc(100% - 8px),transparent 100%);
+            mask-image:linear-gradient(to right,transparent 0,#000 8px,#000 calc(100% - 8px),transparent 100%);
+  }
+  .trinity[data-cols="4"]::-webkit-scrollbar,.trinity[data-cols="5"]::-webkit-scrollbar{display:none}
+  .trinity[data-cols="4"]>.panel,.trinity[data-cols="5"]>.panel{
+    flex:0 0 47vw;min-width:148px;max-width:none;scroll-snap-align:center;
+  }
+  .trinity[data-cols="4"] .ticker-sel,.trinity[data-cols="5"] .ticker-sel{max-width:76px}
   .panel{height:auto;min-height:0;max-height:70vh}
   /* A flex child defaults to min-height:auto, so .strikes grew to full content
      height instead of scrolling — the panel just clipped it. With min-height:0
@@ -435,6 +460,36 @@ footer{text-align:center;padding:12px;font-size:.65rem;color:#3f4656;border-top:
 .od-tag.bet{background:rgba(52,211,153,.16);color:var(--green)}
 .od-tag.flow{background:rgba(34,211,238,.12);color:var(--cyan)}
 @media(max-width:820px){.orr-grid{grid-template-columns:1fr}.orr-rail{max-height:260px}.od-grid{grid-template-columns:1fr}.od-statrow{grid-template-columns:1fr 1fr}}
+/* ── Mythos on a phone ──
+   The section used to run ~1100px tall (a 420px canvas floor plus a 260px rail
+   plus the note) and the header controls wrapped into four ragged rows. Now: a
+   shorter stage, a single scrollable control strip, and a rail that reads as a
+   list instead of a second full screen. */
+@media(max-width:600px){
+  .orrery{overflow-x:hidden}
+  .orr-top{flex-direction:column;align-items:stretch;gap:7px}
+  .orr-title{font-size:.82rem}
+  .orr-controls{display:flex;align-items:center;gap:7px;flex-wrap:nowrap;
+    overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+  .orr-controls::-webkit-scrollbar{display:none}
+  .orr-controls>*{flex:0 0 auto}
+  .orr-meta{white-space:nowrap}
+  #orrCanvas{height:clamp(300px,52vh,430px)}
+  .orr-grid{gap:8px}
+  .orr-rail{max-height:210px;padding:6px}
+  .orr-row{grid-template-columns:12px 42px 1fr auto;gap:6px;font-size:.66rem;padding:5px 4px}
+  .orr-row .orr-rphase{display:none}      /* colour already encodes the phase */
+  .orr-callout{font-size:.62rem;line-height:1.75;padding:7px}
+  .orr-note{font-size:.58rem;line-height:1.55}
+  .od-statrow{grid-template-columns:1fr 1fr;gap:6px}
+  .od-head{gap:8px}
+  .od-sym{font-size:.92rem}
+  .od-prints{font-size:.58rem}
+  .od-prints th,.od-prints td{padding:3px 4px}
+  .od-lrow{grid-template-columns:52px 1fr 52px;font-size:.62rem}
+}
+/* the pinned (tapped) body reads the same as a hovered one in the rail */
+.orr-row.sel{background:rgba(52,211,153,.09);border-color:rgba(52,211,153,.35)}
 
 /* ---- Mythos: basket badge + category toggle ---- */
 .orr-basket{color:var(--cyan);font-size:.7rem;opacity:.8}

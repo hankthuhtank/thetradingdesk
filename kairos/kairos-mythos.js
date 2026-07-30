@@ -63,6 +63,15 @@ let orrCat=localStorage.getItem('kairos_orr_cat')||'all';       // all | sector 
 let orrScope=null;          // null = top level; else a sector/theme object (drilled in)
 let orrPts=[];              // current plotted bodies {sym,name,tail:[{x,y}],x,y,phase,ret,synth}
 let orrRaf=0,orrT=0,orrHover=null,orrLoading=false,orrSel=null;
+/* orrPin is the TOUCH equivalent of orrHover: a body the user tapped, which
+   stays lit until they tap elsewhere. Desktop hover is transient and needs no
+   state; a finger has no hover, so without a pin there was no way to see a
+   trail on a phone at all - the tap fell straight through to orrPick and
+   drilled into the sector instead.
+   orrTrail: 'off' | 'one' | 'all'. 'one' is the original behaviour. */
+let orrPin=null;
+let orrTrail=(function(){try{return localStorage.getItem('kairos_orr_trail')||'one';}catch(e){return 'one';}})();
+let orrTouch=false;   // set true the first time we see a real touch pointer
 let orrCloses={};           // sym -> [daily closes]
 const orrReduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
 /* eased display positions for smooth motion (sym -> {x,y}) */
@@ -230,6 +239,36 @@ function orrStart(){
 function orrFrame(ts){const dt=orrT?Math.min(0.05,(ts-orrT)/1000):0.016;orrT=ts;orrDraw(dt);orrRaf=requestAnimationFrame(orrFrame);}
 
 let orrPhase2=0;
+/* ═══ SHARED CANVAS GEOMETRY ═══
+   orrDraw and the hit-test each used to compute padding independently, both
+   hardcoding 42. The moment the drawing padding became responsive, that second
+   copy would have put every tap target in the wrong place on a phone - taps
+   landing on nothing, or on the wrong body. One formula, one source of truth. */
+function orrPad(W){return Math.round(Math.max(20,Math.min(42,W*0.078)));}
+function orrGeom(){
+  const cv=orrCv();if(!cv)return null;
+  const W=cv.clientWidth||700,H=cv.clientHeight||520,PAD=orrPad(W);
+  let mx=6;orrPts.forEach(p=>{p.tail.concat([{x:p.x,y:p.y}]).forEach(t=>{mx=Math.max(mx,Math.abs(t.x-100),Math.abs(t.y-100));});});
+  mx*=1.15;
+  const lo=100-mx,hi=100+mx;
+  return {W:W,H:H,PAD:PAD,
+    X:v=>PAD+(v-lo)/(hi-lo)*(W-2*PAD),
+    Y:v=>PAD+(hi-v)/(hi-lo)*(H-2*PAD)};
+}
+/* Hit test against the EASED display positions where available, so what you
+   tap is what you see mid-animation rather than where the body is headed. */
+function orrHitTest(cx,cy,radius){
+  const g=orrGeom();if(!g)return null;
+  let best=null,bd=radius||22;
+  for(const p of orrPts){
+    const d=orrDisp[p.sym];
+    const bx=d?d.x:g.X(p.x),by=d?d.y:g.Y(p.y);
+    const dx=bx-cx,dy=by-cy,dd=Math.sqrt(dx*dx+dy*dy);
+    if(dd<bd){bd=dd;best=p.sym;}
+  }
+  return best;
+}
+
 function orrDraw(dt){
   const cv=orrCv();if(!cv)return;
   const ctx=cv.getContext('2d');
@@ -243,7 +282,13 @@ function orrDraw(dt){
   if(wait)wait.style.display='none';
   orrPhase2+=dt;
 
-  const PAD=42;
+  /* Furniture scales with the canvas. At a fixed 42px, a 360px phone lost 23%
+     of its width to padding and then drew 10px labels into each other - which
+     is exactly what "zoomed out weird" looked like. */
+  const NARROW=W<520;
+  const SC=NARROW?Math.max(0.72,W/520):1;
+  const PAD=orrPad(W);
+  const FS=(px,wt)=>(wt||700)+' '+(px*SC).toFixed(1)+'px "JetBrains Mono",monospace';
   // axis bounds: center 100, symmetric, padded to the data
   let mx=6;
   orrPts.forEach(p=>{p.tail.concat([{x:p.x,y:p.y}]).forEach(t=>{mx=Math.max(mx,Math.abs(t.x-100),Math.abs(t.y-100));});});
@@ -267,23 +312,31 @@ function orrDraw(dt){
   ctx.strokeStyle='rgba(126,166,214,.14)';ctx.strokeRect(PAD,PAD,W-2*PAD,H-2*PAD);
 
   // quadrant labels
-  const ql=(txt,x,y,col,align)=>{ctx.font='700 10px "JetBrains Mono",monospace';ctx.fillStyle='rgba('+col+',.5)';ctx.textAlign=align;ctx.fillText(txt,x,y);ctx.textAlign='left';};
-  ql('LEADING',W-PAD-6,PAD+14,ORR_PHASECOL.Leading,'right');
-  ql('WEAKENING',W-PAD-6,H-PAD-6,ORR_PHASECOL.Weakening,'right');
-  ql('LAGGING',PAD+6,H-PAD-6,ORR_PHASECOL.Lagging,'left');
-  ql('IMPROVING',PAD+6,PAD+14,ORR_PHASECOL.Improving,'left');
-  ctx.font='600 8.5px "JetBrains Mono",monospace';ctx.fillStyle='rgba(126,166,214,.5)';ctx.textAlign='center';
-  ctx.fillText('RS-RATIO →',W/2,H-PAD+16);
-  ctx.save();ctx.translate(PAD-16,H/2);ctx.rotate(-Math.PI/2);ctx.fillText('RS-MOMENTUM →',0,0);ctx.restore();
+  const ql=(txt,x,y,col,align)=>{ctx.font=FS(10);ctx.fillStyle='rgba('+col+',.5)';ctx.textAlign=align;ctx.fillText(txt,x,y);ctx.textAlign='left';};
+  /* On a narrow canvas the full words collide with the axis labels, so the
+     quadrants shorten to stubs. Still unambiguous - the four colours were
+     always the primary cue and the words only the confirmation. */
+  const qn=NARROW?['LEAD','WEAK','LAG','IMPR']:['LEADING','WEAKENING','LAGGING','IMPROVING'];
+  ql(qn[0],W-PAD-4,PAD+12*SC,ORR_PHASECOL.Leading,'right');
+  ql(qn[1],W-PAD-4,H-PAD-5,ORR_PHASECOL.Weakening,'right');
+  ql(qn[2],PAD+4,H-PAD-5,ORR_PHASECOL.Lagging,'left');
+  ql(qn[3],PAD+4,PAD+12*SC,ORR_PHASECOL.Improving,'left');
+  ctx.font=FS(8.5,600);ctx.fillStyle='rgba(126,166,214,.5)';ctx.textAlign='center';
+  ctx.fillText(NARROW?'RS →':'RS-RATIO →',W/2,H-PAD+Math.min(16,PAD-6));
+  ctx.save();ctx.translate(Math.max(9,PAD-14),H/2);ctx.rotate(-Math.PI/2);
+  ctx.fillText(NARROW?'MOMENTUM →':'RS-MOMENTUM →',0,0);ctx.restore();
   ctx.textAlign='left';
-  // gentle hint: tails appear on hover (keeps the default view clean)
-  if(!(orrHover||orrSel)&&orrPts.length){
-    ctx.font='600 8.5px "JetBrains Mono",monospace';ctx.fillStyle='rgba(126,166,214,.4)';ctx.textAlign='center';
-    ctx.fillText('hover a body for its rotation trail',W/2,PAD-14);ctx.textAlign='left';
+  /* Hint text adapts to the input device. It used to say "hover", which is
+     advice a phone cannot take. */
+  if(!(orrHover||orrPin||orrSel)&&orrPts.length&&PAD>=24&&orrTrail!=='all'){
+    ctx.font=FS(8.5,600);ctx.fillStyle='rgba(126,166,214,.4)';ctx.textAlign='center';
+    ctx.fillText(orrTouch?'tap a body for its trail · tap again to open'
+                        :'hover a body for its rotation trail',W/2,PAD-11);
+    ctx.textAlign='left';
   }
 
   // --- eased display positions: bodies glide instead of snapping ---
-  const focus=orrHover||orrSel;                    // the one body in focus (if any)
+  const focus=orrHover||orrPin||orrSel;            // hover (mouse), pin (touch), or drilled selection
   const anyFocus=!!focus;
   for(const p of orrPts){
     const tgtX=X(p.x),tgtY=Y(p.y);
@@ -297,15 +350,16 @@ function orrDraw(dt){
   for(const p of orrPts){
     if(p.tail.length<2)continue;
     const isFocus=focus===p.sym;
-    if(anyFocus&&!isFocus)continue;                // hide every other tail when one is focused
-    if(!anyFocus)continue;                          // default clean view: NO tails at all
+    if(orrTrail==='off')break;                      // OFF: no tails, ever
+    if(orrTrail==='one'&&(!anyFocus||!isFocus))continue;  // ONE: only the focused body
+    // ALL: every tail draws, the focused one brighter (see alpha below)
     const col=ORR_PHASECOL[p.phase];
     for(let i=1;i<p.tail.length;i++){
-      const a=(i/p.tail.length)*0.85;
+      const a=(i/p.tail.length)*(isFocus?0.85:(orrTrail==='all'?0.26:0.85));
       ctx.strokeStyle='rgba('+col+','+a.toFixed(2)+')';ctx.lineWidth=2;
       ctx.beginPath();ctx.moveTo(X(p.tail[i-1].x),Y(p.tail[i-1].y));ctx.lineTo(X(p.tail[i].x),Y(p.tail[i].y));ctx.stroke();
     }
-    for(let i=0;i<p.tail.length-1;i++){ctx.fillStyle='rgba('+col+',.5)';ctx.beginPath();ctx.arc(X(p.tail[i].x),Y(p.tail[i].y),2,0,7);ctx.fill();}
+    if(isFocus||orrTrail!=='all')for(let i=0;i<p.tail.length-1;i++){ctx.fillStyle='rgba('+col+',.5)';ctx.beginPath();ctx.arc(X(p.tail[i].x),Y(p.tail[i].y),2*SC,0,7);ctx.fill();}
   }
 
   // --- BODIES ---
@@ -317,7 +371,7 @@ function orrDraw(dt){
     const baseA=dim?0.3:1;
     const pulse=isFocus?1:0.7+0.15*Math.sin(orrPhase2*1.8+p.sym.length);
     // glow
-    const gr=isFocus?22:14;
+    const gr=(isFocus?22:14)*SC;
     const rg=ctx.createRadialGradient(px,py,0,px,py,gr);
     rg.addColorStop(0,'rgba('+col+','+(0.85*pulse*baseA).toFixed(2)+')');rg.addColorStop(1,'rgba('+col+',0)');
     ctx.fillStyle=rg;ctx.beginPath();ctx.arc(px,py,gr,0,7);ctx.fill();
@@ -326,21 +380,33 @@ function orrDraw(dt){
     if(p.synth){
       ctx.strokeStyle='rgba('+col+','+baseA+')';
       ctx.beginPath();
-      const r=isFocus?6:4.5;
+      const r=(isFocus?6:4.5)*SC;
       ctx.moveTo(px,py-r);ctx.lineTo(px+r,py);ctx.lineTo(px,py+r);ctx.lineTo(px-r,py);ctx.closePath();
       ctx.stroke();
       ctx.fillStyle='rgba('+col+','+(0.22*baseA).toFixed(2)+')';ctx.fill();
     }else{
       ctx.fillStyle='rgba('+col+','+baseA+')';
-      ctx.beginPath();ctx.arc(px,py,isFocus?5.5:4,0,7);ctx.fill();
+      ctx.beginPath();ctx.arc(px,py,(isFocus?5.5:4)*SC,0,7);ctx.fill();
     }
-    // label
-    ctx.font='700 '+(isFocus?12:10.5)+'px "JetBrains Mono",monospace';
-    ctx.fillStyle='rgba(233,237,245,'+(dim?0.4:isFocus?1:0.9)+')';
-    ctx.fillText(p.sym,px+9,py+3.5);
+    /* label. On a narrow canvas only the focused body and the two leading
+       quadrants keep a label - otherwise a dozen 10px tickers overlap into an
+       unreadable smear, which was most of the "zoomed out weird" complaint. */
+    const showLab=!NARROW||isFocus||p.phase==='Leading'||p.phase==='Improving';
+    if(showLab){
+      ctx.font=FS(isFocus?12:10.5);
+      ctx.fillStyle='rgba(233,237,245,'+(dim?0.4:isFocus?1:0.9)+')';
+      const lx=px+9*SC;
+      // flip the label inboard when the body sits near the right edge
+      if(lx+30*SC>W-4){ctx.textAlign='right';ctx.fillText(p.sym,px-8*SC,py+3.5*SC);ctx.textAlign='left';}
+      else ctx.fillText(p.sym,lx,py+3.5*SC);
+    }
     if(isFocus){
-      ctx.font='600 9px "JetBrains Mono",monospace';ctx.fillStyle='rgba('+col+',.95)';
-      ctx.fillText(p.name+' · '+p.phase.toUpperCase()+' · '+(p.ret>=0?'+':'')+(p.ret*100).toFixed(1)+'% 5d'+(p.synth?' · basket':''),px+9,py+16);
+      ctx.font=FS(9,600);ctx.fillStyle='rgba('+col+',.95)';
+      const meta=NARROW
+        ? p.phase.toUpperCase()+' · '+(p.ret>=0?'+':'')+(p.ret*100).toFixed(1)+'%'
+        : p.name+' · '+p.phase.toUpperCase()+' · '+(p.ret>=0?'+':'')+(p.ret*100).toFixed(1)+'% 5d'+(p.synth?' · basket':'');
+      const mw=ctx.measureText(meta).width;
+      ctx.fillText(meta,Math.min(px+9*SC,Math.max(4,W-mw-6)),py+16*SC);
     }
   }
 }
@@ -367,7 +433,7 @@ function orrRenderRail(){
   }
   rail.innerHTML=head+callout+sorted.map(p=>{
     const col=ORR_PHASECOL[p.phase];
-    return '<div class="orr-row'+(orrSel===p.sym?' sel':'')+'" data-sym="'+p.sym+'">'+
+    return '<div class="orr-row'+(orrSel===p.sym||orrPin===p.sym?' sel':'')+'" data-sym="'+p.sym+'">'+
       '<span class="orr-dot" style="background:rgb('+col+')"></span>'+
       '<span class="orr-rsym">'+p.sym+(p.synth?' <span class="orr-basket" title="synthetic basket — equal-weight of members, no ETF">◇</span>':'')+'</span>'+
       '<span class="orr-rname">'+p.name+'</span>'+
@@ -388,7 +454,7 @@ function orrRenderRail(){
 async function orrPick(sym){
   const sec=ORR_SECTORS.find(s=>s.sym===sym);
   if(sec && !orrScope){
-    orrScope=sec;orrSel=null;orrPts=[];orrDisp={};
+    orrScope=sec;orrSel=null;orrPin=null;orrPts=[];orrDisp={};
     document.getElementById('orrBack').style.display='';
     document.getElementById('orrDrill').innerHTML='';
     const wait=document.getElementById('orrWait');if(wait){wait.style.display='';wait.innerHTML='Loading '+sec.name+' leaders\u2026';}
@@ -400,7 +466,7 @@ async function orrPick(sym){
   orrDrill(sym);
 }
 function orrBack(){
-  orrScope=null;orrSel=null;orrPts=[];orrDisp={};
+  orrScope=null;orrSel=null;orrPin=null;orrPts=[];orrDisp={};
   document.getElementById('orrBack').style.display='none';
   document.getElementById('orrDrill').innerHTML='';
   const wait=document.getElementById('orrWait');if(wait){wait.style.display='';wait.innerHTML='Loading the market\u2026';}
@@ -485,23 +551,62 @@ function orrClassify(p,spot){
   return {cls:'flow',label:otm?'directional':'itm flow'};
 }
 
-/* ---- pointer picking on the canvas ---- */
+/* ---- pointer picking on the canvas ----
+   Rewritten for touch. The old handler was mousemove + click only, and it also
+   carried its own duplicate PAD=42. On a phone there is no mousemove, so
+   orrHover stayed null and the synthesized click fell through to orrPick -
+   drilling into a sector when all the user wanted was to see a trail. Long
+   presses on a bare <canvas> also raise the browser's own image/context menu,
+   which is the "opens page settings" behaviour.
+
+   Now: mouse keeps hover-to-preview, click-to-open. Touch gets a two-stage tap
+   - first tap PINS the body (trail + readout, no navigation), second tap on the
+   same body opens it, tap on empty space clears. Same gesture grammar as any
+   map app, and nothing is reachable only by hovering. */
+let orrCanvasWired=false;
 function orrCanvasInit(){
   const cv=orrCv();if(!cv)return;
+  if(orrCanvasWired)return;          // setView('chart') runs on every entry to
+  orrCanvasWired=true;               // the view; without this, listeners stacked
   cv.style.cursor='pointer';
+  cv.style.touchAction='pan-y';                 // vertical page scroll still works
+  cv.style.webkitTapHighlightColor='transparent';
+  try{cv.style.webkitTouchCallout='none';}catch(e){}
+
+  const at=(e)=>{const r=cv.getBoundingClientRect();return [e.clientX-r.left,e.clientY-r.top];};
+
   cv.addEventListener('mousemove',e=>{
-    const r=cv.getBoundingClientRect(),mx=e.clientX-r.left,my=e.clientY-r.top;
-    // recompute mapping quickly
-    let best=null,bd=22;
-    const W=cv.clientWidth,H=cv.clientHeight,PAD=42;
-    let m=6;orrPts.forEach(p=>{p.tail.concat([{x:p.x,y:p.y}]).forEach(t=>{m=Math.max(m,Math.abs(t.x-100),Math.abs(t.y-100));});});m*=1.15;
-    const lo=100-m,hi=100+m;
-    const X=v=>PAD+(v-lo)/(hi-lo)*(W-2*PAD),Y=v=>PAD+(hi-v)/(hi-lo)*(H-2*PAD);
-    for(const p of orrPts){const dx=X(p.x)-mx,dy=Y(p.y)-my,dd=Math.sqrt(dx*dx+dy*dy);if(dd<bd){bd=dd;best=p.sym;}}
+    if(orrTouch)return;                          // ignore synthetic mouse after touch
+    const [mx,my]=at(e);
+    const best=orrHitTest(mx,my,22);
     orrHover=best;cv.style.cursor=best?'pointer':'default';
   });
   cv.addEventListener('mouseleave',()=>{orrHover=null;});
-  cv.addEventListener('click',()=>{if(orrHover)orrPick(orrHover);});
+  cv.addEventListener('click',()=>{if(!orrTouch&&orrHover)orrPick(orrHover);});
+
+  /* Touch path. pointerdown fires before any synthetic mouse event, so pinning
+     here and flagging orrTouch stops the old click handler from also firing. */
+  cv.addEventListener('pointerdown',e=>{
+    if(e.pointerType==='mouse')return;
+    orrTouch=true;orrHover=null;
+    const [mx,my]=at(e);
+    const hit=orrHitTest(mx,my,34);              // fingers are wider than cursors
+    if(!hit){ if(orrPin){orrPin=null;orrRenderRail();} return; }
+    if(orrPin===hit){ orrPin=null; orrPick(hit); return; }   // second tap opens
+    orrPin=hit; orrRenderRail();                              // first tap pins
+    if(navigator.vibrate){try{navigator.vibrate(8);}catch(x){}}
+  },{passive:true});
+
+  // kill the long-press image/context menu on the canvas
+  cv.addEventListener('contextmenu',e=>{e.preventDefault();});
+}
+/* Cycle OFF -> ONE -> ALL. Exposed so the toggle and any keyboard shortcut
+   share one code path. */
+function orrSetTrail(mode){
+  orrTrail=(mode==='off'||mode==='one'||mode==='all')?mode:'one';
+  try{localStorage.setItem('kairos_orr_trail',orrTrail);}catch(e){}
+  const box=document.getElementById('orrTrailSel');
+  if(box)box.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.tr===orrTrail));
 }
 
 /* ---- view wiring ---- */
@@ -533,19 +638,28 @@ function orrCanvasInit(){
     orrTf=parseInt(b.dataset.tf);try{localStorage.setItem('kairos_orr_tf',String(orrTf));}catch(x){}
     orrCloses={};orrFetchT={};orrPts=[];orrDisp={};orrCompute();
   });
+  const trl=document.getElementById('orrTrailSel');
+  if(trl){
+    orrSetTrail(orrTrail);                       // reflect the saved mode on load
+    trl.addEventListener('click',e=>{
+      const b=e.target.closest('button[data-tr]');if(!b)return;
+      orrSetTrail(b.dataset.tr);
+    });
+  }
   const cat=document.getElementById('orrCatSel');
   if(cat)cat.addEventListener('click',e=>{
     const b=e.target.closest('button[data-cat]');if(!b)return;
     cat.querySelectorAll('button').forEach(x=>x.classList.remove('on'));b.classList.add('on');
     orrCat=b.dataset.cat;try{localStorage.setItem('kairos_orr_cat',orrCat);}catch(x){}
     if(orrScope){orrScope=null;const bkb=document.getElementById('orrBack');if(bkb)bkb.style.display='none';document.getElementById('orrDrill').innerHTML='';}
-    orrSel=null;orrPts=[];orrDisp={};orrCompute();
+    orrSel=null;orrPin=null;orrPts=[];orrDisp={};orrCompute();
   });
 })();
 document.addEventListener('visibilitychange',function(){
   if(state.view!=='chart')return;
   if(document.hidden)orrStop();else orrStart();
 });
-window.KairosMythos={ORR_SECTORS,orrCompute,orrRRG,orrClassify,orrCentroid,pts:function(){return orrPts;},closes:function(){return orrCloses;}};
+window.orrSetTrail=orrSetTrail;
+window.KairosMythos={ORR_SECTORS,orrCompute,orrSetTrail,orrRRG,orrClassify,orrCentroid,pts:function(){return orrPts;},closes:function(){return orrCloses;}};
 window.KairosOrrery=window.KairosMythos; // back-compat alias
 console.log('%cKairos Mythos \u2014 the market\u0027s rotating bodies. Sectors + themes, RS vs SPY, four phases, clockwise.','color:#34d399;font-weight:bold');

@@ -7,14 +7,14 @@
 <title>Kairos</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='0.9em' font-size='90' fill='%23f2c14e'%3E%E2%97%86%3C/text%3E%3C/svg%3E">
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="kairos.css?v=6.3.0">
+<link rel="stylesheet" href="kairos.css?v=6.4.0">
 </head>
 <body>
 <datalist id="tickerList"></datalist>
 <header>
   <div class="logo"><span>◆</span> Kairos</div>
   <nav class="hdr-nav" id="hdrNav">
-    <button class="btn active" id="btnTrinity">Triad</button>
+    <button class="btn active" id="btnTrinity">Pantheon</button>
     <button class="btn" id="btnSingle">Junction</button>
     <button class="btn" id="btnChart">Mythos</button>
     <button class="btn" id="btnIdeas">Aether</button>
@@ -73,6 +73,11 @@
             <button data-tf="5" class="on">1W</button>
             <button data-tf="10">2W</button>
             <button data-tf="21">1M</button>
+          </div>
+          <div class="mtoggle" id="orrTrailSel" data-tip="Rotation trails. ONE draws the trail of whichever body you hover (mouse) or tap (touch). ALL draws every trail dimmed — busier, but shows the whole field's direction at once. On a phone, tap a body once to pin its trail, tap again to open it.">
+            <button data-tr="off">○ OFF</button>
+            <button data-tr="one" class="on">◜ ONE</button>
+            <button data-tr="all">◔ ALL</button>
           </div>
           <span id="orrMeta" class="orr-meta"></span>
           <button class="btn" id="orrBack" style="display:none;border-color:var(--border)">← All</button>
@@ -205,18 +210,20 @@
 
 <div class="settings" id="settings">
   <h3 style="margin-bottom:14px">Settings</h3>
-  <div class="fg" style="opacity:.7"><label>Build</label><div style="font-family:'JetBrains Mono';font-size:.72rem;color:var(--teal)">v6.3.0</div></div>
+  <div class="fg" style="opacity:.7"><label>Build</label><div style="font-family:'JetBrains Mono';font-size:.72rem;color:var(--teal)">v6.4.0</div></div>
   <input type="password" id="tok" style="display:none" autocomplete="off">
   <div class="fg"><label>Refresh every (seconds)</label><input type="text" id="poll" value="10" style="width:80px" data-tip="10 is the floor. Scheduled polls only tick live quotes (1 batched request) — chains re-pull every ~90s — well under Tradier's 120 req/min limit."></div>
   <div class="fg"><label>Map shows</label><select id="sizeBasis" style="width:100%"><option value="oi">Standing positions — open interest, updates daily</option><option value="vol">Today's flow — volume traded so far this session</option></select></div>
+  <div class="fg"><label>Pantheon columns</label><select id="panthCols" style="width:100%" data-tip="How many pillars stand side by side. On phones, 4 and 5 become a swipe rail so each ladder stays readable instead of shrinking to 72px."><option value="3">3 — SPX · SPY · QQQ</option><option value="4">4 — SPX · SPY · QQQ · UVXY</option><option value="5">5 — SPX · SPY · QQQ · IWM · UVXY</option></select></div>
+  <div class="fg"><button class="btn" style="width:100%" id="panthReset">Reset roster to the default for this count</button></div>
   <button class="btn primary" style="width:100%;margin-top:8px" id="save">Save</button>
 </div>
 <footer>Kairos · Aether · Mythos · Nexus · All Powered by Tradier Live · Structure is context, not a signal</footer>
 
-<script src="kairos-core.js?v=6.3.0"></script>
-<script src="kairos-backend.js?v=6.3.0"></script>
-<script src="kairos-quant.js?v=6.3.0"></script>
-<script src="kairos-modules.js?v=6.3.0"></script>
-<script src="kairos-mythos.js?v=6.3.0"></script>
+<script src="kairos-core.js?v=6.4.0"></script>
+<script src="kairos-backend.js?v=6.4.0"></script>
+<script src="kairos-quant.js?v=6.4.0"></script>
+<script src="kairos-modules.js?v=6.4.0"></script>
+<script src="kairos-mythos.js?v=6.4.0"></script>
 </body>
 </html>

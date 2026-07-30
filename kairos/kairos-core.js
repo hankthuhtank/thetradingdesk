@@ -74,27 +74,58 @@ const state={
   sizeBasis:localStorage.getItem('kairos_basis')||'oi',
   tradierToken:(localStorage.getItem('kairos_tok')||'').trim(),
   tradierEnv:localStorage.getItem('kairos_env')||'production',
-  trinityTickers:(localStorage.getItem('kairos_ticks')||'SPXW,SPY,QQQ').split(',').map(cleanSym).filter(Boolean),
+  panthCols:Math.max(3,Math.min(5,parseInt(localStorage.getItem('kairos_cols'))||4)),
+  trinityTickers:(localStorage.getItem('kairos_ticks')||'SPXW,SPY,QQQ,UVXY').split(',').map(cleanSym).filter(Boolean),
   expCache:{}, history:{}, prevG:{}, dataAge:{}, ideas:{}, tech:{},
   scrolled:{}, refreshing:false, pendingRefresh:false, pendingForce:false,
   lastHistSave:0, firstLoadFailed:false, singleLoading:false
 };
-if(!state.trinityTickers.length)state.trinityTickers=['SPXW','SPY','QQQ'];
-// de-dupe: a duplicate here is what let the old indexOf bug strand two slots
-state.trinityTickers=[...new Set(state.trinityTickers)];
-// self-heal: an older bug could collapse the saved Triad to one ticker — pad back to 3
-if(state.trinityTickers.length<3){
-  ['SPXW','SPY','QQQ'].forEach(t=>{if(state.trinityTickers.length<3&&!state.trinityTickers.includes(t))state.trinityTickers.push(t);});
-  localStorage.setItem('kairos_ticks',state.trinityTickers.join(','));
+/* ═══ PANTHEON ROSTER ═══
+   3 to 5 pillars, side by side, never stacked. The roster is padded from a
+   canonical list so a short or corrupted saved value can never strand a slot,
+   and it always ends up exactly panthCols long.
+   UVXY rather than VIX: VIX options are European, cash-settled and priced off
+   VIX FUTURES, so there is no spot to delta-hedge and a GEX ladder there is not
+   a dealer-hedging map. UVXY is an actual tradeable share with actual hedging,
+   so every metric in that column means what it means everywhere else. */
+const PANTH_DEFAULT=['SPXW','SPY','QQQ','IWM','UVXY'];
+function panthDefaultFor(n){
+  return n<=3?['SPXW','SPY','QQQ']
+       : n===4?['SPXW','SPY','QQQ','UVXY']
+       : ['SPXW','SPY','QQQ','IWM','UVXY'];
 }
-state.trinityTickers=state.trinityTickers.slice(0,3);
-// one-time repair: earlier builds could persist a corrupted Triad (e.g. TSLA,SPY,QQQ).
-// reset to the canonical default ONCE, then respect the user's choices going forward.
-if(!localStorage.getItem('kairos_ticks_ok')){
-  state.trinityTickers=['SPXW','SPY','QQQ'];
-  localStorage.setItem('kairos_ticks','SPXW,SPY,QQQ');
-  localStorage.setItem('kairos_ticks_ok','1');
+function panthNormalize(){
+  const n=Math.max(3,Math.min(5,state.panthCols||4));
+  state.panthCols=n;
+  state.trinityTickers=[...new Set((state.trinityTickers||[]).filter(Boolean))];
+  /* Pad from the default FOR THIS COUNT, not from the flat 5-wide list. Padding
+     from the flat list gave a 4-column cold start SPXW/SPY/QQQ/IWM, quietly
+     dropping the vol pillar that is the whole point of the 4th slot. */
+  for(const t of panthDefaultFor(n)){
+    if(state.trinityTickers.length>=n)break;
+    if(!state.trinityTickers.includes(t))state.trinityTickers.push(t);
+  }
+  for(const t of PANTH_DEFAULT){          // last resort if the user removed several
+    if(state.trinityTickers.length>=n)break;
+    if(!state.trinityTickers.includes(t))state.trinityTickers.push(t);
+  }
+  if(state.trinityTickers.length<n)state.trinityTickers=panthDefaultFor(n);
+  state.trinityTickers=state.trinityTickers.slice(0,n);
+  try{
+    localStorage.setItem('kairos_ticks',state.trinityTickers.join(','));
+    localStorage.setItem('kairos_cols',String(n));
+  }catch(e){}
 }
+/* one-time migration to the 4-column default. Bumped key, so anyone on the old
+   3-column build gets UVXY added once and keeps their own choices after. */
+if(!localStorage.getItem('kairos_ticks_ok2')){
+  state.panthCols=4;
+  state.trinityTickers=panthDefaultFor(4);
+  try{localStorage.setItem('kairos_ticks_ok2','1');}catch(e){}
+}
+panthNormalize();
+window.panthNormalize=panthNormalize;
+window.panthDefaultFor=panthDefaultFor;
 if(!['gex','vex'].includes(state.metric))state.metric='gex';
 if(!['spot','king'].includes(state.centerOn))state.centerOn='king';
 state.histAll={};
@@ -821,8 +852,14 @@ function renderTrinity(){
     if(w)prevScroll[pn.dataset.key]={top:w.scrollTop,left:w.scrollLeft};
   });
   el.innerHTML='';
-  el.style.gridTemplateColumns=state.view==='single'?'1fr':'';
   const list=state.view==='single'?[state.focus]:state.trinityTickers;
+  /* Column count drives BOTH the desktop grid and the mobile swipe rail. CSS
+     reads it off the data attribute; the custom property keeps the grid
+     declaration itself count-agnostic. */
+  const _nCols=state.view==='single'?1:Math.max(1,list.length);
+  el.dataset.cols=String(_nCols);
+  el.style.setProperty('--panth-cols',String(_nCols));
+  el.style.gridTemplateColumns=state.view==='single'?'1fr':'';
   const mlab=state.metric==='vex'?'Vanna King':'King';
 
   list.forEach((sym,slotIdx)=>{
@@ -1292,7 +1329,7 @@ const NOVA_MOUNTS={
   novaTape:[['tape','TAPE READ',1]]
 };
 function novaAge(t){const s=Math.max(0,Math.round(Date.now()/1000-t));return s<90?s+'s':s<5400?Math.round(s/60)+'m':Math.round(s/3600)+'h';}
-const NOVA_TICK=/\b(SPXW|SPX|SPY|QQQ|IWM|NVDA|TSLA|AAPL|MSFT|META|AMZN|GOOGL|AMD|VIX9D|VIX3M|VIX6M|VIX|SMH|XL[A-Z])\b/;
+const NOVA_TICK=/\b(SPXW|SPX|SPY|QQQ|IWM|UVXY|VXX|NVDA|TSLA|AAPL|MSFT|META|AMZN|GOOGL|AMD|VIX9D|VIX3M|VIX6M|VIX|SMH|XL[A-Z])\b/;
 const NOVA_TERM=/\b(negative gamma|positive gamma|short gamma|long gamma|backwardation|contango|call wall|put wall|gamma flip|King|pinning|trending)\b/i;
 /* Presentational only: the model's text is never rewritten, just marked up so
    levels and tickers read as data instead of prose. */
@@ -1337,8 +1374,11 @@ function renderNova(id){
   if(!have.length){
     const ph=typeof marketPhase==='function'?marketPhase():'rth';
     const nxt={rth:'the next few minutes',pre:'8:00 AM ET',post:'shortly after the close',overnight:'the next scheduled run',closed:'the next session'}[ph]||'the next run';
+    const _bf=state._bsFail||0;
     el.innerHTML='<div class="nv-strip nv-wait"><span class="nova-dot"></span><b>NOVA</b>'+
-      '<span class="nv-peek">standing by \u2014 next analysis writes at '+nxt+'</span></div>';
+      '<span class="nv-peek">'+(_bf>=2
+        ? 'backend unreachable from this browser \u2014 '+_bf+' failed reads. A shield or extension is likely blocking the Worker origin.'
+        : 'standing by \u2014 next analysis writes at '+nxt)+'</span></div>';
     return;
   }
   let active=state._novaTab[id];
@@ -2156,7 +2196,10 @@ async function warmPaintInner(){
   }catch(e){}
   try{
     const bs=await window.KairosBackend.bootstrap();
-    try{localStorage.setItem('kairos_bs_v1',JSON.stringify({t:Date.now(),bs}));}catch(e){}
+    /* Cache the ANALYSIS ONLY. Storing the full bootstrap (every ladder for
+       every symbol) routinely blew the ~5MB per-origin localStorage quota; the
+       throw was swallowed, so the cache silently never wrote at all. */
+    try{localStorage.setItem('kairos_bs_v1',JSON.stringify({t:Date.now(),bs:{ai:bs&&bs.ai,plays:bs&&bs.plays,aiError:bs&&bs.aiError}}));}catch(e){}
     applyBootstrap(bs);
     await serverChains();
     if(Object.keys(state.data).length||Object.keys(state.warmData).length)return;
@@ -2177,6 +2220,96 @@ async function warmPaintInner(){
   }
 }
 setTimeout(warmPaint,0);
+/* ═══ BOOTSTRAP HEARTBEAT ═══
+   warmPaint runs exactly once. Before this, one failed or thin /bootstrap left
+   that browser with no Nova for the whole session — which is precisely why Brave
+   (cold profile, one bad request) showed "standing by" while Chrome and the
+   phone kept painting a stale copy out of localStorage. Now every device
+   re-reads the server's analysis on a fixed cadence and converges on the same
+   text regardless of what happened at load. Cost: one small JSON GET / 60s. */
+async function novaHeartbeat(){
+  if(!(window.KairosBackend&&window.KairosBackend.enabled))return;
+  if(document.hidden)return;
+  try{
+    const bs=await window.KairosBackend.bootstrap();
+    if(!bs)return;
+    state._bsFail=0;
+    if(bs.ai&&Object.keys(bs.ai).length){
+      const merged=Object.assign({},state._ai||{});
+      let changed=false;
+      Object.keys(bs.ai).forEach(k=>{
+        const nv=bs.ai[k];
+        if(nv&&nv.text&&(!merged[k]||merged[k].t!==nv.t)){merged[k]=nv;changed=true;}
+      });
+      if(changed){
+        state._ai=merged;
+        try{localStorage.setItem('kairos_nova_v1',JSON.stringify(merged));}catch(e){}
+        try{renderOracle();}catch(e){}
+        try{if(state.view==='nova'){state._hubSig=null;renderNovaHub();}}catch(e){}
+      }
+    }
+    if(bs.plays&&bs.plays.html){
+      const prev=state._srvPlays&&state._srvPlays.t;
+      state._srvPlays=bs.plays;
+      if(prev!==bs.plays.t&&state.view==='ideas'&&typeof renderCards==='function'){try{renderCards();}catch(e){}}
+    }
+    if(bs.aiError)state._aiErr=bs.aiError;
+  }catch(e){
+    state._bsFail=(state._bsFail||0)+1;
+    if(state._bsFail===3)console.warn('Kairos: /bootstrap unreachable 3x — check that the Worker origin is not being blocked by a shield or extension.');
+    try{if(state.view==='nova')renderOracle();}catch(x){}
+  }
+}
+setInterval(novaHeartbeat,60000);
+document.addEventListener('visibilitychange',function(){if(!document.hidden)novaHeartbeat();});
+window.novaHeartbeat=novaHeartbeat;
+
+/* Publish this device's roster so the Worker can scope per-screen reads to it.
+   Whichever device last changed its roster wins — which is what makes every
+   device read the SAME Nova text instead of each getting its own. */
+let _rosterSent='';
+async function pushRoster(){
+  if(!(window.KairosBackend&&window.KairosBackend.enabled))return;
+  const t=(state.trinityTickers||[]).slice(0,6);
+  const sig=t.join(',');
+  if(!sig||sig===_rosterSent)return;
+  _rosterSent=sig;
+  try{
+    await fetch(window.KairosBackend.base+'/roster',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({tickers:t})});
+  }catch(e){_rosterSent='';}
+}
+window.pushRoster=pushRoster;
+setTimeout(pushRoster,4000);
+setInterval(pushRoster,300000);
+
+/* ── Pantheon settings wiring ── */
+(function(){
+  const sel=document.getElementById('panthCols');
+  const rst=document.getElementById('panthReset');
+  if(sel){
+    sel.value=String(state.panthCols||4);
+    sel.onchange=function(){
+      state.panthCols=Math.max(3,Math.min(5,parseInt(sel.value)||4));
+      panthNormalize();
+      try{renderTrinity();}catch(e){}
+      try{pushRoster();}catch(e){}
+      refresh(false);
+    };
+  }
+  if(rst){
+    rst.onclick=function(){
+      state.trinityTickers=panthDefaultFor(state.panthCols||4);
+      panthNormalize();
+      try{renderTrinity();}catch(e){}
+      try{pushRoster();}catch(e){}
+      refresh(false);
+      rst.textContent='Reset \u2713';
+      setTimeout(function(){rst.textContent='Reset roster to the default for this count';},1400);
+    };
+  }
+})();
 async function refresh(force){
   if(state.refreshing){state.pendingRefresh=true;if(force)state.pendingForce=true;return;} // queue it — never drop a tab-hop refresh
   state.refreshing=true;
@@ -2185,7 +2318,7 @@ async function refresh(force){
   try{
     const ticks=(state.view==='single'||state.view==='chart'||state.view==='imb'||state.view==='tape')
       ?[state.focus]
-      :[...new Set([...state.trinityTickers.slice(0,3),state.focus])];
+      :[...new Set([...state.trinityTickers.slice(0,state.panthCols||4),state.focus])];
     if(liveOn()){
       try{const qs=await fetchQuotes(ticks);ticks.forEach(s=>{const u=underOf(s);if(qs[u])state.spot[s]=qs[u];});}catch(e){console.warn('quotes',e.message);}
     }
