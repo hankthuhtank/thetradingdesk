@@ -8,8 +8,15 @@
    ============================================================ */
 window.TDESK = window.TDESK || {};
 
+/* Tabs render in this order. The three PATH tabs come first because opening on
+   79 unsorted cards is a wall, not a resource - a newcomer cannot tell which of
+   them they are supposed to read first. Topic tabs follow for people who already
+   know what they are looking for, and 'Everything' sits last as the escape
+   hatch rather than the front door. */
 window.TDESK.ENC_CATS = [
-  ['all','Everything'],
+  ['lvl1','\u25cf Start here'],
+  ['lvl2','\u25cf\u25cf Building'],
+  ['lvl3','\u25cf\u25cf\u25cf Advanced'],
   ['structure','Market Structure'],
   ['options','Options'],
   ['futures','Futures'],
@@ -17,8 +24,52 @@ window.TDESK.ENC_CATS = [
   ['orders','Order Types'],
   ['risk','Risk & Money'],
   ['psych','Psychology'],
-  ['modern','Today\u2019s Market']
+  ['modern','Today\u2019s Market'],
+  ['all','Everything']
 ];
+
+/* The reading path. Deliberately NOT every entry - a path that includes
+   everything is just the index again. These are the terms that unlock the next
+   ones; the rest are there when you go looking for them.
+   Order inside each level is the order to read them in, not alphabetical. */
+window.TDESK.ENC_PATH = {
+  lvl1: [
+    'Bid / Ask / Spread','Liquidity','Volume','Support & Resistance',
+    'Market vs. Limit','Stop Order','Slippage',
+    'Call & Put','Strike & Expiration',
+    'Position Sizing','Risk-to-Reward (R)','Drawdown',
+    'Discipline & The Plan','FOMO','Revenge Trading'
+  ],
+  lvl2: [
+    'VWAP','Relative Volume (RVOL)','Average True Range (ATR)',
+    'Opening Range & Initial Balance','Gaps & Gap Fill',
+    'Bracket & OCO Orders','Trailing Stop','Time in Force',
+    'Intrinsic & Extrinsic Value','Implied Volatility (IV)','Expected Move',
+    'The Options Chain','Open Interest','Delta','Theta',
+    'Futures Contract','Multiplier & Tick Value',
+    'Expectancy','Margin & The Margin Call','Pattern Day Trader Rule',
+    'Loss Aversion','Confirmation Bias'
+  ],
+  lvl3: [
+    'Liquidity Sweep','Fair Value Gap (Imbalance)','Level 2 & Time and Sales',
+    'Float & The Short Squeeze','IV Rank & IV Percentile',
+    'Credit vs. Debit Spreads','Iron Condor','Volatility Skew',
+    'Volatility Risk Premium','IV Crush','Pin Risk',
+    'Gamma','Vega','Vanna & Charm',
+    '0DTE Options','Gamma Exposure (GEX)','Zero-Gamma Flip',
+    'Call Wall & Put Wall','OPEX & Triple Witching','Gamma Squeeze',
+    'Contango & Backwardation','Correlation Risk','Risk of Ruin',
+    'Volatility ETPs'
+  ]
+};
+
+/* Shown above the grid on a path tab. One sentence on what this level is for
+   and what you should be able to do by the end of it. */
+window.TDESK.ENC_PATH_INTRO = {
+  lvl1: ['Start here','The vocabulary you need before risking a dollar. What a price actually is, how an order behaves, what an option is, and the three risk ideas that decide whether you survive long enough to get good. Fifteen terms, in order.'],
+  lvl2: ['Building','You can read a chart and place an order. Now: the tools that frame a session, the option mechanics that decide what you actually own, and the numbers that tell you whether your approach has an edge or a story.'],
+  lvl3: ['Advanced','Where the modern market actually lives. Dealer positioning, volatility as a tradeable object, and the structural forces that move price when no news does. Read the first two levels before this one \u2014 it assumes them.']
+};
 
 window.TDESK.ENCYCLOPEDIA = [
 /* ---------- MARKET STRUCTURE ---------- */

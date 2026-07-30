@@ -92,6 +92,28 @@ header{position:relative;padding:72px 0 40px;border-bottom:1px solid var(--line)
 .hero .sub b{color:var(--text);font-weight:600}
 .hero .micro{font-family:var(--mono);font-size:.7rem;color:var(--faint);letter-spacing:.04em;margin-bottom:28px}
 .cta-row{display:flex;gap:12px;flex-wrap:wrap}
+
+/* ---- the wire, inside the command center ---- */
+.wire-head{margin-top:14px;padding-top:12px;border-top:1px solid var(--line);align-items:center}
+.wire-head span:first-child{display:flex;align-items:center;gap:6px;color:var(--gold)}
+.wdot{width:5px;height:5px;border-radius:50%;background:var(--gold);box-shadow:0 0 0 0 rgba(245,185,66,.6);animation:wpulse 2.4s infinite}
+@keyframes wpulse{0%{box-shadow:0 0 0 0 rgba(245,185,66,.5)}70%{box-shadow:0 0 0 6px rgba(245,185,66,0)}100%{box-shadow:0 0 0 0 rgba(245,185,66,0)}}
+.wire-strip{display:flex;flex-direction:column;gap:1px;overflow:hidden;transition:max-height .38s cubic-bezier(.4,0,.2,1);max-height:calc(var(--wrows,3) * 46px + 8px)}
+.wrow{display:flex;flex-direction:column;gap:2px;padding:7px 9px;border-radius:7px;border-left:2px solid transparent;transition:background .16s,border-color .16s;animation:wIn .3s ease both}
+@keyframes wIn{from{opacity:0;transform:translateX(-4px)}to{opacity:1;transform:none}}
+.wrow:hover{background:rgba(255,255,255,.03);border-left-color:var(--gold)}
+.wr-h{font-size:.76rem;line-height:1.35;color:var(--txt);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.wrow:hover .wr-h{color:#fff}
+.wr-m{display:flex;gap:8px;align-items:center;font-family:var(--mono);font-size:.55rem;letter-spacing:.07em;text-transform:uppercase;color:var(--faint)}
+.wr-s{color:var(--gold);opacity:.85;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wire-sk{height:38px;border-radius:7px;background:linear-gradient(90deg,rgba(255,255,255,.03),rgba(255,255,255,.06),rgba(255,255,255,.03));background-size:200% 100%;animation:wsk 1.3s linear infinite;margin-bottom:1px}
+@keyframes wsk{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.wire-empty{font-family:var(--mono);font-size:.6rem;letter-spacing:.06em;color:var(--faint);padding:10px 2px;line-height:1.6}
+.wire-more{width:100%;margin-top:7px;padding:7px;border:1px solid var(--line);border-radius:8px;font-family:var(--mono);font-size:.58rem;letter-spacing:.11em;text-transform:uppercase;color:var(--dim);transition:all .18s;display:flex;align-items:center;justify-content:center;gap:6px}
+.wire-more:hover{color:var(--gold);border-color:var(--gold)}
+.wm-c{transition:transform .25s}
+.wire-more[aria-expanded="true"] .wm-c{transform:translateY(1px)}
+@media(prefers-reduced-motion:reduce){.wire-strip{transition:none}.wrow{animation:none}.wdot{animation:none}.wire-sk{animation:none}}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;font-family:var(--mono);font-weight:600;font-size:.78rem;letter-spacing:.08em;text-transform:uppercase;padding:15px 24px;border-radius:10px;border:1px solid transparent;transition:transform .12s,background .25s,border-color .25s,color .25s}
 .btn:active{transform:scale(.97)}
 .btn-primary{background:var(--cyan);color:var(--void);box-shadow:0 0 24px var(--cyan-glow)}
@@ -189,6 +211,66 @@ header{position:relative;padding:72px 0 40px;border-bottom:1px solid var(--line)
 
 /* encyclopedia explorer */
 .enc-controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:22px}
+/* ---- multi-leg payoff ---- */
+.legs{margin:14px 0;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.leg-head,.leg{display:grid;grid-template-columns:88px 84px 1fr 1fr 62px 30px;gap:6px;align-items:center;padding:7px 9px}
+.leg-head{font-family:var(--mono);font-size:.56rem;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);background:rgba(255,255,255,.02);border-bottom:1px solid var(--line)}
+.leg+.leg{border-top:1px solid rgba(255,255,255,.04)}
+.leg select,.leg input{width:100%;background:var(--void);border:1px solid var(--line);border-radius:6px;padding:5px 7px;font-family:var(--mono);font-size:.7rem;color:var(--txt)}
+.leg input:disabled{opacity:.3}
+.leg-x{color:var(--faint);font-size:1.05rem;line-height:1;transition:color .15s}
+.leg-x:hover{color:#f87171}
+.leg-add{width:100%;padding:8px;font-family:var(--mono);font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);border-top:1px solid var(--line);transition:color .15s}
+.leg-add:hover{color:var(--cyan)}
+@media(max-width:640px){.leg-head{display:none}.leg{grid-template-columns:1fr 1fr 30px;gap:5px}}
+/* ---- greeks explorer ---- */
+.ps-why{font-size:.82rem;color:var(--dim);line-height:1.6;margin:0 0 14px;padding-left:11px;border-left:2px solid var(--cyan)}
+.kl-src{font-family:var(--mono);font-size:.68rem;color:var(--dim);padding:10px 12px;border:1px solid var(--line);border-radius:8px;margin:2px 0 6px;line-height:1.7}
+.kl-src b{color:var(--cyan)}
+.kl-up{color:#34d399}.kl-dn{color:#f87171}
+.kl-warn{color:var(--gold)}
+.kl-live{float:right;font-size:.55rem;letter-spacing:.1em;text-transform:uppercase;color:var(--faint)}
+.lev-table tr.kl-here td{background:rgba(45,212,191,.12);color:var(--cyan);font-family:var(--mono);font-size:.66rem;letter-spacing:.09em;text-transform:uppercase;text-align:center;padding:5px}
+.gk-tabs{display:flex;gap:6px;margin:12px 0}
+.gk-tabs button{flex:1;padding:8px;font-family:var(--mono);font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);border:1px solid var(--line);border-radius:8px;transition:all .18s}
+.gk-tabs button:hover{color:var(--cyan);border-color:var(--cyan)}
+.gk-tabs button.on{background:var(--cyan);border-color:var(--cyan);color:var(--void);font-weight:600}
+#greekCanvas{width:100%;height:290px;display:block}
+/* ---- exposure translator ---- */
+.eq-table{margin-top:16px;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.eqt-h,.eqt-r{display:flex;justify-content:space-between;align-items:center;padding:9px 13px;gap:12px}
+.eqt-h{font-family:var(--mono);font-size:.56rem;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);background:rgba(255,255,255,.02);border-bottom:1px solid var(--line)}
+.eqt-r{font-size:.82rem;color:var(--dim);border-top:1px solid rgba(255,255,255,.04);transition:background .15s}
+.eqt-r:first-of-type{border-top:none}
+.eqt-r:hover{background:rgba(255,255,255,.02)}
+.eqt-r b{font-family:var(--mono);color:var(--cyan);font-size:.94rem}
+.eqt-n{font-size:.78rem;color:var(--dim);line-height:1.65;padding:12px 13px;border-top:1px solid var(--line);background:rgba(45,212,191,.03);margin:0}
+/* ---- tax split ---- */
+.tax-vs{display:flex;flex-direction:column;gap:12px;margin:18px 0}
+.tv-row{border:1px solid var(--line);border-radius:10px;padding:13px 15px;border-left:3px solid #f87171}
+.tv-row.ok{border-left-color:var(--cyan)}
+.tv-top{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+.tv-n{font-family:var(--disp);font-weight:600;font-size:.98rem}
+.tv-t{font-family:var(--mono);font-size:1.2rem;color:#f87171}
+.tv-row.ok .tv-t{color:var(--cyan)}
+.tv-bar{height:5px;border-radius:3px;background:rgba(255,255,255,.06);margin:9px 0 7px;overflow:hidden}
+.tv-bar>span{display:block;height:100%;background:#f87171;border-radius:3px;transition:width .55s cubic-bezier(.4,0,.2,1)}
+.tv-row.ok .tv-bar>span{background:var(--cyan)}
+.tv-sub{font-family:var(--mono);font-size:.58rem;letter-spacing:.07em;text-transform:uppercase;color:var(--faint)}
+.tax-cols{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:18px 0}
+.tax-h{font-family:var(--mono);font-size:.6rem;letter-spacing:.11em;text-transform:uppercase;margin:0 0 8px}
+.tax-h.ok{color:var(--cyan)}.tax-h.no{color:#f87171}
+.tax-l{list-style:none;display:flex;flex-direction:column;gap:6px}
+.tax-l li{font-size:.79rem;color:var(--dim);line-height:1.5;padding-left:14px;position:relative}
+.tax-l li:before{content:'';position:absolute;left:0;top:.55em;width:5px;height:1px;background:currentColor;opacity:.5}
+@media(max-width:640px){.tax-cols{grid-template-columns:1fr}}
+/* ---- collapsible extras ---- */
+.mfold{margin-top:16px;border-top:1px solid var(--line);padding-top:14px}
+.mfold summary{cursor:pointer;font-family:var(--mono);font-size:.63rem;letter-spacing:.11em;text-transform:uppercase;color:var(--cyan);list-style:none;padding:4px 0}
+.mfold summary::-webkit-details-marker{display:none}
+.mfold summary:before{content:'+ ';font-weight:700}
+.mfold[open] summary:before{content:'\2212 '}
+.mfold summary em{color:var(--faint);font-style:normal;text-transform:none;letter-spacing:.02em}
 .enc-filters{display:flex;flex-wrap:wrap;gap:8px}
 .enc-filters button{font-family:var(--mono);font-size:.66rem;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);border:1px solid var(--line);border-radius:100px;padding:8px 14px;transition:all .2s}
 .enc-filters button:hover{color:var(--cyan);border-color:var(--cyan)}
@@ -198,6 +280,42 @@ header{position:relative;padding:72px 0 40px;border-bottom:1px solid var(--line)
 .enc-search input::placeholder{color:var(--faint)}
 .enc-search svg{color:var(--faint);flex:0 0 auto}
 @media(max-width:720px){.enc-search{margin-left:0;width:100%}}
+/* ---- encyclopedia: the reading path ---- */
+.enc-filters button.pathtab{border-color:rgba(45,212,191,.35);color:#7fe7d8}
+.enc-filters button.pathtab:hover{border-color:var(--cyan)}
+.enc-filters button.pathtab.on{background:var(--cyan);border-color:var(--cyan);color:var(--void)}
+.enc-intro{border:1px solid var(--line);border-left:3px solid var(--cyan);border-radius:12px;background:linear-gradient(135deg,rgba(45,212,191,.05),transparent 60%);padding:18px 20px;margin:0 0 16px;animation:eiIn .35s ease both}
+.enc-intro.lvl2{border-left-color:var(--gold);background:linear-gradient(135deg,rgba(245,185,66,.05),transparent 60%)}
+.enc-intro.lvl3{border-left-color:#c084fc;background:linear-gradient(135deg,rgba(192,132,252,.06),transparent 60%)}
+@keyframes eiIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+.ei-head{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.ei-dots{font-size:.5rem;letter-spacing:.22em;color:var(--cyan);position:relative;top:-3px}
+.enc-intro.lvl2 .ei-dots{color:var(--gold)}
+.enc-intro.lvl3 .ei-dots{color:#c084fc}
+.ei-t{font-family:var(--disp);font-weight:600;font-size:1.15rem}
+.ei-n{font-family:var(--mono);font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);margin-left:auto}
+.ei-x{font-size:.87rem;color:var(--dim);margin:7px 0 12px;max-width:74ch;line-height:1.65}
+.ei-bar{height:3px;border-radius:2px;background:rgba(255,255,255,.07);overflow:hidden}
+.ei-bar>span{display:block;height:100%;background:var(--cyan);border-radius:2px;transition:width .5s cubic-bezier(.4,0,.2,1)}
+.enc-intro.lvl2 .ei-bar>span{background:var(--gold)}
+.enc-intro.lvl3 .ei-bar>span{background:#c084fc}
+.ei-p{font-family:var(--mono);font-size:.6rem;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);margin-top:7px}
+.ei-reset{font:inherit;color:var(--cyan);text-transform:uppercase;border-bottom:1px dotted currentColor}
+.enc-card{position:relative}
+.enc-card.pathcard{padding-left:52px}
+.estep{position:absolute;left:16px;top:17px;font-family:var(--mono);font-size:.78rem;font-weight:700;color:rgba(255,255,255,.16);letter-spacing:-.02em;transition:color .2s}
+.enc-card.pathcard:hover .estep{color:var(--cyan)}
+.enc-card.read{border-color:rgba(45,212,191,.22)}
+.enc-card.read .estep{color:var(--cyan)}
+.enc-card.read .emore{color:var(--dim)}
+.elv{font-style:normal;font-size:.45rem;letter-spacing:.16em;position:relative;top:-2px;color:var(--cyan)}
+.elv.lvl2{color:var(--gold)}
+.elv.lvl3{color:#c084fc}
+.enc-next{display:flex;flex-direction:column;gap:3px;width:100%;text-align:left;margin-top:20px;padding:14px 16px;border:1px solid var(--line);border-radius:11px;background:var(--panel);transition:border-color .2s,transform .2s}
+.enc-next:hover{border-color:var(--cyan);transform:translateX(3px)}
+.en-k{font-family:var(--mono);font-size:.58rem;letter-spacing:.11em;text-transform:uppercase;color:var(--dim)}
+.en-t{font-family:var(--disp);font-weight:600;font-size:1rem;color:var(--cyan)}
+@media(max-width:640px){.enc-card.pathcard{padding-left:44px}.estep{left:13px}.ei-n{margin-left:0;width:100%}}
 .enc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
 .enc-card{border:1px solid var(--line);border-radius:12px;background:var(--panel);padding:18px;text-align:left;transition:border-color .2s,transform .2s;display:flex;flex-direction:column;gap:8px}
 .enc-card:hover{border-color:var(--cyan);transform:translateY(-3px)}
@@ -724,11 +842,11 @@ body.paged .section{padding-top:40px}
     <div class="hero reveal">
       <div class="badge"><b>◆</b> FREE · EDUCATIONAL ONLY · NO SIGNALS, EVER</div>
       <h1 class="disp">One <span class="c">terminal</span> for the whole trader’s desk.</h1>
-      <p class="sub">Live market data, a breathing sector heatmap, this week’s earnings, dealer-positioning and prediction-market tools, a full trading encyclopedia, the pattern library, and the risk math — <b>all in one place, all free.</b></p>
-      <p class="micro">// live data · kairos + delphi · encyclopedia · candlesticks · strategy playbook · options + futures tools</p>
+      <p class="sub">Live data, dealer positioning, the full encyclopedia, and every calculator that actually matters. <b>No login, no signals, nothing fake.</b></p>
       <div class="cta-row">
         <a class="btn btn-primary" href="#terminal">Open the terminal</a>
-        <a class="btn btn-ghost" href="#strategies">Read the strategy playbook</a>
+        <a class="btn btn-ghost" href="#tools" onclick="showPage('tools');return false;">Browse the toolkit</a>
+        <a class="btn btn-ghost" href="#encyclopedia" onclick="showPage('encyclopedia');return false;">Open the encyclopedia</a>
       </div>
     </div>
     <div class="command reveal" aria-label="Live market command center">
@@ -742,6 +860,11 @@ body.paged .section{padding-top:40px}
         <div class="idx-row" id="idxRow"></div>
         <div class="hm-title"><span>SECTOR HEATMAP · % DAY</span><span id="hmStamp">—</span></div>
         <div class="heatmap" id="heatmap"></div>
+        <!-- The Wire, in the command center. News that lives four screens down
+             is news you read tomorrow. -->
+        <div class="hm-title wire-head"><span><span class="wdot"></span>THE WIRE · LIVE</span><span id="wireStamp">—</span></div>
+        <div class="wire-strip" id="wireStrip"><div class="wire-sk"></div><div class="wire-sk"></div><div class="wire-sk"></div></div>
+        <button class="wire-more" id="wireMore" onclick="toggleWireStrip()" aria-expanded="false">Show more headlines <span class="wm-c">▾</span></button>
       </div>
     </div>
   </div>
@@ -817,11 +940,14 @@ body.paged .section{padding-top:40px}
         <div class="board-live" id="crossLive"><span class="lg">Macro board · tap to open</span></div>
         <div class="board-tap">Open the macro board →</div>
       </button>
-      <button class="flag board" style="text-align:left;--accent:var(--gold);--accent-fade:rgba(245,185,66,.14)" onclick="openModal('m-wire')">
-        <div class="ftop"><span class="fic" style="border-color:var(--gold);color:var(--gold);background:rgba(245,185,66,.12)"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 11a9 9 0 0 1 9 9M4 4a16 16 0 0 1 16 16M6 18h.01"/></svg></span><span class="fname">The Wire<small>LIVE MARKET NEWS</small></span></div>
-        <p class="bdesc">The headlines moving the whole tape, pulled live and clearly sourced — context on the day before you open a single chart.</p>
-        <div class="board-live" id="wireLive"><span class="lg">Live newswire · tap to open</span></div>
-        <div class="board-tap" style="--accent:var(--gold)">Open the wire →</div>
+      <!-- The Wire now lives in the command center, so this slot carries the
+           live board that used to sit in the toolkit. Live data belongs in the
+           terminal; the toolkit is for things that calculate. -->
+      <button class="flag board" style="text-align:left;--accent:var(--gold);--accent-fade:rgba(245,185,66,.14)" onclick="openModal('m-crypto')">
+        <div class="ftop"><span class="fic" style="border-color:var(--gold);color:var(--gold);background:rgba(245,185,66,.12)"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 2v20M8 6h8a3 3 0 0 1 0 6H8h8a3 3 0 0 1 0 6H8"/></svg></span><span class="fname">Crypto Pulse<small>24/7 RISK APPETITE</small></span></div>
+        <p class="bdesc">Bitcoin and the majors, live and keyless via CoinGecko. Crypto trades while equities sleep, so it is often the first thing to price a weekend headline.</p>
+        <div class="board-live" id="cryptoLive"><span class="lg">Live board · tap to open</span></div>
+        <div class="board-tap" style="--accent:var(--gold)">Open the crypto board →</div>
       </button>
     </div>
 
@@ -840,7 +966,7 @@ body.paged .section{padding-top:40px}
     <div class="sec-head reveal">
       <div class="eyebrow">THE TOOLKIT</div>
       <h2 class="disp">The math, <span class="g">done right.</span></h2>
-      <p>Every calculator a stock, options, or futures trader reaches for — sizing, expectancy, options payoff, expected move, futures specs, and the discipline tools that keep an account alive. No login, nothing fake.</p>
+      <p>Every calculator a stock, options, or futures trader actually reaches for — multi-leg payoff, the greeks as curves, expected move <em>and</em> probability of touch, cross-instrument exposure, and the §1256 tax split most traders never learn about. No login, no email, nothing fake.</p>
     </div>
     <div class="tools reveal" id="toolGrid"></div>
   </div>
@@ -852,7 +978,7 @@ body.paged .section{padding-top:40px}
     <div class="sec-head reveal">
       <div class="eyebrow">THE ENCYCLOPEDIA</div>
       <h2 class="disp">Every term, <span class="c">for today’s market.</span></h2>
-      <p>Not a dusty glossary — the vocabulary of the market as it actually trades now, from the greeks and order types to 0DTE, gamma exposure, PFOF, dark pools, and prediction markets. Each entry: what it is, why it matters, and the trap most people miss.</p>
+      <p>Not a dusty glossary — the vocabulary of the market as it actually trades now. Each entry: what it is, why it matters, and the trap most people miss. <b>Start on the path</b> — three levels, in reading order, sixty-one terms that build on each other. The topic tabs and <b>Everything</b> are there when you already know what you're hunting for.</p>
     </div>
     <div class="enc-controls reveal">
       <div class="enc-filters" id="encFilters"></div>
@@ -861,6 +987,7 @@ body.paged .section{padding-top:40px}
         <input type="search" id="encSearch" placeholder="Search the encyclopedia…" aria-label="Search encyclopedia">
       </label>
     </div>
+    <div class="enc-intro" id="encIntro" hidden></div>
     <div class="enc-grid reveal" id="encGrid"></div>
     <div class="enc-count" id="encCount"></div>
   </div>
@@ -1000,16 +1127,50 @@ body.paged .section{padding-top:40px}
 
 <!-- ===== MODALS ===== -->
 <div class="modal" id="m-size" role="dialog" aria-modal="true" aria-label="Position size calculator"><div class="mwin"><div class="mbar"><span class="dots"><s></s><s></s><s></s></span><span class="mt">TOOL // POSITION SIZE</span><button class="mx" onclick="closeModal('m-size')" aria-label="Close">×</button></div><div class="mbody">
-  <h3>Position Size</h3><p class="msub">Size from your risk, not your feelings. Entry and stop decide the share count.</p>
-  <div class="mgrid">
-    <div class="mf"><label for="ps-acct">Account size ($)</label><input id="ps-acct" type="number" value="10000" min="0"></div>
-    <div class="mf"><label for="ps-risk">Risk per trade (%)</label><input id="ps-risk" type="number" value="1" step="0.1" min="0"></div>
-    <div class="mf"><label for="ps-entry">Entry price ($)</label><input id="ps-entry" type="number" value="100" step="0.01" min="0"></div>
-    <div class="mf"><label for="ps-stop">Stop price ($)</label><input id="ps-stop" type="number" value="97" step="0.01" min="0"></div>
+  <h3>Position Size</h3><p class="msub">Size from your risk, not your feelings. Pick the instrument — the arithmetic is different for each, which is exactly where people get it wrong.</p>
+  <div class="gk-tabs" id="psTabs">
+    <button data-p="sh" class="on" onclick="setSizeMode('sh',this)">Shares</button>
+    <button data-p="op" onclick="setSizeMode('op',this)">Options</button>
+    <button data-p="fu" onclick="setSizeMode('fu',this)">Futures</button>
   </div>
+  <p class="ps-why" id="ps-why"></p>
+
+  <div class="ps-pane" id="ps-sh">
+    <div class="mgrid">
+      <div class="mf"><label for="ps-acct">Account size ($)</label><input id="ps-acct" type="number" value="10000" min="0"></div>
+      <div class="mf"><label for="ps-risk">Risk per trade (%)</label><input id="ps-risk" type="number" value="1" step="0.1" min="0"></div>
+      <div class="mf"><label for="ps-entry">Entry price ($)</label><input id="ps-entry" type="number" value="100" step="0.01" min="0"></div>
+      <div class="mf"><label for="ps-stop">Stop price ($)</label><input id="ps-stop" type="number" value="97" step="0.01" min="0"></div>
+    </div>
+  </div>
+
+  <div class="ps-pane" id="ps-op" hidden>
+    <div class="mgrid">
+      <div class="mf"><label for="po-acct">Account size ($)</label><input id="po-acct" type="number" value="10000" min="0"></div>
+      <div class="mf"><label for="po-risk">Risk per trade (%)</label><input id="po-risk" type="number" value="1" step="0.1" min="0"></div>
+      <div class="mf full"><label for="po-mode">How are you defining the risk?</label>
+        <select id="po-mode" onchange="psToggleOpt()">
+          <option value="full">The whole premium — long option, no stop, held to expiry</option>
+          <option value="stop">A stop on the option price</option>
+        </select></div>
+      <div class="mf"><label for="po-prem">Premium paid, per share ($)</label><input id="po-prem" type="number" value="3.00" step="0.05" min="0"></div>
+      <div class="mf" id="po-stopwrap" hidden><label for="po-stop">Stop on the option ($)</label><input id="po-stop" type="number" value="1.50" step="0.05" min="0"></div>
+    </div>
+  </div>
+
+  <div class="ps-pane" id="ps-fu" hidden>
+    <div class="mgrid">
+      <div class="mf"><label for="pf-acct">Account size ($)</label><input id="pf-acct" type="number" value="25000" min="0"></div>
+      <div class="mf"><label for="pf-risk">Risk per trade (%)</label><input id="pf-risk" type="number" value="1" step="0.1" min="0"></div>
+      <div class="mf full"><label for="pf-sym">Contract</label><select id="pf-sym" onchange="calcSize()"></select></div>
+      <div class="mf"><label for="pf-entry">Entry (points)</label><input id="pf-entry" type="number" value="6400" step="0.25"></div>
+      <div class="mf"><label for="pf-stop">Stop (points)</label><input id="pf-stop" type="number" value="6390" step="0.25"></div>
+    </div>
+  </div>
+
   <button class="mbtn" onclick="calcSize()">Calculate size</button>
   <div class="mres" id="ps-res"><div class="rk">Max position</div><div class="rv" id="ps-shares">—</div><div class="rs" id="ps-detail"></div></div>
-  <p class="mnote">Works for shares or contracts: for options/futures, treat entry/stop as the contract price and remember the multiplier (options ×100). Risk amount = account × risk%. Size = risk ÷ per-unit stop distance.</p>
+  <p class="mnote" id="ps-note"></p>
 </div></div></div>
 
 <div class="modal" id="m-rr" role="dialog" aria-modal="true" aria-label="Expectancy lab"><div class="mwin"><div class="mbar"><span class="dots"><s></s><s></s><s></s></span><span class="mt">TOOL // EXPECTANCY LAB</span><button class="mx" onclick="closeModal('m-rr')" aria-label="Close">×</button></div><div class="mbody">
@@ -1025,19 +1186,25 @@ body.paged .section{padding-top:40px}
 </div></div></div>
 
 <div class="modal" id="m-payoff" role="dialog" aria-modal="true" aria-label="Options payoff visualizer"><div class="mwin wide"><div class="mbar"><span class="dots"><s></s><s></s><s></s></span><span class="mt">TOOL // OPTIONS PAYOFF</span><button class="mx" onclick="closeModal('m-payoff')" aria-label="Close">×</button></div><div class="mbody">
-  <h3>Options Payoff</h3><p class="msub">A single-leg payoff diagram with breakeven and max profit / loss at expiration. Pure math — your inputs in.</p>
+  <h3>Strategy Payoff</h3><p class="msub">Up to four legs, at expiration, with every breakeven found numerically. Most payoff tools online do one leg — but almost nobody trades one leg.</p>
   <div class="sim-ctrl">
-    <div class="mf"><label for="op-type">Position</label><select id="op-type" onchange="drawPayoff()"><option value="lc">Long Call</option><option value="lp">Long Put</option><option value="sc">Short Call</option><option value="sp">Short Put</option></select></div>
-    <div class="mf"><label for="op-strike">Strike ($)</label><input id="op-strike" type="number" value="100" step="0.5" oninput="drawPayoff()"></div>
-    <div class="mf"><label for="op-prem">Premium ($)</label><input id="op-prem" type="number" value="3" step="0.05" oninput="drawPayoff()"></div>
+    <div class="mf"><label for="op-preset">Strategy</label><select id="op-preset" onchange="loadPreset()">
+      <optgroup label="Single leg"><option value="lc">Long Call</option><option value="lp">Long Put</option><option value="sc">Short Call (naked)</option><option value="sp">Cash-Secured Put</option></optgroup>
+      <optgroup label="Two legs"><option value="cc">Covered Call</option><option value="bcs">Bull Call Spread</option><option value="bps">Bull Put Spread (credit)</option><option value="bes">Bear Call Spread (credit)</option><option value="bps2">Bear Put Spread</option><option value="strad">Long Straddle</option><option value="strang">Long Strangle</option></optgroup>
+      <optgroup label="Four legs"><option value="ic">Iron Condor</option><option value="fly">Call Butterfly</option></optgroup>
+      <option value="custom">Custom — edit the legs</option>
+    </select></div>
+    <div class="mf"><label for="op-spot">Underlying ($)</label><input id="op-spot" type="number" value="100" step="0.5" oninput="loadPreset()"></div>
     <div class="mf"><label for="op-qty">Contracts</label><input id="op-qty" type="number" value="1" min="1" step="1" oninput="drawPayoff()"></div>
   </div>
+  <div class="legs" id="opLegs"></div>
   <canvas id="payoffCanvas"></canvas>
   <div class="mgrid" style="margin-top:14px">
-    <div class="mres show" style="margin:0"><div class="rk">Breakeven</div><div class="rv" id="op-be" style="font-size:1.6rem">—</div></div>
-    <div class="mres show" style="margin:0"><div class="rk">Max profit / loss</div><div class="rv" id="op-mx" style="font-size:1.6rem">—</div></div>
+    <div class="mres show" style="margin:0"><div class="rk">Breakeven(s)</div><div class="rv" id="op-be" style="font-size:1.45rem">—</div></div>
+    <div class="mres show" style="margin:0"><div class="rk">Max profit / loss</div><div class="rv" id="op-mx" style="font-size:1.45rem">—</div></div>
+    <div class="mres show" style="margin:0"><div class="rk">Net debit / credit</div><div class="rv" id="op-net" style="font-size:1.45rem">—</div></div>
   </div>
-  <p class="mnote">At-expiration payoff, one option leg × 100 shares/contract. Ignores commissions, early assignment, and any move in implied volatility before expiry — real P&amp;L before expiration differs.</p>
+  <p class="mnote">At-expiration payoff, ×100 per contract. Ignores commissions, early assignment, and any IV move before expiry — P&amp;L <em>before</em> expiration will differ, sometimes a lot. Premiums default to a rough Black-Scholes estimate at 20% IV / 30 DTE so the shape is right; overwrite them with real quotes for real numbers.</p>
 </div></div></div>
 
 <div class="modal" id="m-em" role="dialog" aria-modal="true" aria-label="Expected move calculator"><div class="mwin"><div class="mbar"><span class="dots"><s></s><s></s><s></s></span><span class="mt">TOOL // EXPECTED MOVE</span><button class="mx" onclick="closeModal('m-em')" aria-label="Close">×</button></div><div class="mbody">
@@ -1048,7 +1215,13 @@ body.paged .section{padding-top:40px}
     <div class="mf full"><label for="em-dte">Days to expiration — <span class="range-val" id="em-dtev">7</span></label><input id="em-dte" type="range" min="1" max="90" value="7" oninput="document.getElementById('em-dtev').textContent=this.value"></div>
   </div>
   <button class="mbtn" onclick="calcEM()">Calculate range</button>
-  <div class="mres" id="em-res"><div class="rk">±1 standard deviation (≈68%)</div><div class="rv" id="em-1sd">—</div><div class="rs" id="em-band"></div></div>
+  <div class="mres" id="em-res"><div class="rk">±1 standard deviation (≈68%)</div><div class="rv" id="em-1sd">—</div><div class="rs" id="em-band"></div>
+    <div class="mgrid" style="margin-top:16px">
+      <div><div class="rk">Chance of finishing beyond ±1σ</div><div class="rv" id="em-pitm" style="font-size:1.5rem">—</div></div>
+      <div><div class="rk">Chance of <em>touching</em> ±1σ</div><div class="rv" id="em-ptouch" style="font-size:1.5rem">—</div></div>
+    </div>
+    <p class="rs" style="margin-top:12px">Touch probability is roughly <b>double</b> the probability of finishing there. This is the number that matters for a stop, a short strike, or anything that triggers on the way rather than at the end — and it is the one most people never look up.</p>
+  </div>
   <p class="mnote">EM ≈ price × IV × √(days/365). This is a one-standard-deviation band — price finishes outside it roughly a third of the time. It’s a probability cone, not a fence.</p>
 </div></div></div>
 
@@ -1092,15 +1265,21 @@ body.paged .section{padding-top:40px}
 </div></div></div>
 
 <div class="modal" id="m-levels" role="dialog" aria-modal="true" aria-label="Key levels workbench"><div class="mwin"><div class="mbar"><span class="dots"><s></s><s></s><s></s></span><span class="mt">TOOL // KEY LEVELS</span><button class="mx" onclick="closeModal('m-levels')" aria-label="Close">×</button></div><div class="mbody">
-  <h3>Key Levels</h3><p class="msub">Yesterday’s numbers in, the classic pivot map out. The shared reference points the whole floor watches.</p>
+  <h3>Key Levels</h3><p class="msub">Pick a ticker and the session numbers come in on their own. The classic floor-trader pivot map, built from a real range instead of one you typed from memory.</p>
   <div class="mgrid">
-    <div class="mf"><label for="kl-h">Previous day high</label><input id="kl-h" type="number" step="0.01" placeholder="602.40"></div>
-    <div class="mf"><label for="kl-l">Previous day low</label><input id="kl-l" type="number" step="0.01" placeholder="594.10"></div>
-    <div class="mf full"><label for="kl-c">Previous day close</label><input id="kl-c" type="number" step="0.01" placeholder="599.15"></div>
+    <div class="mf full"><label for="kl-sym">Ticker</label><select id="kl-sym" onchange="klPull()"></select></div>
   </div>
+  <div class="kl-src" id="kl-src">Pick a ticker to pull its range.</div>
+  <details class="mfold"><summary>Enter the numbers by hand <em>— for a ticker not listed, or a session you have on a chart</em></summary>
+    <div class="mgrid" style="margin-top:12px">
+      <div class="mf"><label for="kl-h">Session high</label><input id="kl-h" type="number" step="0.01" placeholder="602.40" oninput="klManual()"></div>
+      <div class="mf"><label for="kl-l">Session low</label><input id="kl-l" type="number" step="0.01" placeholder="594.10" oninput="klManual()"></div>
+      <div class="mf full"><label for="kl-c">Session close</label><input id="kl-c" type="number" step="0.01" placeholder="599.15" oninput="klManual()"></div>
+    </div>
+  </details>
   <button class="mbtn" onclick="calcLevels()">Map the levels</button>
   <div id="kl-out"></div>
-  <p class="mnote">Classic floor-trader pivots: P = (H+L+C)÷3, with resistance/support bands from the prior range. Not predictions — shared reference points a huge share of intraday traders all watch, which is why price reacts around them.</p>
+  <p class="mnote">Classic floor-trader pivots: <b>P = (H + L + C) ÷ 3</b>, with the bands built off the range. Not predictions — shared reference points a huge share of intraday traders all watch, which is why price so often reacts around them. The quote feed gives the <em>current</em> session's high, low and last, so during market hours these are provisional and will move until the close; after the close they are the levels for the next session.</p>
 </div></div></div>
 
 <div class="modal" id="m-crypto" role="dialog" aria-modal="true" aria-label="Crypto pulse"><div class="mwin"><div class="mbar"><span class="dots"><s></s><s></s><s></s></span><span class="mt">TOOL // CRYPTO PULSE (LIVE)</span><button class="mx" onclick="closeModal('m-crypto')" aria-label="Close">×</button></div><div class="mbody">
@@ -1123,6 +1302,51 @@ body.paged .section{padding-top:40px}
   <div id="crossOut"><p class="mnote">Loading the macro board…</p></div>
   <button class="mbtn ghost" onclick="loadCross()" style="margin-top:6px">Refresh</button>
   <p class="mnote">Context only. Each line is a liquid, tradable proxy: <b>TLT</b> long Treasuries, <b>UUP</b> the US dollar, <b>GLD</b> gold, <b>SLV</b> silver, <b>USO</b> WTI crude, and Bitcoin via CoinGecko. The “risk backdrop” read is descriptive, not a signal — it just names what the cross-asset moves are saying together.</p>
+</div></div></div>
+
+<div class="modal" id="m-greeks" role="dialog" aria-modal="true" aria-label="Greeks explorer"><div class="mwin wide"><div class="mbar"><span class="dots"><s></s><s></s><s></s></span><span class="mt">TOOL // GREEKS EXPLORER</span><button class="mx" onclick="closeModal('m-greeks')" aria-label="Close">×</button></div><div class="mbody">
+  <h3>Greeks Explorer</h3><p class="msub">The greeks as <em>curves</em>, not a row of numbers. Move the sliders and watch where each one is steep — that steepness is the whole story.</p>
+  <div class="sim-ctrl">
+    <div class="mf"><label for="gk-type">Option</label><select id="gk-type" onchange="drawGreeks()"><option value="c">Call</option><option value="p">Put</option></select></div>
+    <div class="mf"><label for="gk-k">Strike ($)</label><input id="gk-k" type="number" value="100" step="1" oninput="drawGreeks()"></div>
+    <div class="mf"><label for="gk-dte">DTE — <span class="range-val" id="gk-dtev">30</span></label><input id="gk-dte" type="range" min="1" max="120" value="30" oninput="$('#gk-dtev').textContent=this.value;drawGreeks()"></div>
+    <div class="mf"><label for="gk-iv">IV — <span class="range-val" id="gk-ivv">25%</span></label><input id="gk-iv" type="range" min="5" max="120" value="25" oninput="$('#gk-ivv').textContent=this.value+'%';drawGreeks()"></div>
+  </div>
+  <div class="gk-tabs" id="gkTabs">
+    <button data-g="delta" class="on" onclick="setGreek('delta',this)">Delta</button>
+    <button data-g="gamma" onclick="setGreek('gamma',this)">Gamma</button>
+    <button data-g="theta" onclick="setGreek('theta',this)">Theta</button>
+    <button data-g="vega" onclick="setGreek('vega',this)">Vega</button>
+  </div>
+  <canvas id="greekCanvas"></canvas>
+  <div class="mgrid" style="margin-top:14px">
+    <div class="mres show" style="margin:0"><div class="rk">At the money, right now</div><div class="rv" id="gk-atm" style="font-size:1.45rem">—</div></div>
+    <div class="mres show" style="margin:0"><div class="rk">What this curve is telling you</div><div class="rs" id="gk-say" style="margin-top:6px">—</div></div>
+  </div>
+  <p class="mnote">Black-Scholes, zero rates and no dividend — the shape is what matters here, not the third decimal. Theta is quoted per calendar day and vega per one point of IV, which is how a platform will show them.</p>
+</div></div></div>
+
+<div class="modal" id="m-tax" role="dialog" aria-modal="true" aria-label="Section 1256 tax split"><div class="mwin wide"><div class="mbar"><span class="dots"><s></s><s></s><s></s></span><span class="mt">TOOL // §1256 TAX SPLIT</span><button class="mx" onclick="closeModal('m-tax')" aria-label="Close">×</button></div><div class="mbody">
+  <h3>§1256 Tax Split</h3><p class="msub">Same trade, same direction, same fill — a different ticker and a different tax bill. This is the rare edge that requires no skill and no timing.</p>
+  <div class="sim-ctrl">
+    <div class="mf"><label for="tx-pnl">Net trading profit for the year ($)</label><input id="tx-pnl" type="number" value="40000" step="1000" oninput="calcTax()"></div>
+    <div class="mf"><label for="tx-ord">Your ordinary (short-term) rate — <span class="range-val" id="tx-ordv">32%</span></label><input id="tx-ord" type="range" min="10" max="37" value="32" step="1" oninput="$('#tx-ordv').textContent=this.value+'%';calcTax()"></div>
+    <div class="mf"><label for="tx-ltcg">Your long-term rate — <span class="range-val" id="tx-ltcgv">15%</span></label><input id="tx-ltcg" type="range" min="0" max="20" value="15" step="5" oninput="$('#tx-ltcgv').textContent=this.value+'%';calcTax()"></div>
+  </div>
+  <div class="tax-vs" id="taxVs"></div>
+  <div class="mres show" id="tx-res" style="margin-top:4px"><div class="rk">Difference on identical trades</div><div class="rv" id="tx-save">—</div><div class="rs" id="tx-note"></div></div>
+  <div class="tax-cols">
+    <div><h4 class="tax-h ok">Qualifies for 60/40</h4><ul class="tax-l">
+      <li>All exchange-traded futures — /ES, /NQ, /CL, /GC, /ZB</li><li>Options on those futures</li>
+      <li>Broad-based <b>cash-settled index</b> options — SPX, XSP, NDX, RUT, VIX</li>
+      <li>Certain regulated foreign-currency contracts</li></ul></div>
+    <div><h4 class="tax-h no">Does <em>not</em> qualify</h4><ul class="tax-l">
+      <li>ETF options — <b>SPY, QQQ, IWM</b>, however similar the exposure</li>
+      <li>Single-stock options — AAPL, TSLA, NVDA</li>
+      <li>Stock and ETF shares themselves</li>
+      <li>Rule of thumb: if exercise delivers shares, it isn't §1256</li></ul></div>
+  </div>
+  <p class="mnote"><b>The mechanics.</b> §1256 contracts are split 60% long-term / 40% short-term <em>regardless of holding period</em> — a position held nine minutes is taxed mostly at the long-term rate. Positions open on 31 December are marked to market as if sold, and that becomes the new basis. Losses can be carried back three years on Form 6781. <b>This is a general illustration, not tax advice, and it ignores state tax, NIIT and your full situation — the numbers here are federal-rate arithmetic only. Talk to a CPA who knows trader taxation before acting on it.</b></p>
 </div></div></div>
 
 <div class="modal" id="m-wire" role="dialog" aria-modal="true" aria-label="The wire — market news"><div class="mwin"><div class="mbar"><span class="dots"><s></s><s></s><s></s></span><span class="mt">LIVE // THE WIRE</span><button class="mx" onclick="closeModal('m-wire')" aria-label="Close">×</button></div><div class="mbody">
@@ -1361,7 +1585,11 @@ function openModal(id){
   if(id==='m-earn')loadEarnings();
   if(id==='m-futures')renderSpecs();
   if(id==='m-sim')setTimeout(runSim,80);
-  if(id==='m-payoff')setTimeout(drawPayoff,80);
+  if(id==='m-payoff')setTimeout(()=>{if(!OP_LEGS.length)loadPreset();else drawPayoff();},80);
+  if(id==='m-greeks')setTimeout(drawGreeks,80);
+  if(id==='m-tax')calcTax();
+  if(id==='m-levels')klInit();
+  if(id==='m-size')setSizeMode(PS_MODE,document.querySelector('#psTabs button[data-p="'+PS_MODE+'"]'));
   const f=m.querySelector('input,select,button.mx'); if(f)f.focus({preventScroll:true});
 }
 function closeModal(id){ $('#'+id).classList.remove('open'); if(!$$('.modal.open').length)document.body.classList.remove('locked'); if(lastFocus)lastFocus.focus({preventScroll:true}); }
@@ -1381,7 +1609,8 @@ const TOOLS=[
   {id:'m-valid',kind:'validator',name:'Setup Validator',desc:'Grade any trade idea against seven structure criteria before you commit.',ic:'M5 13l4 4L19 7'},
   {id:'m-rules',kind:'generator',name:'Rulebook Builder',desc:'Risk, psychology, execution — written down and downloadable. Your constitution.',ic:'M6 3h9l4 4v14H6zM14 3v5h5'},
   {id:'m-levels',kind:'workbench',name:'Key Levels',desc:'Previous-day numbers in, the classic pivot map out — the reference the floor watches.',ic:'M4 6h16M4 12h10M4 18h16'},
-  {id:'m-crypto',kind:'live',name:'Crypto Pulse',desc:'Real prices via CoinGecko. Risk appetite context — never a call.',ic:'M12 2v20M8 6h8a3 3 0 0 1 0 6H8h8a3 3 0 0 1 0 6H8'}
+  {id:'m-greeks',kind:'options',name:'Greeks Explorer',desc:'Watch delta, gamma, theta and vega bend as price, time and IV move. The greeks as curves, not a table.',ic:'M4 19c4 0 5-14 9-14s4 8 7 8M4 19h16'},
+  {id:'m-tax',kind:'edge',name:'§1256 Tax Split',desc:'SPX vs SPY on identical trades. The 60/40 rule is worth more than most edges and costs nothing to use.',ic:'M12 2v20M17 6H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6'}
 ];
 $('#toolGrid').innerHTML=TOOLS.map(t=>`
   <button class="tool" onclick="openModal('${t.id}')">
@@ -1390,12 +1619,65 @@ $('#toolGrid').innerHTML=TOOLS.map(t=>`
   </button>`).join('');
 
 /* position size */
+let PS_MODE='sh';
+const PS_WHY={
+  sh:'Risk per share is simply entry minus stop. Multiply by shares and that is your loss if the stop fills where you expect.',
+  op:'An option is priced per share but sold in lots of 100, so a $3.00 premium is $300 of risk per contract. That factor of 100 is the single most common sizing mistake in options \u2014 people size as if the quote were the whole cost.',
+  fu:'Futures risk is measured in POINTS, then multiplied by the contract value per point. A 10-point stop on /ES is $500, not $10. Micros divide that by ten and are the honest place to learn.'
+};
+const PS_NOTE={
+  sh:'Round down, never up. If the answer is fractional and your broker does not support fractional shares, one share over the line is more than your stated risk.',
+  op:'This assumes the stop actually fills near your level. It often will not: options gap on spreads, and a wide market can take more than your planned risk on the way out. Size for the fill you might get, not the one you want.',
+  fu:'This is risk sizing, not margin. A contract you can afford to lose 1% on may still exceed your day-trade margin \u2014 or, worse, sit well inside it and tempt you to double. Check both.'
+};
+const PS_FUT=[['/MES','Micro E-mini S&P 500',5],['/ES','E-mini S&P 500',50],['/MNQ','Micro E-mini Nasdaq',2],['/NQ','E-mini Nasdaq 100',20],['/M2K','Micro Russell 2000',5],['/RTY','E-mini Russell 2000',50],['/MYM','Micro Dow',0.5],['/YM','E-mini Dow',5],['/MCL','Micro Crude Oil',100],['/CL','Crude Oil (WTI)',1000],['/MGC','Micro Gold',10],['/GC','Gold',100]];
+function psInitFutures(){
+  const s=$('#pf-sym'); if(!s||s.options.length)return;
+  s.innerHTML=PS_FUT.map(([sy,n,m],i)=>`<option value="${m}"${i===0?' selected':''}>${sy} \u2014 ${n} \u00b7 $${m}/pt</option>`).join('');
+}
+function setSizeMode(m,btn){
+  PS_MODE=m;
+  $$('#psTabs button').forEach(b=>b.classList.remove('on')); btn.classList.add('on');
+  ['sh','op','fu'].forEach(k=>{ const p=$('#ps-'+k); if(p)p.hidden=(k!==m); });
+  $('#ps-why').textContent=PS_WHY[m];
+  $('#ps-note').textContent=PS_NOTE[m];
+  $('#ps-res').classList.remove('show');
+  if(m==='fu')psInitFutures();
+}
+function psToggleOpt(){ const w=$('#po-stopwrap'); if(w)w.hidden=$('#po-mode').value!=='stop'; }
+function psFail(msg){ const r=$('#ps-res'); r.classList.add('show'); $('#ps-shares').textContent='\u2014'; $('#ps-detail').textContent=msg; }
 function calcSize(){
-  const acct=+$('#ps-acct').value, rp=+$('#ps-risk').value, en=+$('#ps-entry').value, st=+$('#ps-stop').value, res=$('#ps-res');
-  if(!acct||!rp||!en||!st||en===st){res.classList.add('show');$('#ps-shares').textContent='—';$('#ps-detail').textContent='Fill every field — entry and stop can’t be equal.';return;}
-  const riskAmt=acct*rp/100, dist=Math.abs(en-st), qty=Math.floor(riskAmt/dist);
-  $('#ps-shares').textContent=qty.toLocaleString()+' units';
-  $('#ps-detail').textContent=`Risking $${riskAmt.toFixed(0)} (${rp}%) · $${dist.toFixed(2)} stop distance · ~$${(qty*en).toLocaleString(undefined,{maximumFractionDigits:0})} notional`;
+  const res=$('#ps-res');
+  if(PS_MODE==='sh'){
+    const acct=+$('#ps-acct').value, rp=+$('#ps-risk').value, en=+$('#ps-entry').value, st=+$('#ps-stop').value;
+    if(!acct||!rp||!en||!st||en===st)return psFail('Fill every field \u2014 entry and stop cannot be equal.');
+    const riskAmt=acct*rp/100, dist=Math.abs(en-st), qty=Math.floor(riskAmt/dist);
+    $('#ps-shares').textContent=qty.toLocaleString()+' shares';
+    $('#ps-detail').textContent=`Risking $${riskAmt.toFixed(0)} (${rp}%) \u00b7 $${dist.toFixed(2)} per share \u00b7 about $${(qty*en).toLocaleString(undefined,{maximumFractionDigits:0})} of stock` +
+      (qty*en>acct?` \u2014 note this exceeds your account, so it needs margin.`:'');
+  } else if(PS_MODE==='op'){
+    const acct=+$('#po-acct').value, rp=+$('#po-risk').value, prem=+$('#po-prem').value;
+    const useStop=$('#po-mode').value==='stop', stop=+$('#po-stop').value;
+    if(!acct||!rp||!prem)return psFail('Fill the account, the risk percentage and the premium.');
+    if(useStop&&(stop<0||stop>=prem))return psFail('The stop has to be below the premium you paid \u2014 otherwise there is no risk to size.');
+    const riskAmt=acct*rp/100;
+    const perShare=useStop?(prem-stop):prem;
+    const perContract=perShare*100;
+    const qty=Math.floor(riskAmt/perContract);
+    $('#ps-shares').textContent=qty.toLocaleString()+(qty===1?' contract':' contracts');
+    $('#ps-detail').textContent=`Risking $${riskAmt.toFixed(0)} (${rp}%) \u00b7 $${perContract.toFixed(0)} at risk per contract ($${perShare.toFixed(2)} \u00d7 100)` +
+      ` \u00b7 total premium outlay $${(qty*prem*100).toLocaleString(undefined,{maximumFractionDigits:0})}` +
+      (qty===0?` \u2014 zero contracts fit inside this risk. One contract alone would be ${((perContract/acct)*100).toFixed(1)}% of the account.`:'');
+  } else {
+    const acct=+$('#pf-acct').value, rp=+$('#pf-risk').value, en=+$('#pf-entry').value, st=+$('#pf-stop').value;
+    const pv=+($('#pf-sym').value||0);
+    const label=($('#pf-sym').selectedOptions[0]||{}).textContent||'';
+    if(!acct||!rp||!en||!st||en===st||!pv)return psFail('Fill every field \u2014 entry and stop cannot be equal.');
+    const riskAmt=acct*rp/100, pts=Math.abs(en-st), perContract=pts*pv, qty=Math.floor(riskAmt/perContract);
+    $('#ps-shares').textContent=qty.toLocaleString()+(qty===1?' contract':' contracts');
+    $('#ps-detail').textContent=`Risking $${riskAmt.toFixed(0)} (${rp}%) \u00b7 ${pts.toLocaleString()} point stop \u00d7 $${pv}/pt = $${perContract.toLocaleString(undefined,{maximumFractionDigits:0})} per contract` +
+      (qty===0?` \u2014 zero contracts fit. One would risk ${((perContract/acct)*100).toFixed(1)}% of the account; try the micro.`:'');
+  }
   res.classList.add('show');
 }
 /* expectancy */
@@ -1412,35 +1694,192 @@ function calcRR(){
   $('#rr-note').textContent=note; $('#rr-res').classList.add('show');
 }
 /* options payoff */
+/* ===================== SHARED BLACK-SCHOLES =====================
+   Zero rates, zero dividend. Every tool below shares these so a delta shown in
+   one place is the same delta shown in another. */
+function bsN(x){const s=x<0?-1:1;x=Math.abs(x)/Math.SQRT2;const t=1/(1+0.3275911*x);
+  const y=1-(((((1.061405429*t-1.453152027)*t)+1.421413741)*t-0.284496736)*t+0.254829592)*t*Math.exp(-x*x);
+  return 0.5*(1+s*y);}
+function bsn(x){return Math.exp(-x*x/2)/Math.sqrt(2*Math.PI);}
+function bsd1(S,K,v,T){return (Math.log(S/K)+0.5*v*v*T)/(v*Math.sqrt(T));}
+function bsPrice(S,K,v,T,isCall){
+  if(T<=0||v<=0)return Math.max(isCall?S-K:K-S,0);
+  const d1=bsd1(S,K,v,T),d2=d1-v*Math.sqrt(T);
+  return isCall? S*bsN(d1)-K*bsN(d2) : K*bsN(-d2)-S*bsN(-d1);}
+function bsDelta(S,K,v,T,isCall){if(T<=0||v<=0)return isCall?(S>K?1:0):(S<K?-1:0);
+  const d1=bsd1(S,K,v,T);return isCall?bsN(d1):bsN(d1)-1;}
+function bsGamma(S,K,v,T){if(T<=0||v<=0||S<=0)return 0;return bsn(bsd1(S,K,v,T))/(S*v*Math.sqrt(T));}
+function bsVega(S,K,v,T){if(T<=0||v<=0)return 0;return S*bsn(bsd1(S,K,v,T))*Math.sqrt(T)/100;}
+function bsTheta(S,K,v,T,isCall){if(T<=0||v<=0)return 0;
+  const d1=bsd1(S,K,v,T);return (-S*bsn(d1)*v/(2*Math.sqrt(T)))/365;}
+
+/* ===================== MULTI-LEG PAYOFF ===================== */
+let OP_LEGS=[];
+const OP_PRESETS={
+  lc:  S=>[[ 1,'c',r5(S),1]],
+  lp:  S=>[[ 1,'p',r5(S),1]],
+  sc:  S=>[[-1,'c',r5(S*1.03),1]],
+  sp:  S=>[[-1,'p',r5(S*0.97),1]],
+  cc:  S=>[[ 1,'s',0,100],[-1,'c',r5(S*1.04),1]],
+  bcs: S=>[[ 1,'c',r5(S),1],[-1,'c',r5(S*1.05),1]],
+  bps: S=>[[-1,'p',r5(S*0.97),1],[ 1,'p',r5(S*0.92),1]],
+  bes: S=>[[-1,'c',r5(S*1.03),1],[ 1,'c',r5(S*1.08),1]],
+  bps2:S=>[[ 1,'p',r5(S),1],[-1,'p',r5(S*0.95),1]],
+  strad:S=>[[1,'c',r5(S),1],[ 1,'p',r5(S),1]],
+  strang:S=>[[1,'c',r5(S*1.05),1],[1,'p',r5(S*0.95),1]],
+  ic:  S=>[[ 1,'p',r5(S*0.90),1],[-1,'p',r5(S*0.95),1],[-1,'c',r5(S*1.05),1],[ 1,'c',r5(S*1.10),1]],
+  fly: S=>[[ 1,'c',r5(S*0.95),1],[-1,'c',r5(S),2],[ 1,'c',r5(S*1.05),1]]
+};
+function r5(x){ return x>=400? Math.round(x/5)*5 : x>=80? Math.round(x) : Math.round(x*2)/2; }
+/* Default premiums from Black-Scholes at 20% IV / 30 DTE. A preset with blank
+   premiums draws a shape that is simply wrong (every spread looks free), and a
+   user with no quote to hand has no way to fix it. Rough but honest. */
+function estPrem(type,K,S){ if(type==='s')return 0; return Math.max(0.01,+bsPrice(S,K,0.20,30/365,type==='c').toFixed(2)); }
+
+function loadPreset(){
+  const p=$('#op-preset').value, S=+$('#op-spot').value||100;
+  if(p!=='custom'&&OP_PRESETS[p]){
+    OP_LEGS=OP_PRESETS[p](S).map(([sd,ty,K,q])=>({sd,ty,K,q,pr:estPrem(ty,K,S)}));
+  }
+  renderLegs(); drawPayoff();
+}
+function renderLegs(){
+  const el=$('#opLegs'); if(!el)return;
+  el.innerHTML=`<div class="leg-head"><span>Side</span><span>Type</span><span>Strike</span><span>Premium</span><span>Qty</span><span></span></div>`+
+  OP_LEGS.map((L,i)=>`<div class="leg">
+    <select onchange="editLeg(${i},'sd',+this.value)"><option value="1"${L.sd>0?' selected':''}>Long</option><option value="-1"${L.sd<0?' selected':''}>Short</option></select>
+    <select onchange="editLeg(${i},'ty',this.value)"><option value="c"${L.ty==='c'?' selected':''}>Call</option><option value="p"${L.ty==='p'?' selected':''}>Put</option><option value="s"${L.ty==='s'?' selected':''}>Stock</option></select>
+    <input type="number" step="0.5" value="${L.K}" ${L.ty==='s'?'disabled':''} oninput="editLeg(${i},'K',+this.value)">
+    <input type="number" step="0.05" value="${L.pr}" oninput="editLeg(${i},'pr',+this.value)">
+    <input type="number" step="1" min="1" value="${L.q}" oninput="editLeg(${i},'q',+this.value)">
+    <button class="leg-x" onclick="rmLeg(${i})" aria-label="Remove leg">×</button></div>`).join('')+
+  (OP_LEGS.length<4?`<button class="leg-add" onclick="addLeg()">+ add leg</button>`:'');
+}
+function editLeg(i,k,v){ OP_LEGS[i][k]=v; $('#op-preset').value='custom'; if(k==='ty'||k==='K')renderLegs(); drawPayoff(); }
+function addLeg(){ const S=+$('#op-spot').value||100; OP_LEGS.push({sd:1,ty:'c',K:r5(S),q:1,pr:estPrem('c',r5(S),S)}); $('#op-preset').value='custom'; renderLegs(); drawPayoff(); }
+function rmLeg(i){ OP_LEGS.splice(i,1); $('#op-preset').value='custom'; renderLegs(); drawPayoff(); }
+
+function opPay(S){
+  let v=0;
+  for(const L of OP_LEGS){
+    const mult=L.ty==='s'?1:100;
+    const intrinsic = L.ty==='s' ? S : L.ty==='c' ? Math.max(S-L.K,0) : Math.max(L.K-S,0);
+    const cost = L.ty==='s' ? (+$('#op-spot').value||0) : L.pr;
+    v += L.sd*(intrinsic-cost)*L.q*mult;
+  }
+  return v*Math.max(1,+$('#op-qty').value||1);
+}
 function drawPayoff(){
   const cv=$('#payoffCanvas'); if(!cv)return;
-  const ctx=cv.getContext('2d'), dpr=Math.min(devicePixelRatio||1,2), w=cv.clientWidth, h=cv.clientHeight;
-  cv.width=w*dpr; cv.height=h*dpr; ctx.setTransform(dpr,0,0,dpr,0,0); ctx.clearRect(0,0,w,h);
-  const type=$('#op-type').value, K=+$('#op-strike').value, prem=+$('#op-prem').value, qty=Math.max(1,+$('#op-qty').value||1), M=100*qty;
-  if(!K||prem<0){return;}
-  const lo=Math.max(0.01,K*0.55), hi=K*1.45, N=120;
-  function pay(S){ let v; if(type==='lc')v=Math.max(S-K,0)-prem; else if(type==='lp')v=Math.max(K-S,0)-prem; else if(type==='sc')v=prem-Math.max(S-K,0); else v=prem-Math.max(K-S,0); return v*M; }
-  let vals=[]; for(let i=0;i<=N;i++){ const S=lo+(hi-lo)*i/N; vals.push([S,pay(S)]); }
-  const ymax=Math.max(...vals.map(v=>v[1])), ymin=Math.min(...vals.map(v=>v[1])), pad=24;
-  const yr=(ymax-ymin)||1;
-  const X=S=>pad+(S-lo)/(hi-lo)*(w-2*pad), Y=v=>h-pad-((v-ymin)/yr)*(h-2*pad);
-  // zero line
-  ctx.strokeStyle='rgba(126,166,214,.25)'; ctx.setLineDash([3,4]); ctx.beginPath(); ctx.moveTo(pad,Y(0)); ctx.lineTo(w-pad,Y(0)); ctx.stroke(); ctx.setLineDash([]);
-  // strike marker
-  ctx.strokeStyle='rgba(245,185,66,.5)'; ctx.beginPath(); ctx.moveTo(X(K),pad); ctx.lineTo(X(K),h-pad); ctx.stroke();
-  // payoff line with green/red split at zero
-  for(let i=0;i<vals.length-1;i++){ const [s1,v1]=vals[i],[s2,v2]=vals[i+1]; ctx.strokeStyle=(v1+v2)/2>=0?GREEN:RED; ctx.lineWidth=2.4; ctx.beginPath(); ctx.moveTo(X(s1),Y(v1)); ctx.lineTo(X(s2),Y(v2)); ctx.stroke(); }
-  // labels
-  ctx.fillStyle=FAINT; ctx.font='10px "IBM Plex Mono"'; ctx.fillText('K '+K,X(K)+4,pad+10);
-  const be = (type==='lc'||type==='sc') ? K+prem : K-prem;
-  $('#op-be').textContent='$'+be.toFixed(2);
-  let mx;
-  if(type==='lc') mx=`+∞ / −$${(prem*M).toFixed(0)}`;
-  else if(type==='sc') mx=`+$${(prem*M).toFixed(0)} / −∞`;
-  else if(type==='lp') mx=`+$${((K-prem)*M).toFixed(0)} / −$${(prem*M).toFixed(0)}`;
-  else mx=`+$${(prem*M).toFixed(0)} / −$${((K-prem)*M).toFixed(0)}`;
-  $('#op-mx').textContent=mx;
+  if(!OP_LEGS.length){ loadPreset(); return; }
+  const ctx=cv.getContext('2d'),dpr=Math.min(devicePixelRatio||1,2),w=cv.clientWidth,hh=cv.clientHeight;
+  cv.width=w*dpr; cv.height=hh*dpr; ctx.setTransform(dpr,0,0,dpr,0,0); ctx.clearRect(0,0,w,hh);
+  const S0=+$('#op-spot').value||100;
+  const ks=OP_LEGS.filter(L=>L.ty!=='s').map(L=>L.K);
+  const lo=Math.max(0.01,Math.min(S0,...ks)*0.80), hi=Math.max(S0,...ks)*1.20, N=340;
+  const vals=[]; for(let i=0;i<=N;i++){const S=lo+(hi-lo)*i/N; vals.push([S,opPay(S)]);}
+  const ys=vals.map(v=>v[1]);
+  let ymax=Math.max(...ys),ymin=Math.min(...ys); const sp=(ymax-ymin)||1; ymax+=sp*0.1; ymin-=sp*0.1;
+  const pad=26,yr=(ymax-ymin)||1;
+  const X=S=>pad+(S-lo)/(hi-lo)*(w-2*pad), Y=v=>hh-pad-((v-ymin)/yr)*(hh-2*pad);
+  // profit / loss shading, so which side you are on is pre-attentive
+  ctx.beginPath(); ctx.moveTo(X(lo),Y(0));
+  vals.forEach(([S,v])=>ctx.lineTo(X(S),Y(Math.max(v,0)))); ctx.lineTo(X(hi),Y(0)); ctx.closePath();
+  ctx.fillStyle='rgba(52,211,153,.10)'; ctx.fill();
+  ctx.beginPath(); ctx.moveTo(X(lo),Y(0));
+  vals.forEach(([S,v])=>ctx.lineTo(X(S),Y(Math.min(v,0)))); ctx.lineTo(X(hi),Y(0)); ctx.closePath();
+  ctx.fillStyle='rgba(248,113,113,.09)'; ctx.fill();
+  ctx.strokeStyle='rgba(126,166,214,.28)'; ctx.setLineDash([3,4]);
+  ctx.beginPath(); ctx.moveTo(pad,Y(0)); ctx.lineTo(w-pad,Y(0)); ctx.stroke(); ctx.setLineDash([]);
+  ctx.strokeStyle='rgba(126,166,214,.45)'; ctx.beginPath(); ctx.moveTo(X(S0),pad); ctx.lineTo(X(S0),hh-pad); ctx.stroke();
+  ctx.fillStyle=FAINT; ctx.font='10px "IBM Plex Mono"'; ctx.fillText('spot '+S0,X(S0)+4,hh-pad-4);
+  [...new Set(ks)].forEach(K=>{ ctx.strokeStyle='rgba(245,185,66,.30)'; ctx.beginPath(); ctx.moveTo(X(K),pad); ctx.lineTo(X(K),hh-pad); ctx.stroke();
+    ctx.fillStyle='rgba(245,185,66,.75)'; ctx.fillText(String(K),X(K)+3,pad+10); });
+  for(let i=0;i<vals.length-1;i++){const[s1,v1]=vals[i],[s2,v2]=vals[i+1];
+    ctx.strokeStyle=(v1+v2)/2>=0?GREEN:RED; ctx.lineWidth=2.4;
+    ctx.beginPath(); ctx.moveTo(X(s1),Y(v1)); ctx.lineTo(X(s2),Y(v2)); ctx.stroke();}
+  // breakevens: sign changes, found numerically so any structure works
+  const bes=[];
+  for(let i=0;i<vals.length-1;i++){const[s1,v1]=vals[i],[s2,v2]=vals[i+1];
+    if((v1<0&&v2>=0)||(v1>0&&v2<=0)){const t=Math.abs(v1)/(Math.abs(v1)+Math.abs(v2));bes.push(s1+(s2-s1)*t);}}
+  bes.forEach(b=>{ctx.fillStyle=GREEN;ctx.beginPath();ctx.arc(X(b),Y(0),3.5,0,7);ctx.fill();});
+  $('#op-be').textContent=bes.length?bes.map(b=>'$'+b.toFixed(2)).join('  ·  '):'none in range';
+  const mxv=Math.max(...ys),mnv=Math.min(...ys);
+  const openUp=opPay(hi*3)>mxv+1, openDn=opPay(Math.max(0.01,lo/3))<mnv-1;
+  const capUp=opPay(hi*3), capDn=opPay(Math.max(0.01,lo/3));
+  $('#op-mx').textContent=(openUp||capUp>mxv+1?'+\u221e':'+$'+Math.max(mxv,capUp).toFixed(0))+' / '+
+                          (openDn||capDn<mnv-1?'\u2212\u221e':'\u2212$'+Math.abs(Math.min(mnv,capDn)).toFixed(0));
+  let net=0; OP_LEGS.forEach(L=>{ if(L.ty!=='s') net += L.sd*L.pr*L.q*100; });
+  net*=Math.max(1,+$('#op-qty').value||1);
+  $('#op-net').textContent=(net>0?'\u2212$'+net.toFixed(0)+' debit':net<0?'+$'+Math.abs(net).toFixed(0)+' credit':'$0');
 }
+
+/* ===================== GREEKS EXPLORER ===================== */
+let GK='delta';
+function setGreek(g,btn){GK=g;$$('#gkTabs button').forEach(b=>b.classList.remove('on'));btn.classList.add('on');drawGreeks();}
+const GK_SAY={
+  delta:'Delta is how many shares the option behaves like. Notice it is a slope, not a constant \u2014 the same contract is a different position after a 2% move. That drift is what gamma measures.',
+  gamma:'Gamma spikes at the money and collapses away from it, and the spike gets violent as expiry nears. This is why a 0DTE at-the-money option behaves nothing like the same strike a month out.',
+  theta:'Theta is worst exactly where gamma is best \u2014 at the money, near expiry. You are never paid for one without paying for the other; that trade-off is the whole options market in one picture.',
+  vega:'Vega is largest at the money and grows with time to expiry. A long-dated option is mostly a volatility position wearing a directional costume.'
+};
+function drawGreeks(){
+  const cv=$('#greekCanvas'); if(!cv)return;
+  const ctx=cv.getContext('2d'),dpr=Math.min(devicePixelRatio||1,2),w=cv.clientWidth,hh=cv.clientHeight;
+  cv.width=w*dpr; cv.height=hh*dpr; ctx.setTransform(dpr,0,0,dpr,0,0); ctx.clearRect(0,0,w,hh);
+  const isCall=$('#gk-type').value==='c', K=+$('#gk-k').value||100;
+  const dte=+$('#gk-dte').value||30, iv=(+$('#gk-iv').value||25)/100, T=dte/365;
+  const f={delta:(S,t)=>bsDelta(S,K,iv,t,isCall),gamma:(S,t)=>bsGamma(S,K,iv,t),
+           theta:(S,t)=>bsTheta(S,K,iv,t,isCall),vega:(S,t)=>bsVega(S,K,iv,t)}[GK];
+  const lo=K*0.7,hi=K*1.3,N=200,pad=30;
+  // three time slices, so the effect of time is visible not described
+  const slices=[[T,1],[Math.max(T/3,1/365),.45],[1/365,.2]];
+  let ymin=1e9,ymax=-1e9;
+  slices.forEach(([t])=>{for(let i=0;i<=N;i++){const S=lo+(hi-lo)*i/N,v=f(S,t);if(v<ymin)ymin=v;if(v>ymax)ymax=v;}});
+  const sp=(ymax-ymin)||1; ymax+=sp*.12; ymin-=sp*.12;
+  const X=S=>pad+(S-lo)/(hi-lo)*(w-2*pad), Y=v=>hh-pad-((v-ymin)/((ymax-ymin)||1))*(hh-2*pad);
+  if(ymin<0&&ymax>0){ctx.strokeStyle='rgba(126,166,214,.22)';ctx.setLineDash([3,4]);ctx.beginPath();ctx.moveTo(pad,Y(0));ctx.lineTo(w-pad,Y(0));ctx.stroke();ctx.setLineDash([]);}
+  ctx.strokeStyle='rgba(245,185,66,.4)';ctx.beginPath();ctx.moveTo(X(K),pad);ctx.lineTo(X(K),hh-pad);ctx.stroke();
+  ctx.fillStyle='rgba(245,185,66,.8)';ctx.font='10px "IBM Plex Mono"';ctx.fillText('strike',X(K)+4,pad+10);
+  slices.forEach(([t,a],si)=>{
+    ctx.strokeStyle=si===0?'rgba(45,212,191,1)':`rgba(45,212,191,${a})`;
+    ctx.lineWidth=si===0?2.6:1.4; if(si)ctx.setLineDash([4,4]);
+    ctx.beginPath();
+    for(let i=0;i<=N;i++){const S=lo+(hi-lo)*i/N,v=f(S,t);i?ctx.lineTo(X(S),Y(v)):ctx.moveTo(X(S),Y(v));}
+    ctx.stroke(); ctx.setLineDash([]);
+  });
+  ctx.fillStyle=FAINT;ctx.font='9.5px "IBM Plex Mono"';
+  ctx.fillText(dte+'d',w-pad-52,pad+10);
+  ctx.fillText(Math.max(1,Math.round(dte/3))+'d',w-pad-52,pad+23);
+  ctx.fillText('1d',w-pad-52,pad+36);
+  const atm=f(K,T);
+  $('#gk-atm').textContent=(GK==='theta'?'-$':'')+Math.abs(atm).toFixed(GK==='gamma'?4:GK==='delta'?3:2)+(GK==='theta'?' / day':GK==='vega'?' / vol pt':'');
+  $('#gk-say').textContent=GK_SAY[GK];
+}
+
+
+/* ===================== §1256 TAX SPLIT ===================== */
+function calcTax(){
+  const p=+$('#tx-pnl').value||0, ord=(+$('#tx-ord').value||0)/100, ltcg=(+$('#tx-ltcg').value||0)/100;
+  const secTax=p*ord;                        // SPY/QQQ options, stock: all short-term
+  const blend=0.6*ltcg+0.4*ord;              // 60/40 regardless of holding period
+  const s1256=p*blend;
+  const save=secTax-s1256;
+  $('#taxVs').innerHTML=[
+    ['SPY / QQQ / stock options','securities \u2014 100% short-term',secTax,ord,'no'],
+    ['SPX / XSP / futures','\u00a71256 \u2014 60% long-term, 40% short',s1256,blend,'ok']
+  ].map(([n,sub,t,r,cls])=>{
+    const pct=secTax>0?Math.max(6,t/secTax*100):0;
+    return `<div class="tv-row ${cls}"><div class="tv-top"><span class="tv-n">${n}</span><span class="tv-t">$${Math.round(t).toLocaleString()}</span></div>
+      <div class="tv-bar"><span style="width:${pct}%"></span></div>
+      <div class="tv-sub">${sub} \u00b7 effective ${(r*100).toFixed(1)}%</div></div>`;
+  }).join('');
+  $('#tx-save').textContent=(save>=0?'$':'\u2212$')+Math.abs(Math.round(save)).toLocaleString()+' kept';
+  $('#tx-note').textContent = p<=0
+    ? 'Enter a profit to compare. Losses have their own \u00a71256 advantage \u2014 they can be carried back three years against prior \u00a71256 gains, which securities losses cannot.'
+    : `That is ${((save/ (secTax||1))*100).toFixed(0)}% of the tax bill, for choosing a different ticker on the same trade. At the top bracket the blended \u00a71256 rate floors at 26.8% against 37% ordinary \u2014 a 10.2 point gap that no amount of chart reading will earn you.`;
+}
+
 /* expected move */
 function calcEM(){
   const price=+$('#em-price').value, iv=+$('#em-iv').value/100, dte=+$('#em-dte').value;
@@ -1449,6 +1888,16 @@ function calcEM(){
   $('#em-1sd').textContent='± $'+em.toFixed(2);
   $('#em-band').innerHTML=`1σ range <b style="color:var(--text)">${(price-em).toFixed(2)} – ${(price+em).toFixed(2)}</b> · 2σ (≈95%) ± $${(2*em).toFixed(2)} → ${(price-2*em).toFixed(2)} – ${(price+2*em).toFixed(2)}`;
   $('#em-res').classList.add('show');
+
+  /* Probability of touch. Under a driftless random walk the chance of trading
+     THROUGH a level at any point is about twice the chance of finishing beyond
+     it - the reflection principle. Roughly 32% of paths finish outside 1 sigma,
+     so roughly 64% touch it. This is the number a stop actually faces, and the
+     one almost nobody checks before placing one. */
+  var _pf=31.7, _pt=Math.min(99,_pf*2);
+  var _a=document.getElementById('em-pitm'), _b=document.getElementById('em-ptouch');
+  if(_a)_a.textContent=_pf.toFixed(0)+'%';
+  if(_b)_b.textContent=_pt.toFixed(0)+'%';
 }
 /* futures specs */
 function renderSpecs(){
@@ -1533,12 +1982,61 @@ function scoreValid(){
   $('#validOut').innerHTML=`<div class="score-big"><div class="sv" style="color:${col}">${score}/7</div><div class="sl" style="color:${col}">${label}</div></div><div class="fb-box">${fb}</div>`;
 }
 /* key levels */
+/* Tickers the page already carries live: the header scroller, the sector
+   basket, and the two broad ETFs the pulse board uses. Built from the existing
+   constants so the list can never drift out of sync with the rest of the site. */
+function klSymbols(){
+  const seen=new Set(), out=[];
+  const push=(s,n)=>{ if(s&&!seen.has(s)){seen.add(s);out.push([s,n]);} };
+  (typeof IDX!=='undefined'?IDX:[]).forEach(([s,n])=>push(s,n));
+  push('DIA','Dow 30');
+  (SECTORS||[]).forEach(x=>push(x.sym,x.name));
+  return out;
+}
+let KL_MANUAL=false;
+function klInit(){
+  const s=$('#kl-sym'); if(!s||s.options.length)return;
+  s.innerHTML='<option value="">\u2014 choose a ticker \u2014</option>'+
+    klSymbols().map(([sy,n])=>`<option value="${sy}">${sy} \u2014 ${n}</option>`).join('');
+}
+function klManual(){ KL_MANUAL=true; $('#kl-src').textContent='Using the numbers you entered by hand.'; }
+async function klPull(){
+  const sym=$('#kl-sym').value, src=$('#kl-src');
+  if(!sym){ src.textContent='Pick a ticker to pull its range.'; return; }
+  if(!mktKey()){ src.innerHTML='<span class="kl-warn">No Finnhub key set \u2014 add one in Market Pulse, or type the numbers in below.</span>'; return; }
+  src.textContent='Pulling '+sym+'\u2026';
+  try{
+    const q=await fhQuote(sym);
+    const H=+q.h, L=+q.l, C=+q.c;
+    if(!H||!L||!C||H<=0||L<=0){ src.innerHTML='<span class="kl-warn">'+sym+' returned no usable range right now. Try again after the open, or enter the numbers by hand.</span>'; return; }
+    KL_MANUAL=false;
+    $('#kl-h').value=H.toFixed(2); $('#kl-l').value=L.toFixed(2); $('#kl-c').value=C.toFixed(2);
+    const pc=+q.pc||0;
+    const chg=pc?((C-pc)/pc*100):0;
+    src.innerHTML=`<b>${sym}</b> \u00b7 H ${H.toFixed(2)} \u00b7 L ${L.toFixed(2)} \u00b7 last ${C.toFixed(2)}`+
+      (pc?` \u00b7 <span class="${chg>=0?'kl-up':'kl-dn'}">${chg>=0?'+':''}${chg.toFixed(2)}%</span> vs prior close`:'')+
+      `<span class="kl-live">live quote</span>`;
+    calcLevels();
+  }catch(e){
+    src.innerHTML='<span class="kl-warn">'+(e&&e.rate?'Finnhub rate limit hit (60/min on the free tier). Give it a moment.':e&&e.auth?'That Finnhub key was rejected.':'Could not reach the quote feed. Enter the numbers by hand below.')+'</span>';
+  }
+}
 function calcLevels(){
   const H=+$('#kl-h').value, L=+$('#kl-l').value, C=+$('#kl-c').value, out=$('#kl-out');
-  if(!H||!L||!C||H<L){out.innerHTML='<p class="err-note">Enter a valid high, low, and close (high must be above low).</p>';return;}
+  if(!H||!L||!C||H<L){out.innerHTML='<p class="err-note">Pick a ticker above, or enter a valid high, low and close by hand (high must be above low).</p>';return;}
   const P=(H+L+C)/3, range=H-L, R1=2*P-L, S1=2*P-H, R2=P+range, S2=P-range, R3=H+2*(P-L), S3=L-2*(H-P);
   const f=v=>v.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
-  out.innerHTML=`<table class="lev-table"><tr class="r"><td>R3 — extension</td><td>${f(R3)}</td></tr><tr class="r"><td>R2 — outer resistance</td><td>${f(R2)}</td></tr><tr class="r"><td>R1 — first resistance</td><td>${f(R1)}</td></tr><tr class="p"><td>Pivot</td><td>${f(P)}</td></tr><tr class="s"><td>S1 — first support</td><td>${f(S1)}</td></tr><tr class="s"><td>S2 — outer support</td><td>${f(S2)}</td></tr><tr class="s"><td>S3 — extension</td><td>${f(S3)}</td></tr><tr><td>Prior range</td><td>${f(range)} (${(range/C*100).toFixed(2)}% of close)</td></tr></table>`;
+  /* Mark where price currently sits in the map. A pivot table without "you are
+     here" makes the reader do the comparison themselves, every time. */
+  const rows=[['R3 \u2014 extension',R3,'r'],['R2 \u2014 outer resistance',R2,'r'],['R1 \u2014 first resistance',R1,'r'],
+              ['Pivot',P,'p'],['S1 \u2014 first support',S1,'s'],['S2 \u2014 outer support',S2,'s'],['S3 \u2014 extension',S3,'s']];
+  let here=-1;
+  for(let i=0;i<rows.length;i++){ if(C>=rows[i][1]){here=i;break;} }
+  out.innerHTML='<table class="lev-table">'+rows.map(([n,v,c],i)=>
+      (i===here?`<tr class="kl-here"><td colspan="2">price here \u00b7 ${f(C)}</td></tr>`:'')+
+      `<tr class="${c}"><td>${n}</td><td>${f(v)}</td></tr>`).join('')+
+    (here===-1?`<tr class="kl-here"><td colspan="2">price here \u00b7 ${f(C)} \u2014 below every level</td></tr>`:'')+
+    `<tr><td>Range used</td><td>${f(range)} (${(range/C*100).toFixed(2)}% of last)</td></tr></table>`;
 }
 /* crypto */
 async function loadCrypto(){
@@ -1756,21 +2254,114 @@ function openPattern(i){
 renderPatterns();
 
 /* ===== ENCYCLOPEDIA ===== */
-let encFilter='all', encQuery='';
+/* Opens on the path, not the index. 79 unsorted cards is a wall - the first
+   question a newcomer has is "where do I start", and a filter row full of topic
+   names cannot answer it. */
+let encFilter='lvl1', encQuery='';
 const ENC_CATLABEL=Object.fromEntries(ENC_CATS);
-$('#encFilters').innerHTML=ENC_CATS.map(([k,l])=>`<button data-f="${k}" class="${k==='all'?'on':''}" onclick="setEncFilter('${k}',this)">${l}</button>`).join('');
+const ENC_PATH=T.ENC_PATH||{}, ENC_PATH_INTRO=T.ENC_PATH_INTRO||{};
+const ENC_BY_TITLE=Object.fromEntries(ENC.map((e,i)=>[e.t,i]));
+const isPath=k=>!!ENC_PATH[k];
+/* every term that appears on any level, so cards can carry their level badge
+   in topic and Everything views too */
+const ENC_LEVEL_OF={};
+Object.keys(ENC_PATH).forEach(k=>ENC_PATH[k].forEach(t=>{ if(!ENC_LEVEL_OF[t])ENC_LEVEL_OF[t]=k; }));
+const LVL_DOT={lvl1:'\u25cf',lvl2:'\u25cf\u25cf',lvl3:'\u25cf\u25cf\u25cf'};
+const LVL_NAME={lvl1:'start here',lvl2:'building',lvl3:'advanced'};
+
+$('#encFilters').innerHTML=ENC_CATS.map(([k,l])=>
+  `<button data-f="${k}" class="${k===encFilter?'on':''}${isPath(k)?' pathtab':''}" onclick="setEncFilter('${k}',this)">${l}</button>`
+).join('');
 function setEncFilter(k,btn){encFilter=k;$$('#encFilters button').forEach(b=>b.classList.remove('on'));btn.classList.add('on');renderEnc();}
-$('#encSearch').addEventListener('input',e=>{encQuery=e.target.value.toLowerCase();renderEnc();});
-function encMatch(e){ if(encFilter!=='all'&&e.cat!==encFilter)return false; if(!encQuery)return true; return (e.t+' '+e.def+' '+(e.tag||'')).toLowerCase().includes(encQuery); }
+$('#encSearch').addEventListener('input',e=>{
+  encQuery=e.target.value.toLowerCase();
+  /* typing a search on a path tab silently hides matches that are not on that
+     path, which reads as a broken search. Searching means "find it anywhere". */
+  if(encQuery&&isPath(encFilter)){
+    encFilter='all';
+    $$('#encFilters button').forEach(b=>b.classList.toggle('on',b.dataset.f==='all'));
+  }
+  renderEnc();
+});
+
+function encSearchHit(e){ return !encQuery || (e.t+' '+e.def+' '+(e.tag||'')).toLowerCase().includes(encQuery); }
+
+function encList(){
+  if(isPath(encFilter)){
+    // path order IS the reading order — never re-sort it alphabetically
+    return ENC_PATH[encFilter].map(t=>ENC[ENC_BY_TITLE[t]]).filter(Boolean).filter(encSearchHit);
+  }
+  return ENC.filter(e=>(encFilter==='all'||e.cat===encFilter)&&encSearchHit(e));
+}
+
 function renderEnc(){
-  const list=ENC.filter(encMatch);
-  $('#encGrid').innerHTML=list.map(e=>{ const idx=ENC.indexOf(e); return `<button class="enc-card" onclick="openEnc(${idx})"><span class="etag">${ENC_CATLABEL[e.cat]||e.cat} · ${e.tag||''}</span><span class="et">${e.t}</span><span class="ed">${e.def}</span><span class="emore">Read more →</span></button>`; }).join('') || `<p class="mnote" style="grid-column:1/-1">No entries match “${encQuery}”. Try a broader term.</p>`;
-  $('#encCount').textContent=`${list.length} of ${ENC.length} entries shown`;
+  const list=encList(), path=isPath(encFilter);
+  const intro=$('#encIntro');
+  if(path&&ENC_PATH_INTRO[encFilter]){
+    const [ttl,txt]=ENC_PATH_INTRO[encFilter];
+    const done=encProgress(encFilter);
+    intro.className='enc-intro '+encFilter;
+    intro.innerHTML=`<div class="ei-head"><span class="ei-dots">${LVL_DOT[encFilter]}</span>
+        <span class="ei-t">${ttl}</span>
+        <span class="ei-n">${list.length} terms, in order</span></div>
+      <p class="ei-x">${txt}</p>
+      <div class="ei-bar" role="progressbar" aria-valuenow="${done}" aria-valuemin="0" aria-valuemax="${ENC_PATH[encFilter].length}">
+        <span style="width:${(done/ENC_PATH[encFilter].length*100).toFixed(1)}%"></span></div>
+      <div class="ei-p">${done} of ${ENC_PATH[encFilter].length} opened${done?` · <button class="ei-reset" onclick="encResetProgress('${encFilter}')">reset</button>`:''}</div>`;
+    intro.hidden=false;
+  } else intro.hidden=true;
+
+  const seen=encSeen();
+  $('#encGrid').innerHTML=list.map((e,i)=>{
+    const idx=ENC.indexOf(e);
+    const lv=ENC_LEVEL_OF[e.t];
+    const read=seen[e.t]?' read':'';
+    return `<button class="enc-card${read}${path?' pathcard':''}" onclick="openEnc(${idx})">
+      ${path?`<span class="estep">${String(i+1).padStart(2,'0')}</span>`:''}
+      <span class="etag">${path?(ENC_CATLABEL[e.cat]||e.cat):`${lv?`<i class="elv ${lv}">${LVL_DOT[lv]}</i> `:''}${ENC_CATLABEL[e.cat]||e.cat}`} · ${e.tag||''}</span>
+      <span class="et">${e.t}</span>
+      <span class="ed">${e.def}</span>
+      <span class="emore">${seen[e.t]?'Read again':'Read more'} →</span></button>`;
+  }).join('') || `<p class="mnote" style="grid-column:1/-1">No entries match “${encQuery}”. Try a broader term.</p>`;
+  $('#encCount').textContent = path
+    ? `${list.length} on this level · ${ENC.length} total in the encyclopedia`
+    : `${list.length} of ${ENC.length} entries shown`;
+}
+
+/* Which entries you have opened, so the path shows progress instead of looking
+   identical on visit five as on visit one. Local only, never sent anywhere. */
+function encSeen(){ try{ return JSON.parse(localStorage.getItem('tdesk_enc_seen')||'{}'); }catch(e){ return {}; } }
+function encMark(t){ try{ const s=encSeen(); s[t]=1; localStorage.setItem('tdesk_enc_seen',JSON.stringify(s)); }catch(e){} }
+function encProgress(k){ const s=encSeen(); return (ENC_PATH[k]||[]).filter(t=>s[t]).length; }
+function encResetProgress(k){
+  try{ const s=encSeen(); (ENC_PATH[k]||[]).forEach(t=>delete s[t]); localStorage.setItem('tdesk_enc_seen',JSON.stringify(s)); }catch(e){}
+  renderEnc();
 }
 function openEnc(i){
   const e=ENC[i];
   $('#enc-bar').textContent='ENCYCLOPEDIA // '+e.t.toUpperCase();
-  $('#encBody').innerHTML=`<h3>${e.t}</h3><div class="pd-meta"><span style="color:var(--gold);border-color:var(--gold)">${ENC_CATLABEL[e.cat]||e.cat}</span><span>${e.tag||''}</span></div><div class="enc-row"><span class="k">What it is</span><span class="v">${e.def}</span></div><div class="enc-row"><span class="k">Why it matters</span><span class="v">${e.why}</span></div><div class="enc-row"><span class="k">The catch</span><span class="v"><b>${e.watch}</b></span></div>`;
+  const lv=ENC_LEVEL_OF[e.t];
+  /* Next-on-the-path link. Reading one term and being dropped back into a grid
+     is where a reading path stops being a path. */
+  let nextHtml='';
+  const pk=isPath(encFilter)?encFilter:lv;
+  if(pk&&ENC_PATH[pk]){
+    const arr=ENC_PATH[pk], at=arr.indexOf(e.t);
+    if(at>-1&&at<arr.length-1){
+      const nt=arr[at+1];
+      nextHtml=`<button class="enc-next" onclick="openEnc(${ENC_BY_TITLE[nt]})">
+        <span class="en-k">Next in ${LVL_NAME[pk]} · ${String(at+2).padStart(2,'0')} of ${String(arr.length).padStart(2,'0')}</span>
+        <span class="en-t">${nt} →</span></button>`;
+    } else if(at===arr.length-1){
+      const nk=pk==='lvl1'?'lvl2':pk==='lvl2'?'lvl3':null;
+      nextHtml=nk
+        ? `<button class="enc-next" onclick="closeModal('m-enc');setEncFilter('${nk}',document.querySelector('#encFilters [data-f=&quot;${nk}&quot;]'));document.getElementById('encyclopedia').scrollIntoView({behavior:'smooth'})">
+             <span class="en-k">Level complete</span><span class="en-t">Start ${LVL_NAME[nk]} →</span></button>`
+        : `<button class="enc-next" onclick="closeModal('m-enc')"><span class="en-k">That is the whole path</span><span class="en-t">Back to the encyclopedia →</span></button>`;
+    }
+  }
+  $('#encBody').innerHTML=`<h3>${e.t}</h3><div class="pd-meta">${lv?`<span class="elv ${lv}" style="border-color:currentColor">${LVL_DOT[lv]} ${LVL_NAME[lv]}</span>`:''}<span style="color:var(--gold);border-color:var(--gold)">${ENC_CATLABEL[e.cat]||e.cat}</span><span>${e.tag||''}</span></div><div class="enc-row"><span class="k">What it is</span><span class="v">${e.def}</span></div><div class="enc-row"><span class="k">Why it matters</span><span class="v">${e.why}</span></div><div class="enc-row"><span class="k">The catch</span><span class="v"><b>${e.watch}</b></span></div>${nextHtml}`;
+  encMark(e.t);
   openModal('m-enc');
 }
 renderEnc();
@@ -2073,9 +2664,69 @@ $('#truthGrid').innerHTML=STRAT_TRUTHS.map(t=>
   `<div class="truth"><div class="tth">${esc(t[0])}</div><p>${esc(t[1])}</p><div class="tk">${esc(t[2])}</div></div>`
 ).join('');
 
+/* ===== the wire, in the command center =====
+   Cached in sessionStorage so switching pages doesn't re-spend a Finnhub call
+   (free tier is 60/min shared with quotes, the heatmap and earnings). */
+let WIRE=[], wireOpen=false;
+const WIRE_SHOW=3, WIRE_MAX=12;
+
+function wireRow(x){
+  const t=new Date((x.datetime||0)*1000);
+  const src=esc(x.source||'wire');
+  return `<a class="wrow" href="${esc(x.url)}" target="_blank" rel="noopener">
+    <span class="wr-h">${esc(x.headline)}</span>
+    <span class="wr-m"><span class="wr-s">${src}</span>${x.datetime?'<span class="wr-t">'+timeAgo(t)+'</span>':''}</span></a>`;
+}
+function paintWireStrip(){
+  const el=$('#wireStrip'), btn=$('#wireMore');
+  if(!el)return;
+  if(!WIRE.length){
+    el.innerHTML='<p class="wire-empty">No headlines available right now.</p>';
+    if(btn)btn.hidden=true; return;
+  }
+  const n=wireOpen?Math.min(WIRE.length,WIRE_MAX):WIRE_SHOW;
+  el.innerHTML=WIRE.slice(0,n).map(wireRow).join('');
+  el.style.setProperty('--wrows',n);
+  if(btn){
+    btn.hidden=WIRE.length<=WIRE_SHOW;
+    btn.setAttribute('aria-expanded',wireOpen?'true':'false');
+    btn.innerHTML=(wireOpen?'Show fewer':'Show more headlines')+' <span class="wm-c">'+(wireOpen?'\u25b4':'\u25be')+'</span>';
+  }
+  const st=$('#wireStamp');
+  if(st&&WIRE[0]&&WIRE[0].datetime)st.textContent=timeAgo(new Date(WIRE[0].datetime*1000));
+}
+function toggleWireStrip(){ wireOpen=!wireOpen; paintWireStrip(); }
+
+async function loadWireStrip(force){
+  const el=$('#wireStrip'); if(!el)return;
+  const key=mktKey();
+  if(!key){ el.innerHTML='<p class="wire-empty">Add a free Finnhub key in Market Pulse to switch the wire on.</p>'; const b=$('#wireMore'); if(b)b.hidden=true; return; }
+  if(!force){
+    try{
+      const c=JSON.parse(sessionStorage.getItem('tdesk_wire')||'null');
+      if(c&&Date.now()-c.t<300000&&c.d&&c.d.length){ WIRE=c.d; paintWireStrip(); return; }
+    }catch(e){}
+  }
+  try{
+    const r=await fetch(`https://finnhub.io/api/v1/news?category=general&token=${encodeURIComponent(key)}`);
+    if(!r.ok)throw new Error('bad');
+    const d=await r.json();
+    WIRE=(Array.isArray(d)?d:[]).filter(x=>x&&x.headline&&x.url).slice(0,WIRE_MAX);
+    try{sessionStorage.setItem('tdesk_wire',JSON.stringify({t:Date.now(),d:WIRE}));}catch(e){}
+    paintWireStrip();
+    const wl=$('#wireLive');
+    if(wl&&WIRE[0]){ const hh=esc(WIRE[0].headline); wl.innerHTML=`<span><span class="lg">${esc(WIRE[0].source||'wire')}</span> <b>${hh.length>44?hh.slice(0,44)+'\u2026':hh}</b></span>`; }
+  }catch(e){
+    el.innerHTML='<p class="wire-empty">The wire is unreachable right now \u2014 it retries on its own.</p>';
+    const b=$('#wireMore'); if(b)b.hidden=true;
+  }
+}
+
 /* ===== boot ===== */
 route();
 loadIdx(); loadHeatmap(); loadEarnWeek();
+loadWireStrip();
+setInterval(()=>loadWireStrip(true),300000);
 setInterval(loadIdx,60000);
 setInterval(loadHeatmap,60000);
 </script>
