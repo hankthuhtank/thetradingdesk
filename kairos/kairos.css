@@ -5,7 +5,10 @@
 :root{--bg:#07080d;--panel:#0d1017;--panel2:#12151e;--border:#1d2330;--text:#e9edf5;--muted:#6d7688;--cyan:#22d3ee;--pika:#f2c14e;--gold:#f2c14e;--barney:#a855f7;--green:#34d399;--red:#f87171;--teal:#2dd4bf}
 *{box-sizing:border-box;margin:0;padding:0}body{font-family:Inter,system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
 .mono{font-family:'JetBrains Mono',monospace}
-header{display:flex;align-items:center;justify-content:space-between;padding:9px 16px;background:linear-gradient(180deg,#0b0d14,#090b10);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:50}
+/* user-select:none kills the text caret that appeared when clicking the empty
+   space past the last nav button. Chrome will place a caret in any selectable
+   text container it considers clickable; the header is chrome, not content. */
+header{-webkit-user-select:none;user-select:none;display:flex;align-items:center;justify-content:space-between;padding:9px 16px;background:linear-gradient(180deg,#0b0d14,#090b10);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:50}
 .logo{font-weight:700;font-size:1.02rem;letter-spacing:.34em;display:flex;align-items:center;gap:10px;text-transform:uppercase}
 .logo span{color:var(--gold);text-shadow:0 0 16px #f2c14e55;font-size:.85rem}
 header{gap:10px}
@@ -247,9 +250,14 @@ footer{text-align:center;padding:12px;font-size:.65rem;color:#3f4656;border-top:
      the PAGE scrolled instead. centerIn() bails when scrollHeight <= clientHeight,
      so the centre-on-spot logic silently did nothing on mobile and you had to
      hunt for spot by hand. Giving the ladder a real height restores it. */
-  .panel.single-mode{height:calc(100vh - 200px);max-height:none;min-height:340px}
+  .panel.single-mode{height:calc(100vh - 148px);max-height:none;min-height:380px}
   .panel.single-mode .strikes{flex:1 1 auto;min-height:0;overflow-y:auto}
-  .panel.single-mode .sgrid-wrap{max-height:46vh;overflow:auto}
+  /* the grid was leaving dead space under it - let it take the room it has */
+  .panel.single-mode .sgrid-wrap{max-height:none;flex:1 1 auto;min-height:0;overflow:auto}
+  /* squeeze the strike column so more expiry columns fit */
+  .sgrid th.sk,.sgrid td.sk{width:40px;min-width:40px;max-width:40px;font-size:.6rem;padding:2px 3px}
+  .sgrid th,.sgrid td{padding:2px 3px;font-size:.58rem;letter-spacing:-.02em}
+  .sgrid th{white-space:nowrap}
   .panel{height:auto;min-height:0;max-height:70vh}
   /* A flex child defaults to min-height:auto, so .strikes grew to full content
      height instead of scrolling — the panel just clipped it. With min-height:0

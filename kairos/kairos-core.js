@@ -999,7 +999,12 @@ function renderTrinity(){
         return v>=0?`background:rgba(45,212,191,${a.toFixed(2)})`:`background:rgba(147,51,234,${a.toFixed(2)})`;
       };
       const kcls=kingCls();
-      let h='<table class="sgrid"><thead><tr><th class="sk">Strike</th>'+m.dates.map(e2=>`<th>${e2}</th>`).join('')+'</tr></thead><tbody>';
+      /* Mobile trades the ISO date for dd-mm-yy. A 2026-08-21 header forces the
+         column to ~78px; 21-08-26 fits in ~52px, and across eight expiries that
+         is a whole extra column on screen. */
+      const _nw=window.matchMedia?window.matchMedia('(max-width:760px)').matches:false;
+      const _dl=e2=>{const p=String(e2).split('-');return(_nw&&p.length===3)?(p[2]+'-'+p[1]+'-'+p[0].slice(2)):e2;};
+      let h='<table class="sgrid"><thead><tr><th class="sk">'+(_nw?'K':'Strike')+'</th>'+m.dates.map(e2=>`<th>${_dl(e2)}</th>`).join('')+'</tr></thead><tbody>';
       ladder.forEach(k=>{
         const rowSum=m.dates.reduce((a,e2)=>a+(cell[e2][k]||0),0);
         const dlR=deltaOf(sym,k,rowSum,gMax);
@@ -2205,10 +2210,18 @@ async function warmPaintInner(){
   }catch(e){}
   try{
     const bs=await window.KairosBackend.bootstrap();
-    /* Cache the ANALYSIS ONLY. Storing the full bootstrap (every ladder for
-       every symbol) routinely blew the ~5MB per-origin localStorage quota; the
-       throw was swallowed, so the cache silently never wrote at all. */
-    try{localStorage.setItem('kairos_bs_v1',JSON.stringify({t:Date.now(),bs:{ai:bs&&bs.ai,plays:bs&&bs.plays,aiError:bs&&bs.aiError}}));}catch(e){}
+    /* Cache the WHOLE bootstrap, ladders included.
+       I previously trimmed this to the analysis slice on a quota theory I never
+       measured - and the ladders are what applyBootstrap paints instantly. With
+       them gone there was nothing to warm-paint, so every start waited on the
+       network and behaved like a cold load. The ladders are ~90 nodes x 13
+       symbols, roughly 30KB: never the problem. The plays HTML is the only bulky
+       field, so if the write genuinely does hit the quota we retry without it
+       rather than losing the instant paint. */
+    try{localStorage.setItem('kairos_bs_v1',JSON.stringify({t:Date.now(),bs}));}
+    catch(e){
+      try{localStorage.setItem('kairos_bs_v1',JSON.stringify({t:Date.now(),bs:{ai:bs&&bs.ai,ladders:bs&&bs.ladders,aiError:bs&&bs.aiError}}));}catch(e2){}
+    }
     applyBootstrap(bs);
     await serverChains();
     if(Object.keys(state.data).length||Object.keys(state.warmData).length)return;
@@ -2263,6 +2276,9 @@ async function novaHeartbeat(){
       if(prev!==bs.plays.t&&state.view==='ideas'&&typeof renderCards==='function'){try{renderCards();}catch(e){}}
     }
     if(bs.aiError)state._aiErr=bs.aiError;
+    /* Keep the warm-paint cache current, so the NEXT cold start paints recent
+       ladders instead of whatever was there when the tab first opened. */
+    try{localStorage.setItem('kairos_bs_v1',JSON.stringify({t:Date.now(),bs}));}catch(e){}
   }catch(e){
     state._bsFail=(state._bsFail||0)+1;
     if(state._bsFail===3)console.warn('Kairos: /bootstrap unreachable 3x — check that the Worker origin is not being blocked by a shield or extension.');
@@ -2291,23 +2307,6 @@ async function pushRoster(){
 }
 window.pushRoster=pushRoster;
 setTimeout(pushRoster,4000);
-/* Deterministic jump-to-spot. Auto-centring races iOS layout and loses often
-   enough that hunting for spot by hand became the norm on mobile. One tap. */
-(function(){
-  const bar=document.getElementById('juncTabs');
-  if(!bar)return;
-  bar.addEventListener('click',function(e){
-    const b=e.target.closest('button[data-spot]');
-    if(!b)return;
-    e.stopPropagation();
-    const w=document.querySelector('#trinity .panel.single-mode .strikes')
-         ||document.querySelector('#trinity .strikes');
-    if(!w)return;
-    const t=w.querySelector('.spotrow')||w.querySelector('.kingrow')
-         ||nearestRow(w,'tbody tr,.srow','.sk',(state.multi[state.focus]||{}).spot);
-    if(t)centerIn(w,t);
-  });
-})();
 setInterval(pushRoster,300000);
 
 /* ── Pantheon settings wiring ── */

@@ -7,7 +7,7 @@
 <title>Kairos</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='0.9em' font-size='90' fill='%23f2c14e'%3E%E2%97%86%3C/text%3E%3C/svg%3E">
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="kairos.css?v=6.6.0">
+<link rel="stylesheet" href="kairos.css?v=6.7.0">
 </head>
 <body>
 <datalist id="tickerList"></datalist>
@@ -43,7 +43,7 @@
 </div>
 <main>
   <div id="presetBar" class="hidden"></div>
-  <div id="trinityWrap"><div id="juncTabs" class="mtoggle hidden" style="margin:0 0 8px"><button data-j="ladder" class="on">Ladder</button><button data-j="regime" data-tip="Session flow and the premium tape, side by side — where the money went and which way it is pressing.">Regime</button><button data-j="vix" data-tip="Everything VIX: term structure, vol regime, the VIX options GEX ladder, and daily pivots.">VIX Desk</button><button data-spot="1" data-tip="Jump the ladder back to spot. Auto-centring can lose the race against iOS layout; this never does.">⌖ Spot</button></div><div id="novaJunction" class="nova hidden"></div><div class="trinity" id="trinity"></div><div id="juncRegime" class="hidden">
+  <div id="trinityWrap"><div id="juncTabs" class="mtoggle hidden" style="margin:0 0 8px"><button data-j="ladder" class="on">Ladder</button><button data-j="regime" data-tip="Session flow and the premium tape, side by side — where the money went and which way it is pressing.">Regime</button><button data-j="vix" data-tip="Everything VIX: term structure, vol regime, the VIX options GEX ladder, and daily pivots.">VIX Desk</button></div><div id="novaJunction" class="nova hidden"></div><div class="trinity" id="trinity"></div><div id="juncRegime" class="hidden">
       <div id="flowConsole" class="flowcon"></div>
       <div class="reg-split">
         <div class="reg-col">
@@ -210,7 +210,7 @@
 
 <div class="settings" id="settings">
   <h3 style="margin-bottom:14px">Settings</h3>
-  <div class="fg" style="opacity:.7"><label>Build</label><div style="font-family:'JetBrains Mono';font-size:.72rem;color:var(--teal)">v6.6.0</div></div>
+  <div class="fg" style="opacity:.7"><label>Build</label><div style="font-family:'JetBrains Mono';font-size:.72rem;color:var(--teal)">v6.7.0</div></div>
   <input type="password" id="tok" style="display:none" autocomplete="off">
   <div class="fg"><label>Refresh every (seconds)</label><input type="text" id="poll" value="10" style="width:80px" data-tip="10 is the floor. Scheduled polls only tick live quotes (1 batched request) — chains re-pull every ~90s — well under Tradier's 120 req/min limit."></div>
   <div class="fg"><label>Map shows</label><select id="sizeBasis" style="width:100%"><option value="oi">Standing positions — open interest, updates daily</option><option value="vol">Today's flow — volume traded so far this session</option></select></div>
@@ -220,10 +220,10 @@
 </div>
 <footer>Kairos · Aether · Mythos · Nexus · All Powered by Tradier Live · Structure is context, not a signal</footer>
 
-<script src="kairos-core.js?v=6.6.0"></script>
-<script src="kairos-backend.js?v=6.6.0"></script>
-<script src="kairos-quant.js?v=6.6.0"></script>
-<script src="kairos-modules.js?v=6.6.0"></script>
-<script src="kairos-mythos.js?v=6.6.0"></script>
+<script src="kairos-core.js?v=6.7.0"></script>
+<script src="kairos-backend.js?v=6.7.0"></script>
+<script src="kairos-quant.js?v=6.7.0"></script>
+<script src="kairos-modules.js?v=6.7.0"></script>
+<script src="kairos-mythos.js?v=6.7.0"></script>
 </body>
 </html>
