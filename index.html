@@ -892,6 +892,7 @@ body.paged .section{padding-top:40px}
         <a class="btn btn-primary" href="#terminal">Open the terminal</a>
         <a class="btn btn-ghost" href="#tools" onclick="showPage('tools');return false;">Browse the toolkit</a>
         <a class="btn btn-ghost" href="#encyclopedia" onclick="showPage('encyclopedia');return false;">Open the encyclopedia</a>
+        <a class="btn btn-ghost" href="#patterns" onclick="showPage('patterns');return false;">Learn candlesticks</a>
       </div>
     </div>
     <div class="command reveal" aria-label="Live market command center">
@@ -1055,7 +1056,7 @@ body.paged .section{padding-top:40px}
 
         <div class="cp-anat">
           <div class="cp-stage">
-            <svg id="anatSVG" viewBox="0 0 300 260" aria-label="Anatomy of a candlestick"></svg>
+            <svg id="anatSVG" viewBox="0 0 344 250" aria-label="Anatomy of a candlestick"></svg>
           </div>
           <div class="cp-ctl">
             <div class="cp-presets" id="anatPresets"></div>
@@ -2359,27 +2360,48 @@ function anatRead(k){
 }
 function drawAnat(){
   const sv=$('#anatSVG'); if(!sv)return;
-  const k=anGet(), W=300,H=260,pad=26;
+  const k=anGet(), W=344,H=250,pad=24;
   const y=v=>H-pad-(v/100)*(H-2*pad);
   const col=k.c>k.o?GREEN:k.c<k.o?RED:CYAN;
-  const cx=104, cw=46;
+  const cx=76, cw=40, LX=170;
   const bt=Math.min(y(k.o),y(k.c)), bh=Math.max(3,Math.abs(y(k.c)-y(k.o)));
-  const lbl=(yy,tx,val)=>`<line x1="${cx+cw/2+6}" y1="${yy}" x2="216" y2="${yy}" stroke="rgba(126,166,214,.28)" stroke-width="1" stroke-dasharray="3 3"/>
-    <text x="222" y="${yy+3.5}" fill="#7ea6d6" font-family="IBM Plex Mono,monospace" font-size="10.5">${tx}</text>`;
   let s='';
-  // wick + body, same visual language as the library thumbnails
   s+=`<line x1="${cx}" y1="${y(k.hi)}" x2="${cx}" y2="${y(k.lo)}" stroke="${col}" stroke-width="2.4"/>`;
   s+=`<rect x="${cx-cw/2}" y="${bt}" width="${cw}" height="${bh}" fill="${col}" rx="2"/>`;
-  // body + wick brackets
-  s+=`<line x1="${cx-cw/2-13}" y1="${bt}" x2="${cx-cw/2-13}" y2="${bt+bh}" stroke="${col}" stroke-width="2" opacity=".55"/>
-      <text x="${cx-cw/2-19}" y="${bt+bh/2+3.5}" fill="${col}" opacity=".9" text-anchor="end" font-family="IBM Plex Mono,monospace" font-size="10.5">body</text>`;
-  if(y(k.hi)<bt-4){ s+=`<text x="${cx-cw/2-19}" y="${(y(k.hi)+bt)/2+3.5}" fill="#7ea6d6" text-anchor="end" font-family="IBM Plex Mono,monospace" font-size="10">wick</text>`; }
-  if(y(k.lo)>bt+bh+4){ s+=`<text x="${cx-cw/2-19}" y="${(y(k.lo)+bt+bh)/2+3.5}" fill="#7ea6d6" text-anchor="end" font-family="IBM Plex Mono,monospace" font-size="10">wick</text>`; }
-  s+=lbl(y(k.hi),'HIGH \u2014 furthest up it traded');
-  s+=lbl(y(k.lo),'LOW \u2014 furthest down it traded');
-  s+=lbl(y(k.o),'OPEN');
-  s+=lbl(y(k.c),'CLOSE');
-  sv.innerHTML=s;
+  s+=`<line x1="${cx-cw/2-12}" y1="${bt}" x2="${cx-cw/2-12}" y2="${bt+bh}" stroke="${col}" stroke-width="2" opacity=".55"/>
+      <text x="${cx-cw/2-18}" y="${bt+bh/2+3.5}" fill="${col}" opacity=".9" text-anchor="end" font-family="IBM Plex Mono,monospace" font-size="10.5">body</text>`;
+  if(y(k.hi)<bt-9)s+=`<text x="${cx-cw/2-18}" y="${(y(k.hi)+bt)/2+3.5}" fill="#7ea6d6" text-anchor="end" font-family="IBM Plex Mono,monospace" font-size="10">wick</text>`;
+  if(y(k.lo)>bt+bh+9)s+=`<text x="${cx-cw/2-18}" y="${(y(k.lo)+bt+bh)/2+3.5}" fill="#7ea6d6" text-anchor="end" font-family="IBM Plex Mono,monospace" font-size="10">wick</text>`;
+
+  /* Labels get their own vertical layout rather than sitting at the price they
+     describe. Two reasons: the descriptor line was overflowing a 300-wide
+     viewBox and getting clipped at every screen size, and OPEN/CLOSE collided
+     into each other whenever the body was small - which is exactly when a
+     beginner most needs to tell them apart. Each label is pushed to a minimum
+     spacing and connected back to its true price with a stepped leader. */
+  const items=[
+    {k:'HIGH', d:'furthest up it traded',   v:k.hi, c:'#7ea6d6'},
+    {k:'CLOSE',d:'where the period ended',  v:k.c,  c:col},
+    {k:'OPEN', d:'where the period began',  v:k.o,  c:col},
+    {k:'LOW',  d:'furthest down it traded', v:k.lo, c:'#7ea6d6'}
+  ];
+  items.forEach(it=>{ it.ty=y(it.v); it.ly=it.ty; });
+  items.sort((a,b)=>a.ty-b.ty);
+  const MIN=34, TOP=18, BOT=H-20;
+  for(let i=1;i<items.length;i++) if(items[i].ly-items[i-1].ly<MIN) items[i].ly=items[i-1].ly+MIN;
+  const over=items[items.length-1].ly-BOT;
+  if(over>0) items.forEach(it=>it.ly-=over);
+  if(items[0].ly<TOP){ const up=TOP-items[0].ly; items.forEach(it=>it.ly+=up); }
+
+  items.forEach(it=>{
+    const x0=cx+cw/2+7, xa=120, xb=LX-8;
+    s+=`<polyline points="${x0},${it.ty.toFixed(1)} ${xa},${it.ty.toFixed(1)} ${(xa+12)},${it.ly.toFixed(1)} ${xb},${it.ly.toFixed(1)}"
+        fill="none" stroke="rgba(126,166,214,.30)" stroke-width="1" stroke-dasharray="3 3"/>`;
+    s+=`<circle cx="${x0-3}" cy="${it.ty.toFixed(1)}" r="2" fill="${it.c}" opacity=".75"/>`;
+    s+=`<text x="${LX}" y="${(it.ly-1).toFixed(1)}" fill="${it.c}" font-family="IBM Plex Mono,monospace" font-size="10.5" font-weight="600">${it.k}</text>`;
+    s+=`<text x="${LX}" y="${(it.ly+10.5).toFixed(1)}" fill="#5d7characters" font-family="IBM Plex Mono,monospace" font-size="8.4">${it.d}</text>`;
+  });
+  sv.innerHTML=s.replace(/#5d7characters/g,'#64809f');
   const r=anatRead(k);
   $('#anatRead').innerHTML=`<div class="cr-h ${r.flat?'neut':r.up?'up':'dn'}">${r.head}</div><div class="cr-m">${r.meta}</div><p>${r.why}</p>`;
 }
