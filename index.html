@@ -17,6 +17,7 @@
   --text:#e8eef7; --dim:#8a94a6; --faint:#586173;
   --cyan:#22d3ee; --cyan-dim:#0e7490; --cyan-glow:rgba(34,211,238,.26);
   --gold:#f5b942; --gold-glow:rgba(245,185,66,.22);
+  --brass:#d9a441; --brass-glow:rgba(217,164,65,.2);
   --green:#34d399; --green-bg:rgba(52,211,153,.12);
   --red:#f87171; --red-bg:rgba(248,113,113,.12);
   --violet:#a855f7; --violet-bg:rgba(168,85,247,.14);
@@ -529,6 +530,322 @@ input[type=range]{accent-color:var(--cyan);width:100%}
 .pd-row .v b,.enc-row .v b{color:var(--text)}
 
 /* command palette */
+
+/* ============================================================
+   THE INSTRUMENT PANEL — the bench, and the Fibonacci Lab
+   ============================================================ */
+.iv-px{stroke:var(--faint)} .iv-a{stroke:var(--brass)} .iv-b{stroke:var(--cyan)}
+.iv-up{stroke:var(--green)} .iv-dn{stroke:var(--red)}
+.iv-thr,.iv-zero{stroke:rgba(126,166,214,.32);stroke-width:1}
+.iv-zone,.iv-fill{fill:rgba(217,164,65,.09)}
+.iv-cloud{fill:rgba(34,211,238,.14)}
+.iv-hp{fill:var(--green)} .iv-hn{fill:var(--red)}
+.iv-vb{fill:rgba(126,166,214,.3)} .iv-va{fill:rgba(217,164,65,.34)} .iv-poc{fill:var(--brass)}
+.iv-fibl{stroke:rgba(217,164,65,.45);stroke-width:1}
+.iv-fib0{stroke:rgba(217,164,65,.85);stroke-width:1.2}
+.iv-gp{fill:rgba(245,185,66,.3)}
+.iv-anch{fill:var(--brass)}
+.iv-tag,.iv-pane{font-family:var(--mono);font-size:8.5px;fill:var(--faint);letter-spacing:.1em}
+.iv-tag{text-anchor:end}
+
+.bench{display:grid;grid-template-columns:286px 1fr;gap:0;border:1px solid var(--line);border-radius:16px;overflow:hidden;background:var(--panel)}
+.bench-side{border-right:1px solid var(--line);background:var(--bg-2);display:flex;flex-direction:column;min-width:0}
+.rk-search{margin:12px 12px 8px}
+.bench-rack{overflow-y:auto;max-height:760px;padding:0 8px 12px}
+.rk-g{font-family:var(--mono);font-size:.56rem;letter-spacing:.18em;text-transform:uppercase;color:var(--faint);padding:14px 8px 7px;position:sticky;top:0;background:var(--bg-2);z-index:1}
+.rk{width:100%;display:grid;grid-template-columns:70px 1fr auto;align-items:center;gap:10px;padding:8px 9px;border-radius:9px;text-align:left;border:1px solid transparent;transition:background .15s,border-color .15s}
+.rk:hover{background:var(--panel-2)}
+.rk.on{background:rgba(217,164,65,.1);border-color:rgba(217,164,65,.4)}
+.rk-sv{width:70px;height:22px;display:block;opacity:.7}
+.rk.on .rk-sv{opacity:1}
+.rk-n{font-size:.83rem;line-height:1.2}
+.rk.on .rk-n{color:var(--brass)}
+.rk-d{font-family:var(--mono);font-size:.58rem;color:var(--faint);white-space:nowrap}
+.rk-none{padding:20px 10px;font-size:.8rem;color:var(--faint)}
+.bench-main{padding:22px 24px 24px;min-width:0}
+.bm-head{display:flex;justify-content:space-between;align-items:flex-start;gap:18px;flex-wrap:wrap;margin-bottom:16px}
+.bm-cat{font-family:var(--mono);font-size:.58rem;letter-spacing:.16em;text-transform:uppercase;color:var(--brass)}
+.bm-ttl h3{font-family:var(--disp);font-size:1.5rem;text-transform:uppercase;letter-spacing:-.01em;margin:5px 0 7px}
+.bm-ttl p{font-size:.88rem;color:var(--dim);max-width:70ch}
+.bm-lab{font-family:var(--mono);font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--brass);border:1px solid rgba(217,164,65,.4);border-radius:8px;padding:9px 12px;white-space:nowrap}
+.bm-stage{border:1px solid var(--line);border-radius:12px;background:var(--bg-2);padding:10px 12px 8px}
+#benchSVG{width:100%;height:auto;display:block}
+.bm-legend{display:flex;flex-wrap:wrap;gap:14px;padding:9px 2px 2px;border-top:1px solid var(--line-2);margin-top:8px}
+.lg{display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:.6rem;letter-spacing:.08em;text-transform:uppercase;color:var(--faint)}
+.lgd{width:14px;height:3px;border-radius:2px;background:currentColor;display:inline-block}
+i.lgd.iv-px{background:var(--faint)} i.lgd.iv-a{background:var(--brass)} i.lgd.iv-b{background:var(--cyan)}
+i.lgd.iv-up{background:var(--green)} i.lgd.iv-dn{background:var(--red)}
+i.lgd.iv-hp{background:var(--green)} i.lgd.iv-vb{background:rgba(126,166,214,.5)}
+i.lgd.iv-va{background:rgba(217,164,65,.5)} i.lgd.iv-poc{background:var(--brass)}
+i.lgd.iv-zone,i.lgd.iv-fill{background:rgba(217,164,65,.4)} i.lgd.iv-cloud{background:rgba(34,211,238,.5)}
+i.lgd.iv-thr{background:rgba(126,166,214,.5)} i.lgd.iv-fib0{background:rgba(217,164,65,.9)} i.lgd.iv-gp{background:var(--gold)}
+.bm-sets-h{font-family:var(--mono);font-size:.56rem;letter-spacing:.16em;text-transform:uppercase;color:var(--faint);margin:20px 0 9px}
+.bm-sets{display:flex;flex-wrap:wrap;gap:8px}
+.st{border:1px solid var(--line);border-radius:9px;padding:9px 13px;text-align:left;transition:.16s;display:flex;flex-direction:column;gap:2px}
+.st b{font-family:var(--mono);font-size:.76rem;font-weight:600;color:var(--dim)}
+.st small{font-family:var(--mono);font-size:.55rem;letter-spacing:.06em;color:var(--faint)}
+.st:hover{border-color:var(--brass)}
+.st.on{border-color:var(--brass);background:rgba(217,164,65,.1)}
+.st.on b{color:var(--brass)}
+.bm-setnote{font-size:.83rem;color:var(--dim);line-height:1.6;margin-top:11px;padding-left:12px;border-left:2px solid rgba(217,164,65,.4)}
+.sn-k{display:block;font-family:var(--mono);font-size:.56rem;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);margin-bottom:4px}
+.bm-rows{margin-top:22px}
+.bm-row{display:grid;grid-template-columns:118px 1fr;gap:14px;padding:12px 0;border-top:1px solid var(--line-2);font-size:.87rem}
+.bm-row .k{font-family:var(--mono);font-size:.58rem;letter-spacing:.12em;text-transform:uppercase;color:var(--cyan);padding-top:3px}
+.bm-row .v{color:var(--dim);line-height:1.62}
+.bm-row.warn .k{color:var(--gold)} .bm-row.trap .k{color:var(--red)}
+.bm-row.trap .v{color:var(--text)}
+.bm-origin{margin-top:16px;padding-top:13px;border-top:1px solid var(--line-2);font-size:.76rem;color:var(--faint);line-height:1.6}
+.bm-origin .k{display:block;font-family:var(--mono);font-size:.55rem;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);margin-bottom:4px;opacity:.7}
+.bench-foot{font-size:.75rem;color:var(--faint);margin-top:14px;text-align:center}
+@media(max-width:980px){
+  .bench{grid-template-columns:1fr}
+  .bench-side{border-right:none;border-bottom:1px solid var(--line)}
+  .bench-rack{max-height:280px}
+  .bench-main{padding:18px 15px}
+  .bm-row{grid-template-columns:1fr;gap:5px}
+  #benchSVG{min-height:210px}
+}
+
+/* ---- the lab ---- */
+.fiblab{border:1px solid rgba(217,164,65,.3);border-radius:16px;overflow:hidden;
+  background:linear-gradient(180deg,rgba(217,164,65,.055),transparent 34%),var(--panel)}
+.fl-head{display:flex;justify-content:space-between;align-items:center;gap:18px;padding:18px 20px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.fl-h1{display:flex;gap:14px;align-items:center}
+.fl-phi{width:44px;height:44px;flex:none;display:grid;place-items:center;border:1px solid rgba(217,164,65,.42);border-radius:12px;color:var(--brass);font-family:var(--disp);font-size:1.5rem;background:rgba(217,164,65,.07)}
+.fl-h1 h3{font-family:var(--disp);font-size:1.1rem;text-transform:uppercase;line-height:1.15}
+.fl-h1 p{font-size:.79rem;color:var(--dim);max-width:54ch}
+.fl-acts{display:flex;gap:8px}
+.fl-copy{font-family:var(--mono);font-size:.58rem;letter-spacing:.12em;text-transform:uppercase;border:1px solid var(--line);border-radius:8px;padding:9px 12px;color:var(--dim);transition:.18s}
+.fl-copy:hover{border-color:var(--brass);color:var(--brass)}
+.fl-body{display:grid;grid-template-columns:1fr 310px}
+.fl-stage{padding:8px 10px;border-right:1px solid var(--line);background:var(--bg-2)}
+#fibSVG{width:100%;height:auto;display:block;touch-action:none;user-select:none}
+.fl-side{padding:16px;display:flex;flex-direction:column;gap:13px;min-width:0}
+.fl-dir{display:grid;grid-template-columns:1fr 1fr;gap:5px;border:1px solid var(--line);border-radius:10px;padding:4px}
+.fl-dir button{font-family:var(--mono);font-size:.55rem;letter-spacing:.09em;text-transform:uppercase;padding:9px 4px;border-radius:6px;color:var(--faint);transition:.18s}
+.fl-dir button.on{background:rgba(217,164,65,.14);color:var(--brass)}
+.fl-in{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.fl-in label{font-family:var(--mono);font-size:.55rem;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);display:flex;flex-direction:column;gap:6px}
+.fl-in input{background:var(--bg-2);border:1px solid var(--line);border-radius:8px;padding:9px 10px;color:var(--text);font-family:var(--mono);font-size:.88rem;width:100%}
+.fl-in input:focus{border-color:var(--brass);outline:none}
+.fl-ext{font-family:var(--mono);font-size:.56rem;letter-spacing:.12em;text-transform:uppercase;border:1px solid var(--line);border-radius:8px;padding:9px;color:var(--faint);transition:.18s}
+.fl-ext.on{border-color:rgba(168,85,247,.45);color:var(--violet)}
+.fl-read{border-top:1px solid var(--line-2);padding-top:12px;display:flex;flex-direction:column;gap:9px}
+.fr-big{display:flex;align-items:baseline;gap:9px}
+.fr-big span{font-family:var(--disp);font-size:2.4rem;color:var(--brass);line-height:1}
+.fr-big small{font-family:var(--mono);font-size:.56rem;letter-spacing:.2em;text-transform:uppercase;color:var(--faint)}
+.fb-state{font-size:.77rem;line-height:1.45;border-left:2px solid var(--line);padding-left:11px;color:var(--dim)}
+.fb-state.g{border-color:var(--gold);color:var(--gold)}
+.fb-state.n{border-color:var(--cyan)} .fb-state.s{border-color:var(--green)}
+.fb-state.d{border-color:var(--red)} .fb-state.x{border-color:var(--violet)}
+.fr-near{font-size:.72rem;color:var(--faint);line-height:1.5}
+.fr-near b{color:var(--text);font-family:var(--mono)}
+.fl-ladder{display:flex;flex-direction:column;gap:2px;border-top:1px solid var(--line-2);padding-top:9px;max-height:236px;overflow-y:auto}
+.fb-row{display:grid;grid-template-columns:58px 1fr 78px;gap:8px;padding:6px 8px;border-radius:6px;font-family:var(--mono);font-size:.72rem;text-align:left;transition:background .15s}
+.fb-row:hover{background:var(--panel-2)}
+.fb-row .fr-r{color:var(--faint)} .fb-row.key .fr-r{color:var(--brass)} .fb-row.x .fr-r{color:var(--violet)}
+.fb-row .fr-p{color:var(--dim)} .fb-row.key .fr-p{color:var(--text)}
+.fb-row .fr-d{text-align:right}
+.fr-d.up{color:var(--green)} .fr-d.dn{color:var(--red)}
+.fl-notes{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border-top:1px solid var(--line)}
+.fl-note{background:var(--panel);padding:19px 20px}
+.fl-note h4{font-family:var(--mono);font-size:.6rem;letter-spacing:.16em;text-transform:uppercase;color:var(--brass);margin-bottom:10px}
+.fl-note p{font-size:.8rem;color:var(--dim);line-height:1.62}
+.fl-note p+p{margin-top:9px}
+#fibSeq{display:flex;flex-wrap:wrap;align-items:center;gap:5px;margin-bottom:11px;font-family:var(--mono);font-size:.72rem}
+#fibSeq i{color:var(--line);font-style:normal}
+.fq-n{color:var(--faint)} .fq-n.lit{color:var(--brass)}
+.fq-eq{width:100%;color:var(--dim);font-size:.65rem;margin-top:5px;line-height:1.7}
+.fq-eq b{color:var(--brass)}
+.fb-l{stroke:rgba(126,166,214,.2);stroke-width:1}
+.fb-l.key{stroke:rgba(217,164,65,.6)} .fb-l.x{stroke:rgba(168,85,247,.4);stroke-dasharray:3 5}
+.fb-r{fill:var(--faint);font-family:var(--mono);font-size:10px}
+.fb-r.key{fill:var(--brass)} .fb-r.x{fill:var(--violet)}
+.fb-p{fill:var(--dim);font-family:var(--mono);font-size:10.5px;text-anchor:end}
+.fb-p.key{fill:var(--text)}
+.fb-gp{fill:rgba(245,185,66,.15);stroke:rgba(245,185,66,.4)}
+.fb-gpl{fill:var(--gold);font-family:var(--mono);font-size:8.5px;letter-spacing:.2em}
+.fb-leg{stroke:var(--brass);stroke-width:2.8;fill:none;stroke-linecap:round}
+.fb-pull{stroke:rgba(126,166,214,.55);stroke-width:1.6;fill:none;stroke-dasharray:4 4}
+.fb-h{fill:var(--void);stroke:var(--brass);stroke-width:2.4;cursor:ns-resize;transition:fill .15s}
+.fb-h:hover{fill:rgba(217,164,65,.5)}
+.fb-hl{fill:var(--faint);font-family:var(--mono);font-size:8.5px;letter-spacing:.14em;text-anchor:middle}
+.fb-pxg{cursor:ns-resize}
+.fb-pxl{stroke:var(--cyan);stroke-width:1.2;stroke-dasharray:2 4}
+.fb-pxb{fill:var(--cyan)}
+.fb-pxt{fill:var(--void);font-family:var(--mono);font-size:11px;font-weight:600;text-anchor:middle}
+@media(max-width:980px){
+  .fl-body{grid-template-columns:1fr}
+  .fl-stage{border-right:none;border-bottom:1px solid var(--line)}
+  .fl-notes{grid-template-columns:1fr}
+  .fl-acts{width:100%} .fl-copy{flex:1;text-align:center}
+}
+
+/* ============================================================
+   THE RISK DESK
+   ============================================================ */
+.rd-tabs{display:flex;gap:6px;border:1px solid var(--line);border-radius:12px;padding:5px;margin-bottom:26px;flex-wrap:wrap}
+.rd-tabs button{flex:1;min-width:150px;font-family:var(--mono);font-size:.62rem;letter-spacing:.13em;text-transform:uppercase;padding:12px 10px;border-radius:8px;color:var(--faint);transition:.18s}
+.rd-tabs button:hover{color:var(--text)}
+.rd-tabs button.on{background:var(--panel-2);color:var(--cyan)}
+#riskdesk[data-lane="invest"] .rd-tabs button.on{color:var(--green)}
+.rd-panel.hidden{display:none}
+.ld-ctl{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:22px}
+.ld-lane{display:grid;grid-template-columns:1fr 1fr;gap:6px;border:1px solid var(--line);border-radius:12px;padding:5px;background:var(--panel)}
+.ld-lane button{padding:12px 10px;border-radius:9px;text-align:left;transition:.18s}
+.ld-lane button b{display:block;font-family:var(--disp);font-size:.92rem;text-transform:uppercase;color:var(--dim)}
+.ld-lane button small{font-family:var(--mono);font-size:.55rem;letter-spacing:.06em;color:var(--faint)}
+.ld-lane button:first-child.on{background:rgba(52,211,153,.12)}
+.ld-lane button:first-child.on b{color:var(--green)}
+.ld-lane button:last-child.on{background:rgba(248,113,113,.12)}
+.ld-lane button:last-child.on b{color:var(--red)}
+.ld-slide{border:1px solid var(--line);border-radius:12px;padding:13px 16px;background:var(--panel)}
+.ld-sh{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}
+.ld-sh span{font-family:var(--mono);font-size:.56rem;letter-spacing:.18em;text-transform:uppercase;color:var(--faint)}
+.ld-sh b{font-family:var(--disp);font-size:1.5rem;color:var(--cyan)}
+#riskdesk[data-lane="invest"] .ld-sh b{color:var(--green)}
+#ldRange{width:100%;accent-color:var(--cyan)}
+#riskdesk[data-lane="invest"] #ldRange{accent-color:var(--green)}
+.ld-rungs{display:flex;gap:5px;margin-top:9px;flex-wrap:wrap}
+.ld-rungs button{font-family:var(--mono);font-size:.53rem;letter-spacing:.05em;color:var(--faint);border:1px solid var(--line);border-radius:6px;padding:5px 7px;transition:.15s}
+.ld-rungs button:hover{color:var(--text)}
+.ld-rungs button.on{border-color:var(--cyan);color:var(--cyan)}
+#riskdesk[data-lane="invest"] .ld-rungs button.on{border-color:var(--green);color:var(--green)}
+.ld-body{display:grid;grid-template-columns:1fr 400px;gap:16px;align-items:start}
+.ld-main,.ld-side>div{border:1px solid var(--line);border-radius:14px;background:var(--panel)}
+.ld-main{padding:22px 24px}
+.ld-side{display:flex;flex-direction:column;gap:14px}
+.ld-band{font-family:var(--mono);font-size:.58rem;letter-spacing:.16em;color:var(--faint)}
+.ld-head h3{font-family:var(--disp);font-size:1.6rem;text-transform:uppercase;margin:5px 0 8px}
+.ld-head p{font-size:.88rem;color:var(--dim);line-height:1.6;max-width:72ch}
+.ld-nums{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:12px;overflow:hidden;margin:20px 0}
+.ld-n{background:var(--bg-2);padding:13px 14px}
+.ln-k{display:block;font-family:var(--mono);font-size:.54rem;letter-spacing:.14em;text-transform:uppercase;color:var(--faint)}
+.ln-v{display:block;font-family:var(--disp);font-size:1.4rem;color:var(--text);margin:5px 0 3px}
+.ln-s{font-size:.68rem;color:var(--faint)}
+.ld-focus{display:grid;grid-template-columns:150px 1fr;gap:14px;padding:13px 0;border-top:1px solid var(--line-2);border-bottom:1px solid var(--line-2);font-size:.87rem}
+.ld-focus .k{font-family:var(--mono);font-size:.56rem;letter-spacing:.12em;text-transform:uppercase;color:var(--cyan);padding-top:3px}
+.ld-focus .v{color:var(--text)}
+.ld-cols{display:grid;grid-template-columns:1.35fr 1fr;gap:22px;margin-top:20px}
+.ld-col h4{font-family:var(--mono);font-size:.58rem;letter-spacing:.15em;text-transform:uppercase;color:var(--green);margin-bottom:11px}
+.ld-col.not h4{color:var(--red)}
+.ld-list{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:9px}
+.ld-list li{font-size:.83rem;color:var(--dim);line-height:1.6}
+.ld-list li::marker{color:var(--faint);font-family:var(--mono);font-size:.7rem}
+.ld-edge{margin-top:16px;padding-top:13px;border-top:1px solid var(--line-2)}
+.ld-edge .k{display:block;font-family:var(--mono);font-size:.55rem;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);margin-bottom:5px}
+.ld-edge .v{font-size:.83rem;color:var(--text);line-height:1.55}
+.ld-viz,.ld-surv,.ld-rule,.ld-note{padding:16px 18px}
+#recSVG,#hpSVG,#psSVG{width:100%;height:auto;display:block}
+.ld-vn{font-size:.74rem;color:var(--faint);line-height:1.6;margin-top:10px}
+.ld-surv{font-size:.83rem;color:var(--dim);line-height:1.65}
+.ld-surv b{color:var(--gold);font-family:var(--mono)}
+.ld-rule h4,.ld-note h4{font-family:var(--mono);font-size:.58rem;letter-spacing:.15em;text-transform:uppercase;color:var(--cyan);margin-bottom:10px}
+.ld-rule code{display:block;font-family:var(--mono);font-size:.82rem;color:var(--gold);background:var(--bg-2);border:1px solid var(--line);border-radius:8px;padding:11px 12px;margin-bottom:10px}
+.ld-rule p,.ld-note p{font-size:.8rem;color:var(--dim);line-height:1.62}
+.ld-note{border-color:rgba(245,185,66,.3)!important}
+.ld-note h4{color:var(--gold)}
+.rc-grid{stroke:rgba(126,166,214,.14);stroke-width:1}
+.rc-ax{font-family:var(--mono);font-size:9px;fill:var(--faint)}
+.rc-ttl{font-family:var(--mono);font-size:8.5px;letter-spacing:.16em;fill:var(--faint)}
+.rc-line{stroke:var(--red);stroke-width:2.2}
+.rc-mark{stroke:rgba(126,166,214,.3);stroke-width:1;stroke-dasharray:2 3}
+.rc-dot{fill:var(--gold)}
+.rc-lab{font-family:var(--mono);font-size:9.5px;fill:var(--gold)}
+.hp-un{stroke:var(--faint);stroke-dasharray:4 4}
+.hp-put{stroke:var(--cyan)} .hp-col{stroke:var(--violet)}
+i.lgd.hp-un{background:var(--faint)} i.lgd.hp-put{background:var(--cyan)} i.lgd.hp-col{background:var(--violet)}
+.hg-intro{border-left:2px solid var(--gold);padding-left:18px;margin-bottom:26px;max-width:82ch}
+.hg-intro h3{font-family:var(--disp);font-size:1.35rem;margin-bottom:9px}
+.hg-intro p{font-size:.9rem;color:var(--dim);line-height:1.65}
+.hg-grid{display:grid;grid-template-columns:1fr 400px;gap:16px;align-items:start}
+.hg-left{display:flex;flex-direction:column;gap:9px}
+.hg{border:1px solid var(--line);border-radius:12px;background:var(--panel);overflow:hidden}
+.hg summary{padding:15px 18px;cursor:pointer;display:flex;flex-direction:column;gap:4px;list-style:none}
+.hg summary::-webkit-details-marker{display:none}
+.hg[open]{border-color:rgba(34,211,238,.35)}
+.hg-n{font-family:var(--disp);font-size:1.02rem;text-transform:uppercase}
+.hg[open] .hg-n{color:var(--cyan)}
+.hg-w{font-size:.8rem;color:var(--faint)}
+.hg-b{padding:0 18px 16px}
+.hg-r{display:grid;grid-template-columns:118px 1fr;gap:13px;padding:11px 0;border-top:1px solid var(--line-2);font-size:.84rem}
+.hg-r .k{font-family:var(--mono);font-size:.55rem;letter-spacing:.12em;text-transform:uppercase;color:var(--cyan);padding-top:3px}
+.hg-r .v{color:var(--dim);line-height:1.6}
+.hg-r.trap .k{color:var(--red)} .hg-r.trap .v{color:var(--text)}
+.hg-right{display:flex;flex-direction:column;gap:14px}
+.hg-calc,.hg-pay{border:1px solid var(--line);border-radius:14px;background:var(--panel);padding:17px 18px}
+.hg-calc h4,.ct-head .eyebrow{font-family:var(--mono)}
+.hg-calc h4{font-size:.58rem;letter-spacing:.15em;text-transform:uppercase;color:var(--gold);margin-bottom:8px}
+.hc-p{font-size:.75rem;color:var(--faint);line-height:1.55;margin-bottom:12px}
+.hg-calc label,.hg-sliders label{display:grid;grid-template-columns:1fr 118px;align-items:center;gap:10px;font-family:var(--mono);font-size:.6rem;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);margin-bottom:8px}
+.hg-calc input,.hg-sliders input{background:var(--bg-2);border:1px solid var(--line);border-radius:7px;padding:8px 10px;color:var(--text);font-family:var(--mono);font-size:.82rem;width:100%}
+.hg-calc input:focus,.hg-sliders input:focus{border-color:var(--gold);outline:none}
+.hg-outs{margin-top:13px;border-top:1px solid var(--line-2);padding-top:11px}
+.hg-o{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:5px 0;font-size:.78rem;color:var(--faint)}
+.hg-o b{font-family:var(--mono);font-size:.92rem;color:var(--text)}
+.hg-o.dim b{font-size:.78rem;color:var(--dim)}
+.hg-warn{margin-top:11px;padding:10px 12px;border-left:2px solid var(--gold);background:rgba(245,185,66,.06);border-radius:0 8px 8px 0;font-size:.74rem;color:var(--dim);line-height:1.6}
+.hp-lg{display:flex;gap:14px;flex-wrap:wrap;margin:8px 0 12px}
+.hg-sliders{border-top:1px solid var(--line-2);padding-top:12px}
+.hp-note{font-size:.76rem;color:var(--faint);line-height:1.6}
+.hp-note b{color:var(--text);font-family:var(--mono)}
+.ct-head{margin:48px 0 20px;max-width:82ch}
+.ct-head h3{font-family:var(--disp);font-size:1.5rem;margin:9px 0 8px}
+.ct-head p{font-size:.88rem;color:var(--dim);line-height:1.65}
+.ct-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.ct{background:var(--panel);padding:18px 20px;display:flex;gap:14px}
+.ct-i{font-family:var(--mono);font-size:.68rem;color:var(--gold);padding-top:2px}
+.ct h5{font-family:var(--disp);font-size:.95rem;text-transform:uppercase;margin-bottom:6px}
+.ct p{font-size:.82rem;color:var(--dim);line-height:1.62}
+.mind-top{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start;margin-bottom:46px}
+.mind-viz{border:1px solid var(--line);border-radius:14px;background:var(--panel);padding:16px 18px}
+.mind-side h3{font-family:var(--disp);font-size:1.5rem;line-height:1.2;margin-bottom:13px}
+.mind-side p{font-size:.88rem;color:var(--dim);line-height:1.66;margin-bottom:11px}
+.mind-fine{border-left:2px solid var(--gold);padding-left:15px;font-size:.83rem!important}
+.ps-line{stroke:var(--cyan);stroke-width:2.3}
+.ps-mark{stroke-width:1;stroke-dasharray:2 3}
+.ps-mark.up{stroke:var(--green)} .ps-mark.dn{stroke:var(--red)}
+.ps-dot.up{fill:var(--green)} .ps-dot.dn{fill:var(--red)}
+.ps-lab{font-family:var(--mono);font-size:9.5px}
+.ps-lab.up{fill:var(--green)} .ps-lab.dn{fill:var(--red)}
+.mind-h{margin-bottom:18px}
+.mind-h h3{font-family:var(--disp);font-size:1.45rem;margin-top:9px}
+.mistakes{display:flex;flex-direction:column;gap:8px}
+.mk{border:1px solid var(--line);border-radius:12px;background:var(--panel);overflow:hidden}
+.mk summary{padding:14px 18px;cursor:pointer;display:grid;grid-template-columns:30px 1fr;gap:4px 12px;list-style:none;align-items:baseline}
+.mk summary::-webkit-details-marker{display:none}
+.mk[open]{border-color:rgba(168,85,247,.35)}
+.mk-i{font-family:var(--mono);font-size:.66rem;color:var(--violet);grid-row:span 2}
+.mk-n{font-family:var(--disp);font-size:1.02rem;text-transform:uppercase}
+.mk[open] .mk-n{color:var(--violet)}
+.mk-s{font-size:.79rem;color:var(--faint)}
+.mk-b{padding:0 18px 15px 60px}
+.mk-r{display:grid;grid-template-columns:130px 1fr;gap:13px;padding:11px 0;border-top:1px solid var(--line-2);font-size:.85rem}
+.mk-r .k{font-family:var(--mono);font-size:.55rem;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);padding-top:3px}
+.mk-r .v{color:var(--dim);line-height:1.62}
+.mk-r.fix .k{color:var(--green)} .mk-r.fix .v{color:var(--text)}
+.quotes{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px}
+.qt{border:1px solid var(--line);border-radius:14px;background:var(--panel);padding:20px;position:relative;overflow:hidden}
+.qt::before{content:"\201C";position:absolute;top:-14px;right:12px;font-family:var(--disp);font-size:5rem;color:rgba(245,185,66,.1)}
+.qt blockquote{font-family:var(--disp);font-size:1.08rem;line-height:1.3;color:var(--text);margin-bottom:12px}
+.qt figcaption{display:flex;flex-direction:column;gap:2px;padding-bottom:11px;border-bottom:1px solid var(--line-2);margin-bottom:11px}
+.qt figcaption b{font-family:var(--mono);font-size:.7rem;letter-spacing:.06em;color:var(--gold)}
+.qt figcaption span{font-family:var(--mono);font-size:.56rem;letter-spacing:.08em;color:var(--faint)}
+.qt p{font-size:.79rem;color:var(--dim);line-height:1.6}
+@media(max-width:1100px){
+  .ld-body,.hg-grid{grid-template-columns:1fr}
+  .mind-top{grid-template-columns:1fr}
+}
+@media(max-width:760px){
+  .ld-ctl{grid-template-columns:1fr}
+  .ld-cols{grid-template-columns:1fr;gap:24px}
+  .ld-focus{grid-template-columns:1fr;gap:5px}
+  .ld-main{padding:18px 16px}
+  .mk-b{padding-left:18px}
+  .mk-r,.hg-r{grid-template-columns:1fr;gap:5px}
+}
+
 #cmdk{position:fixed;inset:0;z-index:200;background:rgba(4,6,10,.85);display:none;align-items:flex-start;justify-content:center;padding-top:12vh}
 #cmdk.open{display:flex}
 .cmdk-win{width:min(580px,92%);border:1px solid var(--line);border-radius:14px;background:var(--panel);overflow:hidden;box-shadow:0 40px 90px rgba(0,0,0,.8)}
@@ -875,7 +1192,9 @@ body.paged .section{padding-top:40px}
       <li><a href="#tools">Tools</a></li>
       <li><a href="#encyclopedia">Encyclopedia</a></li>
       <li><a href="#patterns">Candlesticks</a></li>
+      <li><a href="#indicators">Indicators</a></li>
       <li><a href="#strategies">Strategies</a></li>
+      <li><a href="#riskdesk">Risk &amp; Mind</a></li>
       <li><a href="#sessions">1:1 Sessions</a></li>
     </ul>
     <button class="nav-cmd" onclick="openCmdk()">Search <kbd>/</kbd></button>
@@ -1101,6 +1420,112 @@ body.paged .section{padding-top:40px}
   </div>
 </section>
 
+<!-- INDICATORS / THE INSTRUMENT PANEL -->
+<section class="section page-view hidden" id="indicators" data-page="indicators">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div class="eyebrow">THE INSTRUMENT PANEL</div>
+      <h2 class="disp">Instruments measure. <span class="g">They don’t decide.</span></h2>
+      <p>Every indicator is a measuring device with a price tag attached: it tells you something real, and it tells you late. Pick one off the rack and the bench shows what it measures, the settings that are actually standard and who set them, what it pairs with, and the trap. <b>Change the settings chip and the diagram recomputes</b>, because a setting you can only read about is a setting you never really learn.</p>
+    </div>
+
+    <!-- THE BENCH — rack on the left, one instrument under the lamp on the
+         right. Deliberately not a card grid: the point of this section is
+         depth on one instrument at a time, not a wall of thumbnails. -->
+    <div class="bench reveal" id="bench">
+      <div class="bench-side">
+        <label class="enc-search rk-search">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4-4"/></svg>
+          <input type="search" id="indSearch" placeholder="Search the rack…" aria-label="Search indicators">
+        </label>
+        <div class="bench-rack" id="benchRack"></div>
+      </div>
+
+      <div class="bench-main">
+        <div class="bm-head">
+          <div class="bm-ttl">
+            <span class="bm-cat" id="bmCat">—</span>
+            <h3 id="bmName">—</h3>
+            <p id="bmMeas">—</p>
+          </div>
+          <a class="bm-lab" id="bmLab" href="#indicators" hidden onclick="document.getElementById('fibLab').scrollIntoView({behavior:'smooth'});return false;">Open the Fibonacci Lab →</a>
+        </div>
+
+        <div class="bm-stage">
+          <svg id="benchSVG" viewBox="0 0 760 268" preserveAspectRatio="none" role="img" aria-label="Indicator diagram"></svg>
+          <div class="bm-legend" id="benchLegend"></div>
+        </div>
+
+        <div class="bm-sets-h">SETTINGS · click one to redraw the diagram</div>
+        <div class="bm-sets" id="benchSets"></div>
+        <div class="bm-setnote" id="benchSetNote"></div>
+
+        <div class="bm-rows" id="bmRows"></div>
+        <div class="bm-origin" id="bmOrigin"></div>
+      </div>
+    </div>
+    <p class="bench-foot">Each diagram is the real formula computed on one fixed sample series, so the behaviour is truthful and the prices are not pretending to be a feed. Indicators describe. Structure decides.</p>
+
+    <!-- THE FIBONACCI LAB -->
+    <div class="sec-head reveal" style="margin:70px 0 26px">
+      <div class="eyebrow">THE ONE THAT DRAWS LEVELS</div>
+      <h2 class="disp" style="font-size:clamp(1.6rem,3.4vw,2.4rem)">The Fibonacci <span class="g">Lab.</span></h2>
+      <p>Fibonacci is the only instrument on the panel that outputs prices rather than a squiggle, which is why it gets a workbench of its own. Type a swing off your own chart, drag the anchors, and the ladder rebuilds live.</p>
+    </div>
+
+    <div class="fiblab reveal" id="fibLab">
+      <div class="fl-head">
+        <div class="fl-h1">
+          <span class="fl-phi" aria-hidden="true">&#966;</span>
+          <div><h3>The Fibonacci Lab</h3><p>Drag the swing anchors and the price marker. The ladder, the golden pocket, and the depth read all recompute live.</p></div>
+        </div>
+        <div class="fl-acts">
+          <button class="fl-copy" onclick="fibCopy('text',this)">Copy levels</button>
+          <button class="fl-copy" onclick="fibCopy('pine',this)">Copy as Pine</button>
+        </div>
+      </div>
+      <div class="fl-body">
+        <div class="fl-stage"><svg id="fibSVG" viewBox="0 0 720 430" role="img" aria-label="Fibonacci retracement ladder"></svg></div>
+        <div class="fl-side">
+          <div class="fl-dir" id="fibDir">
+            <button class="on" onclick="fibDir('up',this)">Uptrend · pullback</button>
+            <button onclick="fibDir('down',this)">Downtrend · bounce</button>
+          </div>
+          <div class="fl-in">
+            <label for="fibHi">Swing high<input id="fibHi" type="number" step="0.01" inputmode="decimal"></label>
+            <label for="fibLo">Swing low<input id="fibLo" type="number" step="0.01" inputmode="decimal"></label>
+          </div>
+          <button class="fl-ext on" onclick="fibExt(this)">Extensions on</button>
+          <div class="fl-read">
+            <div class="fr-big"><span id="fibPct">—</span><small>retraced</small></div>
+            <div class="fb-state n" id="fibState">—</div>
+            <div class="fr-near" id="fibNear">—</div>
+          </div>
+          <div class="fl-ladder" id="fibLadder"></div>
+        </div>
+      </div>
+      <div class="fl-notes">
+        <div class="fl-note">
+          <h4>Where the numbers come from</h4>
+          <div id="fibSeq"></div>
+          <p>Divide any Fibonacci number by the next and the answer converges on 0.618. Skip one and you get 0.382, skip two and you get 0.236, and the square root of 0.618 gives 0.786. The whole ladder falls out of one sequence.</p>
+          <p>The exception is 50%, which is not a Fibonacci ratio at all. It arrived through Dow theory, survived because the middle of a move is a genuine decision point, and every charting package ships it anyway.</p>
+        </div>
+        <div class="fl-note">
+          <h4>How to place it without fooling yourself</h4>
+          <p>Anchor to one obvious, finished swing: the impulse anybody would point at, not the one that makes your idea work. Wick to wick or body to body is a preference, but pick one and keep it, because switching mid-analysis is how a level appears out of nothing.</p>
+          <p>And if you catch yourself hunting for the swing that drops a line exactly where you already wanted to buy, you have your answer without the tool.</p>
+        </div>
+        <div class="fl-note">
+          <h4>What the evidence actually says</h4>
+          <p>Batchelor and Ramyar (Cass Business School, 2006) tested retracement and projection ratios in the Dow against what chance alone would produce, found no significant difference, and concluded the idea has no scientific rationale behind it. The Socionomics Institute reviewed the same data and read it the other way.</p>
+          <p>So hold it honestly. The ladder organises a pullback and marks prices a lot of resting orders share, which is not nothing. It is not an edge by itself.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
 <!-- STRATEGIES -->
 <section class="section page-view hidden" id="strategies" data-page="strategies">
   <div class="wrap">
@@ -1125,6 +1550,143 @@ body.paged .section{padding-top:40px}
       <h2 class="disp" style="font-size:clamp(1.7rem,3.6vw,2.6rem)">The four facts that decide <span class="g">more than the setup does.</span></h2>
     </div>
     <div class="truths reveal" id="truthGrid"></div>
+  </div>
+</section>
+
+<!-- THE RISK DESK — scaling, hedging, and the mind -->
+<section class="section band page-view hidden" id="riskdesk" data-page="riskdesk" data-lane="fast">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div class="eyebrow">THE RISK DESK</div>
+      <h2 class="disp">The setup is <span class="g">the easy part.</span></h2>
+      <p>Everything that decides whether you are still here in three years lives on this page: how much to risk at the size you actually are, how to protect a position you cannot afford to lose, and the specific ways a working brain sabotages a working plan. Two lanes run through all of it, because there are two games being played and they need different rules.</p>
+    </div>
+
+    <div class="rd-tabs reveal" id="rdTabs">
+      <button class="on" onclick="setRdTab('ladder',this)">The Capital Ladder</button>
+      <button onclick="setRdTab('hedge',this)">Hedging &amp; Contracts</button>
+      <button onclick="setRdTab('mind',this)">The Mind</button>
+    </div>
+
+    <!-- ============ THE CAPITAL LADDER ============ -->
+    <div class="rd-panel reveal" data-rd="ladder">
+      <div class="ld-ctl">
+        <div class="ld-lane" id="rdLane">
+          <button onclick="setLane('invest',this)"><b>The Long Game</b><small>investing, months to decades</small></button>
+          <button class="on" onclick="setLane('fast',this)"><b>The Fast Lane</b><small>trading, minutes to weeks</small></button>
+        </div>
+        <div class="ld-slide">
+          <div class="ld-sh"><span>ACCOUNT SIZE</span><b id="ldAcct">$5,000</b></div>
+          <input type="range" id="ldRange" min="0" max="100" value="31" aria-label="Account size">
+          <div class="ld-rungs" id="ldRungs"></div>
+        </div>
+      </div>
+
+      <div class="ld-body">
+        <div class="ld-main">
+          <div class="ld-head">
+            <span class="ld-band" id="ldBand">—</span>
+            <h3 id="ldName">—</h3>
+            <p id="ldGist">—</p>
+          </div>
+          <div class="ld-nums" id="ldNums"></div>
+          <div class="ld-focus"><span class="k">What this size should be doing</span><span class="v" id="ldFocus">—</span></div>
+          <div class="ld-cols">
+            <div class="ld-col">
+              <h4>The rules at this rung</h4>
+              <ol class="ld-list" id="ldRules"></ol>
+            </div>
+            <div class="ld-col not">
+              <h4>Not yet</h4>
+              <ul class="ld-list" id="ldNot"></ul>
+              <div class="ld-edge"><span class="k">Your actual edge here</span><span class="v" id="ldEdge">—</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="ld-side">
+          <div class="ld-viz">
+            <svg id="recSVG" viewBox="0 0 520 250" role="img" aria-label="Gain required to recover a drawdown"></svg>
+            <p class="ld-vn">Losses and the gains that undo them are not symmetric. Down 20% needs +25%. Down 50% needs +100%. This curve is the entire argument for small position sizes, and it is pure arithmetic, not opinion.</p>
+          </div>
+          <div class="ld-surv" id="ldSurv"></div>
+          <div class="ld-rule">
+            <h4>The one formula that matters</h4>
+            <code>position size = risk dollars ÷ distance to stop</code>
+            <p>Size from the stop, never from the account balance or from how much you like the idea. If your stop is $2 away and you are risking $200, you buy 100 shares. The instrument changes, the arithmetic does not.</p>
+          </div>
+          <div class="ld-note">
+            <h4>What changed in 2026</h4>
+            <p>The pattern day trader rule is gone. The SEC approved FINRA’s amendments to Rule 4210 on 14 April 2026 and they took effect 4 June 2026, removing the $25,000 minimum equity requirement, the four-trades-in-five-days counter, and the PDT designation itself, replaced by risk-based intraday margin (the ordinary $2,000 margin minimum still applies). Older guides still tell you the rule caps your day trades under $25k. It no longer does, which means the discipline that rule used to impose on small accounts is now entirely yours to supply.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ HEDGING & CONTRACTS ============ -->
+    <div class="rd-panel reveal hidden" data-rd="hedge">
+      <div class="hg-intro">
+        <h3>Hedging is buying insurance, and insurance always costs money.</h3>
+        <p>A hedge that is free is not a hedge, it is a trade with the upside sold off. The right question is never "how do I remove the risk" but "which specific loss can I not tolerate, and what am I willing to pay every year to cap it". Everything below follows from answering that honestly.</p>
+      </div>
+
+      <div class="hg-grid">
+        <div class="hg-left" id="hedgeList"></div>
+        <div class="hg-right">
+          <div class="hg-calc">
+            <h4>Index hedge sizing</h4>
+            <p class="hc-p">Beta-adjust first, then divide. Skipping the beta step over-hedges a defensive portfolio and under-hedges an aggressive one.</p>
+            <label>Portfolio value<input id="hgVal" type="number" value="100000" step="1000" inputmode="decimal"></label>
+            <label>Portfolio beta<input id="hgBeta" type="number" value="1.15" step="0.05" inputmode="decimal"></label>
+            <label>Index level<input id="hgIdx" type="number" value="6000" step="10" inputmode="decimal"></label>
+            <div class="hg-outs" id="hgOut"></div>
+          </div>
+          <div class="hg-pay">
+            <svg id="hpSVG" viewBox="0 0 520 250" role="img" aria-label="Hedged versus unhedged payoff"></svg>
+            <div class="hp-lg"><span class="lg"><i class="lgd hp-un"></i>unhedged</span><span class="lg"><i class="lgd hp-put"></i>protective put</span><span class="lg"><i class="lgd hp-col"></i>collar</span></div>
+            <div class="hg-sliders">
+              <label>Put strike, % below spot<input id="hgStrike" type="number" value="8" step="1" min="1" max="20" inputmode="decimal"></label>
+              <label>Hedge cost, % of value<input id="hgCost" type="number" value="2.5" step="0.25" min="0" max="10" inputmode="decimal"></label>
+            </div>
+            <p class="hp-note" id="hpNote"></p>
+          </div>
+        </div>
+      </div>
+
+      <div class="ct-head">
+        <div class="eyebrow">CONTRACT SELECTION</div>
+        <h3>Eight checks, in order, before the ticket.</h3>
+        <p>Most bad options trades are not bad reads. They are correct reads expressed through the wrong contract, where the spread, the expiry, or the earnings date took the money that the direction earned.</p>
+      </div>
+      <div class="ct-grid" id="contractList"></div>
+    </div>
+
+    <!-- ============ THE MIND ============ -->
+    <div class="rd-panel reveal hidden" data-rd="mind">
+      <div class="mind-top">
+        <div class="mind-viz">
+          <svg id="psSVG" viewBox="0 0 520 280" role="img" aria-label="Prospect theory value function"></svg>
+          <p class="ld-vn">Kahneman and Tversky’s value function, drawn with their published 1992 parameters. A loss registers roughly 2.25 times as hard as a gain of the same size. Every discipline problem below is downstream of this one curve: it is why you take the small profit and let the loss run.</p>
+        </div>
+        <div class="mind-side">
+          <h3>You are not competing with the market. You are competing with the version of yourself that shows up after three losses.</h3>
+          <p>Almost every rule on the risk desk exists because a normal, healthy human brain produces predictable errors under uncertainty and financial pressure. The errors are not a character flaw and knowing about them does not remove them. What removes them is deciding in advance, in writing, while calm.</p>
+          <p class="mind-fine">Mark Douglas built his framework on five plainly stated truths, the first being simply that anything can happen. Paraphrasing the rest: you do not need to know what happens next in order to make money, wins and losses arrive in random order inside an edge, an edge is only a probability rather than a promise, and every moment in the market is genuinely new. Accept those and most of the emotional weight of a single trade evaporates.</p>
+        </div>
+      </div>
+
+      <div class="mind-h">
+        <div class="eyebrow">TEN WAYS IT GOES WRONG</div>
+        <h3>The mistakes, and what actually fixes each one.</h3>
+      </div>
+      <div class="mistakes" id="mistakeList"></div>
+
+      <div class="mind-h" style="margin-top:56px">
+        <div class="eyebrow">THE WALL</div>
+        <h3>Nine short lines worth more than most trading courses.</h3>
+      </div>
+      <div class="quotes" id="quoteWall"></div>
+    </div>
   </div>
 </section>
 
@@ -1465,6 +2027,8 @@ body.paged .section{padding-top:40px}
 <script src="encyclopedia.js"></script>
 <script src="reference.js"></script>
 <script src="strategies.js"></script>
+<script src="indicators.js"></script>
+<script src="riskdesk.js"></script>
 <script>
 'use strict';
 const $=(s,el=document)=>el.querySelector(s);
@@ -1472,6 +2036,8 @@ const $$=(s,el=document)=>[...el.querySelectorAll(s)];
 const T=window.TDESK||{};
 const PATTERNS=T.PATTERNS||[], ENC=T.ENCYCLOPEDIA||[], ENC_CATS=T.ENC_CATS||[['all','All']], FUTURES=T.FUTURES||[], SECTORS=T.SECTORS||[], SESSIONS=T.SESSIONS||[];
 const STRATEGIES=T.STRATEGIES||[], STRAT_FAMS=T.STRAT_FAMS||[['all','All']], STRAT_GRADES=T.STRAT_GRADES||{}, STRAT_TRUTHS=T.STRAT_TRUTHS||[], STRAT_GROUPS=T.STRAT_GROUPS||[];
+const INDICATORS=T.INDICATORS||[], IND_CATS=T.IND_CATS||[], IND_SERIES=T.IND_SERIES||[];
+const TIERS=T.TIERS||[], HEDGES=T.HEDGES||[], CONTRACTS=T.CONTRACTS||[], MISTAKES=T.MISTAKES||[], QUOTES=T.QUOTES||[];
 const GREEN='#34d399', RED='#f87171', CYAN='#22d3ee', GOLD='#f5b942', VIOLET='#a855f7', DIM='#8a94a6', FAINT='#586173';
 const reduceMotion=matchMedia('(prefers-reduced-motion: reduce)').matches;
 const FINNHUB_KEY='d8mhpk1r01qkisoa50a0d8mhpk1r01qkisoa50ag';
@@ -2483,6 +3049,538 @@ function openPattern(i){
 }
 renderPatterns();
 
+/* ============================================================
+   THE INSTRUMENT PANEL - the bench
+   Every diagram is the real formula computed on one fixed sample
+   series (TDESK.IND_SERIES). Changing a settings chip recomputes
+   the diagram, so the "best known settings" are explorable rather
+   than merely asserted. Teaching diagram, never a feed.
+   ============================================================ */
+const S_C=IND_SERIES.map(b=>b.c), S_H=IND_SERIES.map(b=>b.h),
+      S_L=IND_SERIES.map(b=>b.l), S_V=IND_SERIES.map(b=>b.v);
+
+const smaA=(a,p)=>a.map((_,i)=>i<p-1?null:a.slice(i-p+1,i+1).reduce((s,x)=>s+x,0)/p);
+function emaA(a,p){let e=null;return a.map((v,i)=>{if(i<p-1)return null;if(e===null){e=a.slice(0,p).reduce((s,x)=>s+x,0)/p;return e;}e=v*(2/(p+1))+e*(1-2/(p+1));return e;});}
+function rsiA(a,p){let g=0,l=0;const o=a.map(()=>null);
+  for(let i=1;i<a.length;i++){const d=a[i]-a[i-1],u=Math.max(d,0),n=Math.max(-d,0);
+    if(i<=p){g+=u/p;l+=n/p;if(i===p)o[i]=l===0?100:100-100/(1+g/l);}
+    else{g=(g*(p-1)+u)/p;l=(l*(p-1)+n)/p;o[i]=l===0?100:100-100/(1+g/l);}}
+  return o;}
+const stdA=(a,p)=>a.map((_,i)=>{if(i<p-1)return null;const w=a.slice(i-p+1,i+1),m=w.reduce((s,x)=>s+x,0)/p;return Math.sqrt(w.reduce((s,x)=>s+(x-m)*(x-m),0)/p);});
+const trA=()=>S_C.map((c,i)=>i===0?S_H[0]-S_L[0]:Math.max(S_H[i]-S_L[i],Math.abs(S_H[i]-S_C[i-1]),Math.abs(S_L[i]-S_C[i-1])));
+const atrA=p=>{const t=trA();let a=null;return t.map((v,i)=>{if(i<p-1)return null;if(a===null){a=t.slice(0,p).reduce((s,x)=>s+x,0)/p;return a;}a=(a*(p-1)+v)/p;return a;});};
+const hhA=(a,p)=>a.map((_,i)=>i<p-1?null:Math.max(...a.slice(i-p+1,i+1)));
+const llA=(a,p)=>a.map((_,i)=>i<p-1?null:Math.min(...a.slice(i-p+1,i+1)));
+
+const IV_N=100, IV_S=S_C.length-IV_N;
+const cut=a=>a.slice(IV_S);
+function sc(sets,w,y0,y1,pad){
+  let lo=Infinity,hi=-Infinity;
+  sets.forEach(s=>s.forEach(v=>{if(v!=null&&isFinite(v)){if(v<lo)lo=v;if(v>hi)hi=v;}}));
+  if(!isFinite(lo)){lo=0;hi=1;} if(hi===lo)hi=lo+1;
+  pad=pad==null?9:pad;
+  return {x:i=>i/(IV_N-1)*w, y:v=>y0+pad+(hi-v)/(hi-lo)*((y1-y0)-2*pad), lo:lo, hi:hi};
+}
+function pathOf(a,s){let d='',on=false;
+  a.forEach((v,i)=>{if(v==null||!isFinite(v)){on=false;return;}d+=(on?'L':'M')+s.x(i).toFixed(1)+' '+s.y(v).toFixed(1)+' ';on=true;});
+  return d.trim();}
+const ln=(a,s,c,w)=>{const d=pathOf(a,s);return d?`<path class="${c}" d="${d}" fill="none" stroke-width="${w||1.4}" stroke-linejoin="round" stroke-linecap="round"/>`:'';};
+function band(u,d,s,c){const t=[],b=[];
+  u.forEach((v,i)=>{if(v!=null&&d[i]!=null){t.push(`${s.x(i).toFixed(1)} ${s.y(v).toFixed(1)}`);b.unshift(`${s.x(i).toFixed(1)} ${s.y(d[i]).toFixed(1)}`);}});
+  return t.length?`<path class="${c}" d="M${t.join('L')}L${b.join('L')}Z"/>`:'';}
+const hz=(v,s,w,c,dash)=>`<line class="${c}" x1="0" x2="${w}" y1="${s.y(v).toFixed(1)}" y2="${s.y(v).toFixed(1)}"${dash?` stroke-dasharray="${dash}"`:''}/>`;
+const tag=(v,s,w,t,c)=>`<text class="iv-tag ${c||''}" x="${w-3}" y="${(s.y(v)-3).toFixed(1)}">${t}</text>`;
+/* the price strip that sits above every oscillator, so divergence and
+   threshold behaviour can be read against the thing they describe */
+function priceStrip(g){const P=cut(S_C),s=sc([P],g.w,0,g.ph,6);
+  return ln(P,s,'iv-px',1.2)+`<text class="iv-pane" x="2" y="10">PRICE</text>`;}
+
+const VIZ={
+ ma(g,p){const f=p.ema?emaA:smaA,A=cut(f(S_C,p.a)),B=cut(f(S_C,p.b)),P=cut(S_C),s=sc([P,A,B],g.w,g.y0,g.y1);
+   return {s:ln(P,s,'iv-px',1.3)+ln(A,s,'iv-a',1.9)+ln(B,s,'iv-b',1.9),
+     legend:[['iv-px','price'],['iv-a',(p.ema?'EMA ':'SMA ')+p.a],['iv-b',(p.ema?'EMA ':'SMA ')+p.b]]};},
+ macd(g,p){const f=emaA(S_C,p.f),sl=emaA(S_C,p.s),m=f.map((v,i)=>v==null||sl[i]==null?null:v-sl[i]);
+   const sig=emaA(m.map(v=>v==null?0:v),p.g).map((v,i)=>m[i]==null?null:v);
+   const H=m.map((v,i)=>v==null||sig[i]==null?null:v-sig[i]);
+   const M=cut(m),G=cut(sig),Hc=cut(H),s=sc([M,G,Hc],g.w,g.y0,g.y1);
+   const bars=Hc.map((v,i)=>v==null?'':`<rect class="iv-h${v>=0?'p':'n'}" x="${(s.x(i)-1.6).toFixed(1)}" y="${Math.min(s.y(v),s.y(0)).toFixed(1)}" width="3.2" height="${Math.max(.6,Math.abs(s.y(v)-s.y(0))).toFixed(1)}"/>`).join('');
+   return {s:priceStrip(g)+bars+hz(0,s,g.w,'iv-zero')+ln(M,s,'iv-a',1.6)+ln(G,s,'iv-b',1.6),
+     legend:[['iv-a','MACD '+p.f+'/'+p.s],['iv-b','signal '+p.g],['iv-hp','histogram']]};},
+ adx(g,p){const tr=trA();
+   const pdm=S_H.map((v,i)=>i===0?0:(Math.max(v-S_H[i-1],0)>Math.max(S_L[i-1]-S_L[i],0)?Math.max(v-S_H[i-1],0):0));
+   const ndm=S_L.map((v,i)=>i===0?0:(Math.max(S_L[i-1]-v,0)>Math.max(S_H[i]-S_H[i-1],0)?Math.max(S_L[i-1]-v,0):0));
+   const sm=(a,n)=>{let s=null;return a.map((v,i)=>{if(i<n-1)return null;if(s===null){s=a.slice(0,n).reduce((x,y)=>x+y,0);return s;}s=s-s/n+v;return s;});};
+   const t=sm(tr,p.n),pd=sm(pdm,p.n),nd=sm(ndm,p.n);
+   const pdi=t.map((v,i)=>v?100*pd[i]/v:null),ndi=t.map((v,i)=>v?100*nd[i]/v:null);
+   const dx=pdi.map((v,i)=>v==null||ndi[i]==null?null:100*Math.abs(v-ndi[i])/Math.max(1e-9,v+ndi[i]));
+   let a=null;const adx=dx.map((v,i)=>{if(v==null)return null;if(a===null&&i>p.n*3){a=dx.slice(i-p.n+1,i+1).reduce((x,y)=>x+y,0)/p.n;return a;}if(a===null)return null;a=(a*(p.n-1)+v)/p.n;return a;});
+   const s=sc([[0,60]],g.w,g.y0,g.y1);
+   return {s:priceStrip(g)+hz(p.t,s,g.w,'iv-thr','3 3')+tag(p.t,s,g.w,p.t+' trend line')+ln(cut(pdi),s,'iv-up',1.2)+ln(cut(ndi),s,'iv-dn',1.2)+ln(cut(adx),s,'iv-a',2.1),
+     legend:[['iv-a','ADX '+p.n],['iv-up','+DI'],['iv-dn','\u2212DI']]};},
+ supertrend(g,p){const at=atrA(p.n),mid=S_H.map((v,i)=>(v+S_L[i])/2);
+   let dir=1,fu=null,fl=null;const up=[],dn=[];
+   S_C.forEach((c,i)=>{if(at[i]==null){up.push(null);dn.push(null);return;}
+     let u=mid[i]+p.m*at[i],l=mid[i]-p.m*at[i];
+     if(fu!=null&&!(u<fu||S_C[i-1]>fu))u=fu;
+     if(fl!=null&&!(l>fl||S_C[i-1]<fl))l=fl;
+     if(dir===1&&c<l)dir=-1; else if(dir===-1&&c>u)dir=1;
+     fu=u;fl=l;up.push(dir===1?l:null);dn.push(dir===-1?u:null);});
+   const P=cut(S_C),U=cut(up),D=cut(dn),s=sc([P,U,D],g.w,g.y0,g.y1);
+   return {s:ln(P,s,'iv-px',1.3)+ln(U,s,'iv-up',2)+ln(D,s,'iv-dn',2),
+     legend:[['iv-px','price'],['iv-up','band, uptrend'],['iv-dn','band, downtrend']]};},
+ ichimoku(g,p){const mid=n=>S_H.map((_,i)=>i<n-1?null:(Math.max(...S_H.slice(i-n+1,i+1))+Math.min(...S_L.slice(i-n+1,i+1)))/2);
+   const cv=mid(p.a),bs=mid(p.b),bb=mid(p.c);
+   const shift=(a,n)=>{const o=a.map(()=>null);a.forEach((v,i)=>{if(i+n<a.length)o[i+n]=v;});return o;};
+   const sa=shift(cv.map((v,i)=>v==null||bs[i]==null?null:(v+bs[i])/2),p.b),sb=shift(bb,p.b);
+   const P=cut(S_C),A=cut(sa),B=cut(sb),s=sc([P,A,B],g.w,g.y0,g.y1);
+   return {s:band(A,B,s,'iv-cloud')+ln(A,s,'iv-a',1)+ln(B,s,'iv-b',1)+ln(cut(cv),s,'iv-up',1.2)+ln(P,s,'iv-px',1.5),
+     legend:[['iv-px','price'],['iv-cloud','the cloud'],['iv-up','conversion '+p.a]]};},
+ rsi(g,p){const R=cut(rsiA(S_C,p.n)),s=sc([[0,100]],g.w,g.y0,g.y1);
+   return {s:priceStrip(g)+`<rect class="iv-zone" x="0" y="${s.y(p.hi).toFixed(1)}" width="${g.w}" height="${(s.y(p.lo)-s.y(p.hi)).toFixed(1)}"/>`+
+     hz(p.hi,s,g.w,'iv-thr','3 3')+hz(p.lo,s,g.w,'iv-thr','3 3')+tag(p.hi,s,g.w,p.hi)+tag(p.lo,s,g.w,p.lo)+ln(R,s,'iv-a',1.9),
+     legend:[['iv-a','RSI '+p.n],['iv-zone','the working band']]};},
+ stoch(g,p){const hh=hhA(S_H,p.n),ll=llA(S_L,p.n);
+   const k=S_C.map((c,i)=>hh[i]==null?null:100*(c-ll[i])/Math.max(1e-9,hh[i]-ll[i]));
+   const ks=smaA(k.map(v=>v==null?0:v),p.k).map((v,i)=>k[i]==null?null:v);
+   const d=smaA(ks.map(v=>v==null?0:v),p.d).map((v,i)=>ks[i]==null?null:v);
+   const s=sc([[0,100]],g.w,g.y0,g.y1);
+   return {s:priceStrip(g)+`<rect class="iv-zone" x="0" y="${s.y(80).toFixed(1)}" width="${g.w}" height="${(s.y(20)-s.y(80)).toFixed(1)}"/>`+
+     hz(80,s,g.w,'iv-thr','3 3')+hz(20,s,g.w,'iv-thr','3 3')+tag(80,s,g.w,'80')+tag(20,s,g.w,'20')+ln(cut(ks),s,'iv-a',1.7)+ln(cut(d),s,'iv-b',1.7),
+     legend:[['iv-a','%K'],['iv-b','%D'],['iv-zone','20 to 80']]};},
+ bb(g,p){const m=smaA(S_C,p.n),sd=stdA(S_C,p.n);
+   const u=m.map((v,i)=>v==null?null:v+p.s*sd[i]),l=m.map((v,i)=>v==null?null:v-p.s*sd[i]);
+   const P=cut(S_C),U=cut(u),L=cut(l),s=sc([P,U,L],g.w,g.y0,g.y1);
+   return {s:band(U,L,s,'iv-fill')+ln(U,s,'iv-b',1.2)+ln(L,s,'iv-b',1.2)+ln(cut(m),s,'iv-a',1.2)+ln(P,s,'iv-px',1.4),
+     legend:[['iv-px','price'],['iv-a','basis '+p.n],['iv-b','\u00b1'+p.s+' dev']]};},
+ atr(g,p){const A=cut(atrA(p.n)),s=sc([A],g.w,g.y0,g.y1);
+   const base=A.map(()=>s.lo);
+   return {s:priceStrip(g)+band(A,base,s,'iv-fill')+ln(A,s,'iv-a',1.9),
+     legend:[['iv-a','ATR '+p.n],['iv-fill','range expansion']]};},
+ keltner(g,p){const e=emaA(S_C,p.e),a=atrA(p.a);
+   const u=e.map((v,i)=>v==null||a[i]==null?null:v+p.m*a[i]),l=e.map((v,i)=>v==null||a[i]==null?null:v-p.m*a[i]);
+   const P=cut(S_C),U=cut(u),L=cut(l),s=sc([P,U,L],g.w,g.y0,g.y1);
+   return {s:band(U,L,s,'iv-fill')+ln(U,s,'iv-b',1.2)+ln(L,s,'iv-b',1.2)+ln(cut(e),s,'iv-a',1.2)+ln(P,s,'iv-px',1.4),
+     legend:[['iv-px','price'],['iv-a','EMA '+p.e],['iv-b',p.m+' \u00d7 ATR('+p.a+')']]};},
+ obv(g,p){let t=0;const o=S_C.map((c,i)=>{if(i)t+=c>S_C[i-1]?S_V[i]:c<S_C[i-1]?-S_V[i]:0;return t;});
+   const O=cut(o),s=sc([O],g.w,g.y0,g.y1);
+   const sig=p.n?cut(emaA(o,p.n)):null;
+   return {s:priceStrip(g)+ln(O,s,'iv-a',1.9)+(sig?ln(sig,s,'iv-b',1.3):''),
+     legend:sig?[['iv-a','OBV'],['iv-b','EMA '+p.n]]:[['iv-a','OBV, cumulative']]};},
+ rvol(g,p){const av=smaA(S_V,p.n),r=S_V.map((v,i)=>av[i]?v/av[i]:null);
+   const R=cut(r),s=sc([[0,3]],g.w,g.y0,g.y1);
+   return {s:priceStrip(g)+hz(p.t,s,g.w,'iv-thr','3 3')+tag(p.t,s,g.w,p.t+'\u00d7 gate')+
+     R.map((v,i)=>v==null?'':`<rect class="${v>=p.t?'iv-hp':'iv-vb'}" x="${(s.x(i)-1.7).toFixed(1)}" y="${s.y(Math.min(v,3)).toFixed(1)}" width="3.4" height="${Math.max(.6,s.y(0)-s.y(Math.min(v,3))).toFixed(1)}"/>`).join(''),
+     legend:[['iv-hp','at or above the gate'],['iv-vb','below it'],['iv-thr',p.n+'-period average']]};},
+ vprofile(g,p){const P=cut(S_C).slice(-p.n),V=cut(S_V).slice(-p.n),off=IV_N-P.length;
+   const full=cut(S_C),s=sc([full],g.w,g.y0,g.y1),NB=26;
+   const lo=s.lo,hi=s.hi,bw=(hi-lo)/NB,bins=new Array(NB).fill(0);
+   P.forEach((c,i)=>{const b=Math.max(0,Math.min(NB-1,Math.floor((c-lo)/bw)));bins[b]+=V[i];});
+   const total=bins.reduce((a,b)=>a+b,0),mx=Math.max(...bins),poc=bins.indexOf(mx);
+   /* grow the value area outward from the point of control until it holds the target share */
+   let lo_i=poc,hi_i=poc,acc=bins[poc];
+   while(acc<total*p.va&&(lo_i>0||hi_i<NB-1)){
+     const dn=lo_i>0?bins[lo_i-1]:-1, up=hi_i<NB-1?bins[hi_i+1]:-1;
+     if(up>=dn){hi_i++;acc+=bins[hi_i];}else{lo_i--;acc+=bins[lo_i];}}
+   const bh=(s.y(lo)-s.y(hi))/NB;
+   const bars=bins.map((v,i)=>{const inVA=i>=lo_i&&i<=hi_i;
+     return `<rect class="${i===poc?'iv-poc':inVA?'iv-va':'iv-vb'}" x="0" y="${(s.y(hi)+(NB-1-i)*bh+.6).toFixed(1)}" width="${(v/mx*g.w*.4).toFixed(1)}" height="${Math.max(1,bh-1.2).toFixed(1)}"/>`;}).join('');
+   return {s:bars+ln(cut(S_C),s,'iv-px',1.5)+(off?`<line class="iv-thr" x1="${s.x(off).toFixed(1)}" x2="${s.x(off).toFixed(1)}" y1="${g.y0}" y2="${g.y1}" stroke-dasharray="2 3"/>`:''),
+     legend:[['iv-poc','point of control'],['iv-va',(p.va*100)+'% value area'],['iv-px','price']]};},
+ vwap(g,p){const P=cut(S_C);let st=0;
+   if(p.a==='lo'){let m=Infinity;P.forEach((c,i)=>{if(c<m){m=c;st=i;}});}
+   else if(p.a==='hi'){let m=-Infinity;P.forEach((c,i)=>{if(c>m){m=c;st=i;}});}
+   const H=cut(S_H),L=cut(S_L),V=cut(S_V);
+   let pv=0,vv=0;const w=P.map((c,i)=>{if(i<st)return null;const tp=(H[i]+L[i]+c)/3;pv+=tp*V[i];vv+=V[i];return pv/vv;});
+   const s=sc([P,w],g.w,g.y0,g.y1);
+   return {s:ln(P,s,'iv-px',1.3)+ln(w,s,'iv-a',2.1)+(st?`<circle class="iv-anch" cx="${s.x(st).toFixed(1)}" cy="${s.y(P[st]).toFixed(1)}" r="4"/>`:''),
+     legend:[['iv-px','price'],['iv-a',p.a==='session'?'VWAP from the open':'VWAP from the anchor']]};},
+ pivots(g,p){const P=cut(S_C),refN=30;
+   const rh=Math.max(...S_H.slice(IV_S-refN,IV_S)),rl=Math.min(...S_L.slice(IV_S-refN,IV_S)),rc=S_C[IV_S-1],rg=rh-rl;
+   const pp=(rh+rl+rc)/3;
+   let r1,s1,r2,s2;
+   if(p.m==='fib'){r1=pp+.382*rg;s1=pp-.382*rg;r2=pp+.618*rg;s2=pp-.618*rg;}
+   else if(p.m==='cam'){r1=rc+rg*1.1/12;s1=rc-rg*1.1/12;r2=rc+rg*1.1/6;s2=rc-rg*1.1/6;}
+   else {r1=2*pp-rl;s1=2*pp-rh;r2=pp+rg;s2=pp-rg;}
+   const s=sc([P,[r2,s2]],g.w,g.y0,g.y1);
+   return {s:hz(r2,s,g.w,'iv-dn','2 4')+hz(r1,s,g.w,'iv-dn','2 4')+hz(pp,s,g.w,'iv-a')+hz(s1,s,g.w,'iv-up','2 4')+hz(s2,s,g.w,'iv-up','2 4')+
+     tag(r1,s,g.w,'R1')+tag(s1,s,g.w,'S1')+tag(pp,s,g.w,'P')+ln(P,s,'iv-px',1.4),
+     legend:[['iv-a','central pivot'],['iv-dn','resistance'],['iv-up','support']]};},
+ fib(g,p){const P=cut(S_C);let li=0;for(let i=0;i<P.length;i++)if(P[i]<P[li])li=i;
+   let hiI=li;for(let i=li;i<P.length;i++)if(P[i]>P[hiI])hiI=i;
+   const lo=P[li],hi=P[hiI],rg=hi-lo;
+   const ratios=p.mode==='ext'?[1.272,1.618,2.618]:p.mode==='pocket'?[.618,.65]:[.236,.382,.5,.618,.786];
+   const prices=ratios.map(r=>p.mode==='ext'?lo+r*rg:hi-r*rg);
+   const s=sc([P,prices],g.w,g.y0,g.y1);
+   let out=prices.map((v,i)=>hz(v,s,g.w,ratios[i]===.618?'iv-fib0':'iv-fibl','2 3')+tag(v,s,g.w,(ratios[i]*100).toFixed(1)+'%')).join('');
+   if(p.mode!=='ext'){const a=s.y(hi-.618*rg),b=s.y(hi-.65*rg);
+     out=`<rect class="iv-gp" x="0" y="${Math.min(a,b).toFixed(1)}" width="${g.w}" height="${Math.max(2,Math.abs(b-a)).toFixed(1)}"/>`+out;}
+   return {s:out+hz(hi,s,g.w,'iv-fib0')+hz(lo,s,g.w,'iv-fib0')+ln(P,s,'iv-px',1.5),
+     legend:[['iv-px','price'],['iv-fib0','swing anchors'],['iv-gp','golden pocket']]};}
+};
+
+/* ---- the bench ---- */
+let benchI=0, benchSet=0, benchQ='';
+const IND_LABEL=Object.fromEntries(IND_CATS);
+function indHit(x){ if(!benchQ)return true; const q=benchQ.toLowerCase();
+  return (x.n+' '+x.meas+' '+x.use+' '+x.trap+' '+x.origin).toLowerCase().includes(q); }
+function spark(x){
+  const r=VIZ[x.viz]({w:70,y0:0,y1:22,ph:0},x.sets[0].p);
+  return `<svg class="rk-sv" viewBox="0 0 70 22" preserveAspectRatio="none" aria-hidden="true">${r.s}</svg>`;
+}
+function renderRack(){
+  let h='';
+  IND_CATS.forEach(([k,label])=>{
+    const rows=INDICATORS.map((x,i)=>({x,i})).filter(o=>o.x.cat===k&&indHit(o.x));
+    if(!rows.length)return;
+    h+=`<div class="rk-g">${label}</div>`;
+    rows.forEach(o=>{h+=`<button class="rk${o.i===benchI?' on':''}" data-i="${o.i}" onclick="pickInd(${o.i})">
+      <span class="rk-s">${spark(o.x)}</span><span class="rk-n">${o.x.n}</span><span class="rk-d">${o.x.badge}</span></button>`;});
+  });
+  $('#benchRack').innerHTML=h||'<div class="rk-none">Nothing on the panel matches that.</div>';
+}
+function pickInd(i){ benchI=i; benchSet=0; renderRack(); renderBench(); }
+function pickSet(j){ benchSet=j; renderBench(); }
+function openInd(i){ pickInd(i); const el=$('#bench'); if(el)el.scrollIntoView({behavior:reduceMotion?'auto':'smooth',block:'start'}); }
+function renderBench(){
+  const x=INDICATORS[benchI], st=x.sets[Math.min(benchSet,x.sets.length-1)];
+  const W=760,H=x.split?312:268,PH=x.split?86:0;
+  const g={w:W,y0:x.split?PH+14:0,y1:H,ph:PH};
+  const r=VIZ[x.viz](g,st.p);
+  $('#benchSVG').setAttribute('viewBox',`0 0 ${W} ${H}`);
+  $('#benchSVG').innerHTML=r.s;
+  $('#benchLegend').innerHTML=r.legend.map(([c,t])=>`<span class="lg"><i class="lgd ${c}"></i>${t}</span>`).join('');
+  $('#bmName').textContent=x.n;
+  $('#bmCat').textContent=IND_LABEL[x.cat];
+  $('#bmMeas').textContent=x.meas;
+  $('#benchSets').innerHTML=x.sets.map((s,j)=>
+    `<button class="st${j===benchSet?' on':''}" onclick="pickSet(${j})"><b>${s.v}</b><small>${s.t}</small></button>`).join('');
+  $('#benchSetNote').innerHTML=`<span class="sn-k">${st.t}</span>${st.d}`;
+  $('#bmRows').innerHTML=[
+    ['Best used for',x.use,''],['Pairs with',x.pairs,''],['Timeframe fit',x.tf,''],
+    ['The lag',x.lag,'warn'],['The trap',x.trap,'trap']
+  ].map(([k,v,c])=>`<div class="bm-row ${c}"><span class="k">${k}</span><span class="v">${v}</span></div>`).join('');
+  $('#bmOrigin').innerHTML=`<span class="k">Origin</span>${x.origin}`;
+  const lab=$('#bmLab'); lab.hidden=x.opt!=='lab';
+}
+$('#indSearch').addEventListener('input',e=>{benchQ=e.target.value.trim();renderRack();});
+renderRack(); renderBench();
+
+/* ============================================================
+   THE FIBONACCI LAB
+   Runs on two numbers you type from your own chart plus a price
+   marker you drag. Nothing here is a feed.
+   ============================================================ */
+const FIB_R=[0,.236,.382,.5,.618,.786,1], FIB_X=[1.272,1.618,2.618];
+const FIB={dir:'up',hi:120,lo:100,px:107.30,ext:true,frozen:null,drag:null};
+const fibRange=()=>Math.max(1e-6,FIB.hi-FIB.lo);
+const fibPrice=r=>FIB.dir==='up'?(r<=1?FIB.hi-r*fibRange():FIB.lo+r*fibRange())
+                                :(r<=1?FIB.lo+r*fibRange():FIB.hi-r*fibRange());
+const fibPct=()=>FIB.dir==='up'?(FIB.hi-FIB.px)/fibRange():(FIB.px-FIB.lo)/fibRange();
+const fmt=v=>Math.abs(v)>=1000?v.toLocaleString(undefined,{maximumFractionDigits:2,minimumFractionDigits:2}):v.toFixed(2);
+const fibLevels=()=>{const a=FIB_R.map(r=>({r,p:fibPrice(r),kind:'r'}));
+  if(FIB.ext)FIB_X.forEach(r=>a.push({r,p:fibPrice(r),kind:'x'}));return a;};
+const FIB_W=720,FIB_H=430,FIB_PLOT=548,FIB_T=28,FIB_B=26;
+function fibDomain(){
+  if(FIB.frozen)return FIB.frozen;
+  const v=fibLevels().map(l=>l.p).concat([FIB.px,FIB.hi,FIB.lo]);
+  const lo=Math.min(...v),hi=Math.max(...v),pad=Math.max((hi-lo)*.08,fibRange()*.05);
+  return {lo:lo-pad,hi:hi+pad};
+}
+const fibY=(p,d)=>FIB_T+(d.hi-p)/Math.max(1e-9,d.hi-d.lo)*(FIB_H-FIB_T-FIB_B);
+const fibP=(y,d)=>d.hi-(y-FIB_T)/(FIB_H-FIB_T-FIB_B)*(d.hi-d.lo);
+function drawFib(){
+  const d=fibDomain(),up=FIB.dir==='up';
+  const yS=fibY(up?FIB.lo:FIB.hi,d),yE=fibY(up?FIB.hi:FIB.lo,d),yP=fibY(FIB.px,d);
+  const g1=fibY(fibPrice(.618),d),g2=fibY(fibPrice(.65),d);
+  let s=`<rect class="fb-gp" x="0" y="${Math.min(g1,g2).toFixed(1)}" width="${FIB_PLOT}" height="${Math.max(2,Math.abs(g2-g1)).toFixed(1)}" rx="2"/>`;
+  s+=`<text class="fb-gpl" x="8" y="${(Math.min(g1,g2)-4).toFixed(1)}">GOLDEN POCKET</text>`;
+  fibLevels().forEach(l=>{const y=fibY(l.p,d),key=(l.r===.618||l.r===.5||l.r===.382);
+    s+=`<line class="fb-l ${l.kind==='x'?'x':''} ${key?'key':''}" x1="0" x2="${FIB_PLOT}" y1="${y.toFixed(1)}" y2="${y.toFixed(1)}"/>`;
+    s+=`<text class="fb-r ${l.kind==='x'?'x':''} ${key?'key':''}" x="${FIB_PLOT+12}" y="${(y+3.6).toFixed(1)}">${(l.r*100).toFixed(1)}%</text>`;
+    s+=`<text class="fb-p ${key?'key':''}" x="${FIB_W-6}" y="${(y+3.6).toFixed(1)}">${fmt(l.p)}</text>`;});
+  s+=`<path class="fb-leg" d="M118 ${yS.toFixed(1)} L318 ${yE.toFixed(1)}"/>`;
+  s+=`<path class="fb-pull" d="M318 ${yE.toFixed(1)} L452 ${yP.toFixed(1)}"/>`;
+  s+=`<circle class="fb-h" data-h="start" cx="118" cy="${yS.toFixed(1)}" r="9"/>`;
+  s+=`<circle class="fb-h" data-h="end" cx="318" cy="${yE.toFixed(1)}" r="9"/>`;
+  s+=`<text class="fb-hl" x="118" y="${(yS+(up?22:-14)).toFixed(1)}">${up?'SWING LOW':'SWING HIGH'}</text>`;
+  s+=`<text class="fb-hl" x="318" y="${(yE+(up?-14:22)).toFixed(1)}">${up?'SWING HIGH':'SWING LOW'}</text>`;
+  s+=`<g class="fb-pxg" data-h="px"><line class="fb-pxl" x1="0" x2="${FIB_PLOT}" y1="${yP.toFixed(1)}" y2="${yP.toFixed(1)}"/>`+
+     `<rect class="fb-pxb" x="440" y="${(yP-11).toFixed(1)}" width="86" height="22" rx="11"/>`+
+     `<text class="fb-pxt" x="483" y="${(yP+4.5).toFixed(1)}">${fmt(FIB.px)}</text></g>`;
+  $('#fibSVG').innerHTML=s; bindFibHandles(); paintFibReadout();
+}
+function paintFibReadout(){
+  const pct=fibPct()*100, lv=fibLevels();
+  let near=lv[0],dist=Infinity;
+  lv.forEach(l=>{const dd=Math.abs(l.p-FIB.px);if(dd<dist){dist=dd;near=l;}});
+  let state,cls;
+  if(pct<0){state='Beyond the swing. This is extension territory, not a retracement.';cls='x';}
+  else if(pct<23.6){state='Barely a pullback. Strong trend, but nothing has been tested yet.';cls='s';}
+  else if(pct<38.2){state='Shallow. Buyers are stepping in early and defending hard.';cls='s';}
+  else if(pct<61.8){state='Normal pullback depth. Where most continuation entries live.';cls='n';}
+  else if(pct<=65){state='In the golden pocket. Deep enough to shake people out, shallow enough to hold.';cls='g';}
+  else if(pct<=78.6){state='Deep. Still valid, but this is now a fight rather than a trend.';cls='d';}
+  else if(pct<=100){state='Past 78.6%. A retracement this deep usually means the swing is failing.';cls='d';}
+  else {state='Through the origin. The swing is invalidated, not retraced.';cls='x';}
+  $('#fibPct').textContent=pct.toFixed(1)+'%';
+  $('#fibState').className='fb-state '+cls;
+  $('#fibState').textContent=state;
+  $('#fibNear').innerHTML=`Nearest level <b>${(near.r*100).toFixed(1)}%</b> at <b>${fmt(near.p)}</b>, ${fmt(Math.abs(near.p-FIB.px))} away (${(Math.abs(near.p-FIB.px)/Math.max(1e-9,FIB.px)*100).toFixed(2)}%).`;
+  $('#fibLadder').innerHTML=fibLevels().map(l=>{const dd=l.p-FIB.px,key=(l.r===.618||l.r===.5||l.r===.382);
+    return `<button class="fb-row${key?' key':''}${l.kind==='x'?' x':''}" onclick="fibSnap(${l.p})">
+      <span class="fr-r">${(l.r*100).toFixed(1)}%</span><span class="fr-p">${fmt(l.p)}</span>
+      <span class="fr-d ${dd>=0?'up':'dn'}">${dd>=0?'+':''}${fmt(dd)}</span></button>`;}).join('');
+}
+function fibSnap(p){FIB.px=p;drawFib();}
+function bindFibHandles(){
+  const svg=$('#fibSVG');
+  $$('#fibSVG [data-h]').forEach(el=>{
+    el.addEventListener('pointerdown',ev=>{
+      ev.preventDefault(); FIB.frozen=fibDomain(); FIB.drag=el.dataset.h;
+      const move=e=>{const pt=svg.createSVGPoint();pt.x=e.clientX;pt.y=e.clientY;
+        const m=svg.getScreenCTM(); if(!m)return;
+        const v=+fibP(pt.matrixTransform(m.inverse()).y,FIB.frozen).toFixed(2), up=FIB.dir==='up';
+        if(FIB.drag==='px')FIB.px=v;
+        else if((FIB.drag==='start'&&up)||(FIB.drag==='end'&&!up))FIB.lo=Math.min(v,FIB.hi-.01);
+        else FIB.hi=Math.max(v,FIB.lo+.01);
+        syncFibInputs(); drawFib();};
+      const done=()=>{FIB.frozen=null;FIB.drag=null;window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',done);drawFib();};
+      window.addEventListener('pointermove',move); window.addEventListener('pointerup',done);
+    });
+  });
+}
+function syncFibInputs(){const h=$('#fibHi'),l=$('#fibLo');
+  if(document.activeElement!==h)h.value=FIB.hi.toFixed(2);
+  if(document.activeElement!==l)l.value=FIB.lo.toFixed(2);}
+function fibFromInputs(){
+  const h=parseFloat($('#fibHi').value),l=parseFloat($('#fibLo').value);
+  if(isFinite(h)&&isFinite(l)&&h>l){const op=fibPct();FIB.hi=h;FIB.lo=l;
+    FIB.px=FIB.dir==='up'?FIB.hi-op*fibRange():FIB.lo+op*fibRange();drawFib();}}
+function fibDir(d,el){FIB.dir=d;$$('#fibDir button').forEach(b=>b.classList.toggle('on',b===el));FIB.px=fibPrice(.5);drawFib();}
+function fibExt(el){FIB.ext=!FIB.ext;el.classList.toggle('on',FIB.ext);el.textContent=FIB.ext?'Extensions on':'Extensions off';drawFib();}
+function fibText(){return `Fibonacci ladder  ${FIB.dir==='up'?'uptrend (pullback)':'downtrend (bounce)'}\n`+
+  `Swing high ${fmt(FIB.hi)}   Swing low ${fmt(FIB.lo)}   Range ${fmt(fibRange())}\n`+
+  fibLevels().map(l=>`${(l.r*100).toFixed(1).padStart(6)}%   ${fmt(l.p)}`).join('\n');}
+function fibPine(){return `//@version=5\nindicator("Fib ladder ${fmt(FIB.lo)} - ${fmt(FIB.hi)}", overlay=true)\n`+
+  fibLevels().map(l=>`hline(${l.p.toFixed(2)}, "${(l.r*100).toFixed(1)}%", color=${l.r===.618?'color.new(#f5b942,0)':l.kind==='x'?'color.new(#a855f7,20)':'color.new(#7ea6d6,45)'}, linestyle=hline.style_${l.kind==='x'?'dotted':'dashed'})`).join('\n');}
+function fibCopy(kind,el){
+  const txt=kind==='pine'?fibPine():fibText(), old=el.textContent;
+  const done=ok=>{el.textContent=ok?'Copied':'Press ctrl+C';setTimeout(()=>el.textContent=old,1400);};
+  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(txt).then(()=>done(true),()=>done(false));
+  else{const t=document.createElement('textarea');t.value=txt;document.body.appendChild(t);t.select();try{document.execCommand('copy');done(true);}catch(_){done(false);}t.remove();}
+}
+$('#fibHi').addEventListener('input',fibFromInputs);
+$('#fibLo').addEventListener('input',fibFromInputs);
+(function(){const f=[1,1,2,3,5,8,13,21,34,55,89,144];
+  $('#fibSeq').innerHTML=f.map((n,i)=>`<span class="fq-n${i>6?' lit':''}">${n}</span>`).join('<i>\u203a</i>')+
+   `<span class="fq-eq">55 \u00f7 89 = <b>${(55/89).toFixed(4)}</b> \u00b7 55 \u00f7 144 = <b>${(55/144).toFixed(4)}</b> \u00b7 \u221a0.618 = <b>${Math.sqrt(.618).toFixed(4)}</b></span>`;})();
+syncFibInputs(); drawFib();
+
+/* ============================================================
+   THE RISK DESK
+   Three tabs: the capital ladder, hedging and contract selection,
+   and the mind. All arithmetic here is computed live from the
+   numbers you set. Nothing on this page is market data.
+   ============================================================ */
+let rdTab='ladder', rdLane='fast', rdAcct=5000;
+
+function setRdTab(t,el){
+  rdTab=t; $$('#rdTabs button').forEach(b=>b.classList.toggle('on',b===el));
+  $$('.rd-panel').forEach(p=>p.classList.toggle('hidden',p.dataset.rd!==t));
+  if(t==='mind')drawProspect();
+  if(t==='hedge')drawHedgePayoff();
+}
+function setLane(l,el){ rdLane=l; $$('#rdLane button').forEach(b=>b.classList.toggle('on',b===el));
+  $('#riskdesk').dataset.lane=l; renderLadder(); }
+
+const usd=v=>'$'+Math.round(v).toLocaleString();
+const tierFor=v=>TIERS.find(t=>v>=t.lo&&v<t.hi)||TIERS[TIERS.length-1];
+
+/* probability that a run of k or more losses appears somewhere in n
+   trades, computed exactly with a small dynamic program rather than
+   the q^k approximation people usually quote */
+function runRisk(q,k,n){
+  let st=new Array(k).fill(0); st[0]=1; let done=0;
+  for(let i=0;i<n;i++){
+    const nx=new Array(k).fill(0); let d=done;
+    for(let r=0;r<k;r++){ if(!st[r])continue;
+      nx[0]+=st[r]*(1-q);
+      if(r+1>=k)d+=st[r]*q; else nx[r+1]+=st[r]*q; }
+    st=nx; done=d;
+  }
+  return done;
+}
+
+function renderLadder(){
+  const t=tierFor(rdAcct), L=t.lanes[rdLane];
+  const perTrade=rdAcct*L.risk/100;
+  const heat=perTrade*L.pos;
+  const daily=rdAcct*(rdLane==='fast'?(L.risk*2):(L.risk))/100;
+  $('#ldAcct').textContent=usd(rdAcct);
+  $('#ldBand').textContent=t.band;
+  $('#ldName').textContent=t.name;
+  $('#ldGist').textContent=t.gist;
+  $('#ldNums').innerHTML=[
+    ['Risk per trade', usd(perTrade), L.risk+'% of the account'],
+    ['Max open risk', usd(heat), 'across '+L.pos+' position'+(L.pos>1?'s':'')],
+    [rdLane==='fast'?'Daily stop':'Rebalance band', rdLane==='fast'?usd(daily):'\u00b15%', rdLane==='fast'?'then you are done for the day':'drift before you act'],
+    ['Holding period', L.hold, 'what this lane is built for']
+  ].map(([k,v,s])=>`<div class="ld-n"><span class="ln-k">${k}</span><span class="ln-v">${v}</span><span class="ln-s">${s}</span></div>`).join('');
+  $('#ldFocus').textContent=L.focus;
+  $('#ldRules').innerHTML=L.rules.map(r=>`<li>${r}</li>`).join('');
+  $('#ldNot').innerHTML=L.notyet.map(r=>`<li>${r}</li>`).join('');
+  $('#ldEdge').textContent=L.edge;
+  /* survival maths: how many consecutive losses this size absorbs */
+  const toDD=Math.floor(Math.log(0.8)/Math.log(1-L.risk/100));
+  const wr=rdLane==='fast'?0.45:0.55, k=6;
+  const pr=runRisk(1-wr,k,100)*100;
+  $('#ldSurv').innerHTML=
+    `<b>${toDD}</b> straight losses at ${L.risk}% puts this account down 20%, which then needs <b>+25%</b> just to
+     get back to even, and ${usd(rdAcct*L.risk/100*toDD)} of real money is gone in the meantime. At a
+     ${Math.round(wr*100)}% win rate a run of six losses turns up somewhere in a hundred trades about
+     <b>${pr.toFixed(0)}%</b> of the time, so it is a scheduled event, not bad luck.`;
+  drawRecovery(L.risk);
+  $$('#ldRungs button').forEach(b=>b.classList.toggle('on',b.dataset.t===t.id));
+}
+
+/* the recovery curve: the single most under-taught piece of arithmetic
+   in retail trading. gain required = d / (1 - d) */
+function drawRecovery(riskPct){
+  const W=520,H=250,PL=44,PB=30,PT=14,PR=12;
+  const x=d=>PL+(d/70)*(W-PL-PR), y=g=>H-PB-(Math.min(g,240)/240)*(H-PB-PT);
+  let s='';
+  for(let i=0;i<=4;i++){const gv=i*60;
+    s+=`<line class="rc-grid" x1="${PL}" x2="${W-PR}" y1="${y(gv).toFixed(1)}" y2="${y(gv).toFixed(1)}"/>`;
+    s+=`<text class="rc-ax" x="${PL-7}" y="${(y(gv)+3.5).toFixed(1)}" text-anchor="end">${gv}%</text>`;}
+  [0,10,20,30,40,50,60,70].forEach(d=>{
+    s+=`<text class="rc-ax" x="${x(d).toFixed(1)}" y="${H-10}" text-anchor="middle">${d}%</text>`;});
+  let d1='';
+  for(let d=0;d<=70;d+=1){const g=(d/100)/(1-d/100)*100; d1+=(d?'L':'M')+x(d).toFixed(1)+' '+y(g).toFixed(1)+' ';}
+  s+=`<path class="rc-line" d="${d1.trim()}" fill="none"/>`;
+  [[20,'a bad month'],[33,'one third gone'],[50,'half the account']].forEach(([d,lab])=>{
+    const g=(d/100)/(1-d/100)*100;
+    s+=`<line class="rc-mark" x1="${x(d).toFixed(1)}" x2="${x(d).toFixed(1)}" y1="${y(g).toFixed(1)}" y2="${H-PB}"/>`;
+    s+=`<circle class="rc-dot" cx="${x(d).toFixed(1)}" cy="${y(g).toFixed(1)}" r="4"/>`;
+    s+=`<text class="rc-lab" x="${(x(d)+7).toFixed(1)}" y="${(y(g)-6).toFixed(1)}">${lab}: +${Math.round(g)}%</text>`;});
+  s+=`<text class="rc-ttl" x="${PL}" y="${PT-2}">GAIN REQUIRED TO RECOVER A DRAWDOWN</text>`;
+  $('#recSVG').innerHTML=s;
+}
+
+/* ---- hedging ---- */
+function renderHedges(){
+  $('#hedgeList').innerHTML=HEDGES.map((h,i)=>
+    `<details class="hg"${i===0?' open':''}><summary><span class="hg-n">${h.n}</span><span class="hg-w">${h.when}</span></summary>
+     <div class="hg-b">
+       <div class="hg-r"><span class="k">How it is built</span><span class="v">${h.how}</span></div>
+       <div class="hg-r"><span class="k">What it costs</span><span class="v">${h.cost}</span></div>
+       <div class="hg-r"><span class="k">Contract choice</span><span class="v">${h.pick}</span></div>
+       <div class="hg-r trap"><span class="k">The trap</span><span class="v">${h.trap}</span></div>
+     </div></details>`).join('');
+  $('#contractList').innerHTML=CONTRACTS.map(([k,v],i)=>
+    `<div class="ct"><span class="ct-i">${String(i+1).padStart(2,'0')}</span><div><h5>${k}</h5><p>${v}</p></div></div>`).join('');
+}
+function hedgeCalc(){
+  const V=parseFloat($('#hgVal').value)||0, b=parseFloat($('#hgBeta').value)||1, ix=parseFloat($('#hgIdx').value)||1;
+  const raw=(V*b)/(ix*100), n=Math.max(1,Math.round(raw)), covers=ix*100;
+  let note='';
+  if(raw<0.75) note=`One contract covers ${usd(covers)} of notional, which is larger than the exposure you are hedging.
+    Rounding up to one contract over-hedges by roughly ${(1/Math.max(raw,.01)).toFixed(1)}\u00d7. A smaller-notional
+    instrument, an ETF option at roughly a tenth the size, gives the granularity this portfolio needs.`;
+  else if(Math.abs(raw-n)>0.25) note=`Rounding ${raw.toFixed(2)} to ${n} shifts your coverage by
+    ${Math.abs((n/raw-1)*100).toFixed(0)}%. Decide deliberately whether to round down and stay slightly under-hedged.`;
+  $('#hgOut').innerHTML=
+    `<div class="hg-o"><span>Beta-adjusted exposure</span><b>${usd(V*b)}</b></div>
+     <div class="hg-o"><span>Contracts for a full hedge</span><b>${raw.toFixed(2)}</b></div>
+     <div class="hg-o"><span>Practical size</span><b>${n} contract${n===1?'':'s'}</b></div>
+     <div class="hg-o dim"><span>Each contract covers</span><b>${usd(covers)}</b></div>`
+    +(note?`<p class="hg-warn">${note}</p>`:'');
+  drawHedgePayoff();
+}
+/* schematic payoff comparison. real arithmetic on the inputs above,
+   drawn against a percentage move in the underlying */
+function drawHedgePayoff(){
+  const V=parseFloat($('#hgVal').value)||100000;
+  const kPct=parseFloat($('#hgStrike').value)||8, cost=parseFloat($('#hgCost').value)||2.5;
+  const W=520,H=250,PL=52,PB=28,PT=16,PR=14;
+  const xs=-25, xe=25;
+  const lo=-V*0.26, hi=V*0.26;
+  const x=m=>PL+((m-xs)/(xe-xs))*(W-PL-PR), y=v=>H-PB-((v-lo)/(hi-lo))*(H-PB-PT);
+  const un=m=>V*m/100;
+  const put=m=>un(m)+V*Math.max(0,(-kPct-m))/100-V*cost/100;
+  const col=m=>put(m)-V*Math.max(0,(m-kPct))/100+V*cost/100;
+  let s='';
+  s+=`<line class="rc-grid" x1="${PL}" x2="${W-PR}" y1="${y(0).toFixed(1)}" y2="${y(0).toFixed(1)}"/>`;
+  s+=`<line class="rc-grid" x1="${x(0).toFixed(1)}" x2="${x(0).toFixed(1)}" y1="${PT}" y2="${H-PB}"/>`;
+  [-20,-10,0,10,20].forEach(m=>s+=`<text class="rc-ax" x="${x(m).toFixed(1)}" y="${H-9}" text-anchor="middle">${m>0?'+':''}${m}%</text>`);
+  [-0.2,-0.1,0,0.1,0.2].forEach(f=>s+=`<text class="rc-ax" x="${PL-7}" y="${(y(V*f)+3.5).toFixed(1)}" text-anchor="end">${f>0?'+':''}${Math.round(f*100)}%</text>`);
+  const draw=(fn,cls,w)=>{let d='';for(let m=xs;m<=xe;m+=0.5){d+=(d?'L':'M')+x(m).toFixed(1)+' '+y(Math.max(lo,Math.min(hi,fn(m)))).toFixed(1)+' ';}
+    return `<path class="${cls}" d="${d.trim()}" fill="none" stroke-width="${w}"/>`;};
+  s+=draw(un,'hp-un',1.6)+draw(put,'hp-put',2.2)+draw(col,'hp-col',2);
+  s+=`<line class="rc-mark" x1="${x(-kPct).toFixed(1)}" x2="${x(-kPct).toFixed(1)}" y1="${PT}" y2="${H-PB}"/>`;
+  s+=`<text class="rc-lab" x="${(x(-kPct)+6).toFixed(1)}" y="${PT+11}">put strike</text>`;
+  s+=`<text class="rc-ttl" x="${PL}" y="${PT-3}">PORTFOLIO OUTCOME VS A MOVE IN THE INDEX</text>`;
+  $('#hpSVG').innerHTML=s;
+  $('#hpNote').innerHTML=`Unhedged loses <b>${usd(V*0.20)}</b> on a 20% drop. The protective put caps the damage near
+    <b>${usd(Math.abs(put(-20)))}</b> at a standing cost of <b>${usd(V*cost/100)}</b>, which you pay whether or not the drop arrives.
+    The collar recovers that premium by selling the upside above +${kPct}%.`;
+}
+
+/* ---- the mind ---- */
+/* Tversky and Kahneman's 1992 value function, with their published
+   parameters: alpha 0.88 and a loss-aversion coefficient of 2.25.
+   The asymmetry is the whole point. */
+function drawProspect(){
+  const W=520,H=280,PL=48,PB=30,PT=14,PR=14,A=0.88,LAM=2.25;
+  const xs=-100,xe=100, ys=-260, ye=110;
+  const x=v=>PL+((v-xs)/(xe-xs))*(W-PL-PR), y=v=>H-PB-((v-ys)/(ye-ys))*(H-PB-PT);
+  const f=v=>v>=0?Math.pow(v,A):-LAM*Math.pow(-v,A);
+  let s='';
+  s+=`<line class="rc-grid" x1="${PL}" x2="${W-PR}" y1="${y(0).toFixed(1)}" y2="${y(0).toFixed(1)}"/>`;
+  s+=`<line class="rc-grid" x1="${x(0).toFixed(1)}" x2="${x(0).toFixed(1)}" y1="${PT}" y2="${H-PB}"/>`;
+  let d='';for(let v=xs;v<=xe;v+=1){d+=(d?'L':'M')+x(v).toFixed(1)+' '+y(f(v)).toFixed(1)+' ';}
+  s+=`<path class="ps-line" d="${d.trim()}" fill="none"/>`;
+  const g=50;
+  s+=`<line class="ps-mark up" x1="${x(g).toFixed(1)}" x2="${x(g).toFixed(1)}" y1="${y(0).toFixed(1)}" y2="${y(f(g)).toFixed(1)}"/>`;
+  s+=`<line class="ps-mark dn" x1="${x(-g).toFixed(1)}" x2="${x(-g).toFixed(1)}" y1="${y(0).toFixed(1)}" y2="${y(f(-g)).toFixed(1)}"/>`;
+  s+=`<circle class="ps-dot up" cx="${x(g).toFixed(1)}" cy="${y(f(g)).toFixed(1)}" r="4"/>`;
+  s+=`<circle class="ps-dot dn" cx="${x(-g).toFixed(1)}" cy="${y(f(-g)).toFixed(1)}" r="4"/>`;
+  s+=`<text class="ps-lab up" x="${(x(g)+8).toFixed(1)}" y="${(y(f(g))-6).toFixed(1)}">a $50 win feels like ${f(g).toFixed(0)}</text>`;
+  s+=`<text class="ps-lab dn" x="${(x(-g)+8).toFixed(1)}" y="${(y(f(-g))+14).toFixed(1)}">a $50 loss feels like ${f(-g).toFixed(0)}</text>`;
+  s+=`<text class="rc-ax" x="${W-PR}" y="${(y(0)-7).toFixed(1)}" text-anchor="end">GAIN \u2192</text>`;
+  s+=`<text class="rc-ax" x="${PL}" y="${(y(0)-7).toFixed(1)}">\u2190 LOSS</text>`;
+  s+=`<text class="rc-ttl" x="${PL}" y="${PT-2}">HOW A GAIN AND A LOSS OF THE SAME SIZE ACTUALLY FEEL</text>`;
+  $('#psSVG').innerHTML=s;
+}
+function renderMind(){
+  $('#mistakeList').innerHTML=MISTAKES.map((m,i)=>
+    `<details class="mk"><summary><span class="mk-i">${String(i+1).padStart(2,'0')}</span><span class="mk-n">${m.n}</span><span class="mk-s">${m.s}</span></summary>
+     <div class="mk-b"><div class="mk-r"><span class="k">What is happening</span><span class="v">${m.w}</span></div>
+     <div class="mk-r fix"><span class="k">The fix</span><span class="v">${m.f}</span></div></div></details>`).join('');
+  $('#quoteWall').innerHTML=QUOTES.map(q=>
+    `<figure class="qt"><blockquote>${q.q}</blockquote>
+     <figcaption><b>${q.a}</b><span>${q.s}</span></figcaption><p>${q.n}</p></figure>`).join('');
+}
+
+/* ---- wire up ---- */
+$('#ldRange').addEventListener('input',e=>{
+  /* logarithmic feel: the interesting decisions all happen under $50k */
+  const p=+e.target.value/100;
+  rdAcct=Math.round(500*Math.pow(1000000/500,p)/100)*100;
+  renderLadder();
+});
+$('#ldRungs').innerHTML=TIERS.map(t=>`<button data-t="${t.id}" onclick="jumpTier('${t.id}')">${t.band}</button>`).join('');
+function jumpTier(id){
+  const t=TIERS.find(x=>x.id===id); if(!t)return;
+  rdAcct=t.hi>=1e8?400000:Math.round((t.lo+t.hi)/2/100)*100;
+  const p=Math.log(rdAcct/500)/Math.log(1000000/500);
+  $('#ldRange').value=Math.round(p*100);
+  renderLadder();
+}
+['hgVal','hgBeta','hgIdx','hgStrike','hgCost'].forEach(id=>{
+  const el=$('#'+id); if(el)el.addEventListener('input',hedgeCalc);
+});
+renderLadder(); renderHedges(); hedgeCalc(); renderMind();
+
 /* ===== ENCYCLOPEDIA ===== */
 /* Opens on the path, not the index. 79 unsorted cards is a wall - the first
    question a newcomer has is "where do I start", and a filter row full of topic
@@ -2624,12 +3722,20 @@ const CMDS=[
   {label:'Tools & Calculators',kind:'page',run:()=>location.hash='tools'},
   {label:'Encyclopedia',kind:'page',run:()=>location.hash='encyclopedia'},
   {label:'Candlestick Analysis',kind:'page',run:()=>location.hash='patterns'},
+  {label:'Indicators & the Instrument Panel',kind:'page',run:()=>location.hash='indicators'},
+  {label:'Fibonacci Lab',kind:'tool',run:()=>{location.hash='indicators';setTimeout(()=>{const el=document.getElementById('fibLab');if(el)el.scrollIntoView({behavior:'smooth'});},140);}},
+  {label:'Risk & Mind \u2014 the risk desk',kind:'page',run:()=>location.hash='riskdesk'},
+  {label:'The Capital Ladder \u2014 scaling by account size',kind:'page',run:()=>{location.hash='riskdesk';setTimeout(()=>setRdTab('ladder',document.querySelector('#rdTabs button')),140);}},
+  {label:'Hedging & contract selection',kind:'page',run:()=>{location.hash='riskdesk';setTimeout(()=>setRdTab('hedge',document.querySelectorAll('#rdTabs button')[1]),140);}},
+  {label:'Trading psychology & the mistakes',kind:'page',run:()=>{location.hash='riskdesk';setTimeout(()=>setRdTab('mind',document.querySelectorAll('#rdTabs button')[2]),140);}},
   {label:'Strategies',kind:'page',run:()=>location.hash='strategies'},
   {label:'1:1 Sessions & Learning Path',kind:'page',run:()=>location.hash='sessions'},
   {label:'Book a Session',kind:'page',run:()=>location.hash='sessions'},
   ...STRATEGIES.map((x,i)=>({label:x.n,kind:'strategy',run:()=>openStrat(i)})),
   ...ENC.map((e,i)=>({label:e.t,kind:'term',run:()=>openEnc(i)})),
-  ...PATTERNS.map((p,i)=>({label:p.n,kind:'pattern',run:()=>openPattern(i)}))
+  ...PATTERNS.map((p,i)=>({label:p.n,kind:'pattern',run:()=>openPattern(i)})),
+  ...INDICATORS.map((x,i)=>({label:x.n,kind:'indicator',run:()=>{location.hash='indicators';setTimeout(()=>openInd(i),160);}})),
+  ...MISTAKES.map(m=>({label:m.n,kind:'psychology',run:()=>{location.hash='riskdesk';setTimeout(()=>setRdTab('mind',document.querySelectorAll('#rdTabs button')[2]),140);}}))
 ];
 function openCmdk(){cmdk.classList.add('open');document.body.classList.add('locked');cmdkInput.value='';renderCmdk('');cmdkInput.focus();}
 function closeCmdk(){cmdk.classList.remove('open');if(!$$('.modal.open').length)document.body.classList.remove('locked');}
@@ -2664,11 +3770,21 @@ const SECTIONS=[
    ic:'M6 3v18M6 7h0M4 7h4v7H4zM16 3v18M14 9h4v8h-4z',
    desc:'Single candles through full chart structures — what each one shows, where it actually matters, and the trap that catches beginners.',
    count:()=>PATTERNS.length+' patterns'},
+  {id:'indicators', name:'Indicators', crumb:'THE INSTRUMENT PANEL', kind:'instruments + fib lab',
+   accent:'var(--brass)', fade:'rgba(217,164,65,.13)',
+   ic:'M4 20h16M4 20V9M9 20v-5M14 20V4M19 20v-8',
+   desc:'What each instrument measures, the settings that are actually standard, and the trap. Plus a Fibonacci lab built from your own swing.',
+   count:()=>INDICATORS.length+' instruments'},
   {id:'strategies', name:'Strategies', crumb:'THE STRATEGY PLAYBOOK', kind:'playbook',
    accent:'var(--violet)', fade:'rgba(168,85,247,.14)',
    ic:'M3 20h18M6 20V10M12 20V4M18 20v-7',
    desc:'Day trading through decade holding — full playbooks with entry, stop, target, failure regime, and a grade for the evidence behind each one.',
    count:()=>STRATEGIES.length+' playbooks'},
+  {id:'riskdesk', name:'Risk & Mind', crumb:'THE RISK DESK', kind:'scaling + hedging + psychology',
+   accent:'var(--gold)', fade:'rgba(245,185,66,.13)',
+   ic:'M12 3l8 4v5c0 5-3.4 8.3-8 9-4.6-.7-8-4-8-9V7zM9 12l2 2 4-4',
+   desc:'How much to risk at the size you actually are, how to hedge what you cannot lose, and the ten ways a working brain breaks a working plan.',
+   count:()=>TIERS.length+' rungs \u00b7 2 lanes'},
   {id:'sessions', name:'1:1 Sessions', crumb:'THE PATH \u00b7 1:1 SESSIONS', kind:'the path + 1:1', wide:true,
    accent:'var(--gold)', fade:'rgba(245,185,66,.13)',
    ic:'M12 4 2 9l10 5 10-5zM6 12v5c0 1.5 3 3 6 3s6-1.5 6-3v-5',
