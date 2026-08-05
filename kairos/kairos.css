@@ -1096,51 +1096,97 @@ span.nv-tag{flex-shrink:0}
 }
 
 /* ---- THE FORGE ----------------------------------------------------------
-   Two visual layers, matching the two logical ones. The chips are measured
-   contracts and read like an instrument: monospace, dense, no decoration. The
-   case below is prose and is styled as prose. Nothing about a chip should look
-   like an opinion, and nothing about the case should look like a number. */
+   One card per symbol, in the language of the shared board because that is the
+   layout that already reads well. Four rows of numbers you act on, everything
+   else folded away. The complaint was that there was too much on screen, so the
+   alternates and Nova's write-up are both behind a toggle by default.
+   ------------------------------------------------------------------------- */
 .fg-wrap{border:1px solid var(--border);border-radius:8px;background:var(--panel2);
-  padding:10px 12px;margin-bottom:10px}
+  padding:11px 12px;margin-bottom:10px}
 .fg-title{font-size:.6rem;font-weight:700;letter-spacing:.14em;color:var(--gold);
-  margin-bottom:8px;display:flex;align-items:baseline;gap:8px}
+  margin-bottom:10px;display:flex;align-items:center;gap:9px}
 .fg-title i{font-style:normal;font-weight:400;letter-spacing:.04em;color:var(--faint);font-size:.58rem}
-.fg-empty{font-size:.72rem;color:var(--muted);line-height:1.7;padding:6px 0}
-.fg-sym{border-top:1px solid var(--border);padding:9px 0}
-.fg-sym:first-of-type{border-top:0;padding-top:2px}
-.fg-sym.stood{opacity:.72}
-.fg-symhead{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px}
-.fg-symhead b{font-family:'JetBrains Mono';font-size:.9rem;color:var(--text)}
-.fg-bias{font-size:.56rem;font-weight:700;letter-spacing:.1em;padding:2px 6px;border-radius:3px}
+.fg-casebtn{margin-left:auto;background:transparent;border:1px solid var(--border);
+  border-radius:5px;color:var(--muted);font-size:.55rem;letter-spacing:.1em;
+  padding:3px 8px;cursor:pointer;font-family:inherit}
+.fg-casebtn:hover,.fg-casebtn.on{border-color:var(--teal);color:var(--teal)}
+.fg-empty{font-size:.72rem;color:var(--muted);line-height:1.75;padding:4px 0}
+.fg-empty span{color:var(--faint);font-size:.66rem}
+.fg-stood{font-size:.66rem;color:var(--faint);line-height:1.7;
+  border-top:1px solid var(--border);margin-top:9px;padding-top:8px}
+.fg-stood b{color:var(--gold);font-family:'JetBrains Mono'}
+
+.fg-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(310px,1fr));gap:9px}
+.fg-card{border:1px solid var(--border);border-radius:6px;background:rgba(0,0,0,.24);
+  padding:9px 10px}
+.fg-h{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:6px}
+.fg-h b{font-family:'JetBrains Mono';font-size:.94rem;color:var(--text)}
+.fg-bias{font-size:.54rem;font-weight:700;letter-spacing:.1em;padding:2px 6px;border-radius:3px}
 .fg-bias.l{background:rgba(45,212,191,.14);color:var(--teal)}
 .fg-bias.s{background:rgba(244,114,62,.14);color:#f4723e}
-.fg-thesis{font-size:.56rem;letter-spacing:.1em;color:var(--muted)}
-.fg-ivr{font-family:'JetBrains Mono';font-size:.58rem;color:var(--cyan);cursor:help;margin-left:auto}
-.fg-posture{font-size:.68rem;line-height:1.65;color:var(--muted);margin-bottom:7px}
-.fg-posture.warn{color:var(--gold)}
-.fg-chips{display:grid;grid-template-columns:repeat(auto-fit,minmax(212px,1fr));gap:7px}
-.fg-chip{border:1px solid var(--border);border-left-width:2px;border-radius:5px;
-  padding:6px 8px;background:rgba(0,0,0,.22)}
-.fg-chip.good{border-left-color:var(--teal)}
-.fg-chip.ok{border-left-color:var(--gold)}
-.fg-chip.weak{border-left-color:var(--border)}
-.fg-head{display:flex;align-items:baseline;gap:7px;margin-bottom:4px}
-.fg-head b{font-family:'JetBrains Mono';font-size:.82rem;color:var(--text)}
-.fg-dte{font-size:.56rem;color:var(--faint);letter-spacing:.06em}
-.fg-score{margin-left:auto;font-family:'JetBrains Mono';font-size:.68rem;font-weight:700;color:var(--gold)}
-.fg-row{display:flex;align-items:baseline;gap:4px;flex-wrap:wrap;
-  font-family:'JetBrains Mono';font-size:.6rem;line-height:1.85}
-.fg-row i{font-style:normal;color:var(--faint);font-size:.55rem}
-.fg-row b{color:var(--text);font-weight:600;margin-right:5px}
-.fg-case{border-top:1px solid var(--border);margin-top:9px;padding-top:8px;
-  font-size:.72rem;line-height:1.75;color:var(--muted)}
+.fg-thesis{font-size:.54rem;letter-spacing:.1em;color:var(--muted)}
+.fg-ivr{font-family:'JetBrains Mono';font-size:.56rem;color:var(--cyan);cursor:help}
+.fg-ivr.dim{color:var(--faint)}
+.fg-score{margin-left:auto;font-family:'JetBrains Mono';font-size:.82rem;font-weight:700;
+  color:var(--gold);cursor:help}
+
+.fg-c{display:flex;align-items:baseline;gap:6px;flex-wrap:wrap;
+  font-family:'JetBrains Mono';font-size:.6rem;color:var(--faint);
+  border-bottom:1px solid var(--border);padding-bottom:7px;margin-bottom:7px}
+.fg-c b{font-size:.78rem;color:var(--text)}
+.fg-c span{color:var(--muted);margin-right:3px}
+.fg-c i{font-style:normal}
+.fg-c i.fg-theta{cursor:help}
+
+/* The four numbers. Underlying and contract side by side, because a level you
+   cannot price in contract terms is only half a plan. */
+.fg-t{width:100%;border-collapse:collapse;font-family:'JetBrains Mono';font-size:.66rem}
+.fg-t th{font-size:.5rem;font-weight:600;letter-spacing:.1em;color:var(--faint);
+  text-align:right;padding-bottom:3px;font-family:inherit}
+.fg-t th:first-child{text-align:left}
+.fg-t td{padding:2px 0;text-align:right}
+.fg-t td.fg-l{text-align:left;font-size:.54rem;letter-spacing:.1em;color:var(--faint)}
+.fg-t td.fg-u{color:var(--text);font-weight:600}
+.fg-t td.fg-p{color:var(--muted)}
+.fg-t td.fg-x{width:56px;font-weight:600}
+.fg-t tr.en td.fg-u,.fg-t tr.en td.fg-p{color:var(--text)}
+.fg-t tr.st td.fg-u,.fg-t tr.st td.fg-x{color:var(--red,#f87171)}
+.fg-t tr.t1 td.fg-u,.fg-t tr.t1 td.fg-x{color:var(--teal)}
+.fg-t tr.t2 td.fg-u,.fg-t tr.t2 td.fg-x{color:var(--cyan)}
+
+.fg-rr{display:flex;gap:12px;flex-wrap:wrap;margin-top:7px;padding-top:6px;
+  border-top:1px solid var(--border);font-size:.58rem;color:var(--faint)}
+.fg-rr span{cursor:help;letter-spacing:.06em}
+.fg-rr b{font-family:'JetBrains Mono';font-size:.7rem;color:var(--text);font-weight:700}
+.fg-rr i{font-style:normal;font-family:'JetBrains Mono'}
+.fg-why{font-size:.65rem;line-height:1.65;color:var(--muted);margin-top:7px}
+
+.fg-more{margin-top:7px;background:transparent;border:0;border-top:1px solid var(--border);
+  width:100%;text-align:left;padding:6px 0 0;color:var(--faint);font-size:.56rem;
+  letter-spacing:.08em;cursor:pointer;font-family:inherit}
+.fg-more:hover,.fg-more.on{color:var(--teal)}
+.fg-alts{display:none;margin-top:5px}
+.fg-alts.open{display:block}
+.fg-alt{display:flex;align-items:baseline;gap:6px;flex-wrap:wrap;
+  font-family:'JetBrains Mono';font-size:.58rem;color:var(--faint);padding:3px 0;
+  border-top:1px solid rgba(148,163,184,.08)}
+.fg-alt b{color:var(--text);font-size:.66rem}
+.fg-alt i{font-style:normal}
+.fg-alt span{color:var(--teal)}
+.fg-alt em{margin-left:auto;font-style:normal;color:var(--gold);font-weight:700}
+
+.fg-case{display:none;border-top:1px solid var(--border);margin-top:10px;padding-top:9px;
+  font-size:.71rem;line-height:1.75;color:var(--muted)}
+.fg-case.open{display:block}
 .fg-case b,.fg-case strong{color:var(--text)}
-.fg-case h2{font-size:.6rem;letter-spacing:.12em;color:var(--teal);margin:9px 0 4px}
-.fg-caseh{font-size:.56rem;letter-spacing:.13em;color:var(--faint);margin-bottom:5px}
+.fg-case h2{font-size:.58rem;letter-spacing:.12em;color:var(--teal);margin:9px 0 4px}
+.fg-caseh{font-size:.54rem;letter-spacing:.13em;color:var(--faint);margin-bottom:6px}
 .fg-caseh i{font-style:normal;margin-left:6px}
-.fg-foot{border-top:1px solid var(--border);margin-top:9px;padding-top:7px;
-  font-size:.6rem;line-height:1.65;color:var(--faint)}
+.fg-foot{border-top:1px solid var(--border);margin-top:10px;padding-top:8px;
+  font-size:.59rem;line-height:1.7;color:var(--faint)}
+.fg-foot b{color:var(--muted)}
 @media (max-width:720px){
-  .fg-chips{grid-template-columns:1fr}
+  .fg-grid{grid-template-columns:1fr}
   .fg-wrap{padding:9px 10px}
+  .fg-c{font-size:.56rem}
 }

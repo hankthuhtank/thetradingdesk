@@ -581,66 +581,116 @@ function scoreIdea(sym,d,tech){
   return idea;
 }
 /* ---- THE FORGE (frontend) --------------------------------------------------
-   Two layers, deliberately separate.
+   Rebuilt as ONE card per symbol in the same language as the shared board,
+   because that is the layout that already reads well: a contract, then the four
+   numbers you actually act on, in underlying terms AND in contract terms.
 
-   The CHIPS come straight from the server slate: real contracts off the live
-   chain, already through the delta / DTE / open-interest / spread gates, with
-   their measured numbers. They are correct whether or not Nova has run.
+   "T1 is 7913" is not a plan. "+66% at 7913" is. Every level therefore carries
+   both the underlying price and what the contract is worth if it gets there,
+   modelled in the Worker with Black-Scholes at flat IV.
 
-   The CASE is Nova's write-up. If it is stale or missing, the chips still
-   stand on their own, which is the whole point of keeping the arithmetic and
-   the language in separate layers. */
-function forgeChip(c,spot){
-  const dp=spot>2000?0:1;
-  const tone=c.score>=70?'good':c.score>=55?'ok':'weak';
-  return '<div class="fg-chip '+tone+'">'
-    +'<div class="fg-head"><b>'+(+c.k).toFixed(dp)+(c.call?'C':'P')+'</b>'
-    +'<span class="fg-dte">'+c.dte+'d</span>'
-    +'<span class="fg-score">'+c.score+'</span></div>'
-    +'<div class="fg-row"><i>debit</i><b>$'+c.debit+'</b><i>\u0394</i><b>'+c.dl+'</b><i>IV</i><b>'+c.iv+'%</b></div>'
-    +'<div class="fg-row"><i>b/e</i><b>'+c.be+'</b><i>needs</i><b>'+c.movePct+'%</b>'
-    +'<i data-tip="Expected move over this profile\u2019s intended hold, from ATM IV. If the contract needs more than this, the trade is asking for an outlier.">EM</i><b>'+c.emHorizon+'</b></div>'
-    +'<div class="fg-row"><i>theta</i><b>'+c.thetaPct+'%/d</b><i>OI</i><b>'+c.oi+'</b><i>spr</i><b>'+c.sprPct+'%</b></div>'
-    +'</div>';
+   Two things are deliberately hidden by default: the alternate contracts and
+   Nova's write-up. Both are useful and neither is needed to decide, and the
+   screen had far too much on it. */
+function fgN(v,dp){return v==null?'\u2014':(+v).toFixed(dp==null?2:dp);}
+function fgPct(v){return v==null?'':(v>0?'+':'')+v+'%';}
+
+function forgeCard(r,tab){
+  const c=r[tab]&&r[tab][0];
+  if(!c)return '';
+  const dp=r.spot>2000?0:2;
+  const L=r.levels||{},P=c.plan||{};
+  const alts=(r[tab]||[]).slice(1,3);
+  const long=r.bias==='LONG';
+  const row=(lab,und,prem,pct,cls)=>
+    '<tr class="'+(cls||'')+'"><td class="fg-l">'+lab+'</td>'
+    +'<td class="fg-u">'+(und==null?'\u2014':fgN(und,dp))+'</td>'
+    +'<td class="fg-p">'+(prem==null?'\u2014':'$'+fgN(prem,2))+'</td>'
+    +'<td class="fg-x">'+fgPct(pct)+'</td></tr>';
+
+  return '<div class="fg-card" data-fg="'+r.sym+'">'
+    +'<div class="fg-h">'
+      +'<b>'+r.sym+'</b>'
+      +'<span class="fg-bias '+(long?'l':'s')+'">'+r.bias+'</span>'
+      +'<span class="fg-thesis">'+r.thesis+'</span>'
+      +(r.ivRank!=null?'<span class="fg-ivr" data-tip="Where today\u2019s ATM implied volatility sits inside its own trailing year. Low means options are cheap for this name; high means you are paying up.">IVR '+r.ivRank+'</span>':'<span class="fg-ivr dim" data-tip="Not enough IV history stored yet for this name. The vol environment is treated as unknown and the position is sized as if premium is expensive.">IVR \u2014</span>')
+      +'<span class="fg-score" data-tip="Composite of reach, structure, vol value, liquidity, theta burden and regime fit.">'+c.score+'</span>'
+    +'</div>'
+
+    +'<div class="fg-c">'
+      +'<b>'+fgN(c.k,c.k%1?2:0)+(c.call?'C':'P')+'</b> <span>'+c.e+'</span>'
+      +'<i>'+c.dte+' DTE</i><i>\u0394 '+c.dl+'</i><i>IV '+c.iv+'%</i>'
+      +'<i>OI '+c.oi+'</i><i>spread '+c.sprPct+'%</i>'
+      +'<i class="fg-theta" data-tip="Daily time decay as a share of the premium. This is the rent on holding the thesis.">theta '+c.thetaPct+'%/d</i>'
+    +'</div>'
+
+    +'<table class="fg-t"><tr><th></th><th>UNDERLYING</th><th>CONTRACT</th><th></th></tr>'
+      +row('ENTRY',r.spot,P.entry,null,'en')
+      +row('STOP',L.stop,P.stop,P.stopPct,'st')
+      +row('T1',L.t1,P.t1,P.t1Pct,'t1')
+      +row('T2',L.t2,P.t2,P.t2Pct,'t2')
+    +'</table>'
+
+    +'<div class="fg-rr">'
+      +'<span data-tip="Contract reward-to-risk: premium gained at T1 against premium lost at the stop, both modelled at flat implied volatility.">R:R <b>'+(P.rr!=null?P.rr+':1':'\u2014')+'</b></span>'
+      +'<span data-tip="Breakeven at expiry, and the move the underlying has to make to reach it.">B/E <b>'+fgN(c.be,dp)+'</b> <i>needs '+c.movePct+'%</i></span>'
+      +'<span data-tip="One-sigma expected move over this profile\u2019s intended hold, from ATM implied vol. If the contract needs more than this, the trade is asking for an outlier.">EM <b>\u00b1'+c.emHorizon+'</b></span>'
+    +'</div>'
+
+    +'<div class="fg-why">'+(r.posture&&r.posture.why?r.posture.why:'')+'</div>'
+    +(alts.length?'<button class="fg-more" data-alt="'+r.sym+'">'+alts.length+' alternate contract'+(alts.length>1?'s':'')+'</button>'
+      +'<div class="fg-alts" id="fgAlt_'+r.sym+'">'+alts.map(x=>
+        '<div class="fg-alt"><b>'+fgN(x.k,x.k%1?2:0)+(x.call?'C':'P')+'</b> <i>'+x.dte+'d</i>'
+        +'<i>$'+x.debit+'</i><i>\u0394'+x.dl+'</i><i>b/e '+fgN(x.be,dp)+'</i>'
+        +'<i>theta '+x.thetaPct+'%/d</i><i>OI '+x.oi+'</i>'
+        +'<span>'+(x.plan&&x.plan.t1Pct!=null?fgPct(x.plan.t1Pct)+' at T1':'')+'</span>'
+        +'<em>'+x.score+'</em></div>').join('')+'</div>':'')
+  +'</div>';
 }
+
 function renderForge(){
   const host=document.getElementById('forgeBox');
   if(!host)return;
   const F=state._forge||{};
   const tab=state.zTab==='zero'?'degen':'investor';
-  const syms=Object.keys(F);
-  if(!syms.length){host.innerHTML='';return;}
-  /* Rank by the best contract the profile actually produced, so the strongest
-     slate leads rather than whatever came back alphabetically. */
-  const rows=syms.map(s=>F[s]).filter(x=>x&&x[tab]&&x[tab].length)
+  const rows=Object.keys(F).map(s=>F[s])
+    .filter(x=>x&&x.posture&&x.posture.side!=='stand_aside'&&x[tab]&&x[tab].length)
     .sort((a,b)=>b[tab][0].score-a[tab][0].score).slice(0,4);
+  const stood=Object.keys(F).map(s=>F[s]).filter(x=>x&&x.posture&&x.posture.side==='stand_aside');
   const ai=(state._ai||{}).forge;
+
   let h='<div class="fg-wrap"><div class="fg-title">THE FORGE <i>'
-    +(tab==='degen'?'0\u20133 DTE \u00b7 deliberately risky':'18\u201365 DTE \u00b7 room to be right slowly')
-    +'</i></div>';
+    +(tab==='degen'?'0\u20133 DTE \u00b7 deliberately risky':'18\u201365 DTE \u00b7 room to be right slowly')+'</i>'
+    +(ai&&ai.text?'<button class="fg-casebtn" id="fgCaseBtn">NOVA\u2019S CASE</button>':'')+'</div>';
+
   if(!rows.length){
-    h+='<div class="fg-empty">Nothing cleared the gates. No contract in this window currently has the liquidity and the structure to be worth the debit.</div>';
+    h+='<div class="fg-empty">Nothing cleared the gates. No contract in this window currently has the liquidity and the structure to be worth the debit.'
+      +(tab==='investor'?'<br><span>The 18\u201365 DTE chain is pulled once every five minutes, so give the Worker a cycle after a deploy before reading this as a verdict.</span>':'')+'</div>';
   }else{
-    h+=rows.map(r=>{
-      const p=r.posture||{};
-      const stand=p.side==='stand_aside';
-      return '<div class="fg-sym'+(stand?' stood':'')+'">'
-        +'<div class="fg-symhead"><b>'+r.sym+'</b>'
-        +'<span class="fg-bias '+(r.bias==='LONG'?'l':'s')+'">'+r.bias+'</span>'
-        +'<span class="fg-thesis">'+r.thesis+'</span>'
-        +(r.ivRank!=null?'<span class="fg-ivr" data-tip="Where today\u2019s ATM implied vol sits inside its own trailing year. Low means options are cheap relative to this name\u2019s history; high means you are paying up.">IVR '+r.ivRank+'</span>':'')
-        +'</div>'
-        +'<div class="fg-posture'+(stand?' warn':'')+'">'+(p.why||'')+'</div>'
-        +(stand?'':'<div class="fg-chips">'+r[tab].slice(0,3).map(c=>forgeChip(c,r.spot)).join('')+'</div>')
-        +'</div>';
-    }).join('');
+    h+='<div class="fg-grid">'+rows.map(r=>forgeCard(r,tab)).join('')+'</div>';
+  }
+  if(stood.length){
+    h+='<div class="fg-stood">Standing aside: '+stood.map(x=>'<b>'+x.sym+'</b>').join(', ')
+      +' \u00b7 implied vol is too rich here to pay for movement into a book built to suppress it.</div>';
   }
   if(ai&&ai.text){
-    h+='<div class="fg-case"><div class="fg-caseh">NOVA\u2019S CASE <i>'
+    h+='<div class="fg-case" id="fgCase"><div class="fg-caseh">NOVA\u2019S CASE <i>'
       +(ai.t?new Date(ai.t*1000).toLocaleTimeString():'')+'</i></div>'+novaMd(ai.text)+'</div>';
   }
-  h+='<div class="fg-foot">Contracts are enumerated from the live chain and gated on delta, days to expiry, open interest and bid-ask spread before scoring. Recommended means data-driven and conditional on your own directional read. It is never a directive.</div></div>';
+  h+='<div class="fg-foot">Contracts are enumerated from the live chain and gated on delta, days to expiry, open interest and bid-ask spread before scoring. Contract prices at each level are modelled with Black-Scholes at <b>flat implied volatility</b>: a real IV crush on the move would make them optimistic, an expansion conservative. Recommended means data-driven and conditional on your own directional read. It is never a directive.</div></div>';
   host.innerHTML=h;
+
+  const cb=document.getElementById('fgCaseBtn');
+  if(cb)cb.onclick=function(){
+    const el=document.getElementById('fgCase');if(!el)return;
+    el.classList.toggle('open');cb.classList.toggle('on');
+  };
+  host.querySelectorAll('.fg-more').forEach(b=>{
+    b.onclick=function(){
+      const el=document.getElementById('fgAlt_'+b.dataset.alt);if(!el)return;
+      el.classList.toggle('open');b.classList.toggle('on');
+    };
+  });
 }
 
 /* One delegated listener for the Aether cards, bound once. Handles both the
@@ -2711,6 +2761,13 @@ function setView(v){
   document.getElementById('trinityWrap').classList.toggle('hidden',v!=='trinity'&&v!=='single');
   document.getElementById('chartSec').classList.toggle('hidden',v!=='chart');
   document.getElementById('ideasSec').classList.toggle('hidden',v!=='ideas');
+  /* Aether has THE FORGE, which is already the AI layer for this view. Stacking
+     Nova's general commentary above it was two analyses competing for the same
+     screen. Nova stays one click away on its own tab. */
+  const _or=document.getElementById('oracle');
+  if(_or)_or.classList.toggle('hidden',v==='ideas');
+  const _ap=document.getElementById('aetherPulse');
+  if(_ap)_ap.classList.toggle('hidden',v==='ideas');
   document.getElementById('imbSec').classList.toggle('hidden',true);
   const _ns=document.getElementById('novaSec');
   if(_ns){

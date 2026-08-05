@@ -35,10 +35,12 @@
   const NX = {
     REC_MS: 60000,        // one recorded column per minute
     COLS_MEM: 900,        // columns held in memory
-    LEVELS: 34,           // material strikes drawn; past this it is visual noise
+    LEVELS: 9,            // SIGNIFICANT levels only — see pickLevels()
     SAMPLES: 220,         // time samples after downsampling
-    MAX_PX: 13,           // thickness of the strongest level, CSS px
-    MIN_PX: 1.2,          // thinner than this is not worth a row of pixels
+    MAX_PX: 11,           // thickness of the strongest level, CSS px
+    MIN_PX: 1.6,          // thinner than this is not worth a row of pixels
+    MATERIAL: 0.14,       // a level must reach this fraction of the King
+    MERGE: 0.004,         // peaks closer than this (as % of spot) are one level
   };
 
   const field = {};
@@ -184,8 +186,64 @@
     }
     if (!peakBy.size) { cache = empty; return cache; }
 
-    const keep = Array.from(peakBy.entries()).sort((a, b) => b[1] - a[1]).slice(0, NX.LEVELS);
-    const peak = keep[0][1];
+    /* SIGNIFICANT LEVELS ONLY.
+       Taking the top 34 strikes by magnitude drew practically the whole ladder,
+       which is how you end up with a wall of lines that says nothing. Support
+       and resistance are not "every strike with exposure", they are the LOCAL
+       PEAKS in the exposure profile: the strikes that dominate their own
+       neighbourhood and that price therefore actually reacts to.
+
+       Three passes:
+         1. Local extremum. A strike qualifies only if it is the largest of its
+            sign within a +/-0.4% price band. That kills the shoulders of a big
+            node, which were being drawn as separate levels.
+         2. Materiality. It must reach 14% of the King. Anything smaller does
+            not hold price and is noise on the chart.
+         3. Merge. Peaks within 0.4% of each other collapse to the larger.
+       Positive and negative are ranked separately so a large put wall is never
+       hidden by a cluster of positive nodes sitting next to it. */
+    const signed = new Map();
+    for (const c of picked) {
+      const vals = metric === 'vex' ? c.v : c.g;
+      if (!vals) continue;
+      for (let i = 0; i < c.ks.length; i++) {
+        const k = c.ks[i], v = vals[i];
+        if (!v) continue;
+        const cur = signed.get(k);
+        if (!cur || Math.abs(v) > Math.abs(cur)) signed.set(k, v);
+      }
+    }
+    const all = Array.from(signed.entries()).map(p => ({ k: p[0], v: p[1] })).sort((a, b) => a.k - b.k);
+    const kingMag = Math.max.apply(null, all.map(x => Math.abs(x.v)));
+    const spotRef = picked[picked.length - 1].spot || all[Math.floor(all.length / 2)].k;
+    const band = spotRef * 0.004;
+
+    const peaks = [];
+    for (let i = 0; i < all.length; i++) {
+      const a = all[i];
+      if (Math.abs(a.v) < kingMag * NX.MATERIAL) continue;
+      let dominant = true;
+      for (let j = 0; j < all.length; j++) {
+        if (i === j) continue;
+        const b = all[j];
+        if (Math.abs(b.k - a.k) > band) continue;
+        if (b.v * a.v < 0) continue;                    // opposite sign is its own level
+        if (Math.abs(b.v) > Math.abs(a.v)) { dominant = false; break; }
+      }
+      if (dominant) peaks.push(a);
+    }
+    // Merge survivors that are still within the band, keeping the larger.
+    peaks.sort((a, b) => Math.abs(b.v) - Math.abs(a.v));
+    const merged = [];
+    for (const p of peaks) {
+      if (merged.some(m => Math.abs(m.k - p.k) <= spotRef * NX.MERGE && m.v * p.v > 0)) continue;
+      merged.push(p);
+      if (merged.length >= NX.LEVELS) break;
+    }
+    if (!merged.length) { cache = empty; return cache; }
+
+    const keep = merged.map(p => [p.k, peakBy.get(p.k) || Math.abs(p.v)]);
+    const peak = Math.max.apply(null, keep.map(p => p[1]));
     const keepIdx = new Map();
     keep.forEach(function (pair, i) { keepIdx.set(pair[0], i); });
 
@@ -253,30 +311,61 @@
           const segW = Math.max(1, Math.min(span * 1.04, 26));
           const pal = PAL[metric] || PAL.gex;
 
+          /* CONTINUOUS ribbons, not isolated dashes. Open interest is fixed for
+             the whole session, so a level does not cease to exist between two
+             soundings. Drawing it as a connected band whose thickness swells and
+             narrows is both the honest reading and the legible one; the old
+             per-sample rectangles left the levels looking like scattered
+             fragments whenever recording was sparse. */
           ctx.save();
           for (let li = 0; li < m.levels.length; li++) {
             const lv = m.levels[li];
             const y = seriesRef.priceToCoordinate(lv.k);
             if (y == null) continue;
             const isKing = (m.kingK != null && lv.k === m.kingK);
+
+            // Collect this level's live samples, and its strongest reading.
+            const pts = [];
+            let strongest = 0, lastSign = 0;
             for (let i = firstX; i <= lastX; i++) {
               const v = lv.vals[i];
               if (!v || !isFinite(xs[i])) continue;
-              /* Square-root ramp. Gamma concentration is heavy-tailed, so on a
-                 linear ramp the King saturates and the rest of the ladder goes
-                 invisible, which is how the old build lost the whole mid-book. */
               const mag = Math.sqrt(Math.abs(v) / m.peak);
-              const h = NX.MIN_PX + mag * (NX.MAX_PX - NX.MIN_PX);
-              const rgb = isKing ? PAL.king : (v > 0 ? pal.pos : pal.neg);
-              const a = (0.20 + mag * 0.72) * (lv.srv[i] ? 0.8 : 1);
-              ctx.fillStyle = 'rgba(' + rgb[0] + ',' + rgb[1] + ',' + rgb[2] + ',' + a.toFixed(3) + ')';
-              ctx.fillRect(
-                Math.round((xs[i] - segW / 2) * hr),
-                Math.round((y - h / 2) * vr),
-                Math.max(1, Math.round(segW * hr)),
-                Math.max(1, Math.round(h * vr))
-              );
+              pts.push({ x: xs[i], h: NX.MIN_PX + mag * (NX.MAX_PX - NX.MIN_PX), v, srv: lv.srv[i] });
+              if (mag > strongest) { strongest = mag; }
+              lastSign = v > 0 ? 1 : -1;
             }
+            if (!pts.length) continue;
+
+            const rgb = isKing ? PAL.king : (lastSign > 0 ? pal.pos : pal.neg);
+            const alpha = (0.22 + strongest * 0.66);
+            ctx.fillStyle = 'rgba(' + rgb[0] + ',' + rgb[1] + ',' + rgb[2] + ',' + alpha.toFixed(3) + ')';
+
+            if (pts.length === 1) {
+              const p = pts[0];
+              ctx.fillRect(Math.round((p.x - segW / 2) * hr), Math.round((y - p.h / 2) * vr),
+                Math.max(1, Math.round(segW * hr)), Math.max(1, Math.round(p.h * vr)));
+            } else {
+              ctx.beginPath();
+              ctx.moveTo((pts[0].x - segW / 2) * hr, (y - pts[0].h / 2) * vr);
+              for (let i = 0; i < pts.length; i++) ctx.lineTo(pts[i].x * hr, (y - pts[i].h / 2) * vr);
+              ctx.lineTo((pts[pts.length - 1].x + segW / 2) * hr, (y - pts[pts.length - 1].h / 2) * vr);
+              ctx.lineTo((pts[pts.length - 1].x + segW / 2) * hr, (y + pts[pts.length - 1].h / 2) * vr);
+              for (let i = pts.length - 1; i >= 0; i--) ctx.lineTo(pts[i].x * hr, (y + pts[i].h / 2) * vr);
+              ctx.lineTo((pts[0].x - segW / 2) * hr, (y + pts[0].h / 2) * vr);
+              ctx.closePath();
+              ctx.fill();
+            }
+
+            /* Strike label at the right edge. With nine levels there is room to
+               name them, and a level you cannot read the price of is only half
+               a level. */
+            const lastP = pts[pts.length - 1];
+            ctx.font = '600 ' + Math.round(9 * vr) + 'px "JetBrains Mono", monospace';
+            ctx.fillStyle = 'rgba(' + rgb[0] + ',' + rgb[1] + ',' + rgb[2] + ',' + Math.min(1, alpha + 0.25).toFixed(3) + ')';
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(String(lv.k), (lastP.x + segW / 2 + 4) * hr, y * vr);
           }
           ctx.restore();
         });
