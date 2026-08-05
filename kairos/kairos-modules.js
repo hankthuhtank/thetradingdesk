@@ -567,6 +567,8 @@ function zSetTab(t){
   if(ck)ck.classList.toggle('hidden',t!=='zero');
   if(t==='zero'){zRender();zFeed(true);}
   else if(typeof renderCards==='function')renderCards();
+  /* The Forge slate is profile-specific, so it re-renders with the tab. */
+  if(typeof renderForge==='function')try{renderForge();}catch(e){}
 }
 (function(){
   const tabs=document.getElementById('aetherTabs');

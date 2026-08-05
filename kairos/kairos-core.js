@@ -580,6 +580,86 @@ function scoreIdea(sym,d,tech){
   }
   return idea;
 }
+/* ---- THE FORGE (frontend) --------------------------------------------------
+   Two layers, deliberately separate.
+
+   The CHIPS come straight from the server slate: real contracts off the live
+   chain, already through the delta / DTE / open-interest / spread gates, with
+   their measured numbers. They are correct whether or not Nova has run.
+
+   The CASE is Nova's write-up. If it is stale or missing, the chips still
+   stand on their own, which is the whole point of keeping the arithmetic and
+   the language in separate layers. */
+function forgeChip(c,spot){
+  const dp=spot>2000?0:1;
+  const tone=c.score>=70?'good':c.score>=55?'ok':'weak';
+  return '<div class="fg-chip '+tone+'">'
+    +'<div class="fg-head"><b>'+(+c.k).toFixed(dp)+(c.call?'C':'P')+'</b>'
+    +'<span class="fg-dte">'+c.dte+'d</span>'
+    +'<span class="fg-score">'+c.score+'</span></div>'
+    +'<div class="fg-row"><i>debit</i><b>$'+c.debit+'</b><i>\u0394</i><b>'+c.dl+'</b><i>IV</i><b>'+c.iv+'%</b></div>'
+    +'<div class="fg-row"><i>b/e</i><b>'+c.be+'</b><i>needs</i><b>'+c.movePct+'%</b>'
+    +'<i data-tip="Expected move over this profile\u2019s intended hold, from ATM IV. If the contract needs more than this, the trade is asking for an outlier.">EM</i><b>'+c.emHorizon+'</b></div>'
+    +'<div class="fg-row"><i>theta</i><b>'+c.thetaPct+'%/d</b><i>OI</i><b>'+c.oi+'</b><i>spr</i><b>'+c.sprPct+'%</b></div>'
+    +'</div>';
+}
+function renderForge(){
+  const host=document.getElementById('forgeBox');
+  if(!host)return;
+  const F=state._forge||{};
+  const tab=state.zTab==='zero'?'degen':'investor';
+  const syms=Object.keys(F);
+  if(!syms.length){host.innerHTML='';return;}
+  /* Rank by the best contract the profile actually produced, so the strongest
+     slate leads rather than whatever came back alphabetically. */
+  const rows=syms.map(s=>F[s]).filter(x=>x&&x[tab]&&x[tab].length)
+    .sort((a,b)=>b[tab][0].score-a[tab][0].score).slice(0,4);
+  const ai=(state._ai||{}).forge;
+  let h='<div class="fg-wrap"><div class="fg-title">THE FORGE <i>'
+    +(tab==='degen'?'0\u20133 DTE \u00b7 deliberately risky':'18\u201365 DTE \u00b7 room to be right slowly')
+    +'</i></div>';
+  if(!rows.length){
+    h+='<div class="fg-empty">Nothing cleared the gates. No contract in this window currently has the liquidity and the structure to be worth the debit.</div>';
+  }else{
+    h+=rows.map(r=>{
+      const p=r.posture||{};
+      const stand=p.side==='stand_aside';
+      return '<div class="fg-sym'+(stand?' stood':'')+'">'
+        +'<div class="fg-symhead"><b>'+r.sym+'</b>'
+        +'<span class="fg-bias '+(r.bias==='LONG'?'l':'s')+'">'+r.bias+'</span>'
+        +'<span class="fg-thesis">'+r.thesis+'</span>'
+        +(r.ivRank!=null?'<span class="fg-ivr" data-tip="Where today\u2019s ATM implied vol sits inside its own trailing year. Low means options are cheap relative to this name\u2019s history; high means you are paying up.">IVR '+r.ivRank+'</span>':'')
+        +'</div>'
+        +'<div class="fg-posture'+(stand?' warn':'')+'">'+(p.why||'')+'</div>'
+        +(stand?'':'<div class="fg-chips">'+r[tab].slice(0,3).map(c=>forgeChip(c,r.spot)).join('')+'</div>')
+        +'</div>';
+    }).join('');
+  }
+  if(ai&&ai.text){
+    h+='<div class="fg-case"><div class="fg-caseh">NOVA\u2019S CASE <i>'
+      +(ai.t?new Date(ai.t*1000).toLocaleTimeString():'')+'</i></div>'+novaMd(ai.text)+'</div>';
+  }
+  h+='<div class="fg-foot">Contracts are enumerated from the live chain and gated on delta, days to expiry, open interest and bid-ask spread before scoring. Recommended means data-driven and conditional on your own directional read. It is never a directive.</div></div>';
+  host.innerHTML=h;
+}
+
+/* One delegated listener for the Aether cards, bound once. Handles both the
+   core idea cards (data-sym) and the Swing thumbnails (data-swsym). */
+(function(){
+  const el=document.getElementById('cards');
+  if(!el||el._kDelegated)return;
+  el._kDelegated=true;
+  el.addEventListener('click',function(e){
+    const deep=e.target.closest('.thumb-deep');
+    if(deep&&deep.dataset.sym){state.focus=deep.dataset.sym;if(window.openDeep)openDeep(deep.dataset.sym);return;}
+    const card=e.target.closest('[data-sym]');
+    if(!card)return;
+    const sym=card.dataset.sym;
+    state.ideaOpen=(state.ideaOpen===sym)?null:sym;
+    renderCards();
+  });
+})();
+
 let sweeping=false;
 async function ideasSweep(force){
   if(sweeping||document.hidden||state.refreshing)return; // never compete with a visible-panel refresh
@@ -1770,11 +1850,11 @@ function renderCards(){
     }
     c.innerHTML=h;
     c.classList.toggle('open',expanded);
-    c.onclick=(e)=>{
-      if(e.target.closest('.thumb-deep')){state.focus=i.sym;openDeep(i.sym);return;}
-      state.ideaOpen=(state.ideaOpen===i.sym)?null:i.sym;
-      renderCards();
-    };
+    /* data-sym + a delegated listener below, rather than a per-node onclick.
+       An exception anywhere later in this render loop used to leave the
+       remaining cards with no handler attached at all, which is how two plays
+       could sit there refusing to open. Delegation cannot be half-attached. */
+    c.dataset.sym=i.sym;
     el.appendChild(c);
   });
   const note=document.createElement('div');
@@ -2241,6 +2321,7 @@ function openDeep(sym){
 function applyBootstrap(bs){
   if(!bs)return 0;let n=0;
   if(bs.plays&&bs.plays.html)state._srvPlays=bs.plays;
+  if(bs.forge&&Object.keys(bs.forge).length){state._forge=bs.forge;try{renderForge();}catch(e){}}
   if(bs.aiError)state._aiErr=bs.aiError;
   if(bs.ai&&Object.keys(bs.ai).length){
     /* merge, never replace — an empty or partial payload must not blank

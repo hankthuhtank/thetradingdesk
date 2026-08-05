@@ -385,6 +385,12 @@ async function orrCompute(){
   }
   const bench=orrCloses[ORR_BENCH];
   if(!bench){orrLoading=false;orrRenderRail();return;}
+  /* The server seed carries closes but a Worker that has not yet run the dated
+     mythosRefresh sends no calendar. One direct benchmark pull fixes the replay
+     labels for the whole session, and it only ever happens once. */
+  if(!orrCal||!orrCal.length){
+    try{delete orrFetchT[ORR_BENCH];await orrDaily(ORR_BENCH);}catch(e){}
+  }
 
   /* Build the price series for every body FIRST, baskets included, then run ONE
      cross-sectional pass over the lot. Doing it in this order is what makes a
@@ -443,10 +449,36 @@ function orrApplyHead(){
   orrPts=out;
 }
 function orrHeadIdx(){return orrHead==null?(orrSet?orrSet.len-1:0):orrHead;}
+/* Format as MON DD, which is what you actually track a rotation by. "T-45" is
+   only meaningful if you are counting sessions in your head, which nobody is. */
+const ORR_MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function orrFmtDate(iso){
+  if(!iso)return '';
+  const p=String(iso).split('-');
+  if(p.length<3)return iso;
+  return ORR_MON[(+p[1]-1)|0]+' '+(+p[2]);
+}
+/* If the shared calendar has not arrived yet (first load before the Worker has
+   stored one), synthesise it by counting weekdays back from the last session.
+   Marked approximate with a leading tilde, because holidays are not in it and
+   claiming otherwise would be a quiet lie. */
+function orrApproxDate(barsBack){
+  const d=new Date();
+  let n=0;
+  while(n<barsBack){
+    d.setDate(d.getDate()-1);
+    const w=d.getDay();
+    if(w!==0&&w!==6)n++;
+  }
+  const p=x=>String(x).padStart(2,'0');
+  return '~'+ORR_MON[d.getMonth()]+' '+(+p(d.getDate()));
+}
 function orrHeadDate(){
   if(!orrSet)return '';
-  if(!orrSet.dates)return orrHead==null?'LIVE':('T-'+((orrSet.len-1)-orrHeadIdx()));
-  return orrSet.dates[orrHeadIdx()]||'';
+  if(orrHead==null)return 'LIVE';
+  const i=orrHeadIdx();
+  if(orrSet.dates&&orrSet.dates[i])return orrFmtDate(orrSet.dates[i]);
+  return orrApproxDate((orrSet.len-1)-i);
 }
 
 /* ---- replay controls ---- */

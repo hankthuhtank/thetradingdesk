@@ -1,32 +1,28 @@
 /* ============================================================================
-   KAIROS NEXUS v9 — THE SOUNDING
-   Rebuilt on TradingView Lightweight Charts v5. Replaces ~1,200 lines of
-   hand-rolled chart engine with ~450 against a maintained library.
+   KAIROS NEXUS v10 — THE LADDER
+   Lightweight Charts v5. Exposure drawn as horizontal levels through time.
 
-   WHY THE OLD ONE LOOKED CHEAP
-   The old painter drew each recorded column as a vertical createLinearGradient
-   with one addColorStop per strike. A linear gradient INTERPOLATES between
-   stops, and gamma is not linearly distributed between strikes: it is a sum of
-   roughly Gaussian kernels sitting on a discrete ladder. Blending between node
-   values produced diamond and banded artefacts that had nothing to do with the
-   data. That was not a tuning problem, it was the wrong rendering primitive.
+   WHY THIS CHANGED AGAIN
+   v9 drew each recorded minute as a vertical column of strata. It was honest
+   about the data and cheap to reason about, but it read wrong: nobody thinks
+   about a gamma book as a column at 14:32. They think about it as LEVELS that
+   sit at prices and get stronger or weaker as the session runs. Vertical
+   columns force you to mentally transpose the entire picture, and the result
+   looked like noise standing next to the tape rather than structure sitting
+   underneath it.
 
-   It got worse on server history, where only the top 24 nodes by |gex| are
-   stored, so gradient stops sat 5, 10 or 30 points apart and smeared enormous
-   false bands across the gaps.
+   So: one horizontal ribbon per material strike, running left to right across
+   the recorded window, its THICKNESS proportional to how much exposure sits
+   there at that minute. A level that builds thickens. A level that drains
+   narrows to nothing. Price runs across them, and you can see directly whether
+   it is being held up by a wall or falling through a hole.
 
-   THE CONCEPT
-   A field recorded in columns through time, sampled at discrete depths, is
-   structurally a seismic reflection section: a medium read by soundings, drawn
-   as strata. So this draws strata. Each strike gets its own solid band, no
-   interpolation, with a hard null seam where the field genuinely cancels. What
-   the eye reads as banding is now the actual sampling resolution of the
-   instrument, which is honest, and the gaps in server history are visible as
-   gaps rather than disguised as smooth gradient.
-
-   Positive exposure (AEGIS, dealers fade, price is held) reads as cold teal.
-   Negative (MAELSTROM, dealers chase, moves amplify) reads as ember. Zero is
-   the black seam between them.
+   It is also about a hundred times cheaper to render. v9 rebuilt a Float64Array
+   per column and touched every strike of every column on every single frame
+   (900 columns x 200 strikes = 180,000 iterations per paint, on every crosshair
+   move), which is what made Nexus lag the entire tab. This version precomputes
+   the level model once per data change, converts ~220 x-coordinates and ~34
+   y-coordinates per frame, and then does nothing but fillRect.
 
    Load AFTER kairos-core.js. Requires Lightweight Charts v5 on the page.
    ============================================================================ */
@@ -38,48 +34,40 @@
 
   const NX = {
     REC_MS: 60000,        // one recorded column per minute
-    COLS_MEM: 900,        // ~15h of columns held in memory
-    BAND_MIN_PX: 1.5,     // a stratum thinner than this is not worth drawing
-    FIELD_ALPHA: 0.92,    // ceiling opacity for the strongest stratum
-    LADDER_PAD: 0.06,     // how far past the outermost strike the field extends
+    COLS_MEM: 900,        // columns held in memory
+    LEVELS: 34,           // material strikes drawn; past this it is visual noise
+    SAMPLES: 220,         // time samples after downsampling
+    MAX_PX: 13,           // thickness of the strongest level, CSS px
+    MIN_PX: 1.2,          // thinner than this is not worth a row of pixels
   };
 
-  /* Recorded field. One entry per symbol, each an array of columns:
-     {t, ks[], g[], v[], spot, srv, noVex}. Columns arrive from two places:
-     this tab's own recorder, and the server Chronicle, which accumulates 24/5
-     whether or not a browser is open. */
   const field = {};
   const fieldT = {}, fieldStamp = {};
   let chart = null, priceSeries = null, undertow = null, fieldPrim = null;
   let curSym = null, bars = [], barsT = 0, metric = 'gex';
-  let lines = { king: null, cw: null, pw: null, flip: null };
-  let ready = false, libFail = false;
+  let lines = {};
+  let ready = false, libFail = false, opening = false;
 
   const $ = (id) => document.getElementById(id);
   const LWC = () => window.LightweightCharts;
+  const onNexus = () => S.view === 'arena';
 
-  /* ---------- palette -----------------------------------------------------
-     Read from the stylesheet so Nexus can never drift from the rest of Kairos.
-     Falls back to the shipped values if a var is missing. */
-  function cssVar(n, fb) {
-    try {
-      const v = getComputedStyle(document.documentElement).getPropertyValue(n).trim();
-      return v || fb;
-    } catch (e) { return fb; }
-  }
   const PAL = {
-    aegis: [45, 212, 191],      // teal: positive gamma, the field resists
-    maelstrom: [244, 114, 62],  // ember: negative gamma, the field pulls
-    vegaPos: [56, 189, 248],
-    vegaNeg: [232, 121, 249],
+    gex: { pos: [45, 212, 191], neg: [244, 114, 62] },
+    vex: { pos: [56, 189, 248], neg: [232, 121, 249] },
+    king: [242, 193, 78],
   };
 
-  /* ---------- recording ---------------------------------------------------
-     Unchanged in spirit from the old build: snapshot the live ladder on a
-     timer. The ladder itself is computed in core, so this is only storage. */
+  function cssVar(n, fb) {
+    try { return getComputedStyle(document.documentElement).getPropertyValue(n).trim() || fb; }
+    catch (e) { return fb; }
+  }
+
+  /* ---------- recording ---------------------------------------------------- */
   function record() {
     const syms = new Set([S.focus].concat(S.trinityTickers || []));
     const now = Date.now();
+    let touched = false;
     for (const sym of syms) {
       const d = S.data[sym];
       if (!d || !d.strikes || !d.strikes.length) continue;
@@ -91,19 +79,21 @@
       const n = sorted.length;
       const ks = new Float32Array(n), g = new Float32Array(n), v = new Float32Array(n);
       for (let i = 0; i < n; i++) { ks[i] = sorted[i].k; g[i] = sorted[i].gex || 0; v[i] = sorted[i].vex || 0; }
-      const col = { t: now, ks, g, v, spot: S.spot[sym] || d.spot || 0, srv: false, noVex: false };
-      (field[sym] = field[sym] || []).push(col);
+      (field[sym] = field[sym] || []).push({ t: now, ks, g, v, spot: S.spot[sym] || d.spot || 0, srv: false, noVex: false });
       if (field[sym].length > NX.COLS_MEM) field[sym].splice(0, field[sym].length - NX.COLS_MEM);
-      if (sym === curSym) redraw();
+      if (sym === curSym) touched = true;
     }
+    /* Only repaint when this symbol changed AND Nexus is actually on screen.
+       v9 called setData every fifteen seconds regardless of view, which is a
+       large part of why the tab got slower the longer it stayed open. */
+    if (touched && onNexus()) redraw();
   }
   setInterval(record, 15000);
 
-  /* Server Chronicle. The Worker now stores {k,g,v} per node, so vega is real.
-     Older rows predate that and carry no v at all: those columns are flagged
-     noVex and are SKIPPED in VEX mode rather than painted as a field of zeros.
-     Inventing zeros is what the previous build did, and a chart of fabricated
-     nothing is worse than an empty chart. */
+  /* Server Chronicle. Columns written before the vega rollout carry {k,g} only
+     and are flagged noVex: in VEX mode they are SKIPPED, never painted as zero.
+     Inventing zeros is what the pre-v9 build did, and a chart of fabricated
+     nothing is worse than an honest gap. */
   async function hydrate(sym) {
     if (!sym || !window.KairosBackend || !window.KairosBackend.enabled) return;
     try {
@@ -115,9 +105,7 @@
         if (seen.has(t) || !c.nodes || !c.nodes.length) continue;
         const hasV = c.nodes[0].v != null;
         cur.push({
-          t,
-          ks: c.nodes.map(n => n.k),
-          g: c.nodes.map(n => n.g),
+          t, ks: c.nodes.map(n => n.k), g: c.nodes.map(n => n.g),
           v: hasV ? c.nodes.map(n => n.v || 0) : null,
           spot: c.spot, srv: true, noVex: !hasV,
         });
@@ -125,15 +113,14 @@
       }
       cur.sort((a, b) => a.t - b.t);
       field[sym] = cur.slice(-NX.COLS_MEM);
-      redraw();
+      if (sym === curSym && onNexus()) { cache.key = ''; redraw(); }
     } catch (e) {}
   }
 
-  /* ---------- price bars --------------------------------------------------
-     Tradier 1-minute history. Reused rather than refetched on every view
-     switch; 45s is under the bar interval so nothing is ever missed. */
+  /* ---------- price bars --------------------------------------------------- */
   async function loadBars(sym) {
-    if (Date.now() - barsT < 45000 && curSym === sym && bars.length) return;
+    if (!sym) return;
+    if (curSym === sym && bars.length && Date.now() - barsT < 45000) return;
     const p = (n) => String(n).padStart(2, '0');
     const d = new Date(Date.now() - 5 * 86400000);
     const start = d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate());
@@ -146,9 +133,9 @@
       let rows = j && j.series && j.series.data;
       if (rows && !Array.isArray(rows)) rows = [rows];
       if (!rows || !rows.length) return;
-      /* LWC wants seconds and a strictly ascending, de-duplicated time axis.
-         Tradier occasionally repeats a stamp across session boundaries, and a
-         duplicate throws rather than degrading, so it is filtered here. */
+      /* LWC needs a strictly ascending, de-duplicated time axis and THROWS
+         rather than degrading on a repeat, which Tradier occasionally emits
+         across session boundaries. */
       const out = []; let last = 0;
       for (const r of rows) {
         const t = Math.floor(new Date(r.time).getTime() / 1000);
@@ -156,95 +143,139 @@
         last = t;
         out.push({ time: t, open: +r.open, high: +r.high, low: +r.low, close: +r.close });
       }
-      bars = out; barsT = Date.now();
+      if (out.length) { bars = out; barsT = Date.now(); }
     } catch (e) {}
   }
 
-  /* ---------- the field primitive ----------------------------------------
-     A series primitive drawing at zOrder 'bottom', so candles sit on top of
-     the field rather than being lost inside it.
+  /* ---------- level model --------------------------------------------------
+     Collapse the recorded columns into ~34 horizontal levels across ~220 time
+     samples. Computed once per data change and cached, so the render path never
+     allocates and never touches a raw column. */
+  let cache = { key: '', levels: [], times: [], peak: 0, kingK: null };
 
-     Each column is a rectangle one recording interval wide. Within it, each
-     strike is a solid band spanning the midpoint gaps to its neighbours. No
-     gradient, no interpolation, no invented values between soundings. */
+  function buildLevels() {
+    const cols = field[curSym] || [];
+    const key = curSym + '|' + metric + '|' + cols.length + '|' + (cols.length ? cols[cols.length - 1].t : 0);
+    if (cache.key === key) return cache;
+    const empty = { key, levels: [], times: [], peak: 0, kingK: null };
+
+    const usable = cols.filter(c => !(metric === 'vex' && (c.noVex || !c.v)));
+    if (!usable.length) { cache = empty; return cache; }
+
+    // Downsample time, anchored at the newest bar so the live edge stays exact.
+    const stride = Math.max(1, Math.ceil(usable.length / NX.SAMPLES));
+    const picked = [];
+    for (let i = usable.length - 1; i >= 0; i -= stride) picked.push(usable[i]);
+    picked.reverse();
+
+    /* Rank strikes by PEAK magnitude across the window, not by current value.
+       A wall that dominated the morning and has since been torn down is exactly
+       the thing worth being able to see. */
+    const peakBy = new Map();
+    for (const c of picked) {
+      const vals = metric === 'vex' ? c.v : c.g;
+      if (!vals) continue;
+      for (let i = 0; i < c.ks.length; i++) {
+        const a = Math.abs(vals[i]);
+        if (!a) continue;
+        const k = c.ks[i];
+        if (a > (peakBy.get(k) || 0)) peakBy.set(k, a);
+      }
+    }
+    if (!peakBy.size) { cache = empty; return cache; }
+
+    const keep = Array.from(peakBy.entries()).sort((a, b) => b[1] - a[1]).slice(0, NX.LEVELS);
+    const peak = keep[0][1];
+    const keepIdx = new Map();
+    keep.forEach(function (pair, i) { keepIdx.set(pair[0], i); });
+
+    const times = picked.map(c => Math.floor(c.t / 1000));
+    const levels = keep.map(pair => ({
+      k: pair[0],
+      vals: new Float32Array(picked.length),
+      srv: new Uint8Array(picked.length),
+    }));
+
+    for (let ci = 0; ci < picked.length; ci++) {
+      const c = picked[ci];
+      const vals = metric === 'vex' ? c.v : c.g;
+      if (!vals) continue;
+      const isSrv = c.srv ? 1 : 0;
+      for (let i = 0; i < c.ks.length; i++) {
+        const idx = keepIdx.get(c.ks[i]);
+        if (idx === undefined) continue;
+        levels[idx].vals[ci] = vals[i];
+        levels[idx].srv[ci] = isSrv;
+      }
+    }
+
+    // Current King, so it can be tinted gold rather than lost in the field.
+    let kingK = null, kingA = 0;
+    const lastC = picked[picked.length - 1];
+    const lastV = metric === 'vex' ? lastC.v : lastC.g;
+    if (lastV) for (let i = 0; i < lastC.ks.length; i++) {
+      const a = Math.abs(lastV[i]);
+      if (a > kingA) { kingA = a; kingK = lastC.ks[i]; }
+    }
+
+    cache = { key, levels, times, peak, kingK };
+    return cache;
+  }
+
+  /* ---------- the field primitive ------------------------------------------ */
   function makeFieldPrimitive() {
     let chartRef = null, seriesRef = null, requestUpdate = null;
 
-    function bandsFor(col) {
-      const ks = col.ks, n = ks.length;
-      if (!n) return null;
-      const vals = (metric === 'vex') ? col.v : col.g;
-      if (!vals) return null;
-      const edges = new Float64Array(n + 1);
-      /* Band edges at the midpoints between strikes. The outermost bands get
-         the same half-width as their inner neighbour, so the field ends at the
-         ladder rather than trailing off into a value nobody measured. */
-      for (let i = 1; i < n; i++) edges[i] = (ks[i - 1] + ks[i]) / 2;
-      const w0 = n > 1 ? (ks[1] - ks[0]) / 2 : ks[0] * 0.002;
-      const wn = n > 1 ? (ks[n - 1] - ks[n - 2]) / 2 : ks[0] * 0.002;
-      edges[0] = ks[0] - w0; edges[n] = ks[n - 1] + wn;
-      return { edges, vals, n };
-    }
-
     const renderer = {
       draw(target) {
-        const cols = field[curSym];
-        if (!cols || !cols.length || !seriesRef || !chartRef) return;
+        const m = buildLevels();
+        if (!m.levels.length || !seriesRef || !chartRef) return;
         const ts = chartRef.timeScale();
 
-        target.useBitmapCoordinateSpace(scope => {
+        target.useBitmapCoordinateSpace(function (scope) {
           const ctx = scope.context;
           const hr = scope.horizontalPixelRatio, vr = scope.verticalPixelRatio;
 
-          /* One shared scale across every visible column, so a stratum's
-             intensity means the same thing at 09:35 and at 15:55. Scaling per
-             column would make a quiet morning look identical to a violent
-             close, which is the opposite of useful. */
-          let peak = 0;
-          const vis = [];
-          for (let ci = 0; ci < cols.length; ci++) {
-            const c = cols[ci];
-            if (metric === 'vex' && (c.noVex || !c.v)) continue;   // never fabricate
-            const x = ts.timeToCoordinate(Math.floor(c.t / 1000));
-            if (x == null) continue;
-            const b = bandsFor(c);
-            if (!b) continue;
-            for (let i = 0; i < b.n; i++) { const a = Math.abs(b.vals[i]); if (a > peak) peak = a; }
-            vis.push({ x, b, srv: c.srv });
+          /* Coordinates converted ONCE per frame and shared by every level:
+             ~220 x-conversions plus ~34 y-conversions, then nothing but rects. */
+          const xs = new Float64Array(m.times.length);
+          let firstX = -1, lastX = -1;
+          for (let i = 0; i < m.times.length; i++) {
+            const x = ts.timeToCoordinate(m.times[i]);
+            xs[i] = (x == null) ? NaN : x;
+            if (x != null) { if (firstX < 0) firstX = i; lastX = i; }
           }
-          if (!peak || !vis.length) return;
+          if (firstX < 0) return;
 
-          /* Column width from the actual gap between neighbours, so a run of
-             server columns recorded five minutes apart draws five minutes wide
-             and a gap in the record stays visibly a gap. */
+          /* Segment width from the real spacing between samples, so a break in
+             the record stays a visible break instead of being bridged. */
+          const span = (lastX > firstX) ? (xs[lastX] - xs[firstX]) / (lastX - firstX) : 6;
+          const segW = Math.max(1, Math.min(span * 1.04, 26));
+          const pal = PAL[metric] || PAL.gex;
+
           ctx.save();
-          for (let i = 0; i < vis.length; i++) {
-            const cur = vis[i], nxt = vis[i + 1];
-            const wRaw = nxt ? (nxt.x - cur.x) : (i > 0 ? cur.x - vis[i - 1].x : 6);
-            const w = Math.max(1, Math.min(wRaw, 40));
-            const x0 = Math.round(cur.x * hr);
-            const wpx = Math.max(1, Math.round(w * hr));
-            const b = cur.b;
-
-            for (let s = 0; s < b.n; s++) {
-              const val = b.vals[s];
-              if (!val) continue;
-              const yTop = seriesRef.priceToCoordinate(b.edges[s + 1]);
-              const yBot = seriesRef.priceToCoordinate(b.edges[s]);
-              if (yTop == null || yBot == null) continue;
-              const h = Math.abs(yBot - yTop);
-              if (h < NX.BAND_MIN_PX) continue;
-
-              /* Square-root ramp. Gamma concentration is heavy-tailed: on a
-                 linear ramp the King saturates and everything else is black,
-                 which is how the old build lost the whole mid-book. */
-              const mag = Math.sqrt(Math.abs(val) / peak);
-              let rgb;
-              if (metric === 'vex') rgb = val > 0 ? PAL.vegaPos : PAL.vegaNeg;
-              else rgb = val > 0 ? PAL.aegis : PAL.maelstrom;
-              const a = mag * NX.FIELD_ALPHA * (cur.srv ? 0.82 : 1);
+          for (let li = 0; li < m.levels.length; li++) {
+            const lv = m.levels[li];
+            const y = seriesRef.priceToCoordinate(lv.k);
+            if (y == null) continue;
+            const isKing = (m.kingK != null && lv.k === m.kingK);
+            for (let i = firstX; i <= lastX; i++) {
+              const v = lv.vals[i];
+              if (!v || !isFinite(xs[i])) continue;
+              /* Square-root ramp. Gamma concentration is heavy-tailed, so on a
+                 linear ramp the King saturates and the rest of the ladder goes
+                 invisible, which is how the old build lost the whole mid-book. */
+              const mag = Math.sqrt(Math.abs(v) / m.peak);
+              const h = NX.MIN_PX + mag * (NX.MAX_PX - NX.MIN_PX);
+              const rgb = isKing ? PAL.king : (v > 0 ? pal.pos : pal.neg);
+              const a = (0.20 + mag * 0.72) * (lv.srv[i] ? 0.8 : 1);
               ctx.fillStyle = 'rgba(' + rgb[0] + ',' + rgb[1] + ',' + rgb[2] + ',' + a.toFixed(3) + ')';
-              ctx.fillRect(x0, Math.round(Math.min(yTop, yBot) * vr), wpx, Math.max(1, Math.round(h * vr)));
+              ctx.fillRect(
+                Math.round((xs[i] - segW / 2) * hr),
+                Math.round((y - h / 2) * vr),
+                Math.max(1, Math.round(segW * hr)),
+                Math.max(1, Math.round(h * vr))
+              );
             }
           }
           ctx.restore();
@@ -256,24 +287,18 @@
       attached(p) { chartRef = p.chart; seriesRef = p.series; requestUpdate = p.requestUpdate; },
       detached() { chartRef = seriesRef = requestUpdate = null; },
       updateAllViews() {},
-      paneViews() { return [{ renderer: () => renderer, zOrder: () => 'bottom' }]; },
+      paneViews() { return [{ renderer: function () { return renderer; }, zOrder: function () { return 'bottom'; } }]; },
       poke() { if (requestUpdate) requestUpdate(); },
     };
   }
 
-  /* ---------- structure lines --------------------------------------------
-     King, call wall, put wall and the gamma flip as native price lines. In the
-     old build these were hand-drawn and drifted out of sync with the axis on
-     every zoom. */
+  /* ---------- structure lines ---------------------------------------------- */
   function drawLines(sym) {
     if (!priceSeries) return;
-    Object.keys(lines).forEach(k => { if (lines[k]) { try { priceSeries.removePriceLine(lines[k]); } catch (e) {} lines[k] = null; } });
+    Object.keys(lines).forEach(k => { try { priceSeries.removePriceLine(lines[k]); } catch (e) {} });
+    lines = {};
     const d = S.data[sym];
     if (!d || !d.strikes || !d.strikes.length) return;
-    /* kingOf is on the Kairos export; panelStats is a top-level declaration in
-       core, which makes it a global but NOT a member of window.Kairos. Read
-       both defensively so a future export change cannot silently blank the
-       structure lines. */
     let king = null, cw = null, pw = null, flip = null;
     try {
       const kingOf = (window.Kairos && window.Kairos.kingOf) || window.kingOf;
@@ -283,25 +308,24 @@
       if (ps) { cw = ps.cw; pw = ps.pw; flip = ps.fl; }
     } catch (e) {}
     const add = (price, color, title, style) => {
-      if (price == null || !isFinite(price)) return null;
+      if (price == null || !isFinite(price)) return;
       try {
-        return priceSeries.createPriceLine({
+        lines[title] = priceSeries.createPriceLine({
           price: +price, color, lineWidth: 1,
-          lineStyle: style == null ? 2 : style,
-          axisLabelVisible: true, title,
+          lineStyle: style == null ? 2 : style, axisLabelVisible: true, title,
         });
-      } catch (e) { return null; }
+      } catch (e) {}
     };
-    if (king) lines.king = add(king.k, cssVar('--gold', '#f2c14e'), 'KING', 0);
-    if (cw != null) lines.cw = add(cw, 'rgba(45,212,191,.75)', 'CALL WALL');
-    if (pw != null) lines.pw = add(pw, 'rgba(232,121,249,.75)', 'PUT WALL');
-    if (flip != null) lines.flip = add(flip, 'rgba(148,163,184,.7)', 'FLIP', 1);
+    if (king) add(king.k, cssVar('--gold', '#f2c14e'), 'KING', 0);
+    if (cw != null) add(cw, 'rgba(45,212,191,.7)', 'CALL WALL');
+    if (pw != null) add(pw, 'rgba(232,121,249,.7)', 'PUT WALL');
+    if (flip != null) add(flip, 'rgba(148,163,184,.65)', 'FLIP', 1);
   }
 
-  /* ---------- undertow ----------------------------------------------------
-     Net exposure within +/-1% of spot, through time. This is the number that
-     actually says what dealers do here, as opposed to the sign of the single
-     largest node, and it is the same quantity Aether now gates on. */
+  /* ---------- undertow ------------------------------------------------------
+     Net exposure within +/-1% of spot through time. This is the number that
+     says what dealers do HERE, rather than the sign of the largest node
+     somewhere else, and it is the same quantity Aether now gates on. */
   function undertowData() {
     const cols = field[curSym];
     if (!cols || !cols.length) return [];
@@ -315,15 +339,12 @@
       last = t;
       let net = 0;
       for (let i = 0; i < c.ks.length; i++) if (Math.abs(c.ks[i] - c.spot) <= c.spot * 0.01) net += vals[i];
-      out.push({
-        time: t, value: net,
-        color: net >= 0 ? 'rgba(45,212,191,.62)' : 'rgba(244,114,62,.62)',
-      });
+      out.push({ time: t, value: net, color: net >= 0 ? 'rgba(45,212,191,.6)' : 'rgba(244,114,62,.6)' });
     }
     return out;
   }
 
-  /* ---------- chart lifecycle --------------------------------------------- */
+  /* ---------- chart lifecycle ----------------------------------------------- */
   function build() {
     const host = $('nexusStage');
     if (!host) return false;
@@ -334,25 +355,23 @@
       layout: {
         background: { color: 'transparent' },
         textColor: cssVar('--muted', '#94a3b8'),
-        fontFamily: '"JetBrains Mono", monospace',
-        fontSize: 10,
-        attributionLogo: false,
+        fontFamily: '"JetBrains Mono", monospace', fontSize: 10, attributionLogo: false,
         panes: { separatorColor: cssVar('--border', '#1e293b'), separatorHoverColor: 'rgba(45,212,191,.25)' },
       },
-      grid: {
-        vertLines: { color: 'rgba(148,163,184,.05)' },
-        horzLines: { color: 'rgba(148,163,184,.05)' },
+      grid: { vertLines: { color: 'rgba(148,163,184,.045)' }, horzLines: { color: 'rgba(148,163,184,.045)' } },
+      rightPriceScale: { borderColor: cssVar('--border', '#1e293b'), scaleMargins: { top: 0.06, bottom: 0.06 } },
+      timeScale: { borderColor: cssVar('--border', '#1e293b'), timeVisible: true, secondsVisible: false, rightOffset: 6 },
+      crosshair: {
+        mode: 0,
+        vertLine: { color: 'rgba(148,163,184,.35)', labelBackgroundColor: '#0b1220' },
+        horzLine: { color: 'rgba(148,163,184,.35)', labelBackgroundColor: '#0b1220' },
       },
-      rightPriceScale: { borderColor: cssVar('--border', '#1e293b'), scaleMargins: { top: 0.08, bottom: 0.08 } },
-      timeScale: { borderColor: cssVar('--border', '#1e293b'), timeVisible: true, secondsVisible: false, rightOffset: 4 },
-      crosshair: { mode: 0, vertLine: { color: 'rgba(148,163,184,.4)', labelBackgroundColor: '#0b1220' },
-                   horzLine: { color: 'rgba(148,163,184,.4)', labelBackgroundColor: '#0b1220' } },
       localization: { locale: 'en-US' },
       autoSize: true,
     });
 
     priceSeries = chart.addSeries(L.CandlestickSeries, {
-      upColor: 'rgba(226,232,240,.9)', downColor: 'rgba(100,116,139,.9)',
+      upColor: 'rgba(226,232,240,.92)', downColor: 'rgba(100,116,139,.92)',
       wickUpColor: 'rgba(226,232,240,.5)', wickDownColor: 'rgba(100,116,139,.5)',
       borderVisible: false, priceLineVisible: false, lastValueVisible: true,
     });
@@ -360,16 +379,14 @@
     fieldPrim = makeFieldPrimitive();
     try { priceSeries.attachPrimitive(fieldPrim); } catch (e) { console.warn('Nexus: primitive attach failed', e); }
 
-    /* Second pane for the undertow. Wrapped because pane support is the newest
-       part of the v5 API and a failure here should cost the undertow, not the
-       whole chart. */
+    /* Panes are the newest part of the v5 API, so a failure here should cost
+       the undertow rather than the entire chart. */
     try {
       undertow = chart.addSeries(L.HistogramSeries, {
-        priceFormat: { type: 'volume' }, priceLineVisible: false, lastValueVisible: false,
-        base: 0,
+        priceFormat: { type: 'volume' }, priceLineVisible: false, lastValueVisible: false, base: 0,
       }, 1);
       const panes = chart.panes();
-      if (panes && panes[1] && panes[1].setHeight) panes[1].setHeight(90);
+      if (panes && panes[1] && panes[1].setHeight) panes[1].setHeight(78);
     } catch (e) { undertow = null; }
 
     ready = true;
@@ -389,26 +406,45 @@
   }
 
   async function open(sym) {
-    curSym = sym || S.focus;
+    const next = sym || S.focus;
+    const changed = next !== curSym;
+    curSym = next;
+    if (changed) { bars = []; barsT = 0; cache.key = ''; }
+    const ti = $('nexusTicker'); if (ti && ti.value !== curSym) ti.value = curSym;
+
     if (!ready && !libFail) build();
     if (libFail) {
       const wait = $('nexusWait');
       if (wait) {
         wait.style.display = '';
-        wait.innerHTML = 'Chart library did not load.<br><span style="color:var(--faint)">Nexus needs Lightweight Charts. Check the network tab for a blocked CDN request.</span>';
+        wait.innerHTML = 'Chart library did not load.<br><span style="color:var(--faint)">Nexus needs Lightweight Charts. Check the network tab for a blocked request.</span>';
       }
       return;
     }
     hud();
-    await loadBars(curSym);
-    hydrate(curSym);
-    redraw();
-    try { chart.timeScale().fitContent(); } catch (e) {}
+    /* Guard against overlapping opens. Clicking through four tickers used to
+       fire four concurrent bar fetches that resolved out of order and repainted
+       over each other, which read as the chart freezing. */
+    if (opening) return;
+    opening = true;
+    try {
+      await loadBars(curSym);
+      redraw();
+      if (changed) { try { chart.timeScale().fitContent(); } catch (e) {} }
+      hydrate(curSym);
+    } finally { opening = false; }
   }
 
-  /* ---------- HUD ---------------------------------------------------------
-     Reads the same numbers as the rest of Kairos, phrased as what the field is
-     doing rather than as a list of exposures. */
+  /* Focus hook. pickPreset() calls this whenever a ticker chip is clicked,
+     which is how the rail drives every other view. v9 never registered it, so
+     the chips silently did nothing while Nexus was open. */
+  window.__kairosArenaFocus = function (t) {
+    const ti = $('nexusTicker'); if (ti) ti.value = t;
+    if (onNexus()) open(t);
+    else { curSym = t; bars = []; barsT = 0; cache.key = ''; }
+  };
+
+  /* ---------- HUD ----------------------------------------------------------- */
   function hud() {
     const el = $('nexusHud');
     if (!el) return;
@@ -426,7 +462,8 @@
     const net1 = ps && ps.net1 != null ? ps.net1 : null;
     const regime = net1 == null ? null : (net1 > 0 ? 'AEGIS' : 'MAELSTROM');
     const cell = (l, v, c, tip) =>
-      '<div class="nx-cell"' + (tip ? ' data-tip="' + tip + '"' : '') + '><b>' + l + '</b><span' + (c ? ' style="color:' + c + '"' : '') + '>' + v + '</span></div>';
+      '<div class="nx-cell"' + (tip ? ' data-tip="' + tip + '"' : '') + '><b>' + l + '</b><span' +
+      (c ? ' style="color:' + c + '"' : '') + '>' + v + '</span></div>';
     const cols = (field[curSym] || []).length;
     el.innerHTML =
       cell('REGIME @ SPOT', regime || '\u2014',
@@ -437,11 +474,29 @@
         'Zero-gamma level, from a full Black-Scholes re-price across a \u00b17% spot grid rather than per-strike sign changes.') +
       cell('EM \u00b11\u03c3', ps && ps.em ? '\u00b1' + ps.em.toFixed(dp) : '\u2014', 'var(--cyan)', 'One session, implied by ATM IV.') +
       cell('SOUNDINGS', cols ? String(cols) : '0', cols ? 'var(--text)' : 'var(--faint)',
-        'Recorded field columns available for this symbol. Server columns accumulate 24/5; local columns only while a tab is open.');
+        'Recorded field columns for this symbol. Server columns accumulate 24/5; local columns only while a tab is open.');
   }
-  setInterval(() => { if (S.view === 'arena') hud(); }, 5000);
+  setInterval(function () { if (onNexus()) hud(); }, 6000);
 
-  /* ---------- view wiring ------------------------------------------------- */
+  /* ---------- fullscreen ----------------------------------------------------- */
+  function toggleFull() {
+    const sec = $('nexusSec');
+    if (!sec) return;
+    if (document.fullscreenElement) { document.exitFullscreen(); return; }
+    /* iOS Safari has no element fullscreen, so fall back to a fixed-position
+       class that fills the viewport. Same result, no API. */
+    if (sec.requestFullscreen) sec.requestFullscreen().catch(function () { sec.classList.add('nx-faux'); syncFullBtn(); });
+    else { sec.classList.toggle('nx-faux'); syncFullBtn(); }
+  }
+  function syncFullBtn() {
+    const b = $('nexusFull');
+    const on = !!document.fullscreenElement || (($('nexusSec') || {}).classList || { contains: () => false }).contains('nx-faux');
+    if (b) b.textContent = on ? 'EXIT' : 'FULL';
+    setTimeout(function () { try { chart.timeScale().fitContent(); } catch (e) {} }, 140);
+  }
+  document.addEventListener('fullscreenchange', syncFullBtn);
+
+  /* ---------- view wiring ----------------------------------------------------- */
   (function () {
     const prev = window.setView;
     window.setView = function (v) {
@@ -449,15 +504,17 @@
       const btn = $('btnArena'), sec = $('nexusSec');
       if (v !== 'arena') { if (btn) btn.classList.remove('active'); if (sec) sec.classList.add('hidden'); return prev(v); }
       S.view = 'arena';
-      ['btnTrinity', 'btnSingle', 'btnChart', 'btnIdeas', 'btnImb', 'btnTape'].forEach(id => { const b = $(id); if (b) b.classList.remove('active'); });
+      ['btnTrinity', 'btnSingle', 'btnChart', 'btnIdeas', 'btnImb', 'btnTape', 'btnNova'].forEach(id => { const b = $(id); if (b) b.classList.remove('active'); });
       if (btn) btn.classList.add('active');
-      ['trinityWrap', 'chartSec', 'ideasSec', 'imbSec', 'tapeSec'].forEach(id => { const e = $(id); if (e) e.classList.add('hidden'); });
+      /* novaSec belongs on this list. Core's setView owns hiding it, and the
+         arena branch never reaches core's setView, so opening Nova and then
+         Nexus left the entire Nova deck stacked underneath the chart. */
+      ['trinityWrap', 'chartSec', 'ideasSec', 'imbSec', 'tapeSec', 'novaSec'].forEach(id => { const e = $(id); if (e) e.classList.add('hidden'); });
       if (sec) sec.classList.remove('hidden');
       const mt = $('mtoggle'); if (mt) mt.classList.remove('dim');
       const ct = $('centertoggle'); if (ct) ct.classList.add('dim');
       const pb = $('presetBar'); if (pb) pb.classList.remove('hidden');
       if (window.renderPresets) window.renderPresets();
-      const ti = $('nexusTicker'); if (ti) ti.value = S.focus;
       open(S.focus);
       if (!S.data[S.focus] || Date.now() - (S.dataAge[S.focus] || 0) > 90000) { if (window.refresh) window.refresh(false); }
     };
@@ -466,9 +523,10 @@
 
     const ti = $('nexusTicker');
     if (ti) ti.onchange = async function () {
-      const v = window.cleanSym ? window.cleanSym(ti.value) : ti.value.toUpperCase().trim();
-      if (!v) { ti.value = S.focus; return; }
-      ti.value = v; S.focus = v; bars = []; barsT = 0;
+      const v = window.cleanSym ? window.cleanSym(ti.value) : String(ti.value || '').toUpperCase().trim();
+      if (!v) { ti.value = curSym || S.focus; return; }
+      ti.value = v; S.focus = v;
+      if (window.renderPresets) window.renderPresets();
       if (!S.data[v] && window.getSym) {
         const sp = $('spin'); if (sp) sp.classList.remove('hidden');
         try { const r = await window.getSym(v); if (r) { S.data[v] = r; S.dataAge[v] = Date.now(); } } catch (e) {}
@@ -482,26 +540,37 @@
       const b2 = e.target.closest('button[data-m]'); if (!b2) return;
       ms.querySelectorAll('button').forEach(x => x.classList.remove('on'));
       b2.classList.add('on');
-      metric = b2.dataset.m;
+      metric = b2.dataset.m; cache.key = '';
       hud(); redraw();
     });
 
     const fit = $('nexusFit');
-    if (fit) fit.onclick = function () { try { chart.timeScale().fitContent(); priceSeries.priceScale().applyOptions({ autoScale: true }); } catch (e) {} };
+    if (fit) fit.onclick = function () {
+      try { chart.timeScale().fitContent(); priceSeries.priceScale().applyOptions({ autoScale: true }); } catch (e) {}
+    };
+    const fs = $('nexusFull');
+    if (fs) fs.onclick = toggleFull;
+    const nt = $('nexusNoteToggle');
+    if (nt) nt.onclick = function () {
+      const n = $('nexusNote'); if (!n) return;
+      n.classList.toggle('open');
+      nt.textContent = n.classList.contains('open') ? 'HIDE' : 'HOW TO READ';
+    };
   })();
 
   document.addEventListener('visibilitychange', function () {
-    if (S.view === 'arena' && !document.hidden) { loadBars(curSym).then(redraw); }
+    if (onNexus() && !document.hidden) loadBars(curSym).then(redraw);
   });
   setInterval(function () {
-    if (S.view === 'arena' && !document.hidden) loadBars(curSym).then(redraw);
+    if (onNexus() && !document.hidden) loadBars(curSym).then(redraw);
   }, 60000);
 
   window.KairosNexus = {
-    NX, open, redraw, hud, hydrate,
+    NX, open, redraw, hud, hydrate, toggleFull,
     field: function () { return field; },
     chart: function () { return chart; },
+    levels: function () { return buildLevels(); },
     metric: function () { return metric; },
   };
-  console.log('%cKairos Nexus \u2014 THE SOUNDING. The field as strata: discrete strikes, no interpolation, nothing invented between readings.', 'color:#2dd4bf;font-weight:bold');
+  console.log('%cKairos Nexus \u2014 THE LADDER. Exposure as horizontal levels through time: thickness is strength, and price runs across them.', 'color:#2dd4bf;font-weight:bold');
 })();

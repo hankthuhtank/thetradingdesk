@@ -131,23 +131,25 @@
   <div class="tape hidden" id="tapeSec"><span id="tapeMeta"></span><div id="tapeNote"></div></div>
   <div class="nexus hidden" id="nexusSec">
     <div class="nx-top">
-      <input id="nexusTicker" class="ticker-sel" list="tickerList" value="SPY" style="width:92px" autocomplete="off" data-tip="Type any optionable ticker">
-      <div class="mtoggle" id="nexusMetric" data-tip="Which field to sound. GEX is dealer gamma: how hard the book resists or amplifies. VEX is vanna: how the hedge shifts as volatility moves.">
+      <input id="nexusTicker" class="ticker-sel" list="tickerList" value="SPY" style="width:88px" autocomplete="off" data-tip="Type any optionable ticker">
+      <div class="mtoggle" id="nexusMetric" data-tip="Which book to draw. GEX is dealer gamma: how hard the book resists or amplifies. VEX is vanna: how the hedge shifts as volatility moves.">
         <button data-m="gex" class="on">GEX</button>
         <button data-m="vex">VEX</button>
       </div>
-      <button class="btn" id="nexusFit" data-tip="Fit the whole recorded window and re-scale price">FIT</button>
+      <button class="btn nx-btn" id="nexusFit" data-tip="Fit the whole recorded window and re-scale price">FIT</button>
+      <button class="btn nx-btn" id="nexusFull" data-tip="Fill the screen">FULL</button>
+      <button class="btn nx-btn nx-howto" id="nexusNoteToggle">HOW TO READ</button>
       <span class="nx-legend">
-        <span class="nx-lg" data-tip="Positive exposure. Dealers fade moves, so price is held. The field resists."><s class="aeg"></s>AEGIS &middot; +</span>
-        <span class="nx-lg" data-tip="Negative exposure. Dealers chase, so moves accelerate. The field pulls."><s class="mae"></s>MAELSTROM &middot; &minus;</span>
-        <span class="nx-lg" data-tip="Server-recorded columns render slightly dimmer than columns this browser recorded itself."><s class="srv"></s>FROM THE CHRONICLE</span>
+        <span class="nx-lg" data-tip="Positive exposure. Dealers fade moves, so price is held. The level resists."><s class="aeg"></s>AEGIS &middot; +</span>
+        <span class="nx-lg" data-tip="Negative exposure. Dealers chase, so moves accelerate. The level gives way."><s class="mae"></s>MAELSTROM &middot; &minus;</span>
+        <span class="nx-lg" data-tip="The single largest node right now."><s class="kng"></s>KING</span>
       </span>
     </div>
     <div class="nx-hud" id="nexusHud"></div>
     <div class="nx-stage" id="nexusStage">
-      <div class="nx-wait" id="nexusWait">Sounding the field&hellip;<br><span style="color:var(--faint)">strata draw as soon as recorded columns land</span></div>
+      <div class="nx-wait" id="nexusWait">Reading the ladder&hellip;<br><span style="color:var(--faint)">levels draw as soon as recorded columns land</span></div>
     </div>
-    <div id="nexusNote" class="nx-note">Each vertical column is a <b>sounding</b>: the whole strike ladder as it stood at one minute of the session. Within a column every strike is drawn as its own solid band, edge to edge at the midpoints between neighbours &mdash; <b>nothing is interpolated between strikes</b>, because gamma is not smooth between them. What looks like banding <em>is</em> the sampling resolution of the instrument. <b>Aegis</b> (+) holds price because dealers fade moves; <b>Maelstrom</b> (&minus;) pulls because they chase. Intensity is scaled on a square root across every visible column, so the King never blacks out the rest of the book and a quiet morning does not look like a violent close. Columns from the server <b>Chronicle</b> (accumulated 24/5) render dimmer than ones this browser recorded. Server columns older than the vega rollout carry no VEX, and in VEX mode they are <b>omitted rather than drawn as zero</b>. The lower pane is the <b>undertow</b>: net exposure within &plusmn;1% of spot through time, which is the number that says what dealers do <em>here</em> rather than the sign of the largest node somewhere else. Candles are Tradier 1-minute bars. Structure lines are live. Nothing here is a signal.</div>
+    <div id="nexusNote" class="nx-note">Every horizontal band is a <b>level</b>: one strike, drawn across the whole recorded window. Its <b>thickness is how much exposure sits there</b> at that minute, so a level being built thickens and a level being torn down narrows to nothing. Price runs across them, which is the point: you can see whether it is being held up by a wall or falling through a hole. <b>Aegis</b> (+) holds price because dealers fade moves; <b>Maelstrom</b> (&minus;) gives way because they chase. The <b>King</b> is gold. Levels are ranked by their <em>peak</em> strength across the window rather than by their current value, so a wall that dominated the morning and has since been dismantled stays visible, because that is usually the more useful fact. Thickness is on a square root scale, so the King never blacks out the rest of the ladder. Columns from the server <b>Chronicle</b> (accumulated 24/5) render slightly dimmer than ones this browser recorded. Server columns older than the vega rollout carry no VEX, and in VEX mode they are <b>omitted rather than drawn as zero</b>. The lower pane is the <b>undertow</b>: net exposure within &plusmn;1% of spot through time, which is what dealers are doing <em>here</em> rather than the sign of the largest node somewhere else. Candles are Tradier 1-minute bars. Nothing here is a signal.</div>
   </div>
   <div class="novasec hidden" id="novaSec"></div>
   <div class="surfaced hidden" id="ideasSec">
@@ -162,6 +164,7 @@
     </div>
     <div id="oracle" class="oracle nova"></div>
     <div id="aetherPulse" class="aether-pulse"></div>
+    <div id="forgeBox"></div>
     <div class="cards" id="cards"></div>
     <div id="ledgerBox" class="ledger"></div>
     <div class="nfa-sub">Not financial advice · computed context to grade your own read · options carry substantial risk of total loss</div>

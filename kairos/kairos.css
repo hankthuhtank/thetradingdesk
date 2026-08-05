@@ -992,48 +992,70 @@ span.nv-tag{flex-shrink:0}
 }
 
 /* ============================================================================
-   NEXUS v9 — THE SOUNDING
-   The old .arena / .a-* block is superseded. Kept above rather than deleted so
-   any stray selector still resolves, but nothing below depends on it.
-
-   The visual idea is a seismic section: a medium read in vertical soundings and
-   drawn as strata. So the chrome is instrument-panel, not dashboard: hairline
-   rules, monospace numerics, and no rounded card floating in space.
+   NEXUS v10 - THE LADDER
+   Instrument chrome, not dashboard chrome: hairline rules, monospace numerics,
+   and a stage that takes the height it deserves. The chart IS the page here, so
+   everything else is compressed to give it room.
    ============================================================================ */
-.nexus{display:flex;flex-direction:column;gap:8px}
-.nx-top{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.nexus{display:flex;flex-direction:column;gap:7px}
+.nx-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.nx-btn{font-size:.64rem;padding:4px 9px;border-color:var(--border)}
 .nx-legend{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-left:auto;
-  font-size:.62rem;letter-spacing:.06em;color:var(--muted)}
+  font-size:.6rem;letter-spacing:.06em;color:var(--muted)}
 .nx-lg{display:inline-flex;align-items:center;gap:5px;cursor:help}
-.nx-lg s{width:16px;height:8px;display:inline-block;text-decoration:none;border-radius:1px}
-.nx-lg s.aeg{background:linear-gradient(90deg,rgba(45,212,191,.12),rgba(45,212,191,.92))}
-.nx-lg s.mae{background:linear-gradient(90deg,rgba(244,114,62,.12),rgba(244,114,62,.92))}
-.nx-lg s.srv{background:repeating-linear-gradient(90deg,rgba(45,212,191,.6) 0 3px,transparent 3px 6px)}
+.nx-lg s{width:18px;height:5px;display:inline-block;text-decoration:none;border-radius:3px}
+.nx-lg s.aeg{background:rgba(45,212,191,.85)}
+.nx-lg s.mae{background:rgba(244,114,62,.85)}
+.nx-lg s.kng{background:rgba(242,193,78,.95);height:8px}
 
-/* HUD: a strip of readings, not a row of cards. Hairline dividers only. */
+/* HUD: a strip of readings, not a row of cards. */
 .nx-hud{display:flex;flex-wrap:wrap;border:1px solid var(--border);border-radius:6px;
   background:var(--panel2);overflow:hidden}
-.nx-cell{flex:1 1 120px;min-width:104px;padding:6px 10px;
-  border-right:1px solid var(--border);display:flex;flex-direction:column;gap:2px;cursor:help}
+.nx-cell{flex:1 1 118px;min-width:100px;padding:5px 10px;
+  border-right:1px solid var(--border);display:flex;flex-direction:column;gap:1px;cursor:help}
 .nx-cell:last-child{border-right:0}
-.nx-cell b{font-size:.56rem;font-weight:600;letter-spacing:.1em;color:var(--faint)}
-.nx-cell span{font-family:'JetBrains Mono';font-size:.9rem;font-weight:700;color:var(--text)}
+.nx-cell b{font-size:.54rem;font-weight:600;letter-spacing:.1em;color:var(--faint)}
+.nx-cell span{font-family:'JetBrains Mono';font-size:.88rem;font-weight:700;color:var(--text)}
 
-/* The stage is the instrument. Give it real height and let the library own it. */
-.nx-stage{position:relative;height:min(62vh,560px);min-height:300px;
+/* The stage takes everything left in the viewport. dvh rather than vh so the
+   iOS URL bar collapsing does not clip the bottom of the chart. */
+.nx-stage{position:relative;height:calc(100dvh - 236px);min-height:340px;
   border:1px solid var(--border);border-radius:6px;background:#05070c;overflow:hidden}
 .nx-wait{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;
   justify-content:center;text-align:center;font-size:.74rem;color:var(--muted);
   line-height:1.7;pointer-events:none;padding:16px}
-.nx-note{font-size:.66rem;line-height:1.75;color:var(--muted);
+
+/* The explainer is long and useful but it should not push the chart around, so
+   it is collapsed by default and toggled from the top bar. */
+.nx-note{display:none;font-size:.66rem;line-height:1.75;color:var(--muted);
   border-top:1px solid var(--border);padding-top:8px}
+.nx-note.open{display:block}
 .nx-note b{color:var(--text)}
 .nx-note em{color:var(--gold);font-style:normal}
+
+/* True fullscreen, plus a fixed-position fallback for iOS Safari, which has no
+   element fullscreen API. */
+#nexusSec:fullscreen{background:var(--bg);padding:10px}
+#nexusSec:fullscreen .nx-stage{height:calc(100dvh - 120px)}
+#nexusSec.nx-faux{position:fixed;inset:0;z-index:9999;background:var(--bg);
+  padding:10px;overflow:auto;margin:0}
+#nexusSec.nx-faux .nx-stage{height:calc(100dvh - 120px)}
+
+@media (max-width:860px){
+  .nx-legend{margin-left:0;width:100%;font-size:.56rem;gap:10px;order:9}
+}
 @media (max-width:720px){
-  .nx-stage{height:min(56vh,420px)}
-  .nx-legend{margin-left:0;width:100%;font-size:.58rem;gap:9px}
-  .nx-cell{flex:1 1 45%;min-width:0}
-  .nx-cell span{font-size:.8rem}
+  /* Phone: the chart is the whole point, so the ticker and the two toggles get
+     one row and everything else stands down. */
+  .nx-stage{height:calc(100dvh - 224px);min-height:280px}
+  .nx-legend{display:none}
+  .nx-howto{display:none}
+  .nx-top{gap:6px}
+  .nx-btn{padding:4px 7px;font-size:.6rem}
+  .nx-cell{flex:1 1 33%;min-width:0;padding:4px 7px}
+  .nx-cell span{font-size:.74rem}
+  .nx-cell b{font-size:.5rem}
+  .nx-cell:nth-child(4),.nx-cell:nth-child(5){border-top:1px solid var(--border)}
 }
 
 /* ---- Mythos replay ---- */
@@ -1071,4 +1093,54 @@ span.nv-tag{flex-shrink:0}
   .orr-when{min-width:72px;font-size:.62rem}
   .orr-livebtn{display:none}
   .orr-crossings{font-size:.61rem;gap:8px}
+}
+
+/* ---- THE FORGE ----------------------------------------------------------
+   Two visual layers, matching the two logical ones. The chips are measured
+   contracts and read like an instrument: monospace, dense, no decoration. The
+   case below is prose and is styled as prose. Nothing about a chip should look
+   like an opinion, and nothing about the case should look like a number. */
+.fg-wrap{border:1px solid var(--border);border-radius:8px;background:var(--panel2);
+  padding:10px 12px;margin-bottom:10px}
+.fg-title{font-size:.6rem;font-weight:700;letter-spacing:.14em;color:var(--gold);
+  margin-bottom:8px;display:flex;align-items:baseline;gap:8px}
+.fg-title i{font-style:normal;font-weight:400;letter-spacing:.04em;color:var(--faint);font-size:.58rem}
+.fg-empty{font-size:.72rem;color:var(--muted);line-height:1.7;padding:6px 0}
+.fg-sym{border-top:1px solid var(--border);padding:9px 0}
+.fg-sym:first-of-type{border-top:0;padding-top:2px}
+.fg-sym.stood{opacity:.72}
+.fg-symhead{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px}
+.fg-symhead b{font-family:'JetBrains Mono';font-size:.9rem;color:var(--text)}
+.fg-bias{font-size:.56rem;font-weight:700;letter-spacing:.1em;padding:2px 6px;border-radius:3px}
+.fg-bias.l{background:rgba(45,212,191,.14);color:var(--teal)}
+.fg-bias.s{background:rgba(244,114,62,.14);color:#f4723e}
+.fg-thesis{font-size:.56rem;letter-spacing:.1em;color:var(--muted)}
+.fg-ivr{font-family:'JetBrains Mono';font-size:.58rem;color:var(--cyan);cursor:help;margin-left:auto}
+.fg-posture{font-size:.68rem;line-height:1.65;color:var(--muted);margin-bottom:7px}
+.fg-posture.warn{color:var(--gold)}
+.fg-chips{display:grid;grid-template-columns:repeat(auto-fit,minmax(212px,1fr));gap:7px}
+.fg-chip{border:1px solid var(--border);border-left-width:2px;border-radius:5px;
+  padding:6px 8px;background:rgba(0,0,0,.22)}
+.fg-chip.good{border-left-color:var(--teal)}
+.fg-chip.ok{border-left-color:var(--gold)}
+.fg-chip.weak{border-left-color:var(--border)}
+.fg-head{display:flex;align-items:baseline;gap:7px;margin-bottom:4px}
+.fg-head b{font-family:'JetBrains Mono';font-size:.82rem;color:var(--text)}
+.fg-dte{font-size:.56rem;color:var(--faint);letter-spacing:.06em}
+.fg-score{margin-left:auto;font-family:'JetBrains Mono';font-size:.68rem;font-weight:700;color:var(--gold)}
+.fg-row{display:flex;align-items:baseline;gap:4px;flex-wrap:wrap;
+  font-family:'JetBrains Mono';font-size:.6rem;line-height:1.85}
+.fg-row i{font-style:normal;color:var(--faint);font-size:.55rem}
+.fg-row b{color:var(--text);font-weight:600;margin-right:5px}
+.fg-case{border-top:1px solid var(--border);margin-top:9px;padding-top:8px;
+  font-size:.72rem;line-height:1.75;color:var(--muted)}
+.fg-case b,.fg-case strong{color:var(--text)}
+.fg-case h2{font-size:.6rem;letter-spacing:.12em;color:var(--teal);margin:9px 0 4px}
+.fg-caseh{font-size:.56rem;letter-spacing:.13em;color:var(--faint);margin-bottom:5px}
+.fg-caseh i{font-style:normal;margin-left:6px}
+.fg-foot{border-top:1px solid var(--border);margin-top:9px;padding-top:7px;
+  font-size:.6rem;line-height:1.65;color:var(--faint)}
+@media (max-width:720px){
+  .fg-chips{grid-template-columns:1fr}
+  .fg-wrap{padding:9px 10px}
 }
