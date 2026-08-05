@@ -18,6 +18,7 @@
   --cyan:#22d3ee; --cyan-dim:#0e7490; --cyan-glow:rgba(34,211,238,.26);
   --gold:#f5b942; --gold-glow:rgba(245,185,66,.22);
   --brass:#d9a441; --brass-glow:rgba(217,164,65,.2);
+  --ledger:#e0d5bd; --ledger-glow:rgba(224,213,189,.16);
   --green:#34d399; --green-bg:rgba(52,211,153,.12);
   --red:#f87171; --red-bg:rgba(248,113,113,.12);
   --violet:#a855f7; --violet-bg:rgba(168,85,247,.14);
@@ -846,6 +847,170 @@ i.lgd.hp-un{background:var(--faint)} i.lgd.hp-put{background:var(--cyan)} i.lgd.
   .mk-r,.hg-r{grid-template-columns:1fr;gap:5px}
 }
 
+/* ============================================================
+   THE LEDGER — ruled-paper accounting aesthetic. Hairline column
+   rules, tabular figures, and the accountant's own colour rule:
+   what the company keeps reads warm, what it spends reads red.
+   ============================================================ */
+.lg-search{display:flex;flex-direction:column;gap:12px;margin-bottom:26px}
+.lgs-box{display:flex;align-items:center;gap:12px;border:1px solid var(--line);border-radius:14px;background:var(--panel);padding:8px 8px 8px 18px;max-width:640px;transition:border-color .18s}
+.lgs-box:focus-within{border-color:var(--ledger)}
+.lgs-i{font-family:var(--disp);font-size:1.5rem;color:var(--ledger);opacity:.55}
+#lgTicker{flex:1;background:none;border:none;outline:none;color:var(--text);font-family:var(--disp);font-size:1.6rem;text-transform:uppercase;letter-spacing:.06em;min-width:0;padding:8px 0}
+#lgTicker::placeholder{color:var(--faint);letter-spacing:.02em;text-transform:none;font-size:1.1rem}
+.lgs-go{font-family:var(--mono);font-size:.62rem;letter-spacing:.13em;text-transform:uppercase;background:var(--ledger);color:var(--void);border-radius:10px;padding:13px 18px;white-space:nowrap;font-weight:600;transition:filter .18s}
+.lgs-go:hover{filter:brightness(1.12)}
+.lgs-recent{display:flex;gap:6px;flex-wrap:wrap}
+.lgs-recent button,.lg-peers button{font-family:var(--mono);font-size:.63rem;letter-spacing:.08em;color:var(--faint);border:1px solid var(--line);border-radius:7px;padding:6px 10px;transition:.16s}
+.lgs-recent button:hover,.lg-peers button:hover{border-color:var(--ledger);color:var(--ledger)}
+.lg-shell.hidden{display:none}
+.lg-status{font-family:var(--mono);font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);padding:9px 0 16px}
+.lg-status.ok b{color:var(--ledger)} .lg-status.bad{color:var(--red)}
+.lg-status.live{color:var(--cyan)}
+.lg-na{border:1px dashed var(--line);border-radius:12px;padding:16px 18px;font-size:.82rem;color:var(--faint);line-height:1.6}
+.lg-na b{display:block;color:var(--dim);font-family:var(--mono);font-size:.66rem;letter-spacing:.1em;text-transform:uppercase;margin-bottom:5px}
+
+.lg-id{display:grid;grid-template-columns:1fr auto;gap:24px;align-items:center;border:1px solid var(--line);border-radius:16px;background:var(--panel);padding:20px 24px;margin-bottom:20px}
+.lg-id-l{display:flex;gap:16px;align-items:center;min-width:0}
+.lg-logo{width:52px;height:52px;flex:none;border-radius:12px;background:var(--bg-2);object-fit:contain;padding:6px;border:1px solid var(--line)}
+.lg-logo.ph{display:grid;place-items:center;font-family:var(--disp);font-size:1.05rem;color:var(--ledger)}
+.lg-id h3{font-family:var(--disp);font-size:1.55rem;line-height:1.15}
+.lg-meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+.lg-meta span{font-family:var(--mono);font-size:.58rem;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);border:1px solid var(--line);border-radius:5px;padding:3px 7px}
+.lg-meta .ind{color:var(--ledger);border-color:rgba(227,217,198,.3)}
+.lg-web{font-family:var(--mono);font-size:.66rem;color:var(--faint);display:inline-block;margin-top:7px}
+.lg-web:hover{color:var(--ledger)}
+.lg-id-r{text-align:right;min-width:230px}
+.lg-px{display:flex;align-items:baseline;gap:9px;justify-content:flex-end}
+.lg-px b{font-family:var(--disp);font-size:2rem}
+.lg-px span{font-family:var(--mono);font-size:.8rem}
+.lg-px span.up{color:var(--green)} .lg-px span.dn{color:var(--red)}
+.lg-px.dim{font-family:var(--mono);font-size:.7rem;color:var(--faint)}
+.lg-52{margin-top:12px}
+.l52-t,.l52-e{display:flex;justify-content:space-between;font-family:var(--mono);font-size:.55rem;letter-spacing:.08em;text-transform:uppercase;color:var(--faint)}
+.l52-bar{position:relative;height:5px;border-radius:3px;margin:6px 0 4px;background:linear-gradient(90deg,rgba(248,113,113,.4),rgba(126,166,214,.3),rgba(52,211,153,.4))}
+.l52-bar i{position:absolute;top:-3px;width:2px;height:11px;background:var(--text);transform:translateX(-1px)}
+
+.lg-sec{border:1px solid var(--line);border-radius:16px;background:var(--panel);padding:22px 24px;margin-bottom:16px}
+.lg-sec.compact{padding:18px 24px}
+.lg-h{font-family:var(--disp);font-size:1.22rem;text-transform:uppercase;letter-spacing:-.01em;margin-bottom:8px}
+.lg-sub{font-size:.84rem;color:var(--dim);line-height:1.62;max-width:88ch;margin-bottom:16px}
+.lg-sub b{color:var(--ledger)}
+
+/* the waterfall */
+.wf{display:flex;flex-direction:column;gap:2px}
+.wf-r{display:grid;grid-template-columns:172px minmax(90px,1fr) 82px 1.5fr;gap:14px;align-items:center;padding:9px 0;border-top:1px solid var(--line-2)}
+.wf-r:first-child{border-top:none}
+.wf-k{font-family:var(--mono);font-size:.68rem;letter-spacing:.06em;text-transform:uppercase;color:var(--dim)}
+.wf-track{height:13px;background:var(--bg-2);border-radius:3px;overflow:hidden;display:block}
+.wf-track i{display:block;height:100%;border-radius:3px}
+.wf-v{font-family:var(--mono);font-size:.85rem;text-align:right;color:var(--dim)}
+.wf-d{font-size:.75rem;color:var(--faint);line-height:1.5}
+.wf-r.in .wf-track i{background:rgba(227,217,198,.55)} .wf-r.in .wf-k,.wf-r.in .wf-v{color:var(--text)}
+.wf-r.out .wf-track i{background:rgba(248,113,113,.5)} .wf-r.out .wf-v{color:var(--red)}
+.wf-r.sub .wf-track i{background:rgba(126,166,214,.5)}
+.wf-r.net{border-top:1px solid rgba(227,217,198,.35);margin-top:4px;padding-top:13px}
+.wf-r.net .wf-track i{background:var(--ledger)}
+.wf-r.net .wf-k{color:var(--ledger)} .wf-r.net .wf-v{color:var(--ledger);font-size:1.05rem}
+.wf-foot{font-size:.72rem;color:var(--faint);margin-top:12px;line-height:1.55}
+
+/* metric groups */
+.mg{border-top:1px solid var(--line-2);padding-top:16px;margin-top:16px}
+.mg:first-of-type{border-top:none;padding-top:0;margin-top:0}
+.mg-h h5{font-family:var(--mono);font-size:.62rem;letter-spacing:.15em;text-transform:uppercase;color:var(--ledger);margin-bottom:5px}
+.mg-h p{font-size:.78rem;color:var(--faint);line-height:1.55;margin-bottom:11px;max-width:80ch}
+.mrow{border-bottom:1px solid var(--line-2)}
+.mrow summary{display:grid;grid-template-columns:1fr 130px 96px 180px;gap:14px;align-items:center;padding:10px 2px;cursor:pointer;list-style:none}
+.mrow summary::-webkit-details-marker{display:none}
+.mrow:hover{background:rgba(255,255,255,.014)}
+.mr-n{font-size:.85rem;color:var(--dim)}
+.mrow[open] .mr-n{color:var(--ledger)}
+.mr-g{position:relative;height:6px;background:var(--bg-2);border-radius:3px;display:block;overflow:hidden}
+.mr-g i{position:absolute;left:0;top:0;height:100%;border-radius:3px;background:var(--faint)}
+.mr-g i.good{background:var(--green)} .mr-g i.ok{background:var(--cyan)}
+.mr-g i.warn{background:var(--gold)} .mr-g i.bad{background:var(--red)} .mr-g i.note{background:var(--faint)}
+.mr-g u{position:absolute;top:0;width:1px;height:100%;background:rgba(10,14,20,.85)}
+.mr-v{font-family:var(--mono);font-size:.92rem;text-align:right;color:var(--text)}
+.mr-t{font-family:var(--mono);font-size:.58rem;letter-spacing:.05em;color:var(--faint);line-height:1.35}
+.mr-t.good{color:var(--green)} .mr-t.ok{color:var(--cyan)} .mr-t.warn{color:var(--gold)} .mr-t.bad{color:var(--red)}
+.mrow.off{display:grid;grid-template-columns:1fr auto;gap:14px;padding:10px 2px;opacity:.42}
+.mrow.off .mr-v{font-family:var(--mono);font-size:.7rem;color:var(--faint)}
+.mr-b{padding:4px 2px 15px;display:flex;flex-direction:column;gap:9px;max-width:96ch}
+.mr-b p{font-size:.81rem;color:var(--dim);line-height:1.62}
+.mr-b .k{display:block;font-family:var(--mono);font-size:.55rem;letter-spacing:.13em;text-transform:uppercase;color:var(--faint);margin-bottom:3px}
+
+/* trend cards */
+.sgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px}
+.sc{border:1px solid var(--line);border-radius:12px;background:var(--bg-2);padding:14px 15px}
+.sc-h{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:7px}
+.sc-h h5{font-family:var(--mono);font-size:.6rem;letter-spacing:.11em;text-transform:uppercase;color:var(--faint)}
+.sc-v{font-family:var(--mono);font-size:.88rem;color:var(--text);white-space:nowrap}
+.sc-v em{font-style:normal;font-size:.8rem}
+.sc-v em.good,.sc-l.good,.sc-d.good{color:var(--green)}
+.sc-v em.bad,.sc-l.bad,.sc-d.bad{color:var(--red)}
+.sc-svg{width:100%;height:74px;display:block}
+.sc-l{stroke:currentColor;stroke-width:1.8;stroke-linejoin:round}
+.sc-l.good{stroke:var(--green)} .sc-l.bad{stroke:var(--red)}
+.sc-a{opacity:.13} .sc-a.good{fill:var(--green)} .sc-a.bad{fill:var(--red)}
+.sc-d.good{fill:var(--green)} .sc-d.bad{fill:var(--red)}
+.sc-x{display:flex;justify-content:space-between;font-family:var(--mono);font-size:.55rem;color:var(--faint);margin-top:3px}
+.sc-n{font-size:.72rem;color:var(--faint);line-height:1.5;margin-top:8px;padding-top:8px;border-top:1px solid var(--line-2)}
+
+/* earnings + recommendations */
+.ec,.rc{border:1px solid var(--line);border-radius:12px;background:var(--bg-2);padding:12px}
+#ecSVG,#rcSVG{width:100%;height:auto;display:block}
+.ec-zero{stroke:rgba(126,166,214,.25);stroke-width:1}
+.ec-est{fill:rgba(126,166,214,.45)} .ec-act{fill:var(--ledger)}
+i.lgd.ec-est{background:rgba(126,166,214,.55)} i.lgd.ec-act{background:var(--ledger)}
+.ec-sp{font-family:var(--mono);font-size:10px;text-anchor:middle}
+.ec-sp.up{fill:var(--green)} .ec-sp.dn{fill:var(--red)}
+.ec-lb{font-family:var(--mono);font-size:9.5px;fill:var(--dim);text-anchor:middle}
+.ec-eps{font-family:var(--mono);font-size:8px;fill:var(--faint);text-anchor:middle}
+.ec-lg,.rc-lg{display:flex;gap:14px;flex-wrap:wrap;padding-top:9px;margin-top:8px;border-top:1px solid var(--line-2)}
+.r-sb{fill:var(--green)} .r-b{fill:rgba(52,211,153,.5)} .r-h{fill:rgba(126,166,214,.45)}
+.r-s{fill:rgba(248,113,113,.55)} .r-ss{fill:var(--red)}
+i.lgd.r-sb{background:var(--green)} i.lgd.r-b{background:rgba(52,211,153,.5)}
+i.lgd.r-h{background:rgba(126,166,214,.45)} i.lgd.r-s{background:rgba(248,113,113,.55)} i.lgd.r-ss{background:var(--red)}
+.rc-n{font-family:var(--mono);font-size:9.5px;fill:var(--void);text-anchor:middle;font-weight:600}
+.lg-peers{display:flex;gap:6px;flex-wrap:wrap}
+
+/* news */
+.lg-news{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.nw{background:var(--bg-2);padding:13px 15px;display:flex;flex-direction:column;gap:6px;transition:background .16s}
+.nw:hover{background:var(--panel-2)}
+.nw-m{display:flex;gap:9px;align-items:baseline;font-family:var(--mono);font-size:.55rem;letter-spacing:.1em;text-transform:uppercase}
+.nw-m b{color:var(--ledger)} .nw-m span{color:var(--faint)}
+.nw-h{font-size:.84rem;color:var(--dim);line-height:1.45}
+.nw:hover .nw-h{color:var(--text)}
+
+/* the lesson layer */
+.lg-teach{margin-top:44px}
+.lgt-h{max-width:84ch;margin-bottom:18px}
+.lgt-h h3{font-family:var(--disp);font-size:1.5rem;margin:9px 0 8px}
+.lgt-h p{font-size:.88rem;color:var(--dim);line-height:1.65}
+.lessons{display:flex;flex-direction:column;gap:8px}
+.ls{border:1px solid var(--line);border-radius:12px;background:var(--panel);overflow:hidden}
+.ls summary{padding:14px 18px;cursor:pointer;display:flex;gap:14px;align-items:baseline;list-style:none}
+.ls summary::-webkit-details-marker{display:none}
+.ls[open]{border-color:rgba(227,217,198,.28)}
+.ls-i{font-family:var(--mono);font-size:.66rem;color:var(--ledger)}
+.ls-n{font-family:var(--disp);font-size:1.02rem;text-transform:uppercase}
+.ls[open] .ls-n{color:var(--ledger)}
+.ls-b{padding:0 18px 16px 46px;max-width:96ch}
+.ls-b p{font-size:.85rem;color:var(--dim);line-height:1.66}
+.ls-t{margin-top:10px;padding-left:13px;border-left:2px solid rgba(227,217,198,.35);color:var(--text)!important;font-size:.81rem!important}
+@media(max-width:900px){
+  .lg-id{grid-template-columns:1fr}
+  .lg-id-r{text-align:left;min-width:0}
+  .lg-px{justify-content:flex-start}
+  .wf-r{grid-template-columns:1fr auto;gap:6px 12px}
+  .wf-track{grid-column:1/-1;order:3} .wf-d{grid-column:1/-1;order:4}
+  .mrow summary{grid-template-columns:1fr 86px;gap:6px 12px}
+  .mr-g{grid-column:1/-1;order:3} .mr-t{grid-column:1/-1;order:4}
+  .ls-b{padding-left:18px}
+  .lg-sec{padding:18px 16px}
+}
+
 #cmdk{position:fixed;inset:0;z-index:200;background:rgba(4,6,10,.85);display:none;align-items:flex-start;justify-content:center;padding-top:12vh}
 #cmdk.open{display:flex}
 .cmdk-win{width:min(580px,92%);border:1px solid var(--line);border-radius:14px;background:var(--panel);overflow:hidden;box-shadow:0 40px 90px rgba(0,0,0,.8)}
@@ -1190,6 +1355,7 @@ body.paged .section{padding-top:40px}
     <ul class="nav-links" id="navLinks">
       <li><a href="#terminal">Terminal</a></li>
       <li><a href="#tools">Tools</a></li>
+      <li><a href="#ledger">Fundamentals</a></li>
       <li><a href="#encyclopedia">Encyclopedia</a></li>
       <li><a href="#patterns">Candlesticks</a></li>
       <li><a href="#indicators">Indicators</a></li>
@@ -1690,6 +1856,40 @@ body.paged .section{padding-top:40px}
   </div>
 </section>
 
+<!-- THE LEDGER — company financials, explained -->
+<section class="section page-view hidden" id="ledger" data-page="ledger">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div class="eyebrow">THE LEDGER</div>
+      <h2 class="disp">A company is not a ticker. <span class="g">It’s a set of numbers.</span></h2>
+      <p>Type a symbol and the whole picture loads live: what the business is, where every dollar of revenue actually goes, what you are paying for it, whether it survives a bad year, how it has trended for a decade, whether it keeps beating expectations, and what news is moving it this week. Every figure links back to what it means and why it moves the share price.</p>
+    </div>
+
+    <div class="lg-search reveal">
+      <div class="lgs-box">
+        <span class="lgs-i" aria-hidden="true">$</span>
+        <input id="lgTicker" type="search" placeholder="Enter a ticker…" autocomplete="off" spellcheck="false" aria-label="Ticker symbol" maxlength="12">
+        <button class="lgs-go" onclick="ledgerLoad()">Pull the file</button>
+      </div>
+      <div class="lgs-recent" id="lgRecent"></div>
+    </div>
+
+    <div class="lg-shell reveal hidden" id="lgShell">
+      <div class="lg-status" id="lgStatus"></div>
+      <div id="lgBody"></div>
+    </div>
+
+    <div class="lg-teach reveal">
+      <div class="lgt-h">
+        <div class="eyebrow">THE PART NOBODY EXPLAINS</div>
+        <h3>How the numbers actually reach the share price.</h3>
+        <p>Fundamentals do not move a stock on their own. They move it through expectations, and expectations are already in the price before you read anything. These eight ideas are the bridge between a financial statement and a candle on a chart.</p>
+      </div>
+      <div class="lessons" id="lgLessons"></div>
+    </div>
+  </div>
+</section>
+
 <!-- SESSIONS — the path, and the optional human in the loop -->
 <section class="section band page-view hidden" id="sessions" data-page="sessions">
   <div class="wrap">
@@ -2029,6 +2229,7 @@ body.paged .section{padding-top:40px}
 <script src="strategies.js"></script>
 <script src="indicators.js"></script>
 <script src="riskdesk.js"></script>
+<script src="ledger.js"></script>
 <script>
 'use strict';
 const $=(s,el=document)=>el.querySelector(s);
@@ -2038,16 +2239,75 @@ const PATTERNS=T.PATTERNS||[], ENC=T.ENCYCLOPEDIA||[], ENC_CATS=T.ENC_CATS||[['a
 const STRATEGIES=T.STRATEGIES||[], STRAT_FAMS=T.STRAT_FAMS||[['all','All']], STRAT_GRADES=T.STRAT_GRADES||{}, STRAT_TRUTHS=T.STRAT_TRUTHS||[], STRAT_GROUPS=T.STRAT_GROUPS||[];
 const INDICATORS=T.INDICATORS||[], IND_CATS=T.IND_CATS||[], IND_SERIES=T.IND_SERIES||[];
 const TIERS=T.TIERS||[], HEDGES=T.HEDGES||[], CONTRACTS=T.CONTRACTS||[], MISTAKES=T.MISTAKES||[], QUOTES=T.QUOTES||[];
+const LEDGER_GROUPS=T.LEDGER_GROUPS||[], LEDGER_METRICS=T.LEDGER_METRICS||[], LEDGER_SERIES=T.LEDGER_SERIES||[], LEDGER_LESSONS=T.LEDGER_LESSONS||[];
 const GREEN='#34d399', RED='#f87171', CYAN='#22d3ee', GOLD='#f5b942', VIOLET='#a855f7', DIM='#8a94a6', FAINT='#586173';
 const reduceMotion=matchMedia('(prefers-reduced-motion: reduce)').matches;
-const FINNHUB_KEY='d8mhpk1r01qkisoa50a0d8mhpk1r01qkisoa50ag';
-function mktKey(){ return (FINNHUB_KEY||'').trim() || (localStorage.getItem('tdesk_finnhub')||'').trim(); }
+/* ============================================================
+   DATA LAYER — one brain, many displays
+   Market data comes from the tdesk-data Cloudflare Worker, which
+   holds the Finnhub key and caches on our side. Finnhub sees one
+   caller no matter how many devices are on the site, and the key
+   is no longer sitting in a public repo.
+
+   Set TDESK_API to your deployed Worker URL. Leave it empty and
+   the site falls back to calling Finnhub directly from the
+   browser with a personal key, which is the old behaviour and is
+   still fine for a single tab.
+   ============================================================ */
+const TDESK_API='';   /* e.g. 'https://tdesk-data.safihelal.workers.dev' */
+const FINNHUB_KEY='';
+const useAPI=()=>!!TDESK_API;
+function mktKey(){
+  if(useAPI())return 'via-worker';
+  return (FINNHUB_KEY||'').trim() || (localStorage.getItem('tdesk_finnhub')||'').trim();
+}
+async function apiGet(path){
+  const r=await fetch(TDESK_API.replace(/\/$/,'')+path);
+  if(r.status===429) throw {rate:true};
+  if(!r.ok) throw {api:true,status:r.status};
+  return r.json();
+}
+/* The shared board snapshot. Every panel on every page reads this
+   one object, so the index row and the sector heatmap cost a single
+   request between them instead of fifteen. */
+let MKT_SNAP=null, MKT_AT=0, MKT_WAIT=null;
+async function marketSnap(){
+  if(MKT_SNAP && Date.now()-MKT_AT<30000) return MKT_SNAP;
+  if(MKT_WAIT) return MKT_WAIT;
+  MKT_WAIT=apiGet('/v1/market')
+    .then(d=>{ MKT_SNAP=d; MKT_AT=Date.now(); MKT_WAIT=null; return d; })
+    .catch(e=>{ MKT_WAIT=null; if(MKT_SNAP) return MKT_SNAP; throw e; });
+  return MKT_WAIT;
+}
 async function fhQuote(sym){
+  if(useAPI()){
+    try{ const s=await marketSnap(); if(s&&s.quotes&&s.quotes[sym]) return s.quotes[sym]; }catch(_){}
+    return apiGet('/v1/quote?symbol='+encodeURIComponent(sym));
+  }
   const r=await fetch(`https://finnhub.io/api/v1/quote?symbol=${encodeURIComponent(sym)}&token=${encodeURIComponent(mktKey())}`);
   if(r.status===429) throw {rate:true};
   if(r.status===401||r.status===403) throw {auth:true};
   if(!r.ok) throw new Error('bad');
   return r.json();
+}
+/* Response-shaped shims, so the existing wire and calendar call sites
+   keep working byte for byte whichever data path is active. */
+const fhShim=d=>({ok:true,status:200,json:async()=>d});
+async function fhWire(){
+  if(!useAPI()) return fetch(`https://finnhub.io/api/v1/news?category=general&token=${encodeURIComponent(mktKey())}`);
+  try{ const d=await apiGet('/v1/wire'); return fhShim(d.items||[]); }
+  catch(e){ return {ok:false,status:(e&&e.status)||503,json:async()=>[]}; }
+}
+async function fhCal(from,to){
+  if(!useAPI()) return fetch(`https://finnhub.io/api/v1/calendar/earnings?from=${from}&to=${to}&token=${encodeURIComponent(mktKey())}`);
+  try{ const d=await apiGet(`/v1/earnings?from=${from}&to=${to}`); return fhShim({earningsCalendar:d.earningsCalendar||[]}); }
+  catch(e){ return {ok:false,status:(e&&e.status)||503,json:async()=>({})}; }
+}
+/* Polling pauses on a hidden tab. Three tabs left open used to mean
+   three times the upstream load, forever. */
+function pollWhenVisible(fn,ms){
+  setInterval(()=>{ if(!document.hidden) fn(); },ms);
+  document.addEventListener('visibilitychange',()=>{ if(!document.hidden) fn(); });
 }
 
 /* ===== live ticker tape ===== */
@@ -2162,7 +2422,7 @@ async function fetchEarnings(){
   const wk=weekRange(), key=isoD(wk.mon);
   if(earnCache&&earnWeekKey===key) return {list:earnCache,wk};
   if(!mktKey()) throw {nokey:true};
-  const r=await fetch(`https://finnhub.io/api/v1/calendar/earnings?from=${isoD(wk.mon)}&to=${isoD(wk.fri)}&token=${encodeURIComponent(mktKey())}`);
+  const r=await fhCal(isoD(wk.mon),isoD(wk.fri));
   if(r.status===403||r.status===401) throw {auth:true};
   if(r.status===429) throw {rate:true};
   if(!r.ok) throw new Error('bad');
@@ -2852,7 +3112,7 @@ async function loadWire(){
   if(!key){ out.innerHTML='<p class="mnote">Add a free Finnhub key (via Market Pulse) to load the wire.</p>'; return; }
   out.innerHTML='<p class="mnote">Loading the wire…</p>';
   try{
-    const r=await fetch(`https://finnhub.io/api/v1/news?category=general&token=${encodeURIComponent(key)}`);
+    const r=await fhWire();
     if(r.status===429)throw{rate:true}; if(r.status===401||r.status===403)throw{auth:true}; if(!r.ok)throw new Error('bad');
     const d=await r.json();
     const items=(Array.isArray(d)?d:[]).filter(x=>x&&x.headline&&x.url).slice(0,14);
@@ -3581,6 +3841,397 @@ function jumpTier(id){
 });
 renderLadder(); renderHedges(); hedgeCalc(); renderMind();
 
+/* ============================================================
+   THE LEDGER - company financials, explained
+   Everything on this page comes from live Finnhub calls made in
+   the browser. Any endpoint that is not on the key's tier, or
+   that returns nothing for a given symbol, renders an explicit
+   "not available" state. Nothing is estimated, filled in, or
+   carried over from another symbol.
+   ============================================================ */
+const LG={sym:null, m:null, prof:null, q:null, busy:false};
+
+/* One request to the Worker returns the whole company file, already
+   cached per part on our side. Falls back to seven direct Finnhub
+   calls when no Worker is configured. */
+async function lgFetchAll(sym){
+  if(useAPI()){
+    try{
+      const d=await apiGet('/v1/company?symbol='+encodeURIComponent(sym));
+      const w=n=>{ const p=(d.parts&&d.parts[n])||{}; const v=d[n];
+        return (v==null||(Array.isArray(v)&&!v.length))
+          ? {ok:false, why:p.why||'empty'}
+          : {ok:true, d:v, asOf:p.asOf, stale:!!p.stale}; };
+      return {prof:w('profile'),q:w('quote'),met:w('metric'),earn:w('earnings'),
+              rec:w('rec'),news:w('news'),peers:w('peers'),asOf:d.asOf,via:'worker'};
+    }catch(e){
+      const why=(e&&e.status===503)?'down':(e&&e.status===404)?'unknown':(e&&e.rate)?'rate':'net';
+      const f={ok:false,why};
+      return {prof:f,q:f,met:f,earn:f,rec:f,news:f,peers:f,via:'worker'};
+    }
+  }
+  const today=new Date(), back=new Date(Date.now()-45*864e5), iso=d=>d.toISOString().slice(0,10);
+  const [prof,q,met,earn,rec,news,peers]=await Promise.all([
+    fhGet(`stock/profile2?symbol=${sym}`),
+    fhGet(`quote?symbol=${sym}`),
+    fhGet(`stock/metric?symbol=${sym}&metric=all`),
+    fhGet(`stock/earnings?symbol=${sym}`),
+    fhGet(`stock/recommendation?symbol=${sym}`),
+    fhGet(`company-news?symbol=${sym}&from=${iso(back)}&to=${iso(today)}`),
+    fhGet(`stock/peers?symbol=${sym}`)
+  ]);
+  return {prof,q,met,earn,rec,news,peers,via:'direct'};
+}
+async function fhGet(path){
+  const key=mktKey();
+  if(!key) return {ok:false, why:'nokey'};
+  try{
+    const r=await fetch(`https://finnhub.io/api/v1/${path}${path.includes('?')?'&':'?'}token=${encodeURIComponent(key)}`);
+    if(r.status===401||r.status===403) return {ok:false, why:r.status===401?'auth':'tier'};
+    if(r.status===429) return {ok:false, why:'rate'};
+    if(!r.ok) return {ok:false, why:'http'};
+    const d=await r.json();
+    if(d&&d.error) return {ok:false, why:'tier'};
+    return {ok:true, d};
+  }catch(e){ return {ok:false, why:'net'}; }
+}
+const LG_WHY={nokey:'No data source configured yet.',
+  down:'The data provider is unreachable right now, and nothing was cached for this symbol yet.',
+  budget:'Held back to stay under the provider\u2019s rate limit. Try again in a moment.',
+  unknown:'The provider does not cover this symbol.',
+  auth:'The API key was rejected.', tier:'Not included on this API key\u2019s tier.',
+  rate:'Rate limit hit. Wait a few seconds and try again.',
+  http:'The data provider returned an error for this symbol.',
+  net:'Could not reach the data provider.', empty:'The provider returned nothing for this symbol.'};
+const lgFail=(w,label)=>`<div class="lg-na"><b>${label}</b>${LG_WHY[w]||LG_WHY.empty}</div>`;
+
+/* ---- formatting ---- */
+const nf=(v,d)=>v.toLocaleString(undefined,{minimumFractionDigits:d,maximumFractionDigits:d});
+function lgFmt(v,f){
+  if(v==null||!isFinite(v))return null;
+  switch(f){
+    case 'big':{const a=Math.abs(v);
+      if(a>=1e12)return '$'+nf(v/1e12,2)+'T'; if(a>=1e9)return '$'+nf(v/1e9,2)+'B';
+      if(a>=1e6)return '$'+nf(v/1e6,1)+'M'; return '$'+nf(v,0);}
+    case 'usd': return '$'+nf(v,2);
+    case 'pct': return nf(v,1)+'%';
+    case 'pctd':return nf(v,1)+'%';
+    case 'x1':  return nf(v,1)+'\u00d7';
+    case 'x2':  return nf(v,2)+'\u00d7';
+    default:    return nf(v,2);
+  }
+}
+function mpick(m,keys,mult){
+  if(!m)return null;
+  for(const k of keys){const v=m[k];
+    if(v!=null&&isFinite(v))return mult?v*mult:v;}
+  return null;
+}
+function verdict(v,bands){
+  if(!bands)return null;
+  for(const [t,label,tone] of bands){ if(v<=t)return {label,tone}; }
+  return null;
+}
+
+/* ---- the search ---- */
+async function ledgerLoad(raw){
+  const sym=(raw||$('#lgTicker').value||'').trim().toUpperCase().replace(/[^A-Z0-9.\-]/g,'');
+  if(!sym||LG.busy)return;
+  LG.busy=true; LG.sym=sym; $('#lgTicker').value=sym;
+  $('#lgShell').classList.remove('hidden');
+  $('#lgStatus').textContent='Pulling '+sym+'\u2026';
+  $('#lgStatus').className='lg-status live';
+  try{ const r=JSON.parse(localStorage.getItem('tdesk_lg_recent')||'[]').filter(x=>x!==sym);
+    r.unshift(sym); localStorage.setItem('tdesk_lg_recent',JSON.stringify(r.slice(0,8))); lgRecent(); }catch(_){}
+  const {prof,q,met,earn,rec,news,peers,via}=await lgFetchAll(sym);
+  const known = prof.ok && prof.d && prof.d.name;
+  if(!known && !(met.ok&&met.d&&met.d.metric)){
+    $('#lgStatus').textContent='No company found for '+sym;
+    $('#lgStatus').className='lg-status bad';
+    $('#lgBody').innerHTML=`<div class="lg-na"><b>Nothing came back for ${sym}</b>Check the symbol, or the provider may not cover this listing. US-listed common stock works best on the free tier.</div>`;
+    LG.busy=false; return;
+  }
+  LG.prof=prof.ok?prof.d:null; LG.q=q.ok?q.d:null;
+  LG.m=(met.ok&&met.d&&met.d.metric)?met.d.metric:null;
+  const series=(met.ok&&met.d&&met.d.series&&met.d.series.annual)?met.d.series.annual:null;
+  const staleParts=[prof,q,met,earn,rec,news].filter(x=>x&&x.stale).length;
+  $('#lgStatus').innerHTML=`<b>${sym}</b> loaded \u00b7 ${new Date().toLocaleTimeString()}`
+    +` \u00b7 ${via==='worker'?'via the data worker':'live from Finnhub'}`
+    +(staleParts?` \u00b7 <em>${staleParts} section${staleParts>1?'s':''} showing the last cached copy</em>`:'');
+  $('#lgStatus').className='lg-status ok';
+  $('#lgBody').innerHTML=
+     lgIdentity(sym,prof,q)
+   + lgWaterfall(met)
+   + lgMetrics(met)
+   + lgSeries(series,met)
+   + lgEarnings(earn)
+   + lgRecs(rec)
+   + lgPeers(peers)
+   + lgNews(news,sym);
+  drawLgVisuals(series,earn,rec);
+  LG.busy=false;
+}
+function lgRecent(){
+  let r=[]; try{ r=JSON.parse(localStorage.getItem('tdesk_lg_recent')||'[]'); }catch(_){}
+  const el=$('#lgRecent'); if(!el)return;
+  el.innerHTML=(r.length?r:['AAPL','NVDA','MSFT','JPM','XOM','KO']).map(s=>
+    `<button onclick="ledgerLoad('${s}')">${s}</button>`).join('');
+}
+
+/* ---- panels ---- */
+function lgIdentity(sym,prof,q){
+  const p=prof.ok?prof.d:{}, k=q.ok?q.d:null;
+  const price=k&&isFinite(k.c)&&k.c>0?k.c:null;
+  const chg=k&&isFinite(k.dp)?k.dp:null;
+  const hi=mpick(LG.m,['52WeekHigh']), lo=mpick(LG.m,['52WeekLow']);
+  let bar='';
+  if(price&&hi&&lo&&hi>lo){
+    const pos=Math.max(0,Math.min(1,(price-lo)/(hi-lo)));
+    bar=`<div class="lg-52">
+      <div class="l52-t"><span>52-week range</span><span>${(pos*100).toFixed(0)}% of the way up</span></div>
+      <div class="l52-bar"><i style="left:${(pos*100).toFixed(1)}%"></i></div>
+      <div class="l52-e"><span>${lgFmt(lo,'usd')}</span><span>${lgFmt(hi,'usd')}</span></div></div>`;
+  }
+  return `<div class="lg-id">
+    <div class="lg-id-l">
+      ${p.logo?`<img class="lg-logo" src="${p.logo}" alt="" loading="lazy">`:`<span class="lg-logo ph">${sym.slice(0,2)}</span>`}
+      <div>
+        <h3>${p.name||sym}</h3>
+        <div class="lg-meta">
+          <span>${sym}</span>${p.exchange?`<span>${p.exchange}</span>`:''}
+          ${p.finnhubIndustry?`<span class="ind">${p.finnhubIndustry}</span>`:''}
+          ${p.country?`<span>${p.country}</span>`:''}
+          ${p.ipo?`<span>listed ${p.ipo.slice(0,4)}</span>`:''}
+        </div>
+        ${p.weburl?`<a class="lg-web" href="${p.weburl}" target="_blank" rel="noopener">${p.weburl.replace(/^https?:\/\//,'').replace(/\/$/,'')}</a>`:''}
+      </div>
+    </div>
+    <div class="lg-id-r">
+      ${price?`<div class="lg-px"><b>${lgFmt(price,'usd')}</b>${chg!=null?`<span class="${chg>=0?'up':'dn'}">${chg>=0?'+':''}${nf(chg,2)}%</span>`:''}</div>`
+             :`<div class="lg-px dim">price unavailable</div>`}
+      ${bar}
+    </div></div>`;
+}
+
+/* the signature visual: where each $100 of revenue actually goes.
+   Built only from margins the provider actually reported. */
+function lgWaterfall(met){
+  const m=LG.m;
+  const gm=mpick(m,['grossMarginTTM','grossMarginAnnual']),
+        om=mpick(m,['operatingMarginTTM','operatingMarginAnnual']),
+        nm=mpick(m,['netProfitMarginTTM','netProfitMarginAnnual']);
+  if(gm==null&&om==null&&nm==null)
+    return `<section class="lg-sec"><h4 class="lg-h">Where the money goes</h4>${lgFail(met.ok?'empty':met.why,'No margin data for this symbol')}</section>`;
+  return `<section class="lg-sec">
+    <h4 class="lg-h">Where every $100 of revenue goes</h4>
+    <p class="lg-sub">The single most useful picture of a company. Read it top to bottom: sales come in, costs come out in layers, and whatever survives the last layer is what belongs to shareholders.</p>
+    <div class="wf" id="wfBox" data-gm="${gm==null?'':gm}" data-om="${om==null?'':om}" data-nm="${nm==null?'':nm}"></div>
+  </section>`;
+}
+function drawWaterfall(){
+  const box=$('#wfBox'); if(!box)return;
+  const gm=parseFloat(box.dataset.gm), om=parseFloat(box.dataset.om), nm=parseFloat(box.dataset.nm);
+  const has=v=>isFinite(v);
+  const rows=[{k:'Revenue',v:100,t:'in',d:'Everything customers paid.'}];
+  if(has(gm)){
+    rows.push({k:'Cost of revenue',v:-(100-gm),t:'out',d:'What it cost to actually produce or deliver what was sold.'});
+    rows.push({k:'Gross profit',v:gm,t:'sub',d:'The raw earning power of the product before any overhead.'});
+  }
+  if(has(gm)&&has(om)){
+    rows.push({k:'Operating costs',v:-(gm-om),t:'out',d:'Staff, research, sales, marketing, and the cost of running the company.'});
+    rows.push({k:'Operating income',v:om,t:'sub',d:'What the business earns from operating, before financing and tax.'});
+  }
+  if(has(om)&&has(nm)){
+    rows.push({k:'Interest, tax and other',v:-(om-nm),t:'out',d:'Debt service, the tax bill, and everything below the operating line.'});
+  }
+  if(has(nm)) rows.push({k:'Net income',v:nm,t:'net',d:'What is left for shareholders. This is the number that feeds earnings per share.'});
+  const mx=100;
+  box.innerHTML=rows.map(r=>{
+    const w=Math.max(1.2,Math.min(100,Math.abs(r.v)/mx*100));
+    return `<div class="wf-r ${r.t}">
+      <span class="wf-k">${r.k}</span>
+      <span class="wf-track"><i style="width:${w.toFixed(1)}%"></i></span>
+      <span class="wf-v">${r.v<0?'\u2212':''}$${nf(Math.abs(r.v),2)}</span>
+      <span class="wf-d">${r.d}</span></div>`;}).join('')
+    + `<p class="wf-foot">Percentages are the company\u2019s reported trailing-twelve-month margins, scaled to a $100 sale. If a layer is missing above, the provider did not report that margin for this company.</p>`;
+}
+
+function lgMetrics(met){
+  if(!LG.m) return `<section class="lg-sec"><h4 class="lg-h">The numbers</h4>${lgFail(met.ok?'empty':met.why,'No fundamentals returned')}</section>`;
+  let out=`<section class="lg-sec"><h4 class="lg-h">The numbers, and what each one is telling you</h4>
+    <p class="lg-sub">Click any metric to open what it means and why it moves the share price. The bands are general starting points for a large US company; a bank and a software firm should never be read against the same ruler.</p>`;
+  LEDGER_GROUPS.forEach(([g,label,blurb])=>{
+    const rows=LEDGER_METRICS.filter(x=>x.grp===g);
+    if(!rows.length)return;
+    out+=`<div class="mg"><div class="mg-h"><h5>${label}</h5><p>${blurb}</p></div><div class="mg-b">`;
+    rows.forEach(x=>{
+      const v=mpick(LG.m,x.k,x.mult);
+      if(v==null){ out+=`<div class="mrow off"><span class="mr-n">${x.n}</span><span class="mr-v">not reported</span></div>`; return; }
+      const vd=verdict(v,x.bands);
+      let gauge='';
+      if(x.bands){
+        const fin=x.bands.filter(b=>isFinite(b[0])).map(b=>b[0]);
+        const top=(fin.length?fin[fin.length-1]:1)*1.25;
+        const pos=Math.max(0,Math.min(1,v/top));
+        gauge=`<span class="mr-g"><i class="${vd?vd.tone:''}" style="width:${(pos*100).toFixed(1)}%"></i>`+
+          fin.slice(0,-1).map(b=>`<u style="left:${(Math.min(1,b/top)*100).toFixed(1)}%"></u>`).join('')+`</span>`;
+      }
+      out+=`<details class="mrow">
+        <summary><span class="mr-n">${x.n}</span>${gauge}
+          <span class="mr-v">${lgFmt(v,x.fmt)}</span>
+          ${vd?`<span class="mr-t ${vd.tone}">${vd.label}</span>`:'<span class="mr-t"></span>'}</summary>
+        <div class="mr-b"><p><span class="k">What it is</span>${x.what}</p><p><span class="k">Why it moves the price</span>${x.why}</p></div>
+      </details>`;
+    });
+    out+=`</div></div>`;
+  });
+  return out+`</section>`;
+}
+
+function lgSeries(series,met){
+  if(!series) return `<section class="lg-sec"><h4 class="lg-h">The trend</h4>${lgFail(met.ok?'empty':met.why,'No annual history returned for this symbol')}</section>`;
+  const cards=LEDGER_SERIES.map(s=>{
+    let arr=null;
+    for(const k of s.k){ if(Array.isArray(series[k])&&series[k].length>1){arr=series[k];break;} }
+    if(!arr)return '';
+    return `<div class="sc" data-s='${JSON.stringify(arr.slice(-12)).replace(/'/g,"&#39;")}' data-f="${s.fmt}" data-inv="${s.inv?1:0}">
+      <div class="sc-h"><h5>${s.n}</h5><span class="sc-v"></span></div>
+      <svg class="sc-svg" viewBox="0 0 260 74" preserveAspectRatio="none"></svg>
+      <div class="sc-x"></div><p class="sc-n">${s.note}</p></div>`;
+  }).filter(Boolean).join('');
+  if(!cards) return `<section class="lg-sec"><h4 class="lg-h">The trend</h4>${lgFail('empty','No annual history returned for this symbol')}</section>`;
+  return `<section class="lg-sec"><h4 class="lg-h">The trend, which matters more than any single year</h4>
+    <p class="lg-sub">One year is a data point. A decade is a business. Direction and consistency across these lines tell you more than any snapshot ratio above.</p>
+    <div class="sgrid">${cards}</div></section>`;
+}
+
+function lgEarnings(earn){
+  if(!earn.ok) return `<section class="lg-sec"><h4 class="lg-h">Earnings surprises</h4>${lgFail(earn.why,'Earnings history unavailable')}</section>`;
+  const d=(earn.d||[]).filter(x=>x&&isFinite(x.actual)&&isFinite(x.estimate)).slice(0,8).reverse();
+  if(!d.length) return `<section class="lg-sec"><h4 class="lg-h">Earnings surprises</h4>${lgFail('empty','No earnings history for this symbol')}</section>`;
+  const beats=d.filter(x=>x.actual>=x.estimate).length;
+  return `<section class="lg-sec"><h4 class="lg-h">Earnings versus what was expected</h4>
+    <p class="lg-sub">The market prices the estimate before the report, so the move comes from the gap. This company has beaten in <b>${beats} of the last ${d.length}</b> quarters, which means a merely in-line quarter may already read as a disappointment.</p>
+    <div class="ec"><svg id="ecSVG" viewBox="0 0 720 220" preserveAspectRatio="none"></svg>
+    <div class="ec-lg"><span class="lg"><i class="lgd ec-est"></i>estimate</span><span class="lg"><i class="lgd ec-act"></i>actual</span></div></div>
+    <div class="ec-tbl" id="ecTbl"></div></section>`;
+}
+
+function lgRecs(rec){
+  if(!rec.ok) return `<section class="lg-sec"><h4 class="lg-h">Analyst positioning</h4>${lgFail(rec.why,'Recommendation trends unavailable')}</section>`;
+  const d=(rec.d||[]).slice(0,6).reverse();
+  if(!d.length) return `<section class="lg-sec"><h4 class="lg-h">Analyst positioning</h4>${lgFail('empty','No analyst coverage returned')}</section>`;
+  return `<section class="lg-sec"><h4 class="lg-h">Where the analysts sit</h4>
+    <p class="lg-sub">Useful as a crowding gauge rather than a recommendation. A name where everyone is already at strong buy has nobody left to upgrade it, and the downgrade risk is entirely one-sided.</p>
+    <div class="rc" data-r='${JSON.stringify(d).replace(/'/g,"&#39;")}'>
+      <svg id="rcSVG" viewBox="0 0 720 190" preserveAspectRatio="none"></svg>
+      <div class="rc-lg">
+        <span class="lg"><i class="lgd r-sb"></i>strong buy</span><span class="lg"><i class="lgd r-b"></i>buy</span>
+        <span class="lg"><i class="lgd r-h"></i>hold</span><span class="lg"><i class="lgd r-s"></i>sell</span>
+        <span class="lg"><i class="lgd r-ss"></i>strong sell</span></div></div></section>`;
+}
+
+function lgPeers(peers){
+  if(!peers.ok||!Array.isArray(peers.d)||!peers.d.length)return '';
+  const list=peers.d.filter(s=>s&&s!==LG.sym).slice(0,10);
+  if(!list.length)return '';
+  return `<section class="lg-sec compact"><h4 class="lg-h">Compare against its own group</h4>
+    <p class="lg-sub">Every band on this page is a general rule. The comparison that actually settles an argument is the same metric across direct peers. Load one:</p>
+    <div class="lg-peers">${list.map(s=>`<button onclick="ledgerLoad('${s}')">${s}</button>`).join('')}</div></section>`;
+}
+
+function lgNews(news,sym){
+  if(!news.ok) return `<section class="lg-sec"><h4 class="lg-h">What is driving it right now</h4>${lgFail(news.why,'Company news unavailable')}</section>`;
+  const d=(news.d||[]).filter(x=>x&&x.headline&&x.url).slice(0,10);
+  if(!d.length) return `<section class="lg-sec"><h4 class="lg-h">What is driving it right now</h4>${lgFail('empty','No recent company news for this symbol')}</section>`;
+  const ago=ts=>{const h=(Date.now()/1000-ts)/3600;
+    return h<1?Math.max(1,Math.round(h*60))+'m ago':h<24?Math.round(h)+'h ago':Math.round(h/24)+'d ago';};
+  return `<section class="lg-sec"><h4 class="lg-h">What is driving it right now</h4>
+    <p class="lg-sub">Fundamentals set the range a stock can reasonably trade in. News decides where inside that range it sits this week, and occasionally resets the range entirely. Headlines link out to the source.</p>
+    <div class="lg-news">${d.map(x=>
+      `<a class="nw" href="${x.url}" target="_blank" rel="noopener">
+        <span class="nw-m"><b>${x.source||'source'}</b><span>${ago(x.datetime)}</span></span>
+        <span class="nw-h">${x.headline}</span></a>`).join('')}</div>
+    <p class="lg-sub" style="margin-top:14px">Last 45 days for ${sym}. Headlines and links belong to their publishers.</p></section>`;
+}
+
+/* ---- drawing ---- */
+function drawLgVisuals(series,earn,rec){
+  drawWaterfall();
+  $$('.sc').forEach(drawSpark);
+  if(earn&&earn.ok)drawEarnChart((earn.d||[]).filter(x=>x&&isFinite(x.actual)&&isFinite(x.estimate)).slice(0,8).reverse());
+  if(rec&&rec.ok)drawRecChart((rec.d||[]).slice(0,6).reverse());
+}
+function drawSpark(box){
+  let arr; try{ arr=JSON.parse(box.dataset.s); }catch(_){ return; }
+  const pts=arr.map(o=>({p:o.period,v:o.v})).filter(o=>isFinite(o.v));
+  if(pts.length<2)return;
+  const f=box.dataset.f, inv=box.dataset.inv==='1';
+  const W=260,H=74,PT=8,PB=8;
+  const vs=pts.map(o=>o.v); let lo=Math.min(...vs),hi=Math.max(...vs);
+  if(hi===lo){hi=lo+1;lo=lo-1;}
+  const pad=(hi-lo)*.12; lo-=pad; hi+=pad;
+  const x=i=>4+i/(pts.length-1)*(W-8), y=v=>PT+(hi-v)/(hi-lo)*(H-PT-PB);
+  const first=pts[0].v,last=pts[pts.length-1].v;
+  const rising=last>=first, good=inv?!rising:rising;
+  let d='',a='';
+  pts.forEach((o,i)=>{d+=(i?'L':'M')+x(i).toFixed(1)+' '+y(o.v).toFixed(1)+' ';});
+  a=`M${x(0).toFixed(1)} ${H-PB} `+d.replace(/^M/,'L')+`L${x(pts.length-1).toFixed(1)} ${H-PB}Z`;
+  box.querySelector('.sc-svg').innerHTML=
+    `<path class="sc-a ${good?'good':'bad'}" d="${a}"/><path class="sc-l ${good?'good':'bad'}" d="${d.trim()}" fill="none"/>`+
+    `<circle class="sc-d ${good?'good':'bad'}" cx="${x(pts.length-1).toFixed(1)}" cy="${y(last).toFixed(1)}" r="3"/>`;
+  const fmtv=v=>f==='pctd'?nf(v,1)+'%':f==='x2'?nf(v,2)+'\u00d7':'$'+nf(v,2);
+  box.querySelector('.sc-v').innerHTML=`${fmtv(last)} <em class="${good?'good':'bad'}">${rising?'\u2197':'\u2198'}</em>`;
+  box.querySelector('.sc-x').innerHTML=`<span>${(pts[0].p||'').slice(0,4)}</span><span>${(pts[pts.length-1].p||'').slice(0,4)}</span>`;
+}
+function drawEarnChart(d){
+  const el=$('#ecSVG'); if(!el||!d.length)return;
+  const W=720,H=220,PL=8,PR=8,PT=26,PB=44;
+  const vals=d.flatMap(x=>[x.actual,x.estimate]);
+  let lo=Math.min(0,...vals),hi=Math.max(...vals); if(hi===lo)hi=lo+1;
+  const pad=(hi-lo)*.18; hi+=pad; if(lo<0)lo-=pad;
+  const bw=(W-PL-PR)/d.length, y=v=>PT+(hi-v)/(hi-lo)*(H-PT-PB);
+  let s=`<line class="ec-zero" x1="${PL}" x2="${W-PR}" y1="${y(0).toFixed(1)}" y2="${y(0).toFixed(1)}"/>`;
+  d.forEach((x,i)=>{
+    const cx=PL+i*bw+bw/2, w=Math.min(26,bw*.3);
+    [['estimate',x.estimate,'ec-est',-w*0.55],['actual',x.actual,'ec-act',w*0.55]].forEach(([_,v,c,off])=>{
+      const yt=Math.min(y(v),y(0)),h=Math.max(1.5,Math.abs(y(v)-y(0)));
+      s+=`<rect class="${c}" x="${(cx+off-w/2).toFixed(1)}" y="${yt.toFixed(1)}" width="${w.toFixed(1)}" height="${h.toFixed(1)}" rx="1.5"/>`;});
+    const beat=x.actual>=x.estimate, sp=isFinite(x.surprisePercent)?x.surprisePercent:((x.actual-x.estimate)/Math.abs(x.estimate||1)*100);
+    s+=`<text class="ec-sp ${beat?'up':'dn'}" x="${cx.toFixed(1)}" y="${(Math.min(y(x.actual),y(x.estimate))-7).toFixed(1)}">${sp>=0?'+':''}${nf(sp,1)}%</text>`;
+    s+=`<text class="ec-lb" x="${cx.toFixed(1)}" y="${H-24}">${x.period?String(x.period).slice(0,7):(x.year+' Q'+x.quarter)}</text>`;
+    s+=`<text class="ec-eps" x="${cx.toFixed(1)}" y="${H-10}">est ${nf(x.estimate,2)} \u00b7 act ${nf(x.actual,2)}</text>`;
+  });
+  el.innerHTML=s;
+}
+function drawRecChart(d){
+  const el=$('#rcSVG'); if(!el||!d.length)return;
+  const W=720,H=190,PL=8,PR=8,PT=14,PB=32;
+  const bw=(W-PL-PR)/d.length;
+  let s='';
+  d.forEach((r,i)=>{
+    const parts=[['r-sb',r.strongBuy||0],['r-b',r.buy||0],['r-h',r.hold||0],['r-s',r.sell||0],['r-ss',r.strongSell||0]];
+    const tot=parts.reduce((a,b)=>a+b[1],0)||1;
+    const cx=PL+i*bw+bw/2, w=Math.min(70,bw*.56);
+    let yy=PT;
+    parts.forEach(([c,v])=>{ if(!v)return;
+      const h=(v/tot)*(H-PT-PB);
+      s+=`<rect class="${c}" x="${(cx-w/2).toFixed(1)}" y="${yy.toFixed(1)}" width="${w.toFixed(1)}" height="${h.toFixed(1)}"/>`;
+      if(h>13)s+=`<text class="rc-n" x="${cx.toFixed(1)}" y="${(yy+h/2+3.5).toFixed(1)}">${v}</text>`;
+      yy+=h;});
+    s+=`<text class="ec-lb" x="${cx.toFixed(1)}" y="${H-16}">${(r.period||'').slice(0,7)}</text>`;
+    s+=`<text class="ec-eps" x="${cx.toFixed(1)}" y="${H-4}">${tot} analysts</text>`;
+  });
+  el.innerHTML=s;
+}
+
+/* ---- lessons ---- */
+$('#lgLessons').innerHTML=LEDGER_LESSONS.map((l,i)=>
+  `<details class="ls"${i===0?' open':''}><summary><span class="ls-i">${String(i+1).padStart(2,'0')}</span><span class="ls-n">${l.n}</span></summary>
+   <div class="ls-b"><p>${l.b}</p><p class="ls-t">${l.t}</p></div></details>`).join('');
+lgRecent();
+$('#lgTicker').addEventListener('keydown',e=>{ if(e.key==='Enter')ledgerLoad(); });
+
 /* ===== ENCYCLOPEDIA ===== */
 /* Opens on the path, not the index. 79 unsorted cards is a wall - the first
    question a newcomer has is "where do I start", and a filter row full of topic
@@ -3722,6 +4373,7 @@ const CMDS=[
   {label:'Tools & Calculators',kind:'page',run:()=>location.hash='tools'},
   {label:'Encyclopedia',kind:'page',run:()=>location.hash='encyclopedia'},
   {label:'Candlestick Analysis',kind:'page',run:()=>location.hash='patterns'},
+  {label:'Fundamentals \u2014 look up a company',kind:'page',run:()=>location.hash='ledger'},
   {label:'Indicators & the Instrument Panel',kind:'page',run:()=>location.hash='indicators'},
   {label:'Fibonacci Lab',kind:'tool',run:()=>{location.hash='indicators';setTimeout(()=>{const el=document.getElementById('fibLab');if(el)el.scrollIntoView({behavior:'smooth'});},140);}},
   {label:'Risk & Mind \u2014 the risk desk',kind:'page',run:()=>location.hash='riskdesk'},
@@ -3760,6 +4412,11 @@ const SECTIONS=[
    ic:'M4 20h16M6 16l4-6 3 3 5-8',
    desc:'Position size, expectancy, options payoff, expected move, futures specs, and the discipline tools that keep an account alive.',
    count:()=>TOOLS.length+' tools'},
+  {id:'ledger', name:'Fundamentals', crumb:'THE LEDGER', kind:'live company financials',
+   accent:'var(--ledger)', fade:'rgba(224,213,189,.12)',
+   ic:'M4 4h16v16H4zM4 9h16M4 14h16M9 4v16',
+   desc:'Enter a ticker and pull the whole file: where every dollar of revenue goes, what you are paying, whether it survives a bad year, and what news is moving it now.',
+   count:()=>LEDGER_METRICS.length+' metrics, explained'},
   {id:'encyclopedia', name:'Encyclopedia', crumb:'THE ENCYCLOPEDIA', kind:'reference',
    accent:'var(--gold)', fade:'rgba(245,185,66,.13)',
    ic:'M4 4h11a3 3 0 0 1 3 3v13a2 2 0 0 0-2-2H4zM4 4v14M18 7h2v13H8',
@@ -4054,7 +4711,7 @@ async function loadWireStrip(force){
     }catch(e){}
   }
   try{
-    const r=await fetch(`https://finnhub.io/api/v1/news?category=general&token=${encodeURIComponent(key)}`);
+    const r=await fhWire();
     if(!r.ok)throw new Error('bad');
     const d=await r.json();
     WIRE=(Array.isArray(d)?d:[]).filter(x=>x&&x.headline&&x.url).slice(0,WIRE_MAX);
@@ -4073,9 +4730,9 @@ route();
 initPrimer();
 loadIdx(); loadHeatmap(); loadEarnWeek();
 loadWireStrip();
-setInterval(()=>loadWireStrip(true),300000);
-setInterval(loadIdx,60000);
-setInterval(loadHeatmap,60000);
+pollWhenVisible(()=>loadWireStrip(true),300000);
+pollWhenVisible(loadIdx,60000);
+pollWhenVisible(loadHeatmap,60000);
 </script>
 </body>
 </html>
