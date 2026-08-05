@@ -73,6 +73,22 @@ let orrPin=null;
 let orrTrail=(function(){try{return localStorage.getItem('kairos_orr_trail')||'one';}catch(e){return 'one';}})();
 let orrTouch=false;   // set true the first time we see a real touch pointer
 let orrCloses={};           // sym -> [daily closes]
+let orrEnd={};              // sym -> last bar date 'YYYY-MM-DD'
+let orrCal=null;            // shared trading calendar (SPY's dates)
+
+/* ---- REPLAY --------------------------------------------------------------
+   The full RS-Ratio / RS-Momentum series was always computed and then thrown
+   away, so replay costs nothing beyond a playhead. This is also the canonical
+   RRG feature rather than an invention: a static plot shows the trail over the
+   past n observations, a dynamic one moves it forward one observation at a
+   time. */
+let orrSet=null;            // {bodies, dates, len} from orrRRGSet
+let orrMetaMap={};          // key -> {sym,name,synth,...}
+let orrHead=null;           // playhead bar index; null = live
+let orrPlaying=false;
+let orrSpeed=1;
+let orrAcc=0;               // fractional bar accumulator
+const ORR_BPS=3;            // base bars per second at 1x
 const orrReduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
 /* eased display positions for smooth motion (sym -> {x,y}) */
 let orrDisp={};
@@ -82,19 +98,24 @@ let orrDisp={};
    hard (6h in-memory + localStorage) so Mythos is instant on reload. ---- */
 let orrFetchT={};
 const ORR_DCACHE='kairos_orr_daily_v1';
-(function(){try{const o=JSON.parse(localStorage.getItem(ORR_DCACHE)||'{}');if(o&&o.day===new Date().toISOString().slice(0,10)){orrCloses=o.c||{};Object.keys(orrCloses).forEach(k=>orrFetchT[k]=Date.now()-3600000);}}catch(e){}})();
+(function(){try{const o=JSON.parse(localStorage.getItem(ORR_DCACHE)||'{}');if(o&&o.day===new Date().toISOString().slice(0,10)){orrCloses=o.c||{};orrEnd=o.e||{};orrCal=o.cal||null;Object.keys(orrCloses).forEach(k=>orrFetchT[k]=Date.now()-3600000);}}catch(e){}})();
 let orrDSaveT=0;
 /* seed the rotation from the server's hourly snapshot — a cold device gets
    the whole universe in one payload instead of ~44 daily-history requests */
-window.orrSeed=function(map){
+window.orrSeed=function(map,ends,cal){
   if(!map)return;let n=0;
   Object.keys(map).forEach(k=>{
-    if(!orrCloses[k]||!orrCloses[k].length){orrCloses[k]=map[k];orrFetchT[k]=Date.now();n++;}
+    if(!orrCloses[k]||!orrCloses[k].length){
+      orrCloses[k]=map[k];
+      if(ends&&ends[k])orrEnd[k]=ends[k];
+      orrFetchT[k]=Date.now();n++;
+    }
   });
+  if(cal&&cal.length&&(!orrCal||cal.length>orrCal.length))orrCal=cal;
   if(n)orrDSave();
   return n;
 };
-function orrDSave(){const now=Date.now();if(now-orrDSaveT<4000)return;orrDSaveT=now;try{localStorage.setItem(ORR_DCACHE,JSON.stringify({day:new Date().toISOString().slice(0,10),c:orrCloses}));}catch(e){}}
+function orrDSave(){const now=Date.now();if(now-orrDSaveT<4000)return;orrDSaveT=now;try{localStorage.setItem(ORR_DCACHE,JSON.stringify({day:new Date().toISOString().slice(0,10),c:orrCloses,e:orrEnd,cal:orrCal}));}catch(e){}}
 async function orrDaily(sym){
   if(orrCloses[sym]&&Date.now()-(orrFetchT[sym]||0)<6*3600000)return orrCloses[sym];
   if(!(typeof liveOn==='function'?liveOn():(state.tradierToken&&state.tradierToken.length>8)))return orrCloses[sym]||null;
@@ -103,47 +124,226 @@ async function orrDaily(sym){
     const start=new Date(Date.now()-160*86400000).toISOString().slice(0,10);
     const j=await tFetch('/markets/history?symbol='+encodeURIComponent(u)+'&interval=daily&start='+start);
     const days=j.history&&j.history.day;const arr=Array.isArray(days)?days:(days?[days]:[]);
-    const closes=arr.map(x=>+x.close).filter(x=>x>0);
-    if(closes.length>=50){orrCloses[sym]=closes;orrFetchT[sym]=Date.now();orrDSave();return closes;}
+    const rows=arr.filter(x=>+x.close>0);
+    const closes=rows.map(x=>+x.close);
+    if(closes.length>=50){
+      orrCloses[sym]=closes;
+      orrEnd[sym]=rows[rows.length-1].date;
+      /* The benchmark's dates ARE the trading calendar every other series is
+         aligned onto, so capture them whenever SPY comes back. */
+      if(sym===ORR_BENCH)orrCal=rows.map(x=>x.date);
+      orrFetchT[sym]=Date.now();orrDSave();return closes;
+    }
   }catch(e){}
   return orrCloses[sym]||null;
 }
 
-/* ---- RRG math ---- */
-function orrZWin(a,w){ // rolling z-score of the last value vs trailing window
-  const s=a.slice(-w);if(s.length<8)return 0;
-  const m=s.reduce((x,y)=>x+y,0)/s.length;
-  const v=s.reduce((x,y)=>x+(y-m)*(y-m),0)/Math.max(1,s.length-1);
-  const sd=Math.sqrt(v)||1e-9;
-  return (a[a.length-1]-m)/sd;
+/* ---- RRG math v9 ---------------------------------------------------------
+   Three things changed and the first one is the important one.
+
+   1. CROSS-SECTIONAL NORMALISATION. The old build z-scored each symbol against
+      its OWN trailing 20 bars. That is the opposite of what an RRG requires:
+      the whole premise is that RS-Ratio values for different securities are
+      comparable because they share a benchmark and a scale. A per-security
+      z-score means a chronically weak sector that is mildly less weak than its
+      own average gets plotted in Leading, and a strong sector consolidating
+      gets plotted in Lagging. The quadrants were not measuring what the labels
+      said. The z-score is now taken ACROSS THE UNIVERSE at each date, so 100 is
+      the field's median on that date by construction.
+
+   2. LONGER TREND WINDOW. tf=5 gave a 20-bar window. Twenty bars of z-score
+      makes every body oscillate around 100 at high frequency, which destroys
+      the slow clockwise rotation that is the entire signal. The trend leg now
+      runs on ~63 bars (one quarter) and momentum stays on the user's tf.
+
+   3. FULL SERIES RETAINED. The old code computed every bar and then discarded
+      everything but the last six points. Keeping it costs nothing and is what
+      makes replay possible.
+
+   Also removed: `+roc*0.0`, a rate-of-change term computed and then multiplied
+   by zero, and the expanding `slice(0,i+1)` inside both loops, which made this
+   O(n^2) across ~110 symbols when orrZWin only ever read the last `win` values. */
+
+const ORR_TREND_W=63;      // trend leg of RS-Ratio, about one quarter of sessions
+const ORR_Z=2.5;           // 100 +/- ORR_Z*z, unchanged so the scale stays familiar
+
+function orrSMA(a,w){
+  const out=new Array(a.length);let s=0;
+  for(let i=0;i<a.length;i++){
+    s+=a[i];
+    if(i>=w)s-=a[i-w];
+    out[i]=i>=w-1?s/w:s/(i+1);
+  }
+  return out;
 }
-/* build RS-Ratio & RS-Momentum SERIES so we can draw a tail */
-function orrRRG(closes,bench,tf){
-  const n=Math.min(closes.length,bench.length);
-  if(n<40)return null;
-  const c=closes.slice(-n),b=bench.slice(-n);
-  const rs=c.map((v,i)=>v/b[i]);                 // relative strength line
-  // RS-Ratio: normalised RS (rolling z -> ~100 centered)
-  const win=Math.max(20,tf*4);
-  const ratioSer=[];
-  for(let i=0;i<rs.length;i++){
-    const seg=rs.slice(0,i+1);
-    ratioSer.push(100+orrZWin(seg,win)*2.5);
+/* z-score COLUMN-wise: at each date, across every body in the plot. This single
+   function is what makes quadrant position comparable between XLU and SMH. */
+function orrXZ(rows){
+  const n=rows.length;if(!n)return[];
+  const L=rows[0].length;
+  const out=rows.map(()=>new Array(L).fill(0));
+  for(let t=0;t<L;t++){
+    let m=0,c=0;
+    for(let i=0;i<n;i++){const v=rows[i][t];if(isFinite(v)){m+=v;c++;}}
+    if(c<2)continue;
+    m/=c;
+    let s2=0;
+    for(let i=0;i<n;i++){const v=rows[i][t];if(isFinite(v))s2+=(v-m)*(v-m);}
+    const sd=Math.sqrt(s2/(c-1))||1e-9;
+    for(let i=0;i<n;i++){const v=rows[i][t];out[i][t]=isFinite(v)?(v-m)/sd:0;}
   }
-  // RS-Momentum: rate-of-change of the ratio, also normalised
-  const momSer=[];
-  for(let i=0;i<ratioSer.length;i++){
-    if(i<tf){momSer.push(100);continue;}
-    const roc=ratioSer[i]-ratioSer[i-tf];
-    const seg=ratioSer.slice(0,i+1).map((v,j)=>j>=tf?v-ratioSer[j-tf]:0);
-    momSer.push(100+orrZWin(seg,win)*2.5+roc*0.0); // z of ROC
+  return out;
+}
+
+/* Align every series onto the shared trading calendar by DATE, not by index.
+   The universe refreshes as a rotating slice, so a symbol pulled three hours
+   ago and one pulled just now can end on different days; aligning by array
+   position silently compared Tuesday's XLE against Monday's XLU on the same
+   tail point. Trailing gaps carry the last close forward and the body is
+   flagged so the rail can say so rather than pretend. */
+function orrAlignSet(map){
+  const cal=(orrCal&&orrCal.length)?orrCal:null;
+  const keys=Object.keys(map).filter(k=>map[k]&&map[k].length>=ORR_TREND_W+10);
+  if(keys.length<2)return null;
+  if(!cal){
+    // No calendar yet (first load). Fall back to index alignment, as before.
+    const n=Math.min.apply(null,keys.map(k=>map[k].length));
+    if(n<ORR_TREND_W+10)return null;
+    const o={};keys.forEach(k=>o[k]=map[k].slice(-n));
+    return {series:o,dates:null,stale:{}};
   }
+  const idx={};cal.forEach((d,i)=>idx[d]=i);
+  const rows={},stale={};
+  let start=0;
+  for(const k of keys){
+    const c=map[k];
+    const e=orrEnd[k];
+    const end=(e&&idx[e]!=null)?idx[e]:cal.length-1;
+    stale[k]=(cal.length-1)-end;
+    const row=new Array(cal.length).fill(null);
+    for(let j=0;j<c.length;j++){
+      const p=end-(c.length-1-j);
+      if(p>=0&&p<cal.length)row[p]=c[j];
+    }
+    let first=-1,last=null;
+    for(let i=0;i<cal.length;i++){
+      if(row[i]!=null){if(first<0)first=i;last=row[i];}
+      else if(last!=null)row[i]=last;
+    }
+    if(first<0)continue;
+    if(first>start)start=first;
+    rows[k]=row;
+  }
+  const ks=Object.keys(rows);
+  if(ks.length<2||cal.length-start<ORR_TREND_W+10)return null;
+  const o={};ks.forEach(k=>o[k]=rows[k].slice(start));
+  return {series:o,dates:cal.slice(start),stale};
+}
+
+/* Equal-weight index for a synthetic basket, built BEFORE normalisation so the
+   basket enters the universe as one ordinary body. The old code averaged the
+   members' already-normalised coordinates, and a centroid of z-scores is not
+   the z-score of a centroid. */
+function orrBasketSeries(members){
+  const ser=members.map(m=>orrCloses[m]).filter(a=>a&&a.length>=ORR_TREND_W+10);
+  if(ser.length<2)return null;
+  const n=Math.min.apply(null,ser.map(a=>a.length));
+  const idx=new Array(n).fill(0);
+  ser.forEach(a=>{
+    const s=a.slice(-n),base=s[0];
+    if(base>0)for(let i=0;i<n;i++)idx[i]+=s[i]/base;
+  });
+  return {closes:idx.map(v=>v/ser.length*100),n:ser.length};
+}
+
+/* Build the whole plot at once. Returns the FULL RS-Ratio / RS-Momentum series
+   per body, which is what both the live view and replay read from. */
+function orrRRGSet(map,bench,tf){
+  const withB=Object.assign({__b:bench},map);
+  const al=orrAlignSet(withB);
+  if(!al)return null;
+  const b=al.series.__b;
+  if(!b)return null;
+  delete al.series.__b;
+  const keys=Object.keys(al.series);
+  if(keys.length<2)return null;
+
+  // 1) trend measure per body: RS against its own quarter mean, unitless
+  const raw=keys.map(k=>{
+    const c=al.series[k];
+    const rs=c.map((v,i)=>b[i]>0?v/b[i]:0);
+    const sm=orrSMA(rs,ORR_TREND_W);
+    return rs.map((v,i)=>sm[i]>0?v/sm[i]-1:0);
+  });
+  // 2) cross-sectional z at each date -> RS-Ratio
+  const ratio=orrXZ(raw).map(r=>r.map(z=>100+z*ORR_Z));
+  // 3) RS-Momentum is the rate of change of RS-Ratio over tf, normalised alike
+  const rawM=ratio.map(r=>r.map((v,i)=>i>=tf?v-r[i-tf]:0));
+  const mom=orrXZ(rawM).map(r=>r.map(z=>100+z*ORR_Z));
+
+  const bodies={};
+  keys.forEach((k,i)=>{bodies[k]={ratio:ratio[i],mom:mom[i],closes:al.series[k],stale:al.stale[k]||0};});
+  return {bodies,dates:al.dates,len:ratio[0].length};
+}
+
+/* Read one body at a playhead position. p === null means live (last bar). */
+function orrAt(s,p,tailLen){
+  const L=s.ratio.length;
+  const i=Math.max(0,Math.min(L-1,p==null?L-1:p));
   const tail=[];
-  for(let i=Math.max(0,ratioSer.length-ORR_TAIL);i<ratioSer.length;i++)tail.push({x:ratioSer[i],y:momSer[i]});
-  const x=ratioSer[ratioSer.length-1],y=momSer[momSer.length-1];
-  const ret=c.length>=2?(c[c.length-1]/c[c.length-6>=0?c.length-6:0]-1):0;
-  return {x,y,tail,ret};
+  for(let j=Math.max(0,i-tailLen+1);j<=i;j++)tail.push({x:s.ratio[j],y:s.mom[j]});
+  const c=s.closes,back=Math.max(0,i-5);
+  const ret=c[back]>0?(c[i]/c[back]-1):0;
+  return {x:s.ratio[i],y:s.mom[i],tail,ret};
 }
+
+/* ---- rotation quality ----------------------------------------------------
+   Bodies are SUPPOSED to rotate clockwise. Measuring whether one actually is
+   separates "XLE is rotating into Leading" from "XLE is jittering across the
+   boundary", which is the most common way an RRG gets misread and something a
+   trail alone cannot tell you.
+
+   Signed angular sweep around (100,100). In data space Leading sits at a
+   positive angle and Weakening at a negative one, so a clockwise rotation is a
+   DECREASING angle: negative sweep. Quality is arc length over path length, so
+   a clean arc approaches 1 and a scribble approaches 0. */
+function orrRotQuality(tail){
+  if(!tail||tail.length<4)return null;
+  let sweep=0,path=0,rsum=0;
+  for(let i=1;i<tail.length;i++){
+    const a=tail[i-1],b=tail[i];
+    let d=Math.atan2(b.y-100,b.x-100)-Math.atan2(a.y-100,a.x-100);
+    while(d>Math.PI)d-=2*Math.PI;
+    while(d<-Math.PI)d+=2*Math.PI;
+    sweep+=d;
+    path+=Math.hypot(b.x-a.x,b.y-a.y);
+    rsum+=Math.hypot(b.x-100,b.y-100);
+  }
+  const r=rsum/(tail.length-1);
+  const q=path>0?Math.abs(sweep)*r/path:0;
+  return {sweep,r,dir:sweep<-0.10?'cw':sweep>0.10?'ccw':'flat',quality:Math.max(0,Math.min(1,q))};
+}
+
+/* Quadrant crossings inside the visible window. Crossings are the tradeable
+   event: a move from the left half to the right half is a new uptrend in
+   relative performance. Previously one was only visible if you happened to be
+   watching at the moment it happened. */
+function orrCrossings(set,upto,lookback){
+  if(!set||!set.bodies)return[];
+  const out=[];
+  Object.keys(set.bodies).forEach(k=>{
+    const s=set.bodies[k];
+    const end=Math.min(s.ratio.length-1,upto==null?s.ratio.length-1:upto);
+    const from=Math.max(1,end-lookback);
+    let prev=orrPhase(s.ratio[from-1],s.mom[from-1]);
+    for(let i=from;i<=end;i++){
+      const ph=orrPhase(s.ratio[i],s.mom[i]);
+      if(ph!==prev){out.push({sym:k,from:prev,to:ph,i:i});prev=ph;}
+    }
+  });
+  return out.sort((a,b)=>b.i-a.i);
+}
+
 function orrPhase(x,y){
   if(x>=100&&y>=100)return 'Leading';
   if(x>=100&&y<100)return 'Weakening';
@@ -156,27 +356,12 @@ const ORR_PHASECOL={Leading:'52,211,153',Weakening:'242,193,78',Lagging:'232,121
 function orrVisibleSectors(){
   return ORR_SECTORS.filter(s=>orrCat==='all'||s.cat===orrCat);
 }
-/* average a set of member RRG results into one synthetic-basket body */
-function orrCentroid(results){
-  if(!results.length)return null;
-  const n=results.length;
-  const x=results.reduce((a,r)=>a+r.x,0)/n;
-  const y=results.reduce((a,r)=>a+r.y,0)/n;
-  const ret=results.reduce((a,r)=>a+r.ret,0)/n;
-  // tail centroid, point-by-point (align on the shortest tail)
-  const tl=Math.min(...results.map(r=>r.tail.length));
-  const tail=[];
-  for(let i=0;i<tl;i++){
-    let tx=0,ty=0;results.forEach(r=>{const p=r.tail[r.tail.length-tl+i];tx+=p.x;ty+=p.y;});
-    tail.push({x:tx/n,y:ty/n});
-  }
-  return {x,y,tail,ret};
-}
+
 let orrSeeded=false;
 async function orrSeedFromServer(){
   if(orrSeeded)return;orrSeeded=true;
   if(!(window.KairosBackend&&window.KairosBackend.enabled&&window.KairosBackend.mythos))return;
-  try{const d=await window.KairosBackend.mythos();if(d&&d.c&&window.orrSeed)window.orrSeed(d.c);}catch(e){}
+  try{const d=await window.KairosBackend.mythos();if(d&&d.c&&window.orrSeed)window.orrSeed(d.c,d.e,d.d);}catch(e){}
 }
 async function orrCompute(){
   orrLoading=true;
@@ -200,30 +385,143 @@ async function orrCompute(){
   }
   const bench=orrCloses[ORR_BENCH];
   if(!bench){orrLoading=false;orrRenderRail();return;}
-  const out=[];
+
+  /* Build the price series for every body FIRST, baskets included, then run ONE
+     cross-sectional pass over the lot. Doing it in this order is what makes a
+     basket comparable to an ETF instead of an average of incomparable numbers. */
+  const meta={},src={};
   if(orrScope){
     orrScope.members.forEach(sym=>{
-      const c=orrCloses[sym];if(!c)return;
-      const r=orrRRG(c,bench,orrTf);if(!r)return;
-      out.push({sym,name:sym,x:r.x,y:r.y,tail:r.tail,phase:orrPhase(r.x,r.y),ret:r.ret});
+      if(orrCloses[sym]){src[sym]=orrCloses[sym];meta[sym]={sym:sym,name:sym};}
     });
   }else{
     orrVisibleSectors().forEach(sec=>{
       if(sec.synth){
-        const rs=[];
-        sec.members.forEach(m=>{const c=orrCloses[m];if(!c)return;const r=orrRRG(c,bench,orrTf);if(r)rs.push(r);});
-        const cen=orrCentroid(rs);
-        if(cen)out.push({sym:sec.sym,name:sec.name,x:cen.x,y:cen.y,tail:cen.tail,phase:orrPhase(cen.x,cen.y),ret:cen.ret,synth:true,n:rs.length});
+        const bk=orrBasketSeries(sec.members);
+        if(bk){
+          src[sec.sym]=bk.closes;
+          /* A basket has no ticker of its own, so it inherits the calendar
+             position of its most recently refreshed member. */
+          let best=null;
+          sec.members.forEach(m=>{if(orrEnd[m]&&(!best||orrEnd[m]>best))best=orrEnd[m];});
+          if(best)orrEnd[sec.sym]=best;
+          meta[sec.sym]={sym:sec.sym,name:sec.name,synth:true,n:bk.n};
+        }
       }else{
-        const c=orrCloses[sec.etf||sec.sym];if(!c)return;
-        const r=orrRRG(c,bench,orrTf);if(!r)return;
-        out.push({sym:sec.sym,etf:sec.etf,name:sec.name,x:r.x,y:r.y,tail:r.tail,phase:orrPhase(r.x,r.y),ret:r.ret});
+        const key=sec.etf||sec.sym,c=orrCloses[key];
+        if(c){
+          src[sec.sym]=c;
+          if(orrEnd[key])orrEnd[sec.sym]=orrEnd[key];
+          meta[sec.sym]={sym:sec.sym,etf:sec.etf,name:sec.name};
+        }
       }
     });
   }
-  orrPts=out;
+  orrSet=orrRRGSet(src,bench,orrTf);
+  orrMetaMap=meta;
+  orrHead=null;orrPlaying=false;orrAcc=0;
+  orrApplyHead();
+  orrRenderReplay();
   orrLoading=false;
   orrRenderRail();
+}
+
+/* Derive the plotted bodies from the playhead. Called on every replay frame, so
+   it stays light: no recomputation, just a slice out of the stored series. */
+function orrApplyHead(){
+  if(!orrSet||!orrSet.bodies){orrPts=[];return;}
+  const out=[];
+  Object.keys(orrSet.bodies).forEach(k=>{
+    const m=orrMetaMap[k];if(!m)return;
+    const a=orrAt(orrSet.bodies[k],orrHead,ORR_TAIL);
+    out.push(Object.assign({},m,{
+      x:a.x,y:a.y,tail:a.tail,phase:orrPhase(a.x,a.y),ret:a.ret,
+      rot:orrRotQuality(a.tail),
+      stale:orrSet.bodies[k].stale||0,
+    }));
+  });
+  orrPts=out;
+}
+function orrHeadIdx(){return orrHead==null?(orrSet?orrSet.len-1:0):orrHead;}
+function orrHeadDate(){
+  if(!orrSet)return '';
+  if(!orrSet.dates)return orrHead==null?'LIVE':('T-'+((orrSet.len-1)-orrHeadIdx()));
+  return orrSet.dates[orrHeadIdx()]||'';
+}
+
+/* ---- replay controls ---- */
+function orrPlayToggle(){
+  if(!orrSet)return;
+  /* Pressing play while parked at the live edge rewinds first, otherwise play
+     would appear to do nothing at all. */
+  if(!orrPlaying&&(orrHead==null||orrHead>=orrSet.len-1)){
+    orrHead=Math.max(0,orrSet.len-1-Math.min(90,orrSet.len-1));
+  }
+  orrPlaying=!orrPlaying;
+  orrAcc=0;
+  if(orrPlaying&&!orrRaf)orrRaf=requestAnimationFrame(orrFrame);
+  orrApplyHead();orrRenderRail();orrRenderReplay();
+  if(orrReduce&&!orrPlaying)orrDraw(0);
+}
+function orrSeek(i){
+  if(!orrSet)return;
+  let h=Math.max(0,Math.min(orrSet.len-1,i|0));
+  orrHead=(h>=orrSet.len-1)?null:h;      // snap to live at the right edge
+  orrApplyHead();orrRenderRail();orrRenderReplay();
+  if(orrReduce)orrDraw(0);
+}
+function orrGoLive(){
+  orrPlaying=false;orrHead=null;orrAcc=0;
+  orrApplyHead();orrRenderRail();orrRenderReplay();
+  if(orrReduce)orrDraw(0);
+}
+function orrSetSpeed(s){
+  orrSpeed=s;
+  try{localStorage.setItem('kairos_orr_speed',String(s));}catch(e){}
+  orrRenderReplay();
+}
+/* Advance the playhead using real elapsed seconds, so playback rate is
+   wall-clock consistent regardless of frame rate. */
+function orrAdvance(dt){
+  if(!orrPlaying||!orrSet)return;
+  orrAcc+=dt*ORR_BPS*orrSpeed;
+  if(orrAcc<1)return;
+  const step=Math.floor(orrAcc);
+  orrAcc-=step;
+  const h=orrHeadIdx()+step;
+  if(h>=orrSet.len-1){
+    orrPlaying=false;orrHead=null;      // stop at the live edge, never loop
+    orrApplyHead();orrRenderRail();orrRenderReplay();
+    return;
+  }
+  orrHead=h;
+  orrApplyHead();
+  orrRenderReplay();
+  orrRenderRail();
+}
+function orrRenderReplay(){
+  const bar=document.getElementById('orrReplay');if(!bar)return;
+  if(!orrSet){bar.style.visibility='hidden';return;}
+  bar.style.visibility='';
+  const i=orrHeadIdx(),L=Math.max(1,orrSet.len-1);
+  const btn=document.getElementById('orrPlay');
+  if(btn)btn.textContent=orrPlaying?'\u275a\u275a':'\u25b6';
+  const sc=document.getElementById('orrScrub');
+  if(sc){sc.max=String(L);if(+sc.value!==i)sc.value=String(i);}
+  const lab=document.getElementById('orrWhen');
+  if(lab){
+    lab.textContent=orrHead==null?'LIVE':orrHeadDate();
+    lab.className='orr-when'+(orrHead==null?' live':'');
+  }
+  const cr=document.getElementById('orrCross');
+  if(cr){
+    const xs=orrCrossings(orrSet,i,10).slice(0,3);
+    cr.innerHTML=xs.length?xs.map(x=>{
+      const m=orrMetaMap[x.sym];
+      return '<span class="orr-cx"><b>'+(m?m.sym:x.sym)+'</b> '+x.from.slice(0,4)+'\u2192'+
+        '<i style="color:rgb('+ORR_PHASECOL[x.to]+')">'+x.to+'</i></span>';
+    }).join(''):'<span class="orr-cx dim">no quadrant changes in 10 sessions</span>';
+  }
 }
 
 /* ---- canvas render ---- */
@@ -233,10 +531,13 @@ function orrStart(){
   orrStop();
   const wait=document.getElementById('orrWait');
   if(!orrPts.length){if(wait)wait.style.display='';}
-  if(orrReduce){orrDraw(0);return;}
+  /* Reduced motion normally skips the rAF loop entirely. Replay still needs it
+     while playing, so honour the preference by easing instantly rather than by
+     refusing to animate at all. */
+  if(orrReduce&&!orrPlaying){orrDraw(0);return;}
   orrT=0;orrRaf=requestAnimationFrame(orrFrame);
 }
-function orrFrame(ts){const dt=orrT?Math.min(0.05,(ts-orrT)/1000):0.016;orrT=ts;orrDraw(dt);orrRaf=requestAnimationFrame(orrFrame);}
+function orrFrame(ts){const dt=orrT?Math.min(0.05,(ts-orrT)/1000):0.016;orrT=ts;orrAdvance(dt);orrDraw(dt);orrRaf=requestAnimationFrame(orrFrame);}
 
 let orrPhase2=0;
 /* ═══ SHARED CANVAS GEOMETRY ═══
@@ -362,6 +663,18 @@ function orrDraw(dt){
     if(isFocus||orrTrail!=='all')for(let i=0;i<p.tail.length-1;i++){ctx.fillStyle='rgba('+col+',.5)';ctx.beginPath();ctx.arc(X(p.tail[i].x),Y(p.tail[i].y),2*SC,0,7);ctx.fill();}
   }
 
+  /* Scrubbed into the past: a wash and a stamp, so a screenshot can never be
+     mistaken for the live field. */
+  if(orrHead!=null){
+    ctx.save();
+    ctx.fillStyle='rgba(242,193,78,.055)';
+    ctx.fillRect(0,0,W,H);
+    ctx.font='700 '+Math.round(11*SC)+'px "JetBrains Mono",monospace';
+    ctx.fillStyle='rgba(242,193,78,.9)';
+    ctx.textAlign='left';
+    ctx.fillText('\u25c0 REPLAY \u00b7 '+orrHeadDate(),PAD+4,PAD+13*SC);
+    ctx.restore();
+  }
   // --- BODIES ---
   for(const p of orrPts){
     const col=ORR_PHASECOL[p.phase];
@@ -438,6 +751,14 @@ function orrRenderRail(){
       '<span class="orr-rsym">'+p.sym+(p.synth?' <span class="orr-basket" title="synthetic basket — equal-weight of members, no ETF">◇</span>':'')+'</span>'+
       '<span class="orr-rname">'+p.name+'</span>'+
       '<span class="orr-rphase" style="color:rgb('+col+')">'+p.phase+'</span>'+
+      /* Is this body actually rotating, or just jittering across a boundary?
+         Clockwise with a clean arc is a real rotation; flat with a long path is
+         noise wearing a trail. */
+      (p.rot?('<span class="orr-rrot" title="rotation: '+(p.rot.dir==='cw'?'clockwise':p.rot.dir==='ccw'?'counter-clockwise':'flat')+
+        ', arc quality '+Math.round(p.rot.quality*100)+'%">'+
+        (p.rot.dir==='cw'?'\u21bb':p.rot.dir==='ccw'?'\u21ba':'\u00b7')+
+        '<i style="opacity:'+(0.35+p.rot.quality*0.65).toFixed(2)+'">'+Math.round(p.rot.quality*100)+'</i></span>'):'')+
+      (p.stale>0?'<span class="orr-stale" title="last bar is '+p.stale+' session(s) behind the calendar">\u00b7'+p.stale+'d</span>':'')+
       '<span class="orr-rret" style="color:'+(p.ret>=0?'var(--green)':'var(--red)')+'">'+(p.ret>=0?'+':'')+(p.ret*100).toFixed(1)+'%</span>'+
       '</div>';
   }).join('');
@@ -490,7 +811,13 @@ async function orrDrill(sym){
   const pos=ps.net1>=0;
   // biggest opening prints (Tape engine) — 15-min-ok flow
   let prints=[];
-  try{const fl=flowLean(sym);if(fl)prints=fl.prints.slice(0,8);}catch(e){}
+  let weakPrints=[],flThresh=null;
+  try{
+    /* allExp: read the whole book rather than inheriting the global
+       0DTE/7d/30d chip, which on a sector member often leaves nothing at all. */
+    const fl=flowLean(sym,{allExp:true});
+    if(fl){prints=fl.prints.slice(0,8);weakPrints=fl.weak||[];flThresh=fl.thresh;}
+  }catch(e){}
   const dp=spot>2000?0:2;
   const stat=(l,v,c,tip)=>'<div class="od-stat"'+(tip?' data-tip="'+tip+'"':'')+'><div class="od-l">'+l+'</div><div class="od-v" style="color:'+(c||'var(--text)')+'">'+v+'</div></div>';
   const regime=pos?'<span style="color:var(--teal)">+GEX · pinning</span>':'<span style="color:#e879f9">−GEX · momentum</span>';
@@ -509,7 +836,11 @@ async function orrDrill(sym){
     prints.map(p=>{
       const cls=orrClassify(p,spot);
       return '<tr><td><span class="cbadge '+(p.call?'c':'p')+'">'+(p.call?'C':'P')+'</span> '+p.k+' '+p.e.slice(5)+'</td><td>'+p.voi.toFixed(1)+'×</td><td style="color:var(--gold)">'+fmt(p.prem)+'</td><td><span class="od-tag '+cls.cls+'">'+cls.label+'</span></td></tr>';
-    }).join('')+'</table>'):'<div class="od-noflow">No qualifying opening prints yet (needs vol ≥70% of OI, ≥$25k premium).</div>';
+    }).join('')+'</table>'):(weakPrints.length?
+      ('<div class="od-noflow">No prints cleared the opening bar (vol ≥'+Math.round((flThresh?flThresh.open:0.25)*100)+'% of OI). Largest premium on the tape below, tagged as churn rather than new positioning:</div>'+
+       '<table class="od-prints"><tr><th>Contract</th><th>Vol/OI</th><th>Prem</th><th>Read</th></tr>'+
+       weakPrints.map(p=>'<tr style="opacity:.62"><td><span class="cbadge '+(p.call?'c':'p')+'">'+(p.call?'C':'P')+'</span> '+p.k+' '+p.e.slice(5)+'</td><td>'+p.voi.toFixed(2)+'\u00d7</td><td style="color:var(--gold)">'+fmt(p.prem)+'</td><td><span class="od-tag flow">churn</span></td></tr>').join('')+'</table>')
+      :'<div class="od-noflow">No option volume on '+sym+' this session.</div>');
   host.innerHTML=
     '<div class="od-head"><div class="od-sym">'+sym+' <span class="od-px">$'+(+spot).toFixed(dp)+'</span></div>'+
       '<div class="od-regime">'+regime+' · Crown '+(kg?kg.k:'—')+'</div>'+
@@ -619,7 +950,7 @@ function orrSetTrail(mode){
     state.view='chart';
     if(window.clearNav)window.clearNav();
     const cb=document.getElementById('btnChart');if(cb)cb.classList.add('active');
-    ['trinityWrap','ideasSec','imbSec','tapeSec','arenaSec'].forEach(id=>{const e=document.getElementById(id);if(e)e.classList.add('hidden');});
+    ['trinityWrap','ideasSec','imbSec','tapeSec','nexusSec'].forEach(id=>{const e=document.getElementById(id);if(e)e.classList.add('hidden');});
     if(cs)cs.classList.remove('hidden');
     document.getElementById('presetBar').classList.add('hidden');
     document.getElementById('mtoggle').classList.add('dim');
@@ -646,6 +977,34 @@ function orrSetTrail(mode){
       orrSetTrail(b.dataset.tr);
     });
   }
+  /* ---- replay wiring ---- */
+  const rp=document.getElementById('orrReplay');
+  if(rp&&!rp._wired){
+    rp._wired=true;
+    const pb=document.getElementById('orrPlay');if(pb)pb.onclick=orrPlayToggle;
+    const lv=document.getElementById('orrLive');if(lv)lv.onclick=orrGoLive;
+    const sc=document.getElementById('orrScrub');
+    if(sc)sc.oninput=function(e){orrPlaying=false;orrSeek(+e.target.value);};
+    const sp=document.getElementById('orrSpeedSel');
+    try{orrSpeed=parseFloat(localStorage.getItem('kairos_orr_speed'))||1;}catch(e){}
+    if(sp)sp.querySelectorAll('button').forEach(b=>{
+      b.classList.toggle('on',parseFloat(b.dataset.sp)===orrSpeed);
+      b.onclick=function(){
+        orrSetSpeed(parseFloat(b.dataset.sp));
+        sp.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));
+      };
+    });
+    /* Space plays, arrows step one session, Escape returns to live. Only while
+       Mythos is the visible view, so it never steals keys from the ticker box. */
+    document.addEventListener('keydown',function(e){
+      if(state.view!=='chart')return;
+      if(/^(INPUT|TEXTAREA|SELECT)$/.test(e.target&&e.target.tagName||''))return;
+      if(e.code==='Space'){e.preventDefault();orrPlayToggle();}
+      else if(e.key==='ArrowRight'){orrPlaying=false;orrSeek(orrHeadIdx()+1);}
+      else if(e.key==='ArrowLeft'){orrPlaying=false;orrSeek(orrHeadIdx()-1);}
+      else if(e.key==='Escape'&&orrHead!=null)orrGoLive();
+    });
+  }
   const cat=document.getElementById('orrCatSel');
   if(cat)cat.addEventListener('click',e=>{
     const b=e.target.closest('button[data-cat]');if(!b)return;
@@ -660,6 +1019,9 @@ document.addEventListener('visibilitychange',function(){
   if(document.hidden)orrStop();else orrStart();
 });
 window.orrSetTrail=orrSetTrail;
-window.KairosMythos={ORR_SECTORS,orrCompute,orrSetTrail,orrRRG,orrClassify,orrCentroid,pts:function(){return orrPts;},closes:function(){return orrCloses;}};
+window.KairosMythos={ORR_SECTORS,orrCompute,orrSetTrail,orrClassify,orrRRGSet,orrAt,orrRotQuality,orrCrossings,
+  orrPlayToggle,orrSeek,orrGoLive,orrSetSpeed,
+  pts:function(){return orrPts;},closes:function(){return orrCloses;},
+  set:function(){return orrSet;},head:function(){return orrHead;},cal:function(){return orrCal;}};
 window.KairosOrrery=window.KairosMythos; // back-compat alias
 console.log('%cKairos Mythos \u2014 the market\u0027s rotating bodies. Sectors + themes, RS vs SPY, four phases, clockwise.','color:#34d399;font-weight:bold');

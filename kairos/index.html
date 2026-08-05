@@ -6,8 +6,27 @@
 <meta name="color-scheme" content="dark">
 <title>Kairos</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='0.9em' font-size='90' fill='%23f2c14e'%3E%E2%97%86%3C/text%3E%3C/svg%3E">
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="kairos.css?v=6.7.0">
+<!-- Google Fonts is two CHAINED round trips: googleapis for the CSS, then
+     gstatic for the files. Without preconnect the browser cannot begin either
+     handshake until it has parsed this link, which was 300-600ms of blank page
+     on a cold connection. Weights trimmed from eight to six. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://kairos-api.safihelal.workers.dev" crossorigin>
+<link rel="preconnect" href="https://unpkg.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="kairos.css?v=6.8.0">
+<!-- Lightweight Charts powers Nexus. Deferred, and Nexus degrades to a clear
+     message rather than a broken canvas if it fails to load. -->
+<script defer src="https://unpkg.com/lightweight-charts@5.1.0/dist/lightweight-charts.standalone.production.js"></script>
+<!-- defer: downloaded in parallel during HTML parse, executed in document order
+     after it. Five synchronous tags at ~350KB were serialising the whole boot. -->
+<script defer src="kairos-core.js?v=6.8.0"></script>
+<script defer src="kairos-backend.js?v=6.8.0"></script>
+<script defer src="kairos-quant.js?v=6.8.0"></script>
+<script defer src="kairos-modules.js?v=6.8.0"></script>
+<script defer src="kairos-nexus.js?v=6.8.0"></script>
+<script defer src="kairos-mythos.js?v=6.8.0"></script>
 </head>
 <body>
 <datalist id="tickerList"></datalist>
@@ -83,6 +102,19 @@
           <button class="btn" id="orrBack" style="display:none;border-color:var(--border)">← All</button>
         </div>
       </div>
+      <div class="orr-replay" id="orrReplay" data-tip="Scrub or play the rotation forward one session at a time. The field you see is the field as it was on that date. Space plays, arrow keys step, Escape returns to live.">
+        <button class="orr-play" id="orrPlay" aria-label="play rotation replay">▶</button>
+        <input type="range" id="orrScrub" min="0" max="0" value="0" step="1" aria-label="rotation replay position">
+        <span class="orr-when live" id="orrWhen">LIVE</span>
+        <div class="mtoggle orr-spd" id="orrSpeedSel">
+          <button data-sp="0.5">½×</button>
+          <button data-sp="1" class="on">1×</button>
+          <button data-sp="2">2×</button>
+          <button data-sp="4">4×</button>
+        </div>
+        <button class="btn orr-livebtn" id="orrLive">LIVE →</button>
+        <div class="orr-crossings" id="orrCross"></div>
+      </div>
       <div class="orr-grid">
         <div class="orr-stage">
           <canvas id="orrCanvas"></canvas>
@@ -97,24 +129,25 @@
   </div>
   <div class="imb hidden" id="imbSec"><span id="imbMeta"></span><div class="imb-stats" id="imbStats"></div></div>
   <div class="tape hidden" id="tapeSec"><span id="tapeMeta"></span><div id="tapeNote"></div></div>
-  <div class="arena hidden" id="arenaSec">
-    <div class="a-top">
-      <input id="arenaTicker" class="ticker-sel" list="tickerList" value="SPY" style="width:92px" autocomplete="off" data-tip="Type any optionable ticker">
-      <span id="arenaMeta" style="font-size:.68rem;color:var(--muted)"></span>
-      <span class="a-legend">
-        <span class="a-lg" data-tip="Positive exposure. Dealers fade moves, so price is held — the field resists."><s class="aeg"></s>AEGIS · +</span>
-        <span class="a-lg" data-tip="Negative exposure. Dealers chase, so moves accelerate — the field pulls."><s class="mae"></s>MAELSTROM · −</span>
-        <span class="a-lg" data-tip="Time-at-price from the real path on screen — a live market profile."><s class="scorch"></s>TIME @ PRICE</span>
-        <span class="a-lg" data-tip="The Reach — ±1σ/±2σ implied by ATM IV over the next 18 minutes. The implied distribution, not a forecast."><s class="reach"></s>THE REACH</span>
-        <span class="a-lg" data-tip="The Standard — live spot at the head of the front."><i class="std"></i>THE STANDARD</span>
+  <div class="nexus hidden" id="nexusSec">
+    <div class="nx-top">
+      <input id="nexusTicker" class="ticker-sel" list="tickerList" value="SPY" style="width:92px" autocomplete="off" data-tip="Type any optionable ticker">
+      <div class="mtoggle" id="nexusMetric" data-tip="Which field to sound. GEX is dealer gamma: how hard the book resists or amplifies. VEX is vanna: how the hedge shifts as volatility moves.">
+        <button data-m="gex" class="on">GEX</button>
+        <button data-m="vex">VEX</button>
+      </div>
+      <button class="btn" id="nexusFit" data-tip="Fit the whole recorded window and re-scale price">FIT</button>
+      <span class="nx-legend">
+        <span class="nx-lg" data-tip="Positive exposure. Dealers fade moves, so price is held. The field resists."><s class="aeg"></s>AEGIS &middot; +</span>
+        <span class="nx-lg" data-tip="Negative exposure. Dealers chase, so moves accelerate. The field pulls."><s class="mae"></s>MAELSTROM &middot; &minus;</span>
+        <span class="nx-lg" data-tip="Server-recorded columns render slightly dimmer than columns this browser recorded itself."><s class="srv"></s>FROM THE CHRONICLE</span>
       </span>
     </div>
-    <div class="a-stage">
-      <canvas id="arenaCanvas"></canvas>
-      <div class="a-wait" id="arenaWait">Waiting on the first chain for this ticker…<br><span style="color:var(--faint)">the field draws as soon as strikes land</span></div>
+    <div class="nx-hud" id="nexusHud"></div>
+    <div class="nx-stage" id="nexusStage">
+      <div class="nx-wait" id="nexusWait">Sounding the field&hellip;<br><span style="color:var(--faint)">strata draw as soon as recorded columns land</span></div>
     </div>
-    <div class="a-hud" id="arenaHud"></div>
-    <div id="arenaNote" class="a-note">Exposure lives on the <b>price</b> axis, time belongs to the tape. <b>The field</b> is one continuous gradient across the strike ladder — colour and opacity <em>are</em> the exposure, and it fades to black through the zero crossing because that is where the field genuinely cancels. <b>Aegis</b> (+) holds price because dealers fade moves; <em>Maelstrom</em> (−) pulls because they chase. The white trace is the <b>real price path</b> from Tradier 1-minute bars, anchored to the last real bar when the market is closed. <u>Time @ price</u> is a genuine profile. <q>The Reach</q> is the ±1σ/±2σ cone implied by ATM IV over the next 18 minutes — the implied distribution, not a prediction. Nothing here is a signal. <b>The Chronicle:</b> the field is recorded (~60s columns, full ladder, GEX+VEX) while a Kairos tab is open and kept ~7 days in this browser — past columns show the field <em>as it was</em>; before the first recording, only the tape draws. Drag to pan time <em>and</em> price; wheel zooms time, Shift+wheel (or wheel over the strike ladder) zooms price; double-click snaps back to live + auto-fit. 30M–5D windows; 1-min bars reach back 20 days (Tradier's limit). <b>The Echo:</b> because OI is fixed all session (OCC prior-settlement), today's field before recording began is <em>reconstructed</em> — the same Black-Scholes × OI pipeline evaluated at each minute's real spot, with current IV (drift not replayed) on an OI basis. Reconstructed columns render dimmer, are tagged in the Lens, and are never persisted — recorded columns always win. <b>The Undertow</b> (bottom pane) is net ±1% exposure through time; the thin gold/teal/magenta tracks are where Crown and the walls actually sat.</div>
+    <div id="nexusNote" class="nx-note">Each vertical column is a <b>sounding</b>: the whole strike ladder as it stood at one minute of the session. Within a column every strike is drawn as its own solid band, edge to edge at the midpoints between neighbours &mdash; <b>nothing is interpolated between strikes</b>, because gamma is not smooth between them. What looks like banding <em>is</em> the sampling resolution of the instrument. <b>Aegis</b> (+) holds price because dealers fade moves; <b>Maelstrom</b> (&minus;) pulls because they chase. Intensity is scaled on a square root across every visible column, so the King never blacks out the rest of the book and a quiet morning does not look like a violent close. Columns from the server <b>Chronicle</b> (accumulated 24/5) render dimmer than ones this browser recorded. Server columns older than the vega rollout carry no VEX, and in VEX mode they are <b>omitted rather than drawn as zero</b>. The lower pane is the <b>undertow</b>: net exposure within &plusmn;1% of spot through time, which is the number that says what dealers do <em>here</em> rather than the sign of the largest node somewhere else. Candles are Tradier 1-minute bars. Structure lines are live. Nothing here is a signal.</div>
   </div>
   <div class="novasec hidden" id="novaSec"></div>
   <div class="surfaced hidden" id="ideasSec">
@@ -220,10 +253,6 @@
 </div>
 <footer>Kairos · Aether · Mythos · Nexus · All Powered by Tradier Live · Structure is context, not a signal</footer>
 
-<script src="kairos-core.js?v=6.7.0"></script>
-<script src="kairos-backend.js?v=6.7.0"></script>
-<script src="kairos-quant.js?v=6.7.0"></script>
-<script src="kairos-modules.js?v=6.7.0"></script>
-<script src="kairos-mythos.js?v=6.7.0"></script>
+<!-- moved to <head> with defer, plus kairos-nexus.js -->
 </body>
 </html>

@@ -1,5 +1,5 @@
 /* ============================================================================
-   KAIROS BACKEND CLIENT  (frontend shim)  v6.4
+   KAIROS BACKEND CLIENT  (frontend shim)  v7.0
 
    One place for the app to:
      • route live Tradier calls through the Worker proxy (token stays server-side)
@@ -32,6 +32,28 @@
     } finally { if (timer) clearTimeout(timer); }
   }
 
+  /* /bootstrap is polled once a minute forever and its body rarely changes, so
+     the Worker now serves it with an ETag. The browser sends If-None-Match on
+     its own; a 304 has no body, so we hand back the last good payload instead
+     of letting a JSON parse of an empty response throw. */
+  let _bsCache = null, _bsEtag = null;
+  async function getBootstrap(path, ms) {
+    const ctl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+    const timer = ctl ? setTimeout(() => ctl.abort(), ms || 20000) : null;
+    try {
+      const opt = { headers: {} };
+      if (ctl) opt.signal = ctl.signal;
+      if (_bsEtag) opt.headers['If-None-Match'] = _bsEtag;
+      const r = await fetch(api(path), opt);
+      if (r.status === 304 && _bsCache) return _bsCache;
+      if (!r.ok) throw new Error('backend ' + r.status);
+      const tag = r.headers.get('ETag');
+      const j = await r.json();
+      if (tag) { _bsEtag = tag; _bsCache = j; }
+      return j;
+    } finally { if (timer) clearTimeout(timer); }
+  }
+
   const KairosBackend = {
     enabled: /^https:\/\/[a-z0-9.-]+/i.test(BACKEND) && !BACKEND.includes('YOUR-SUBDOMAIN'),
     base: BACKEND,
@@ -56,9 +78,13 @@
       } catch (e) { return false; }
     },
 
-    // bootstrap carries the ladders, Nova's analysis, and the plays board.
-    // 20s ceiling: it is the largest single response the app asks for.
-    bootstrap() { return getJSON('/bootstrap', 20000); },
+    /* bootstrap carries the ladders, Nova's analysis, and the plays board.
+       Passing the roster scopes the ladders to this device: a six-ticker
+       machine was downloading all thirteen on every cold start. */
+    bootstrap(syms) {
+      const q = (syms && syms.length) ? '?syms=' + encodeURIComponent(syms.join(',')) : '';
+      return getBootstrap('/bootstrap' + q, 20000);
+    },
     getChain(sym) { return getJSON('/chain?sym=' + encodeURIComponent(sym)); },
     mythos() { return getJSON('/mythos'); },
 

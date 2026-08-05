@@ -990,3 +990,85 @@ span.nv-tag{flex-shrink:0}
 @media(prefers-reduced-motion:reduce){
   .nc-r1,.nc-r2,.nc-r3,.nc-sweep,.nc-pulse,.nv-scan::after,.nv-st.on i{animation:none}
 }
+
+/* ============================================================================
+   NEXUS v9 — THE SOUNDING
+   The old .arena / .a-* block is superseded. Kept above rather than deleted so
+   any stray selector still resolves, but nothing below depends on it.
+
+   The visual idea is a seismic section: a medium read in vertical soundings and
+   drawn as strata. So the chrome is instrument-panel, not dashboard: hairline
+   rules, monospace numerics, and no rounded card floating in space.
+   ============================================================================ */
+.nexus{display:flex;flex-direction:column;gap:8px}
+.nx-top{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.nx-legend{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-left:auto;
+  font-size:.62rem;letter-spacing:.06em;color:var(--muted)}
+.nx-lg{display:inline-flex;align-items:center;gap:5px;cursor:help}
+.nx-lg s{width:16px;height:8px;display:inline-block;text-decoration:none;border-radius:1px}
+.nx-lg s.aeg{background:linear-gradient(90deg,rgba(45,212,191,.12),rgba(45,212,191,.92))}
+.nx-lg s.mae{background:linear-gradient(90deg,rgba(244,114,62,.12),rgba(244,114,62,.92))}
+.nx-lg s.srv{background:repeating-linear-gradient(90deg,rgba(45,212,191,.6) 0 3px,transparent 3px 6px)}
+
+/* HUD: a strip of readings, not a row of cards. Hairline dividers only. */
+.nx-hud{display:flex;flex-wrap:wrap;border:1px solid var(--border);border-radius:6px;
+  background:var(--panel2);overflow:hidden}
+.nx-cell{flex:1 1 120px;min-width:104px;padding:6px 10px;
+  border-right:1px solid var(--border);display:flex;flex-direction:column;gap:2px;cursor:help}
+.nx-cell:last-child{border-right:0}
+.nx-cell b{font-size:.56rem;font-weight:600;letter-spacing:.1em;color:var(--faint)}
+.nx-cell span{font-family:'JetBrains Mono';font-size:.9rem;font-weight:700;color:var(--text)}
+
+/* The stage is the instrument. Give it real height and let the library own it. */
+.nx-stage{position:relative;height:min(62vh,560px);min-height:300px;
+  border:1px solid var(--border);border-radius:6px;background:#05070c;overflow:hidden}
+.nx-wait{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;text-align:center;font-size:.74rem;color:var(--muted);
+  line-height:1.7;pointer-events:none;padding:16px}
+.nx-note{font-size:.66rem;line-height:1.75;color:var(--muted);
+  border-top:1px solid var(--border);padding-top:8px}
+.nx-note b{color:var(--text)}
+.nx-note em{color:var(--gold);font-style:normal}
+@media (max-width:720px){
+  .nx-stage{height:min(56vh,420px)}
+  .nx-legend{margin-left:0;width:100%;font-size:.58rem;gap:9px}
+  .nx-cell{flex:1 1 45%;min-width:0}
+  .nx-cell span{font-size:.8rem}
+}
+
+/* ---- Mythos replay ---- */
+.orr-replay{display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  padding:7px 10px;margin:0 0 8px;background:var(--panel2);
+  border:1px solid var(--border);border-radius:8px}
+.orr-play{width:30px;height:26px;flex:0 0 auto;background:transparent;
+  border:1px solid var(--border);border-radius:6px;color:var(--teal);
+  font-size:.7rem;cursor:pointer;transition:border-color .15s,color .15s}
+.orr-play:hover{border-color:var(--teal);color:var(--text)}
+#orrScrub{flex:1 1 180px;min-width:110px;height:3px;appearance:none;-webkit-appearance:none;
+  background:linear-gradient(90deg,var(--border),var(--teal));border-radius:2px;
+  outline:none;cursor:pointer;padding:0}
+#orrScrub::-webkit-slider-thumb{appearance:none;-webkit-appearance:none;width:12px;height:12px;
+  border-radius:50%;background:var(--teal);border:2px solid var(--panel2);cursor:grab}
+#orrScrub::-moz-range-thumb{width:12px;height:12px;border-radius:50%;
+  background:var(--teal);border:2px solid var(--panel2);cursor:grab}
+.orr-when{font-family:'JetBrains Mono';font-size:.68rem;font-weight:700;
+  letter-spacing:.04em;color:var(--gold);min-width:84px;text-align:center}
+.orr-when.live{color:var(--teal)}
+.orr-spd button{padding:4px 7px;font-size:.66rem}
+.orr-livebtn{font-size:.66rem;padding:4px 9px;border-color:var(--border)}
+.orr-crossings{flex:1 1 100%;display:flex;gap:12px;flex-wrap:wrap;
+  font-size:.66rem;color:var(--muted);border-top:1px solid var(--border);
+  padding-top:6px;margin-top:2px}
+.orr-cx b{font-family:'JetBrains Mono';color:var(--text);font-weight:700}
+.orr-cx i{font-style:normal;font-weight:600}
+.orr-cx.dim{color:var(--faint)}
+.orr-rrot{font-family:'JetBrains Mono';font-size:.62rem;color:var(--muted);
+  margin-left:5px;letter-spacing:-.02em}
+.orr-rrot i{font-style:normal;margin-left:1px}
+.orr-stale{font-family:'JetBrains Mono';font-size:.6rem;color:var(--gold);
+  opacity:.7;margin-left:4px}
+@media (max-width:720px){
+  .orr-when{min-width:72px;font-size:.62rem}
+  .orr-livebtn{display:none}
+  .orr-crossings{font-size:.61rem;gap:8px}
+}

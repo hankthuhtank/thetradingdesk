@@ -58,8 +58,23 @@ const REG_SERIES_CAP=400;     // intraday net-premium/spot samples for the Regim
 const DELTA_WINDOW=720;
 const DELTA_MATERIAL=0.08;
 const DELTA_MIN=8;
-const FLOW_OPEN=0.7;        // vol/oi ratio to call a node "opening" (being rebuilt today)
-const FLOW_MIN_PREM=25000;  // $ premium floor for a tape print to matter
+/* Two calibrations, not one. 0.7 vol/OI is right for index 0DTE, where open
+   interest starts near zero every morning so a real print trivially clears it.
+   On an equity or sector monthly, OI accumulates for weeks and a single strike
+   turning over 70% of it in one session essentially never happens, which is why
+   every Mythos sector drill showed an empty flow panel. The filter was not
+   broken; it was mathematically unreachable for the instruments it was applied
+   to. */
+const FLOW_OPEN=0.7;        // index / 0DTE: vol/oi to call a node "opening"
+const FLOW_MIN_PREM=25000;  // index / 0DTE: $ premium floor
+const FLOW_OPEN_EQ=0.25;    // equities & sector ETFs
+const FLOW_MIN_PREM_EQ=10000;
+const FLOW_INDEXY=/^(SPX|SPXW|SPY|QQQ|IWM|NDX|VIX|VIXW|UVXY|RUT|XSP|DIA)$/;
+function flowThresh(sym){
+  return FLOW_INDEXY.test(String(sym||'').toUpperCase())
+    ?{open:FLOW_OPEN,prem:FLOW_MIN_PREM}
+    :{open:FLOW_OPEN_EQ,prem:FLOW_MIN_PREM_EQ};
+}
 
 function cleanSym(s){s=String(s||'').trim().toUpperCase();return /^[A-Z0-9.\-\/]{1,12}$/.test(s)?s:'';}
 function underOf(sym){return (sym==='SPXW'||sym==='SPX')?'SPX':sym;}
@@ -276,20 +291,31 @@ function deltaChip(dl){
   return `<span class="dchip" style="color:${c};font-weight:700" data-tip="Change vs ~12 min ago — growing nodes are being built, shrinking nodes are unwinding">${dl>=0?'\u25b2':'\u25bc'}${Math.abs(dl)>=100?Math.round(Math.abs(dl)):Math.abs(dl).toFixed(1)}%</span>`;
 }
 /* ---- opening-flow lean: real vol/OI/premium, opening inferred from vol>=70% OI ---- */
-function flowLean(sym){
+function flowLean(sym,opts){
   const ch=state.chains[sym];if(!ch||!ch.list||!ch.list.length)return null;
   const spot=state.spot[sym]||ch.spot||ch.spotHint||0;if(!spot)return null;
-  let callPrem=0,putPrem=0;const prints=[];
-  for(const c of ch.list.filter(expiryFilt)){
+  const TH=flowThresh(sym);
+  /* allExp lets a caller (Mythos) read the whole book instead of inheriting the
+     global 0DTE/7d/30d chip, which on a sector ETF can leave nothing at all. */
+  const filt=(opts&&opts.allExp)?function(){return true;}:expiryFilt;
+  let callPrem=0,putPrem=0;const prints=[],weak=[];
+  for(const c of ch.list.filter(filt)){
     if(!c.vol)continue;
     const voi=c.vol/Math.max(c.oi,1);
-    if(voi<FLOW_OPEN)continue;                 // churn, not new positioning
     const prem=(c.mid||0)*c.vol*100;
+    if(voi<TH.open){
+      /* Kept and flagged, never silently dropped. An empty panel reads as
+         broken; a labelled weak panel reads as honest, which is the point. */
+      if(prem>=TH.prem)weak.push({k:c.k,call:c.call,e:c.e,vol:c.vol,oi:c.oi,voi,prem,iv:c.iv,weak:true});
+      continue;
+    }
     if(c.call)callPrem+=prem;else putPrem+=prem;
-    if(prem>=FLOW_MIN_PREM)prints.push({k:c.k,call:c.call,e:c.e,vol:c.vol,oi:c.oi,voi,prem,iv:c.iv});
+    if(prem>=TH.prem)prints.push({k:c.k,call:c.call,e:c.e,vol:c.vol,oi:c.oi,voi,prem,iv:c.iv});
   }
   prints.sort((a,b)=>b.prem-a.prem);
-  return{callPrem,putPrem,net:callPrem-putPrem,prints:prints.slice(0,30),spot};
+  weak.sort((a,b)=>b.prem-a.prem);
+  return{callPrem,putPrem,net:callPrem-putPrem,prints:prints.slice(0,30),
+         weak:weak.slice(0,8),thresh:TH,spot};
 }
 /* ---- daily technicals (Tradier history, cached 10 min) ---- */
 async function getTech(sym){
@@ -353,6 +379,10 @@ function scoreIdea(sym,d,tech){
   const spot=d.spot;
   const tot=d.strikes.reduce((a,s)=>a+Math.abs(s.gex),0)||1;
   const conc=Math.abs(kg.gex)/tot;
+  /* sBias is the direction TOWARD the King. In the old build this was the only
+     thing the positive-gamma branch could ever produce, which is why every card
+     read "fade the King" and why structure kept breaking on them. It is now one
+     of two theses, gated by the three tests below. */
   let sBias=0;
   if(kg.gex>0)sBias=kg.k>spot?1:kg.k<spot?-1:0;
   let tBias=0;
@@ -365,9 +395,49 @@ function scoreIdea(sym,d,tech){
   const intraday=ret1>0.002?1:ret1<-0.002?-1:0;
   const hardRed=ret1<=-0.009, hardGrn=ret1>=0.009;   // ~ +/-0.9% = a real trend day
   const belowFlip=ps.fl!=null&&spot<ps.fl;           // spot under the zero-gamma flip = negative-gamma regime
-  let bias=0;
-  if(kg.gex>0){
-    // POSITIVE gamma -> dealers fade moves; price mean-reverts toward the King (dip-buy / rip-sell).
+  /* ---- REGIME, PATH, DISTANCE ---------------------------------------------
+     Three tests that did not exist. Their absence is the whole "Aether always
+     fades the King" problem.
+
+     1. REGIME BY THE BOOK, NOT ONE STRIKE. kg.gex>0 tests the sign of the single
+        largest node, which is not the regime. The dominant strike can be
+        strongly positive while the book BETWEEN spot and it is negative, in
+        which case price accelerates away and never arrives. ps.net1 is the net
+        gamma within +/-1% of spot and it is the number that actually describes
+        what dealers do here. It was already being computed; only Mythos used it.
+
+     2. PATH INTEGRITY. Walk the strikes from spot to the King and sum the
+        opposing-sign gamma. A large wall in the way means the pin is
+        unreachable even when regime and distance both look fine.
+
+     3. DISTANCE. Nothing checked whether the King was in range. A magnet five
+        expected moves away is not a thesis, it is a coordinate. */
+  const netNear=(ps.net1!=null)?ps.net1:kg.gex;
+  const posRegime=netNear>0;
+  function pathClear(from,to,want){
+    const lo=Math.min(from,to),hi=Math.max(from,to);
+    let opp=0;
+    for(const s of d.strikes){
+      if(s.k<lo||s.k>hi)continue;
+      if(s.gex*want<0)opp+=Math.abs(s.gex);
+    }
+    return opp<Math.abs(kg.gex)*0.35;
+  }
+  /* Has spot already traded through the King this session? A level that has
+     been crossed is demonstrably permeable, not a magnet. */
+  let breached=false;
+  try{
+    const h=state.history&&state.history[sym];
+    if(h&&h.length>3){
+      let a=false,b=false;
+      for(const x of h){const sp=x&&(x.spot!=null?x.spot:x.s);if(sp==null)continue;if(sp>kg.k)a=true;else if(sp<kg.k)b=true;}
+      breached=a&&b;
+    }
+  }catch(e){}
+
+  let bias=0,thesis='PIN';
+  if(posRegime){
+    // POSITIVE gamma near spot -> dealers dampen; price mean-reverts toward the King.
     if(sBias===0)return null;
     if(tBias!==0&&tBias!==sBias)return null;          // structure & daily trend must agree
     bias=sBias;
@@ -375,20 +445,52 @@ function scoreIdea(sym,d,tech){
     // UNDER the gamma flip is the negative-gamma flush scenario -- skip it (mirror for shorts).
     if(bias>0&&hardRed&&belowFlip)return null;
     if(bias<0&&hardGrn&&!belowFlip)return null;
+
+    const kingDraining=(ps.vel!=null&&ps.vel<-12);
+    if(kingDraining||breached){
+      /* PIN BREAK. The node is draining or price has already proved it
+         permeable. Same structure, opposite thesis: expansion away from the
+         King rather than reversion to it. This branch did not exist, and its
+         absence is exactly why every card looked the same. */
+      thesis='PIN BREAK';
+      bias=(intraday!==0?intraday:sBias);
+      if(bias===0)return null;
+    }else{
+      // A real pin needs the magnet inside one expected move and a clear path.
+      if(ps.em&&Math.abs(kg.k-spot)>ps.em*1.0)return null;
+      if(!pathClear(spot,kg.k,bias>0?1:-1))return null;
+    }
   }else{
     // NEGATIVE gamma -> moves amplify; follow the CURRENT tape, not the lagging daily MA.
     const mo=intraday!==0?intraday:tBias;
     if(mo===0)return null;
     bias=mo;
   }
-  const target=kg.gex>0?kg.k:null;
+  /* PIN targets the King. PIN BREAK targets the next material node BEYOND it,
+     because the thesis is that price leaves rather than arrives. */
+  let target=null;
+  if(thesis==='PIN'){target=posRegime?kg.k:null;}
+  else if(thesis==='PIN BREAK'){
+    const beyond=d.strikes.filter(s=>bias>0?s.k>kg.k:s.k<kg.k)
+      .sort((a,b)=>Math.abs(b.gex)-Math.abs(a.gex))[0];
+    target=beyond?beyond.k:null;
+  }
 
   // ===== AETHER v2: transparent factor model (falls back to legacy if quant absent) =====
   const Q=window.KairosQuant;
   let v2=null,deskNoteText=null;
   if(Q&&Q.aetherScore){
     // --- assemble factor inputs from real signals ---
-    const flipAlign=ps.fl!=null?((bias>0)===(spot>ps.fl)?1:-1)*(kg.gex>0?1:1):0;
+    /* Distance to the flip is the confidence, not just the side. Sitting 3%
+       clear of the zero-gamma level is a strong regime statement; sitting 0.4%
+       away is nearly meaningless, because one catalyst flips it intraday. The
+       old +/-1 asserted full confidence at every distance. */
+    let flipAlign=0;
+    if(ps.fl!=null&&spot>0){
+      const side=((bias>0)===(spot>ps.fl))?1:-1;
+      const gap=Math.abs(spot-ps.fl)/spot;
+      flipAlign=side*Math.max(0,Math.min(1,(gap-0.004)/0.026));
+    }
     const emCoverage=(ps.em&&target)?Math.min(1,ps.em/Math.max(1e-9,Math.abs(target-spot))):0;
     // classified flow lean (bought vs sold), signed to thesis
     let flowLean=null;
@@ -417,7 +519,7 @@ function scoreIdea(sym,d,tech){
     // rsi extreme overlay
     let rsiExtreme=0;
     if(tech&&tech.ok){if(bias>0&&tech.rsi>72)rsiExtreme=-1;else if(bias<0&&tech.rsi<28)rsiExtreme=-1;}
-    v2=Q.aetherScore({bias,gexPos:kg.gex>0,flipAlign,concFrac:conc,emCoverage,
+    v2=Q.aetherScore({bias,gexPos:posRegime,flipAlign,concFrac:conc,emCoverage,
       flowLean,trendAgree,intradayAgree,ivRank,vixBackwardation:vixBack,skewTailwind,rsiExtreme});
   }
 
@@ -452,7 +554,8 @@ function scoreIdea(sym,d,tech){
   const idea={
     sym,score,t:Date.now(),
     bias:bias>0?'LONG':'SHORT',
-    momentum:kg.gex<0,flow:flowNote,
+    thesis,
+    momentum:!posRegime,flow:flowNote,
     target:target?(+target).toFixed(dp):null,
     invalid,
     entry:+spot.toFixed(dp),
@@ -460,15 +563,17 @@ function scoreIdea(sym,d,tech){
     contractK,rr,
     factors:driversV2,
     v2:!!v2,
-    line:kg.gex>0
-      ?`${sym} ~ATM ${bias>0?'call':'put'} \u00b7 target King ${(+kg.k).toFixed(dp)}`
+    line:thesis==='PIN'
+      ?`${sym} ~ATM ${bias>0?'call':'put'} \u00b7 pin to King ${(+kg.k).toFixed(dp)}`
+      :thesis==='PIN BREAK'
+      ?`${sym} ${bias>0?'call':'put'} \u00b7 pin break through King ${(+kg.k).toFixed(dp)}${target?` \u2192 ${(+target).toFixed(dp)}`:''}`
       :`${sym} ${bias>0?'call':'put'} \u2014 momentum regime (\u2212GEX), ${bias>0?'up':'down'} tape`,
     drivers:driversV2.map(f=>f.txt).slice(0,5),
     meta:`King ${kg.k} \u00b7 ${Math.round(conc*100)}% of book${ps.em?` \u00b7 EM \u00b1${ps.em.toFixed(dp)}`:''}${tech&&tech.ok?` \u00b7 RSI ${Math.round(tech.rsi)}`:''}`
   };
   // desk-note + journal (v2 only)
   if(v2&&Q.deskNote){
-    const planTxt=target?`Plan: target the King ${(+target).toFixed(dp)}${invalid?`, invalid ${bias>0?'below':'above'} ${invalid}`:''}${rr?` (${rr}:1)`:''}.`:'';
+    const planTxt=target?`Plan: ${thesis==='PIN BREAK'?'expansion through the King toward':'target the King at'} ${(+target).toFixed(dp)}${invalid?`, invalid ${bias>0?'below':'above'} ${invalid}`:''}${rr?` (${rr}:1)`:''}.`:'';
     idea.desk=Q.deskNote(sym,bias,v2,{plan:planTxt});
     try{Q.qjLog(idea);}catch(e){}
     if(backendOn()&&window.KairosBackend.logIdea)window.KairosBackend.logIdea(idea);
@@ -2209,7 +2314,7 @@ async function warmPaintInner(){
     if(cch&&cch.t&&Date.now()-cch.t<30*60000)applyBootstrap(cch.bs);
   }catch(e){}
   try{
-    const bs=await window.KairosBackend.bootstrap();
+    const bs=await window.KairosBackend.bootstrap((state.trinityTickers||[]).slice(0,8));
     /* Cache the WHOLE bootstrap, ladders included.
        I previously trimmed this to the analysis slice on a quota theory I never
        measured - and the ladders are what applyBootstrap paints instantly. With
@@ -2253,7 +2358,7 @@ async function novaHeartbeat(){
   if(!(window.KairosBackend&&window.KairosBackend.enabled))return;
   if(document.hidden)return;
   try{
-    const bs=await window.KairosBackend.bootstrap();
+    const bs=await window.KairosBackend.bootstrap((state.trinityTickers||[]).slice(0,8));
     if(!bs)return;
     state._bsFail=0;
     if(bs.ai&&Object.keys(bs.ai).length){
