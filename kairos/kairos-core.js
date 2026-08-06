@@ -57,7 +57,7 @@ const CHAIN_TTL=90000;
    disagree, which is what a half-deployed set of files looks like: new HTML
    pointing at cached JS, or new JS under old HTML. That state is invisible
    otherwise, and it costs an entire debugging session every time it happens. */
-const KAIROS_BUILD='7.3.0';
+const KAIROS_BUILD='7.4.0';
 window.KAIROS_BUILD=KAIROS_BUILD;
 (function(){
   try{
@@ -144,7 +144,7 @@ const state={
   sizeBasis:localStorage.getItem('kairos_basis')||'oi',
   tradierToken:(localStorage.getItem('kairos_tok')||'').trim(),
   tradierEnv:localStorage.getItem('kairos_env')||'production',
-  panthCols:Math.max(3,Math.min(5,parseInt(localStorage.getItem('kairos_cols'))||5)),
+  panthCols:Math.max(3,Math.min(5,parseInt(localStorage.getItem('kairos_cols'))||3)),
   trinityTickers:(localStorage.getItem('kairos_ticks')||'SPXW,SPY,QQQ,UVXY').split(',').map(cleanSym).filter(Boolean),
   expCache:{}, history:{}, prevG:{}, dataAge:{}, ideas:{}, tech:{},
   scrolled:{}, refreshing:false, pendingRefresh:false, pendingForce:false,
@@ -162,15 +162,13 @@ const state={
    roster degrades gracefully instead of needing a hand-written list per width.
    The order is deliberate: index complex first, then the vol pillar, then the
    single names that actually carry gamma, then the two macro hedges. */
-const PANTH_DEFAULT=['SPXW','SPY','QQQ','IWM','UVXY'];
+const PANTH_DEFAULT=['SPXW','SPY','QQQ','UVXY','IWM'];
 const PANTH_MAX=5;
 function panthDefaultFor(n){
   /* Not a flat slice. A 4-wide board keeps UVXY, because padding from the
      5-wide list would quietly drop the vol pillar that is the entire reason
      the fourth slot exists. */
-  return n<=3?['SPXW','SPY','QQQ']
-       : n===4?['SPXW','SPY','QQQ','UVXY']
-       : ['SPXW','SPY','QQQ','IWM','UVXY'];
+  return PANTH_DEFAULT.slice(0,Math.max(3,Math.min(PANTH_MAX,n||3)));
 }
 function panthNormalize(){
   const n=Math.max(3,Math.min(PANTH_MAX,state.panthCols||4));
@@ -199,8 +197,8 @@ function panthNormalize(){
 /* Migration to the ten-deep Cosmos roster. Bumped key, so an existing user gets
    the new ordering once and keeps their own edits after that. */
 if(!localStorage.getItem('kairos_ticks_ok4')){
-  state.panthCols=5;
-  state.trinityTickers=panthDefaultFor(5);
+  state.panthCols=3;
+  state.trinityTickers=panthDefaultFor(3);
   try{localStorage.setItem('kairos_ticks_ok4','1');}catch(e){}
 }
 panthNormalize();
@@ -987,12 +985,40 @@ async function fetchChainsCBOE(sym){
   if(!list.length)throw new Error('CBOE empty');
   return{list,dates:Object.keys(seen).sort(),rawCount:opts.length,spotHint:0,spot,src:'cboe',maxExp:99};
 }
-function expiryFilt(c){
+/* Per-symbol expiry window.
+
+   UVXY was never a fetch bug. It has WEEKLY expiries, so on most days its
+   nearest contract is one to four days out and a 0DTE filter (dd <= 0.8)
+   matches literally nothing. The ladder came back empty and the pillar sat on
+   "warming" forever, which reads as broken when the honest answer is "this name
+   has no same-day contracts".
+
+   So the cutoff relaxes per symbol: if nothing in the chain clears the selected
+   window, fall back to that symbol's own nearest expiry and mark it. The chip
+   still says 0DTE, the pillar shows real data, and expiryRelaxed() lets the UI
+   say which symbols are not actually on the requested window. */
+const _expRelax={};
+function expiryBase(){
+  return state.expiry==='0dte'?0.8:state.expiry==='7d'?7.2:state.expiry==='30d'?30.2:Infinity;
+}
+function expiryCutFor(sym){
+  const base=expiryBase();
+  if(!isFinite(base))return base;
+  const ch=state.chains[sym];
+  if(!ch||!ch.list||!ch.list.length)return base;
+  const key=sym+'|'+state.expiry+'|'+(ch.t||0);
+  if(_expRelax[key]!==undefined)return _expRelax[key];
+  let cut=base,minDd=Infinity;
+  for(const c of ch.list){const d=dteOf(c.e);if(d<minDd)minDd=d;}
+  if(isFinite(minDd)&&minDd>base)cut=minDd+0.2;   // nothing in window: use its own front expiry
+  _expRelax[key]=cut;
+  return cut;
+}
+function expiryRelaxed(sym){return expiryCutFor(sym)>expiryBase()+1e-9;}
+function expiryFilt(c,sym){
   const dd=dteOf(c.e);
-  if(state.expiry==='0dte')return dd<=0.8;
-  if(state.expiry==='7d')return dd<=7.2;
-  if(state.expiry==='30d')return dd<=30.2;
-  return true;
+  const cut=sym?expiryCutFor(sym):expiryBase();
+  return dd<=cut;
 }
 
 /* ---- shared aggregator: builds GEX + VEX per strike in one pass ---- */
@@ -1001,7 +1027,7 @@ function buildFromChains(sym){
   if(!ch||!ch.list||!ch.list.length)return null;
   const spot=state.spot[sym]||ch.spot||ch.spotHint||0;
   if(!spot)return null;
-  const cs=ch.list.filter(expiryFilt);
+  const cs=ch.list.filter(c=>expiryFilt(c,sym));
   if(!cs.length)return null;
   const gmult=100*spot*spot*0.01, vmult=100*spot*0.01;
   const per={};const contracts=[];
@@ -1045,7 +1071,7 @@ function buildImbalance(sym){
   if(!ch||!ch.list||!ch.list.length)return null;
   const spot=state.spot[sym]||ch.spot||ch.spotHint||0;
   if(!spot)return null;
-  const cs=ch.list.filter(expiryFilt);
+  const cs=ch.list.filter(c=>expiryFilt(c,sym));
   if(!cs.length)return null;
   const by={};
   for(const c of cs){
@@ -1860,21 +1886,6 @@ function renderNovaHub(){
 
   let h='<div class="nv-deck">';
 
-  /* ── THE RANGE ──
-     Every tracked symbol's WHOLE exposure ladder, drawn as terrain and stacked
-     back to front. Ridges above the line absorb, ridges below accelerate, and
-     every row is aligned on its own spot so the shapes compare directly across
-     names. Painted by kairos-nova.js on its own loop, which only runs while
-     this view is open. */
-  h+='<div class="nv-range"><canvas id="novaRange"></canvas>'+
-     '<div class="nv-range-cap">THE RANGE <i>every ladder as terrain \u00b7 click a ridge to open it in Junction</i></div>'+
-     '<div class="nv-range-key">'+
-       '<span><s class="up"></s>ABSORBS</span>'+
-       '<span><s class="dn"></s>ACCELERATES</span>'+
-       '<span><s class="kg"></s>KING</span>'+
-       '<span><s class="fl"></s>FLIP</span>'+
-     '</div></div>';
-
   /* ── HERO ── */
   h+='<div class="nv-hero">'+
      '<div class="nv-hero-core">'+novaCore(!!hub)+'</div>'+
@@ -1934,16 +1945,6 @@ function renderNovaHub(){
   el.innerHTML=h;
 }
 window.renderNovaHub=renderNovaHub;
-/* The canvas is recreated every time the hub re-renders, so the painter has to
-   be re-pointed at the new node rather than holding a stale reference. */
-(function(){
-  const _rn=renderNovaHub;
-  window.renderNovaHub=function(){
-    const r=_rn.apply(this,arguments);
-    try{if(window.KairosNovaRange&&state.view==='nova')setTimeout(window.KairosNovaRange.start,20);}catch(e){}
-    return r;
-  };
-})();
 document.addEventListener('click',function(e){
   const t=e.target.closest('[data-novasym]');if(!t)return;
   state.focus=t.dataset.novasym;state._juncTab='ladder';
@@ -2861,6 +2862,11 @@ async function pickPreset(t){
   if(state.view==='chart')tvLoaded='';
   renderPresets();
   await refresh(false);
+  /* Junction owns three sub-tabs and only the ladder re-drew on a ticker
+     switch. Regime and VIX Desk render inside the setView('single') path, so
+     picking a chip while on those tabs changed state.focus and repainted
+     nothing. Re-entering the view redraws whichever tab is actually open. */
+  if(state.view==='single'){try{setView('single');}catch(e){}}
   if(state.view==='chart'){loadTV(t);updateChart(t);}
   else if(state.view==='imb')renderImb(t);
   else if(state.view==='tape')renderTape(t);

@@ -52,10 +52,9 @@
   let chart = null, priceSeries = null, undertow = null, fieldPrim = null;
   let curSym = null, bars = [], barsT = 0, metric = 'gex';
   let tf = (function () { try { return localStorage.getItem('kairos_chronos_tf') || '5min'; } catch (e) { return '5min'; } })();
-  let tools = (function () {
-    try { return JSON.parse(localStorage.getItem('kairos_chronos_tools') || 'null') || { vwap: true, ema: false, pd: true }; }
-    catch (e) { return { vwap: true, ema: false, pd: true }; }
-  })();
+  /* Studies removed. They were bolted on without earning their place and the
+     chart is about dealer structure, not moving averages. */
+  let tools = { vwap: false, ema: false, pd: false };
   let overlays = { vwap: null, ema9: null, ema21: null };
   let pdLines = {};
   /* Tradier serves 1/5/15-minute bars natively. Anything coarser is aggregated
@@ -291,11 +290,28 @@
 
   function buildLevels() {
     const cols = field[curSym] || [];
-    const key = curSym + '|' + metric + '|' + cols.length + '|' + (cols.length ? cols[cols.length - 1].t : 0);
+    const key = curSym + '|' + metric + '|' + cols.length + '|' +
+      (cols.length ? cols[cols.length - 1].t : (S.dataAge[curSym] || 0));
     if (cache.key === key) return cache;
     const empty = { key, levels: [], times: [], peak: 0, kingK: null };
 
-    const usable = cols.filter(c => !(metric === 'vex' && (c.noVex || !c.v)));
+    let usable = cols.filter(c => !(metric === 'vex' && (c.noVex || !c.v)));
+
+    /* SEED FROM NOW. Levels were derived only from RECORDED columns, so on a
+       cold open, or on any symbol the Chronicle has not covered yet, the chart
+       drew candles and no levels at all and looked broken. The live ladder is
+       already in memory; use it as a single synthetic column so the levels
+       appear immediately and the ribbons thicken as real columns accumulate. */
+    if (!usable.length) {
+      const d = S.data[curSym];
+      if (d && d.strikes && d.strikes.length) {
+        const sorted = d.strikes.slice().sort((a, b) => a.k - b.k);
+        const n = sorted.length;
+        const ks = new Float32Array(n), g = new Float32Array(n), v = new Float32Array(n);
+        for (let i = 0; i < n; i++) { ks[i] = sorted[i].k; g[i] = sorted[i].gex || 0; v[i] = sorted[i].vex || 0; }
+        usable = [{ t: Date.now(), ks, g, v, spot: S.spot[curSym] || d.spot || 0, srv: false, noVex: false }];
+      }
+    }
     if (!usable.length) { cache = empty; return cache; }
 
     // Downsample time, anchored at the newest bar so the live edge stays exact.
@@ -373,6 +389,38 @@
       if (merged.some(m => Math.abs(m.k - p.k) <= spotRef * NX.MERGE && m.v * p.v > 0)) continue;
       merged.push(p);
       if (merged.length >= NX.LEVELS) break;
+    }
+
+    /* GUARANTEED FLOOR. Three stacked filters can all pass individually and
+       still intersect to nothing, which is exactly what happened on SPX: the
+       chart drew candles and no levels at all. A selection rule that can return
+       zero is a bug regardless of how principled each step is.
+
+       So if the passes come back thin, fall back to the plainly useful answer:
+       the King, the heaviest positive node above spot, and the heaviest
+       negative node below. Those three always exist when a ladder exists, and
+       they are the levels a trader would draw by hand anyway. */
+    if (merged.length < 3) {
+      const push = (n) => {
+        if (!n) return;
+        if (merged.some(m => Math.abs(m.k - n.k) <= spotRef * NX.MERGE && m.v * n.v > 0)) return;
+        merged.push(n);
+      };
+      let king = null, cw = null, pw = null;
+      for (const a of all) {
+        if (!king || Math.abs(a.v) > Math.abs(king.v)) king = a;
+        if (a.k > spotRef && a.v > 0 && (!cw || a.v > cw.v)) cw = a;
+        if (a.k < spotRef && a.v < 0 && (!pw || a.v < pw.v)) pw = a;
+      }
+      push(king); push(cw); push(pw);
+      /* Still thin? Take the biggest remaining nodes by magnitude so the chart
+         is never blank while a real ladder is sitting in memory. */
+      if (merged.length < 3) {
+        for (const a of all.slice().sort((x, y) => Math.abs(y.v) - Math.abs(x.v))) {
+          push(a);
+          if (merged.length >= 4) break;
+        }
+      }
     }
     if (!merged.length) { cache = empty; return cache; }
 

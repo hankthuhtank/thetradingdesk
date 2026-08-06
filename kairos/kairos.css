@@ -1224,31 +1224,3 @@ span.nv-tag{flex-shrink:0}
   border-left:2px solid var(--border);padding:2px 0 2px 10px;margin-bottom:10px}
 .ae-detail-note b{color:var(--text)}
 
-/* ---- NOVA: THE RANGE ----------------------------------------------------
-   A ridgeline needs height and it needs black. The gradient floor gives the
-   terrain something to sit on without drawing a horizon line that would compete
-   with the ridges themselves. No scanline overlay this time: the sweep is drawn
-   in canvas against the actual crests, which is the difference between an
-   effect that means something and chrome laid on top.
-   ------------------------------------------------------------------------ */
-.nv-range{position:relative;border:1px solid var(--border);border-radius:12px;
-  background:linear-gradient(180deg,#050a10 0%,#04070c 62%,#020407 100%);
-  height:clamp(360px,62vh,640px);margin-bottom:10px;overflow:hidden}
-.nv-range canvas{width:100%;height:100%;display:block;cursor:crosshair}
-.nv-range-cap{position:absolute;left:14px;top:9px;font-size:.55rem;font-weight:700;
-  letter-spacing:.18em;color:var(--teal);opacity:.8;pointer-events:none}
-.nv-range-cap i{font-style:normal;font-weight:400;letter-spacing:.05em;
-  color:var(--faint);margin-left:10px}
-.nv-range-key{position:absolute;right:14px;top:8px;display:flex;gap:12px;
-  font-size:.54rem;letter-spacing:.1em;color:var(--faint);pointer-events:none}
-.nv-range-key span{display:inline-flex;align-items:center;gap:5px}
-.nv-range-key s{width:14px;height:3px;display:inline-block;text-decoration:none;border-radius:2px}
-.nv-range-key s.up{background:rgba(45,212,191,.9)}
-.nv-range-key s.dn{background:rgba(244,114,62,.9)}
-.nv-range-key s.kg{background:rgba(242,193,78,.95);width:6px;height:6px;border-radius:50%}
-.nv-range-key s.fl{background:rgba(148,163,184,.8);width:2px;height:10px}
-@media (max-width:720px){
-  .nv-range{height:clamp(300px,52vh,420px)}
-  .nv-range-cap i{display:none}
-  .nv-range-key{display:none}
-}
