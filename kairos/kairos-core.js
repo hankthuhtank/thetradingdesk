@@ -57,7 +57,7 @@ const CHAIN_TTL=90000;
    disagree, which is what a half-deployed set of files looks like: new HTML
    pointing at cached JS, or new JS under old HTML. That state is invisible
    otherwise, and it costs an entire debugging session every time it happens. */
-const KAIROS_BUILD='7.4.0';
+const KAIROS_BUILD='7.5.0';
 window.KAIROS_BUILD=KAIROS_BUILD;
 (function(){
   try{
@@ -1319,6 +1319,35 @@ function renderTrinity(){
             <span class="badge-src ${srcMap[d.source]||'demo'}">${srcTxt[d.source]||d.source}</span>${staleB}
           </div>
           ${headStrip}
+          ${(function(){
+            /* Column headers were mostly whitespace. These are the four numbers
+               you would otherwise have to open Junction to read, and they fit on
+               one line: which way dealers hedge here, how far the regime
+               boundary is, and the two walls that bracket price. */
+            let ps=null;
+            try{ps=panelStats(sym,d,state.metric);}catch(e){}
+            if(!ps)return '';
+            const sp=d.spot||0,dp=sp>2000?0:1;
+            let cw=null,pw=null,cwv=0,pwv=0;
+            for(const s of (d.strikes||[])){
+              const v=mval(s,state.metric);
+              if(s.k>sp&&v>cwv){cwv=v;cw=s.k;}
+              if(s.k<sp&&v<pwv){pwv=v;pw=s.k;}
+            }
+            const abs=ps.net1>=0;
+            const gap=(ps.fl!=null&&sp>0)?Math.abs(sp-ps.fl)/sp*100:null;
+            const gtone=gap==null?'var(--faint)':gap<0.5?'#f4723e':gap<1.5?'var(--gold)':'var(--teal)';
+            const cell=(l,v,c,tip)=>'<span class="hs-c" data-tip="'+tip+'"><i>'+l+'</i><b style="color:'+c+'">'+v+'</b></span>';
+            return '<div class="p-stats">'+
+              cell('REGIME',abs?'ABSORB':'ACCEL',abs?'var(--teal)':'#f4723e',
+                'Net '+metricLabel(state.metric)+' within \u00b11% of spot. ABSORB: dealers hedge against the move, price gets held here. ACCEL: they hedge with it, moves amplify.')+
+              cell('CW',cw!=null?(+cw).toFixed(dp):'\u2014','var(--teal)','Heaviest positive node above spot. The ceiling dealers defend while absorbing.')+
+              cell('PW',pw!=null?(+pw).toFixed(dp):'\u2014','#e879f9','Heaviest negative node below spot. The floor while absorbing, the trapdoor once closed through.')+
+              cell('FLIP',(ps.fl!=null?(+ps.fl).toFixed(dp):'\u2014')+(gap!=null?' <em>'+gap.toFixed(1)+'%</em>':''),gtone,
+                'Zero-gamma level. The DISTANCE matters more than the side: inside ~0.5% one catalyst flips the regime, past ~3% it is firmly set.')+
+              cell('EM',ps.em?'\u00b1'+ps.em.toFixed(dp):'\u2014','var(--cyan)','One-session expected move from ATM implied vol.')+
+            '</div>';
+          })()}
           <div class="king-pill ${pillCls()}${kg&&mval(kg)<0?' kneg':''}" data-tip="Biggest absolute ${metricLabel(state.metric)} node — the magnet for that force. Strike first: that is the level price is drawn to. Exposure size is secondary.">★ ${mlab} ${kg?kg.k:'\u2014'}${kg?` <i style="font-style:normal;opacity:.66;font-weight:600">${mdisp(mval(kg),d.spot)}</i>`:''}</div>
         </div>
         <div class="sgrid-wrap"></div>`;
@@ -1802,8 +1831,19 @@ function renderFlowConsole(sym){
   const last=ser.length?ser[ser.length-1]:null;
   const okc=p=>p&&p.cbought!=null&&p.csold!=null&&Math.abs(p.cbought-p.csold)>1;
   const okp=p=>p&&p.pbought!=null&&p.psold!=null&&Math.abs(p.pbought-p.psold)>1;
-  const cf=last?(okc(last)?last.cbought-last.csold:last.cpr||0):0;
-  const pf=last?(okp(last)?last.pbought-last.psold:last.ppr||0):0;
+  let cf=last?(okc(last)?last.cbought-last.csold:last.cpr||0):0;
+  let pf=last?(okp(last)?last.pbought-last.psold:last.ppr||0):0;
+  /* regSeries only accumulates for the roster and for whatever the server
+     tracks, so opening Junction on any other name showed PUT/CALL PRESSURE $0
+     and "waiting for the first sample" while THE TAPE, two panels across, was
+     rendering real premium off the very same chain. Fall back to that chain
+     directly: it is the same measurement, just not time-series yet. */
+  if(!last&&d&&d.contracts){
+    try{
+      const fl=flowLean(sym);
+      if(fl){cf=fl.callPrem||0;pf=fl.putPrem||0;}
+    }catch(e){}
+  }
   const nd=last&&last.ndf!=null?last.ndf:null;
   const net=cf-pf;
   const tot=Math.abs(cf)+Math.abs(pf)||1;

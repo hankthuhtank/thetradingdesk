@@ -657,7 +657,27 @@
       /* No grid, solid black. The levels ARE the horizontal reference, and a
          grid behind them competed with the thing the chart exists to show. */
       grid: { vertLines: { visible: false }, horzLines: { visible: false } },
-      rightPriceScale: { borderColor: cssVar('--border', '#1e293b'), scaleMargins: { top: 0.06, bottom: 0.06 } },
+      rightPriceScale: {
+        borderColor: cssVar('--border', '#1e293b'),
+        scaleMargins: { top: 0.06, bottom: 0.06 },
+        autoScale: true,
+      },
+      /* Mouse wheel over the chart now zooms the PRICE axis as well as time,
+         and dragging the price axis rescales it. Lightweight Charts ships with
+         price-axis interaction on but vertical wheel scaling off, which is why
+         the y-axis felt locked. */
+      handleScale: {
+        mouseWheel: true,
+        pinch: true,
+        axisPressedMouseMove: { time: true, price: true },
+        axisDoubleClickReset: { time: true, price: true },
+      },
+      handleScroll: {
+        mouseWheel: true,
+        pressedMouseMove: true,
+        horzTouchDrag: true,
+        vertTouchDrag: true,
+      },
       timeScale: { borderColor: cssVar('--border', '#1e293b'), timeVisible: true, secondsVisible: false, rightOffset: 6 },
       crosshair: {
         mode: 0,

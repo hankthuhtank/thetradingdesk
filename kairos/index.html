@@ -15,18 +15,18 @@
 <link rel="preconnect" href="https://kairos-api.safihelal.workers.dev" crossorigin>
 <link rel="preconnect" href="https://unpkg.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="kairos.css?v=7.4.0">
+<link rel="stylesheet" href="kairos.css?v=7.5.0">
 <!-- Lightweight Charts powers Chronos. Deferred, and Chronos degrades to a clear
      message rather than a broken canvas if it fails to load. -->
 <script defer src="https://unpkg.com/lightweight-charts@5.1.0/dist/lightweight-charts.standalone.production.js"></script>
 <!-- defer: downloaded in parallel during HTML parse, executed in document order
      after it. Five synchronous tags at ~350KB were serialising the whole boot. -->
-<script defer src="kairos-core.js?v=7.4.0"></script>
-<script defer src="kairos-backend.js?v=7.4.0"></script>
-<script defer src="kairos-quant.js?v=7.4.0"></script>
-<script defer src="kairos-modules.js?v=7.4.0"></script>
-<script defer src="kairos-nexus.js?v=7.4.0"></script>
-<script defer src="kairos-mythos.js?v=7.4.0"></script>
+<script defer src="kairos-core.js?v=7.5.0"></script>
+<script defer src="kairos-backend.js?v=7.5.0"></script>
+<script defer src="kairos-quant.js?v=7.5.0"></script>
+<script defer src="kairos-modules.js?v=7.5.0"></script>
+<script defer src="kairos-nexus.js?v=7.5.0"></script>
+<script defer src="kairos-mythos.js?v=7.5.0"></script>
 </head>
 <body>
 <datalist id="tickerList"></datalist>
@@ -274,8 +274,8 @@
 <div class="settings" id="settings">
   <h3 style="margin-bottom:14px">Settings</h3>
   <div class="fg"><label>Build</label>
-    <div id="buildInfo" data-html="7.4.0" style="font-family:'JetBrains Mono';font-size:.72rem;color:var(--teal)">
-      html v7.4.0 &middot; js <span style="color:var(--faint)">loading&hellip;</span>
+    <div id="buildInfo" data-html="7.5.0" style="font-family:'JetBrains Mono';font-size:.72rem;color:var(--teal)">
+      html v7.5.0 &middot; js <span style="color:var(--faint)">loading&hellip;</span>
     </div>
     <div style="font-size:.6rem;color:var(--faint);line-height:1.6;margin-top:4px">
       Both numbers must match. If they do not, one of the files did not deploy: hard-refresh with Ctrl+Shift+R, and if it persists, re-upload the file with the older number.
