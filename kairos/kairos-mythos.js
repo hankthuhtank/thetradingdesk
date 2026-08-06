@@ -980,6 +980,7 @@ function orrSetTrail(mode){
     if(v!=='chart'){orrStop();return __sv(v);}
     // Orrery owns the (renamed) Chart view
     state.view='chart';
+    if(window.applyViewExpiry)window.applyViewExpiry('chart');
     if(window.clearNav)window.clearNav();
     const cb=document.getElementById('btnChart');if(cb)cb.classList.add('active');
     ['trinityWrap','ideasSec','imbSec','tapeSec','nexusSec'].forEach(id=>{const e=document.getElementById(id);if(e)e.classList.add('hidden');});

@@ -84,15 +84,23 @@ const state={
   metric:(localStorage.getItem('kairos_metric')||'gex'),
   centerOn:(localStorage.getItem('kairos_center')||'king'),
   dealerMode:'standard', customShort:0.7,
-  /* Cosmos opens on 0DTE: the wall exists to show same-session structure, and
-     ALL buries today's book under three weeks of standing open interest. */
-  expiry:(localStorage.getItem('kairos_exp')||'0dte'),
+  /* Expiry is PER VIEW, because the two screens want opposite things. Cosmos
+     is a same-session structure read, so it opens on 0DTE. Junction is the
+     full-depth screen and its whole point is the strike x expiry grid, so it
+     opens on ALL. One global setting meant every switch between them was
+     wrong for one of the two. */
+  expiry:'0dte',
+  expiryView:(function(){
+    try{const o=JSON.parse(localStorage.getItem('kairos_expview')||'null');
+      if(o&&o.trinity&&o.single)return o;}catch(e){}
+    return {trinity:'0dte',single:'all',chart:'all',ideas:'all',nova:'all',arena:'all'};
+  })(),
   pollSec:Math.max(10,parseInt(localStorage.getItem('kairos_poll'))||10),
   calcMode:'live', unit:'pt',
   sizeBasis:localStorage.getItem('kairos_basis')||'oi',
   tradierToken:(localStorage.getItem('kairos_tok')||'').trim(),
   tradierEnv:localStorage.getItem('kairos_env')||'production',
-  panthCols:Math.max(3,Math.min(5,parseInt(localStorage.getItem('kairos_cols'))||4)),
+  panthCols:Math.max(3,Math.min(5,parseInt(localStorage.getItem('kairos_cols'))||5)),
   trinityTickers:(localStorage.getItem('kairos_ticks')||'SPXW,SPY,QQQ,UVXY').split(',').map(cleanSym).filter(Boolean),
   expCache:{}, history:{}, prevG:{}, dataAge:{}, ideas:{}, tech:{},
   scrolled:{}, refreshing:false, pendingRefresh:false, pendingForce:false,
@@ -110,10 +118,15 @@ const state={
    roster degrades gracefully instead of needing a hand-written list per width.
    The order is deliberate: index complex first, then the vol pillar, then the
    single names that actually carry gamma, then the two macro hedges. */
-const PANTH_DEFAULT=['SPXW','SPY','QQQ','UVXY','IWM','NVDA','AAPL','TSLA','IBIT','GLD'];
-const PANTH_MAX=10;
+const PANTH_DEFAULT=['SPXW','SPY','QQQ','IWM','UVXY'];
+const PANTH_MAX=5;
 function panthDefaultFor(n){
-  return PANTH_DEFAULT.slice(0,Math.max(3,Math.min(PANTH_MAX,n||4)));
+  /* Not a flat slice. A 4-wide board keeps UVXY, because padding from the
+     5-wide list would quietly drop the vol pillar that is the entire reason
+     the fourth slot exists. */
+  return n<=3?['SPXW','SPY','QQQ']
+       : n===4?['SPXW','SPY','QQQ','UVXY']
+       : ['SPXW','SPY','QQQ','IWM','UVXY'];
 }
 function panthNormalize(){
   const n=Math.max(3,Math.min(PANTH_MAX,state.panthCols||4));
@@ -141,13 +154,19 @@ function panthNormalize(){
    3-column build gets UVXY added once and keeps their own choices after. */
 /* Migration to the ten-deep Cosmos roster. Bumped key, so an existing user gets
    the new ordering once and keeps their own edits after that. */
-if(!localStorage.getItem('kairos_ticks_ok3')){
-  state.panthCols=Math.max(4,Math.min(PANTH_MAX,+localStorage.getItem('kairos_cols')||4));
-  state.trinityTickers=panthDefaultFor(state.panthCols);
-  try{localStorage.setItem('kairos_ticks_ok3','1');}catch(e){}
+if(!localStorage.getItem('kairos_ticks_ok4')){
+  state.panthCols=5;
+  state.trinityTickers=panthDefaultFor(5);
+  try{localStorage.setItem('kairos_ticks_ok4','1');}catch(e){}
 }
 panthNormalize();
 window.panthNormalize=panthNormalize;
+/* First paint: the app opens on Cosmos, so seed the filter from that view's
+   preference before anything renders. */
+state.expiry=(state.expiryView&&state.expiryView.trinity)||'0dte';
+try{document.addEventListener('DOMContentLoaded',function(){
+  const s=document.getElementById('expiryFilter');if(s)s.value=state.expiry;
+});}catch(e){}
 window.panthDefaultFor=panthDefaultFor;
 /* Cosmos opens on 0DTE. The whole point of the wall is same-session structure,
    and ALL buries today's book under three weeks of standing open interest. */
@@ -1009,14 +1028,13 @@ function buildImbalance(sym){
 const _symInFlight={};
 async function getSym(sym,maxExp,force){
   sym=cleanSym(sym);if(!sym)return null;
-  /* Only fetch the expirations the current filter can actually display.
-     expiryFilt discards everything past the window anyway, so pulling five
-     chains to render 0DTE was throwing away four multi-megabyte responses per
-     ticker switch. This is the single biggest cause of the switch lag, and it
-     compounds now that Cosmos opens on 0DTE. Two rather than one so a session
-     with no same-day expiry still has a next one to fall back to, and so the
-     term-structure reads have something to compare against. */
-  const need=maxExp||(state.expiry==='0dte'?2:state.expiry==='7d'?4:state.expiry==='30d'?8:5);
+  /* REVERTED. Trimming this to the current filter looked like a clean win and
+     was actively wrong: a name without daily expiries (UVXY, most single
+     names) has no contract inside 0.8 days, so fetching two expirations and
+     then filtering to 0DTE left the ladder EMPTY and the pillar stuck warming
+     forever. Junction lost its strike x expiry grid for the same reason. Always
+     pull the full set; the filter is a view, not a fetch plan. */
+  const need=maxExp||(state.expiry==='30d'?8:5);
   const ch=state.chains[sym];
   const fresh=!force&&ch&&ch.list&&ch.list.length&&(Date.now()-ch.t<CHAIN_TTL)&&ch.maxExp>=need;
   if(!fresh){
@@ -1798,13 +1816,20 @@ function renderNovaHub(){
 
   let h='<div class="nv-deck">';
 
-  /* ── THE ORRERY ──
-     The board rendered as a board rather than as a list. Every position on it
-     is measured: radius is distance to the regime flip in expected moves, size
-     is net gamma at spot, colour is which way dealers hedge. Painted by
-     kairos-nova.js on its own loop, which only runs while this view is open. */
-  h+='<div class="nv-orrery"><canvas id="novaOrrery"></canvas>'+
-     '<div class="nv-orr-cap">THE ORRERY <i>live \u00b7 click a body to open it in Junction</i></div></div>';
+  /* ── THE RANGE ──
+     Every tracked symbol's WHOLE exposure ladder, drawn as terrain and stacked
+     back to front. Ridges above the line absorb, ridges below accelerate, and
+     every row is aligned on its own spot so the shapes compare directly across
+     names. Painted by kairos-nova.js on its own loop, which only runs while
+     this view is open. */
+  h+='<div class="nv-range"><canvas id="novaRange"></canvas>'+
+     '<div class="nv-range-cap">THE RANGE <i>every ladder as terrain \u00b7 click a ridge to open it in Junction</i></div>'+
+     '<div class="nv-range-key">'+
+       '<span><s class="up"></s>ABSORBS</span>'+
+       '<span><s class="dn"></s>ACCELERATES</span>'+
+       '<span><s class="kg"></s>KING</span>'+
+       '<span><s class="fl"></s>FLIP</span>'+
+     '</div></div>';
 
   /* ── HERO ── */
   h+='<div class="nv-hero">'+
@@ -1871,7 +1896,7 @@ window.renderNovaHub=renderNovaHub;
   const _rn=renderNovaHub;
   window.renderNovaHub=function(){
     const r=_rn.apply(this,arguments);
-    try{if(window.KairosNovaOrrery&&state.view==='nova')setTimeout(window.KairosNovaOrrery.start,20);}catch(e){}
+    try{if(window.KairosNovaRange&&state.view==='nova')setTimeout(window.KairosNovaRange.start,20);}catch(e){}
     return r;
   };
 })();
@@ -2731,7 +2756,9 @@ document.addEventListener('click',e=>{
 document.getElementById('btnRefresh').onclick=()=>refresh(true);
 document.getElementById('expiryFilter').onchange=e=>{
   state.expiry=e.target.value;
-  try{localStorage.setItem('kairos_exp',state.expiry);}catch(err){}
+  /* Remember it for THIS view only. */
+  state.expiryView[state.view||'trinity']=state.expiry;
+  try{localStorage.setItem('kairos_expview',JSON.stringify(state.expiryView));}catch(err){}
   /* re-filter the cached chains synchronously so the switch is instant and can
      never be swallowed by an in-flight refresh (which is what made 0DTE look
      dead while a load was running) */
@@ -2804,8 +2831,27 @@ function navButtons(){
 }
 function clearNav(){navButtons().forEach(b=>b.classList.remove('active'));}
 window.clearNav=clearNav;
+function applyViewExpiry(v){
+  const want=(state.expiryView&&state.expiryView[v])||state.expiry||'all';
+  const sel=document.getElementById('expiryFilter');
+  const changed=(want!==state.expiry);
+  state.expiry=want;
+  /* Sync the control to the state. This was the "All/0DTE is bugging out" bug:
+     the select always rendered its first option (All) while state.expiry had
+     been set to 0dte in code, so the label and the filter disagreed from the
+     first paint. */
+  if(sel&&sel.value!==want)sel.value=want;
+  if(changed){
+    Object.keys(state.chains||{}).forEach(s=>{
+      try{const r=buildFromChains(s);if(r){state.data[s]=r;state.dataAge[s]=Date.now();}}catch(x){}
+    });
+  }
+  return changed;
+}
+window.applyViewExpiry=applyViewExpiry;
 function setView(v){
   state.view=v;
+  applyViewExpiry(v);
   clearNav();
   const bmap={trinity:'btnTrinity',single:'btnSingle',chart:'btnChart',ideas:'btnIdeas',nova:'btnNova'};
   if(bmap[v]&&document.getElementById(bmap[v]))document.getElementById(bmap[v]).classList.add('active');

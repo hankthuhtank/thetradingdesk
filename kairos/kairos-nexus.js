@@ -35,12 +35,16 @@
   const NX = {
     REC_MS: 60000,        // one recorded column per minute
     COLS_MEM: 900,        // columns held in memory
-    LEVELS: 9,            // SIGNIFICANT levels only — see pickLevels()
+    LEVELS: 7,            // SIGNIFICANT levels only — see the selection passes
     SAMPLES: 220,         // time samples after downsampling
     MAX_PX: 11,           // thickness of the strongest level, CSS px
     MIN_PX: 1.6,          // thinner than this is not worth a row of pixels
-    MATERIAL: 0.14,       // a level must reach this fraction of the King
-    MERGE: 0.004,         // peaks closer than this (as % of spot) are one level
+    /* Tuned against a real SPY ladder (56 strikes, walls at 775 / 771 / 768 /
+       755). Wider bands merged the 768 put wall into 771 and lost a level that
+       genuinely matters; these keep all four and still reject the picket fence. */
+    MATERIAL: 0.15,       // a level must reach this fraction of the King
+    MERGE: 0.003,         // peaks closer than this (as % of spot) are one level
+    DOMBAND: 0.003,       // half-width of the neighbourhood a peak must dominate
   };
 
   const field = {};
@@ -83,6 +87,23 @@
     king: [242, 193, 78],
   };
   const REGIME = { pos: 'ABSORBING', neg: 'ACCELERATING' };
+
+  /* panelStats() returns {net1, em, fl, vel} and nothing else, so every read of
+     ps.cw / ps.pw was quietly resolving to undefined and printing a dash. The
+     walls are trivial to derive from the ladder that is already in memory:
+     heaviest POSITIVE node above spot, heaviest NEGATIVE node below. */
+  function wallsOf(d, m) {
+    const out = { cw: null, pw: null };
+    if (!d || !d.strikes || !d.spot) return out;
+    const val = (s) => (m === 'vex' ? (s.vex || 0) : (s.gex || 0));
+    let cwv = 0, pwv = 0;
+    for (const s of d.strikes) {
+      const v = val(s);
+      if (s.k > d.spot && v > cwv) { cwv = v; out.cw = s.k; }
+      if (s.k < d.spot && v < pwv) { pwv = v; out.pw = s.k; }
+    }
+    return out;
+  }
 
   function cssVar(n, fb) {
     try { return getComputedStyle(document.documentElement).getPropertyValue(n).trim() || fb; }
@@ -329,7 +350,7 @@
     const all = Array.from(signed.entries()).map(p => ({ k: p[0], v: p[1] })).sort((a, b) => a.k - b.k);
     const kingMag = Math.max.apply(null, all.map(x => Math.abs(x.v)));
     const spotRef = picked[picked.length - 1].spot || all[Math.floor(all.length / 2)].k;
-    const band = spotRef * 0.004;
+    const band = spotRef * NX.DOMBAND;
 
     const peaks = [];
     for (let i = 0; i < all.length; i++) {
@@ -689,12 +710,13 @@
     if (!el) return;
     const d = S.data[curSym];
     if (!d || !d.strikes) { el.innerHTML = ''; return; }
-    let ps = null, king = null;
+    let ps = null, king = null, walls = { cw: null, pw: null };
     try {
       const kingOf = (window.Kairos && window.Kairos.kingOf) || window.kingOf;
       const panelStats = (window.Kairos && window.Kairos.panelStats) || window.panelStats;
       ps = panelStats ? panelStats(curSym, d, metric) : null;
       king = kingOf ? kingOf(d.strikes, metric) : null;
+      walls = wallsOf(d, metric);
     } catch (e) {}
     const spot = S.spot[curSym] || d.spot || 0;
     const dp = spot > 2000 ? 0 : 1;
@@ -710,17 +732,17 @@
        which is the number that says how stable the regime call even is. */
     const gap = (ps && ps.fl != null && spot > 0) ? Math.abs(spot - ps.fl) / spot * 100 : null;
     const gapTone = gap == null ? '' : gap < 0.5 ? '#f4723e' : gap < 1.5 ? 'var(--gold)' : 'var(--teal)';
-    const cwDist = (ps && ps.cw != null && spot > 0) ? ((ps.cw - spot) / spot * 100) : null;
-    const pwDist = (ps && ps.pw != null && spot > 0) ? ((ps.pw - spot) / spot * 100) : null;
+    const cwDist = (walls.cw != null && spot > 0) ? ((walls.cw - spot) / spot * 100) : null;
+    const pwDist = (walls.pw != null && spot > 0) ? ((walls.pw - spot) / spot * 100) : null;
     const sub = (v) => v == null ? '' : '<em>' + (v > 0 ? '+' : '') + v.toFixed(2) + '%</em>';
     el.innerHTML =
       cell('REGIME @ SPOT', regime || '\u2014',
         regime === REGIME.pos ? 'var(--teal)' : regime === REGIME.neg ? '#f4723e' : '',
         'Net exposure within \u00b11% of spot. ABSORBING: dealers hedge against the move, so price gets soaked up here. ACCELERATING: dealers hedge with the move, so price gets pushed through. This is the local book, not the sign of the largest node somewhere else.') +
       cell('KING', king ? (+king.k).toFixed(dp) : '\u2014', 'var(--gold)', 'The single largest node on this metric. The strongest magnet on the board.') +
-      cell('CALL WALL', (ps && ps.cw != null ? (+ps.cw).toFixed(dp) : '\u2014') + sub(cwDist), 'var(--teal)',
+      cell('CALL WALL', (walls.cw != null ? (+walls.cw).toFixed(dp) : '\u2014') + sub(cwDist), 'var(--teal)',
         'The heaviest positive node above spot. In an absorbing regime this is the ceiling dealers defend, and a CLOSE above it, not a touch, is what breaks it.') +
-      cell('PUT WALL', (ps && ps.pw != null ? (+ps.pw).toFixed(dp) : '\u2014') + sub(pwDist), '#e879f9',
+      cell('PUT WALL', (walls.pw != null ? (+walls.pw).toFixed(dp) : '\u2014') + sub(pwDist), '#e879f9',
         'The heaviest negative node below spot. The floor in an absorbing regime, and the trapdoor once price closes through it.') +
       cell('FLIP', (ps && ps.fl != null ? (+ps.fl).toFixed(dp) : '\u2014')
         + (gap != null ? '<em style="color:' + gapTone + '">' + gap.toFixed(2) + '% away</em>' : ''), 'var(--muted)',
@@ -754,6 +776,7 @@
       const btn = $('btnArena'), sec = $('nexusSec');
       if (v !== 'arena') { if (btn) btn.classList.remove('active'); if (sec) sec.classList.add('hidden'); return prev(v); }
       S.view = 'arena';
+      if (window.applyViewExpiry) window.applyViewExpiry('arena');
       ['btnTrinity', 'btnSingle', 'btnChart', 'btnIdeas', 'btnImb', 'btnTape', 'btnNova'].forEach(id => { const b = $(id); if (b) b.classList.remove('active'); });
       if (btn) btn.classList.add('active');
       /* novaSec belongs on this list. Core's setView owns hiding it, and the

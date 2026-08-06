@@ -15,19 +15,19 @@
 <link rel="preconnect" href="https://kairos-api.safihelal.workers.dev" crossorigin>
 <link rel="preconnect" href="https://unpkg.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="kairos.css?v=7.1.0">
+<link rel="stylesheet" href="kairos.css?v=7.2.0">
 <!-- Lightweight Charts powers Chronos. Deferred, and Chronos degrades to a clear
      message rather than a broken canvas if it fails to load. -->
 <script defer src="https://unpkg.com/lightweight-charts@5.1.0/dist/lightweight-charts.standalone.production.js"></script>
 <!-- defer: downloaded in parallel during HTML parse, executed in document order
      after it. Five synchronous tags at ~350KB were serialising the whole boot. -->
-<script defer src="kairos-core.js?v=7.1.0"></script>
-<script defer src="kairos-backend.js?v=7.1.0"></script>
-<script defer src="kairos-quant.js?v=7.1.0"></script>
-<script defer src="kairos-modules.js?v=7.1.0"></script>
-<script defer src="kairos-nexus.js?v=7.1.0"></script>
-<script defer src="kairos-nova.js?v=7.1.0"></script>
-<script defer src="kairos-mythos.js?v=7.1.0"></script>
+<script defer src="kairos-core.js?v=7.2.0"></script>
+<script defer src="kairos-backend.js?v=7.2.0"></script>
+<script defer src="kairos-quant.js?v=7.2.0"></script>
+<script defer src="kairos-modules.js?v=7.2.0"></script>
+<script defer src="kairos-nexus.js?v=7.2.0"></script>
+<script defer src="kairos-nova.js?v=7.2.0"></script>
+<script defer src="kairos-mythos.js?v=7.2.0"></script>
 </head>
 <body>
 <datalist id="tickerList"></datalist>
@@ -286,11 +286,11 @@
 
 <div class="settings" id="settings">
   <h3 style="margin-bottom:14px">Settings</h3>
-  <div class="fg" style="opacity:.7"><label>Build</label><div style="font-family:'JetBrains Mono';font-size:.72rem;color:var(--teal)">v7.1.0</div></div>
+  <div class="fg" style="opacity:.7"><label>Build</label><div style="font-family:'JetBrains Mono';font-size:.72rem;color:var(--teal)">v7.2.0</div></div>
   <input type="password" id="tok" style="display:none" autocomplete="off">
   <input type="hidden" id="poll" value="10">
   <div class="fg"><label>Map shows</label><select id="sizeBasis" style="width:100%"><option value="oi">Standing positions — open interest, updates daily</option><option value="vol">Today's flow — volume traded so far this session</option></select></div>
-  <div class="fg"><label>Cosmos columns</label><select id="panthCols" style="width:100%" data-tip="How many pillars stand side by side. Desktop fits as many as the screen allows and wraps the rest; phones show four and scroll sideways for the others."><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option></select></div>
+  <div class="fg"><label>Cosmos columns</label><select id="panthCols" style="width:100%" data-tip="How many pillars stand side by side. Phones show four across and scroll sideways for the fifth."><option value="3">3 &mdash; SPX &middot; SPY &middot; QQQ</option><option value="4">4 &mdash; SPX &middot; SPY &middot; QQQ &middot; UVXY</option><option value="5">5 &mdash; SPX &middot; SPY &middot; QQQ &middot; IWM &middot; UVXY</option></select></div>
   <div class="fg"><button class="btn" style="width:100%" id="panthReset">Reset roster to the default for this count</button></div>
   <button class="btn primary" style="width:100%;margin-top:8px" id="save">Save</button>
 </div>
