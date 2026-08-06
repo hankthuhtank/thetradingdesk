@@ -15,30 +15,31 @@
 <link rel="preconnect" href="https://kairos-api.safihelal.workers.dev" crossorigin>
 <link rel="preconnect" href="https://unpkg.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="kairos.css?v=6.8.0">
-<!-- Lightweight Charts powers Nexus. Deferred, and Nexus degrades to a clear
+<link rel="stylesheet" href="kairos.css?v=7.1.0">
+<!-- Lightweight Charts powers Chronos. Deferred, and Chronos degrades to a clear
      message rather than a broken canvas if it fails to load. -->
 <script defer src="https://unpkg.com/lightweight-charts@5.1.0/dist/lightweight-charts.standalone.production.js"></script>
 <!-- defer: downloaded in parallel during HTML parse, executed in document order
      after it. Five synchronous tags at ~350KB were serialising the whole boot. -->
-<script defer src="kairos-core.js?v=6.8.0"></script>
-<script defer src="kairos-backend.js?v=6.8.0"></script>
-<script defer src="kairos-quant.js?v=6.8.0"></script>
-<script defer src="kairos-modules.js?v=6.8.0"></script>
-<script defer src="kairos-nexus.js?v=6.8.0"></script>
-<script defer src="kairos-mythos.js?v=6.8.0"></script>
+<script defer src="kairos-core.js?v=7.1.0"></script>
+<script defer src="kairos-backend.js?v=7.1.0"></script>
+<script defer src="kairos-quant.js?v=7.1.0"></script>
+<script defer src="kairos-modules.js?v=7.1.0"></script>
+<script defer src="kairos-nexus.js?v=7.1.0"></script>
+<script defer src="kairos-nova.js?v=7.1.0"></script>
+<script defer src="kairos-mythos.js?v=7.1.0"></script>
 </head>
 <body>
 <datalist id="tickerList"></datalist>
 <header>
   <div class="logo"><span>◆</span> Kairos</div>
   <nav class="hdr-nav" id="hdrNav">
-    <button class="btn active" id="btnTrinity">Pantheon</button>
+    <button class="btn active" id="btnTrinity">Cosmos</button>
     <button class="btn" id="btnSingle">Junction</button>
     <button class="btn" id="btnChart">Mythos</button>
     <button class="btn" id="btnIdeas">Aether</button>
     <button class="btn" id="btnNova">Nova</button>
-    <button class="btn" id="btnArena">Nexus</button>
+    <button class="btn" id="btnArena">Chronos</button>
   </nav>
   <div class="hdr-tools">
     <div class="mtoggle" id="mtoggle" data-tip="Which exposure the map shows. GEX=gamma (pin/momentum). VEX=vanna (how walls move when IV moves).">
@@ -136,12 +137,24 @@
         <button data-m="gex" class="on">GEX</button>
         <button data-m="vex">VEX</button>
       </div>
+      <div class="mtoggle nx-tf" id="nexusTf" data-tip="Candle interval. 30m and 1h are composed from 15-minute bars, so their highs and lows are real rather than resampled closes.">
+        <button data-tf="1min">1m</button>
+        <button data-tf="5min" class="on">5m</button>
+        <button data-tf="15min">15m</button>
+        <button data-tf="30min">30m</button>
+        <button data-tf="1h">1h</button>
+      </div>
+      <div class="mtoggle nx-tools" id="nexusTools" data-tip="Studies. All computed from the bars already loaded, so none of them costs a request.">
+        <button data-tool="vwap" class="on" data-tip="Session TWAP. There is no per-bar volume on this feed, so bars are weighted equally: it is a time-weighted average, not a true VWAP, and it resets every session.">TWAP</button>
+        <button data-tool="ema" data-tip="9 and 21 period EMAs on the selected interval.">EMA</button>
+        <button data-tool="pd" class="on" data-tip="Prior session high, low and close.">PD</button>
+      </div>
       <button class="btn nx-btn" id="nexusFit" data-tip="Fit the whole recorded window and re-scale price">FIT</button>
       <button class="btn nx-btn" id="nexusFull" data-tip="Fill the screen">FULL</button>
       <button class="btn nx-btn nx-howto" id="nexusNoteToggle">HOW TO READ</button>
       <span class="nx-legend">
-        <span class="nx-lg" data-tip="Positive exposure. Dealers fade moves, so price is held. The level resists."><s class="aeg"></s>AEGIS &middot; +</span>
-        <span class="nx-lg" data-tip="Negative exposure. Dealers chase, so moves accelerate. The level gives way."><s class="mae"></s>MAELSTROM &middot; &minus;</span>
+        <span class="nx-lg" data-tip="Positive exposure. Dealers hedge AGAINST the move, so price gets soaked up at this strike."><s class="aeg"></s>ABSORBS &middot; +</span>
+        <span class="nx-lg" data-tip="Negative exposure. Dealers hedge WITH the move, so price gets pushed through this strike."><s class="mae"></s>ACCELERATES &middot; &minus;</span>
         <span class="nx-lg" data-tip="The single largest node right now."><s class="kng"></s>KING</span>
       </span>
     </div>
@@ -156,7 +169,7 @@
     <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px">
       <h3 style="margin-bottom:0">Surfaced Ideas</h3>
       <div class="mtoggle" id="aetherTabs">
-        <button data-a="swing" class="on" data-tip="INVESTOR — 14–90 DTE contracts with room to run, sized so a sub-10k account can actually hold them. Structure has to support a multi-week move, and the debit stays small on purpose.">INVESTOR</button>
+        <button data-a="swing" class="on" data-tip="Contracts with 18 to 65 days on them. Structure has to support a multi-week move, the position is mostly intrinsic so it is a bet on price rather than on volatility, and the debit stays small on purpose.">SWING &middot; 18&ndash;65 DTE</button>
         <button data-a="zero" data-tip="DEGEN — same-day and next-day only. Deliberately risky. Free to sit OTM, ATM or ITM depending on whether the setup is a fade to a magnet or a run through a barrier.">DEGEN</button>
       </div>
       <input type="hidden" id="swModeSel">
@@ -165,10 +178,14 @@
     <div id="oracle" class="oracle nova"></div>
     <div id="aetherPulse" class="aether-pulse"></div>
     <div id="forgeBox"></div>
-    <div class="cards" id="cards"></div>
     <div id="ledgerBox" class="ledger"></div>
+    <button class="ae-detailbtn" id="aetherDetailBtn" data-tip="The readiness layer: whether the board is even set up for a trade right now, symbol by symbol. The Forge above is the answer; this is the working behind it.">SHOW STRUCTURE DETAIL &darr;</button>
+    <div id="aetherDetail" class="ae-detail">
+      <div class="ae-detail-note">Below is the <b>readiness layer</b>, not a second set of contracts. It says whether each symbol is currently set up for a trade at all: regime, expected move, tape, and whether a named setup is live. The Forge above turns the ones that qualify into an actual contract with levels.</div>
+      <div class="cards" id="cards"></div>
+      <div id="zeroWrap" class="hidden"></div>
+    </div>
     <div class="nfa-sub">Not financial advice · computed context to grade your own read · options carry substantial risk of total loss</div>
-    <div id="zeroWrap" class="hidden"></div>
   </div>
 </main>
 
@@ -177,17 +194,40 @@
     <button class="close" id="closeHelp">×</button>
     <h2>How to use Kairos</h2>
 
-    <h2>The Seven Deadly Tools</h2>
-    <p class="guide-lede">Kairos reads dealer positioning — where market makers are hedged, and what that implies about how price behaves around those levels. Every number is computed from live option chains. Nothing here is a signal or advice.</p>
+    <h2>The Eight Screens</h2>
+    <p class="guide-lede">Kairos reads dealer positioning: where market makers are hedged, and what that implies about how price behaves around those levels. Every number is computed from live option chains. Nothing here is a signal or advice.</p>
     <div class="guide-grid">
-      <div class="guide-item"><b>Triad</b><span>Three ladders side by side — SPXW, SPY, QQQ. Use it to check <i>agreement</i>: when all three point the same way, structure is aligned. When they diverge, size down or pass.</span></div>
-      <div class="guide-item"><b>Junction</b><span>One symbol, full depth. The strike ladder plus a strike × expiry grid showing where gamma sits per expiration. Opens centred on spot. The VIX Desk tab holds the whole volatility picture — term structure, regime, VIX's own option ladder, daily pivots.</span></div>
-      <div class="guide-item"><b>Mythos</b><span>Sector and theme rotation versus SPY, plotted as relative strength (x) against momentum (y). Bodies rotate clockwise: Leading → Weakening → Lagging → Improving. Use it for leadership context, not entries.</span></div>
-      <div class="guide-item"><b>Aether</b><span>The idea engine. It scores every roster symbol through a gate chain and surfaces contract candidates in two profiles — <b>Investor</b> (deep ITM, high probability, larger debit) and <b>Degen</b> (far OTM with long runway, small debit, low probability). Tick <i>took it</i> to log a contract to your ledger; mark it win or loss and it files itself.</span></div>
-      <div class="guide-item"><b>Regime</b><span>Flow through the day. Net call and put premium (bought minus sold) plus net delta flow, the directional pressure, all against spot. Hover or drag anywhere on the chart to scrub the session tick by tick.</span></div>
-      <div class="guide-item"><b>Tape</b><span>Where today's option dollars actually went, ranked by premium. Cross-reference it against the ladder — premium clustering at a structural level means something different than premium scattered away from it.</span></div>
-      <div class="guide-item"><b>Nexus</b><span>The same exposure rendered as a living field over time rather than rows. Drag to pan, wheel or pinch to zoom, double-click to snap back to live.</span></div>
+      <div class="guide-item"><b>Cosmos</b><span>Up to ten ladders side by side. Opens on <b>0DTE</b>, because same-session structure is the point and ALL buries today's book under three weeks of standing open interest. Use it to check <i>agreement</i>: when the pillars point the same way, structure is aligned; when they diverge, size down or pass. Desktop fits as many columns as the screen allows and wraps the rest. Phones show four and scroll sideways.</span></div>
+      <div class="guide-item"><b>Junction</b><span>One symbol, full depth. The strike ladder plus a strike &times; expiry grid showing where gamma sits per expiration. Opens centred on spot. The VIX Desk tab holds the whole volatility picture: term structure, regime, VIX's own ladder, daily pivots.</span></div>
+      <div class="guide-item"><b>Mythos</b><span>Sector and theme rotation against SPY, plotted as relative strength (x) versus momentum (y). Bodies should rotate clockwise: Leading &rarr; Weakening &rarr; Lagging &rarr; Improving. Normalisation is <b>cross-sectional</b>, so 100 means the median of the field on that date and quadrant positions are comparable between names. The replay bar scrubs the rotation forward one session at a time; the &#8635; badge says whether a body is genuinely rotating or just jittering across a boundary.</span></div>
+      <div class="guide-item"><b>Aether</b><span>The idea engine, in two layers. <b>THE FORGE</b> on top is the answer: one contract per symbol with entry, stop, T1 and T2 in both underlying and contract terms. Below it, <i>structure detail</i> is the working: whether each symbol is set up for a trade at all. Two tabs pick the horizon, not two different products.</span></div>
+      <div class="guide-item"><b>Nova</b><span>The command deck. <b>THE ORRERY</b> plots every tracked symbol as a body: radius is how far it sits from its own regime flip in expected moves, size is net gamma at spot, colour is which way dealers hedge. Near the core means fragile. The written briefing below ranks and explains what the engine computed; it never invents a number.</span></div>
+      <div class="guide-item"><b>Chronos</b><span>Exposure as horizontal levels through time, over real candles. Each band is one strike; its <b>thickness is how much exposure sits there</b>, so a level being built thickens and one being torn down narrows. Only <i>significant</i> levels draw: local peaks in the profile that reach at least 14% of the King. Timeframes from 1m to 1h, with TWAP, EMAs and prior-day levels.</span></div>
+      <div class="guide-item"><b>Regime</b><span>Flow through the day. Net call and put premium (bought minus sold) plus net delta flow, the directional pressure, against spot. Hover or drag to scrub the session tick by tick.</span></div>
+      <div class="guide-item"><b>Tape</b><span>Where today's option dollars actually went, ranked by premium. Cross-reference against the ladder: premium clustering at a structural level means something different than premium scattered away from it.</span></div>
     </div>
+
+    <h2>The words on the screen</h2>
+    <div class="guide-grid">
+      <div class="guide-item"><b>Absorbing</b><span>Net gamma at spot is positive. Dealers hedge <i>against</i> the move, selling strength and buying weakness, so price gets soaked up around these strikes. Ranges hold, breakouts fail, and the mean-reversion edge is real until a level is <i>closed</i> through rather than touched.</span></div>
+      <div class="guide-item"><b>Accelerating</b><span>Net gamma at spot is negative. Dealers hedge <i>with</i> the move, so a push gets amplified rather than damped. Moves extend, stops get run, and fading is expensive.</span></div>
+      <div class="guide-item"><b>King</b><span>The single largest node on the current metric. The strongest magnet on the board, and the level most likely to pin into a close.</span></div>
+      <div class="guide-item"><b>Call wall / put wall</b><span>The heaviest positive node above spot and heaviest negative node below. In an absorbing regime these are the ceiling and floor dealers defend.</span></div>
+      <div class="guide-item"><b>Flip</b><span>The zero-gamma level, where dealer behaviour inverts. Computed by re-pricing the whole book across a &plusmn;7% spot grid, not by hunting per-strike sign changes. <b>The distance matters more than the side</b>: inside about 0.5% the regime is fragile and one catalyst flips it; past roughly 3% it is firmly set.</span></div>
+      <div class="guide-item"><b>IV rank</b><span>Where today's at-the-money implied volatility sits inside its own trailing year. Low means options are cheap for this name; high means you are paying up. It decides whether you should be buying premium at all, before any strike is chosen.</span></div>
+      <div class="guide-item"><b>Expected move</b><span>One standard deviation over the stated horizon, implied by at-the-money IV. If a contract needs a bigger move than this to break even, the trade is asking for an outlier.</span></div>
+      <div class="guide-item"><b>Posture</b><span>The Forge's verdict on the volatility environment before any contract is picked. <i>Stand aside</i> means implied vol is too rich to pay for movement into a book built to suppress it, and no strike selection fixes that.</span></div>
+    </div>
+
+    <h2>How the Forge picks a contract</h2>
+    <p class="guide-lede">Three stages, and the split is the point: arithmetic in code, judgment under ambiguity in the model, nothing fabricated in between.</p>
+    <div class="guide-grid">
+      <div class="guide-item"><b>1 &middot; Posture</b><span>IV rank plus the local gamma regime decide whether buying premium is the right side of the trade at all. This can veto the whole idea before a strike is considered.</span></div>
+      <div class="guide-item"><b>2 &middot; Slate</b><span>Real contracts enumerated off the live chain, then hard-gated on delta, days to expiry, open interest and bid-ask spread. Survivors score on reach, structure, vol value, liquidity, theta burden and regime fit. Delta and IV come from the feed; theta and vega are re-derived from Black-Scholes.</span></div>
+      <div class="guide-item"><b>3 &middot; The case</b><span>Nova receives the scored slate plus news, rotation and vol context, picks one per horizon, and writes the argument, the strongest counter-argument, and the invalidation. <b>It cannot invent a strike, a price or a greek.</b> If nothing clears the gates, both layers say so; loosening the standard to produce a pick is forbidden.</span></div>
+      <div class="guide-item"><b>Contract prices at levels</b><span>Modelled with Black-Scholes at <b>flat implied volatility</b>. A real IV crush on the move makes them optimistic and an expansion makes them conservative, so read them as shape rather than as quotes.</span></div>
+    </div>
+
 
     <h2>Nova</h2>
     <p class="guide-lede">Nova is the analyst layer. It runs on the server on a schedule, reads the same computed state you see, and writes to every screen — so the analysis is identical on every device and never makes you wait. Nova ranks and explains the numbers the engine produced; it never originates one, and it never tells you what to do.</p>
@@ -221,7 +261,7 @@
     <h3>Imbalance</h3>
     <p>Per-strike call vs put pressure — bright bars are today's volume, faint bars are standing OI. Call Wall / Put Wall are the strikes with the highest call-side and put-side <em>gamma</em> (OI × Γ) inside the visible band — the industry-standard ceiling/floor. Gamma-weighting is deliberate: it's highest at-the-money and decays with distance, so a far-OTM tail hedge can't masquerade as support/resistance the way raw OI would. Sentiment blends volume ratio with premium ratio.</p>
     <h3>Workflow</h3>
-    <p>Chart first, map second. Build your thesis from price, then use the map to confirm or deny. Full Triad alignment = highest conviction; divergence = size down or pass. Structure is context, not a signal.</p>
+    <p>Chart first, map second. Build your thesis from price, then use the map to confirm or deny. Full Cosmos alignment = highest conviction; divergence = size down or pass. Structure is context, not a signal.</p>
     <h3>Units &amp; honesty</h3>
     <p>GEX is <strong>$ per 1-pt move</strong>. VEX is <strong>$ delta per vol-point</strong>. OI updates daily pre-market; Greeks/IV refresh ~hourly; quotes are real-time. Chains cache ~90s and every metric is re-priced from live spot on each tick. Signs assume the standard dealer position (long calls / short puts).</p>
   </div>
@@ -246,15 +286,15 @@
 
 <div class="settings" id="settings">
   <h3 style="margin-bottom:14px">Settings</h3>
-  <div class="fg" style="opacity:.7"><label>Build</label><div style="font-family:'JetBrains Mono';font-size:.72rem;color:var(--teal)">v6.7.0</div></div>
+  <div class="fg" style="opacity:.7"><label>Build</label><div style="font-family:'JetBrains Mono';font-size:.72rem;color:var(--teal)">v7.1.0</div></div>
   <input type="password" id="tok" style="display:none" autocomplete="off">
-  <div class="fg"><label>Refresh every (seconds)</label><input type="text" id="poll" value="10" style="width:80px" data-tip="10 is the floor. Scheduled polls only tick live quotes (1 batched request) — chains re-pull every ~90s — well under Tradier's 120 req/min limit."></div>
+  <input type="hidden" id="poll" value="10">
   <div class="fg"><label>Map shows</label><select id="sizeBasis" style="width:100%"><option value="oi">Standing positions — open interest, updates daily</option><option value="vol">Today's flow — volume traded so far this session</option></select></div>
-  <div class="fg"><label>Pantheon columns</label><select id="panthCols" style="width:100%" data-tip="How many pillars stand side by side. On phones, 4 and 5 become a swipe rail so each ladder stays readable instead of shrinking to 72px."><option value="3">3 — SPX · SPY · QQQ</option><option value="4">4 — SPX · SPY · QQQ · UVXY</option><option value="5">5 — SPX · SPY · QQQ · IWM · UVXY</option></select></div>
+  <div class="fg"><label>Cosmos columns</label><select id="panthCols" style="width:100%" data-tip="How many pillars stand side by side. Desktop fits as many as the screen allows and wraps the rest; phones show four and scroll sideways for the others."><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option></select></div>
   <div class="fg"><button class="btn" style="width:100%" id="panthReset">Reset roster to the default for this count</button></div>
   <button class="btn primary" style="width:100%;margin-top:8px" id="save">Save</button>
 </div>
-<footer>Kairos · Aether · Mythos · Nexus · All Powered by Tradier Live · Structure is context, not a signal</footer>
+<footer>Kairos · Aether · Mythos · Chronos · All Powered by Tradier Live · Structure is context, not a signal</footer>
 
 <!-- moved to <head> with defer, plus kairos-nexus.js -->
 </body>

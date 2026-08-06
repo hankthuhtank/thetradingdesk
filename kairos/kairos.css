@@ -51,14 +51,54 @@ select,input{background:var(--panel2);border:1px solid var(--border);color:var(-
 main{padding:10px;display:flex;flex-direction:column;gap:10px}
 /* ═══ PANTHEON ═══ pillars side by side, never stacked. Count arrives as
    --panth-cols from renderTrinity so 3, 4 and 5 share one declaration. */
-.trinity{display:grid;grid-template-columns:repeat(var(--panth-cols,3),1fr);gap:3px}
-.trinity[data-cols="5"]{gap:2px}
-/* narrower pillars need a narrower head or the ticker select shoves out the price */
+/* ---- COSMOS grid --------------------------------------------------------
+   Up to ten pillars. Desktop fits as many as the screen can hold at a readable
+   width and wraps the rest onto a second row rather than crushing everything to
+   70px; auto-fit with a minmax floor does that without a media query per count.
+   Phones get a fixed four-across and scroll sideways for the rest, because a
+   ladder narrower than about a quarter of a phone screen is unreadable. */
+.trinity{display:grid;gap:3px;
+  grid-template-columns:repeat(var(--panth-cols,3),minmax(0,1fr))}
+@media(min-width:721px){
+  .trinity{grid-template-columns:repeat(auto-fit,minmax(var(--panth-min,210px),1fr))}
+  .trinity[data-cols="6"],.trinity[data-cols="7"]{--panth-min:190px}
+  .trinity[data-cols="8"],.trinity[data-cols="9"],.trinity[data-cols="10"]{--panth-min:172px}
+}
+.trinity[data-cols="5"],.trinity[data-cols="6"],.trinity[data-cols="7"],
+.trinity[data-cols="8"],.trinity[data-cols="9"],.trinity[data-cols="10"]{gap:2px}
+/* Narrow pillars need a narrower head or the ticker select shoves out the price. */
 .trinity[data-cols="4"] .ticker-sel,.trinity[data-cols="5"] .ticker-sel{max-width:70px;font-size:.86rem}
-.trinity[data-cols="5"] .p-head{padding:7px}
+.trinity[data-cols="6"] .ticker-sel,.trinity[data-cols="7"] .ticker-sel,
+.trinity[data-cols="8"] .ticker-sel,.trinity[data-cols="9"] .ticker-sel,
+.trinity[data-cols="10"] .ticker-sel{max-width:62px;font-size:.78rem}
+.trinity[data-cols="5"] .p-head,.trinity[data-cols="6"] .p-head,
+.trinity[data-cols="7"] .p-head,.trinity[data-cols="8"] .p-head,
+.trinity[data-cols="9"] .p-head,.trinity[data-cols="10"] .p-head{padding:6px}
 .trinity[data-cols="5"] .price{font-size:.8rem}
+.trinity[data-cols="6"] .price,.trinity[data-cols="7"] .price,
+.trinity[data-cols="8"] .price,.trinity[data-cols="9"] .price,
+.trinity[data-cols="10"] .price{font-size:.74rem}
 .trinity[data-cols="5"] .king-pill{font-size:.6rem;padding:2px 6px}
+.trinity[data-cols="6"] .king-pill,.trinity[data-cols="7"] .king-pill,
+.trinity[data-cols="8"] .king-pill,.trinity[data-cols="9"] .king-pill,
+.trinity[data-cols="10"] .king-pill{font-size:.55rem;padding:1px 5px}
 @media(max-width:1400px){.trinity[data-cols="5"] .badge-src{display:none}}
+@media(min-width:721px){
+  .trinity[data-cols="6"] .badge-src,.trinity[data-cols="7"] .badge-src,
+  .trinity[data-cols="8"] .badge-src,.trinity[data-cols="9"] .badge-src,
+  .trinity[data-cols="10"] .badge-src{display:none}
+}
+/* Phone: four across, the rest one swipe to the right. */
+@media(max-width:720px){
+  .trinity{display:flex;overflow-x:auto;scroll-snap-type:x proximity;
+    -webkit-overflow-scrolling:touch;scrollbar-width:none;gap:2px;padding-bottom:2px}
+  .trinity::-webkit-scrollbar{display:none}
+  .trinity>*{flex:0 0 calc(25% - 2px);scroll-snap-align:start;min-width:0}
+  .trinity[data-cols="3"]>*{flex:0 0 calc(33.33% - 2px)}
+  .trinity .ticker-sel{max-width:58px;font-size:.74rem}
+  .trinity .price{font-size:.7rem}
+  .trinity .badge-src{display:none}
+}
 .panel{background:var(--panel);border:1px solid var(--border);border-radius:12px;display:flex;flex-direction:column;height:calc(100vh - 172px);min-height:540px;overflow:hidden}
 .panel.single-mode{max-height:none;min-height:580px}
 .p-head{padding:8px 10px;background:var(--panel2);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:6px;flex-shrink:0}
@@ -1190,3 +1230,44 @@ span.nv-tag{flex-shrink:0}
   .fg-wrap{padding:9px 10px}
   .fg-c{font-size:.56rem}
 }
+
+/* ---- CHRONOS controls (timeframe + studies) ---- */
+.nx-tf button,.nx-tools button{padding:4px 7px;font-size:.62rem}
+.nx-tools button{letter-spacing:.04em}
+
+/* ---- AETHER: one answer, one readiness layer ----------------------------
+   Two lists of contracts on one screen was the single most confusing thing in
+   the app. The Forge is the answer; everything below is the working, and the
+   working is closed until you ask for it. */
+.ae-detailbtn{width:100%;background:transparent;border:1px dashed var(--border);
+  border-radius:7px;color:var(--faint);font-size:.6rem;letter-spacing:.12em;
+  padding:9px;margin:4px 0 10px;cursor:pointer;font-family:inherit;
+  transition:border-color .15s,color .15s}
+.ae-detailbtn:hover,.ae-detailbtn.on{border-color:var(--teal);color:var(--teal)}
+.ae-detail{display:none}
+.ae-detail.open{display:block}
+.ae-detail-note{font-size:.68rem;line-height:1.7;color:var(--muted);
+  border-left:2px solid var(--border);padding:2px 0 2px 10px;margin-bottom:10px}
+.ae-detail-note b{color:var(--text)}
+
+/* ---- NOVA: THE ORRERY ---------------------------------------------------
+   The board rendered as a board. Given real height because it is the primary
+   read on this page, not an ornament above the text. */
+.nv-orrery{position:relative;border:1px solid var(--border);border-radius:12px;
+  background:radial-gradient(ellipse at 50% 45%,#071016 0%,#04070c 55%,#000 100%);
+  height:min(56vh,520px);min-height:320px;margin-bottom:10px;overflow:hidden}
+.nv-orrery canvas{width:100%;height:100%;display:block;cursor:crosshair}
+.nv-orrery::before{
+  /* scanline wash: pure chrome, kept faint enough that it never competes with
+     the data underneath it */
+  content:'';position:absolute;inset:0;pointer-events:none;opacity:.16;
+  background:repeating-linear-gradient(0deg,rgba(45,212,191,.05) 0 1px,transparent 1px 3px)}
+.nv-orr-cap{position:absolute;right:12px;top:10px;font-size:.55rem;font-weight:700;
+  letter-spacing:.16em;color:var(--teal);opacity:.75;pointer-events:none}
+.nv-orr-cap i{font-style:normal;font-weight:400;letter-spacing:.05em;
+  color:var(--faint);margin-left:8px}
+@media (max-width:720px){
+  .nv-orrery{height:min(46vh,340px);min-height:260px}
+  .nv-orr-cap i{display:none}
+}
+@media (prefers-reduced-motion:reduce){.nv-orrery::before{display:none}}

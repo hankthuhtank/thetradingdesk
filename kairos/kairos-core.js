@@ -83,7 +83,10 @@ const state={
   data:{}, chains:{}, spot:{}, multi:{}, focus:'SPY', view:'trinity',
   metric:(localStorage.getItem('kairos_metric')||'gex'),
   centerOn:(localStorage.getItem('kairos_center')||'king'),
-  dealerMode:'standard', customShort:0.7, expiry:'all',
+  dealerMode:'standard', customShort:0.7,
+  /* Cosmos opens on 0DTE: the wall exists to show same-session structure, and
+     ALL buries today's book under three weeks of standing open interest. */
+  expiry:(localStorage.getItem('kairos_exp')||'0dte'),
   pollSec:Math.max(10,parseInt(localStorage.getItem('kairos_poll'))||10),
   calcMode:'live', unit:'pt',
   sizeBasis:localStorage.getItem('kairos_basis')||'oi',
@@ -103,14 +106,17 @@ const state={
    VIX FUTURES, so there is no spot to delta-hedge and a GEX ladder there is not
    a dealer-hedging map. UVXY is an actual tradeable share with actual hedging,
    so every metric in that column means what it means everywhere else. */
-const PANTH_DEFAULT=['SPXW','SPY','QQQ','IWM','UVXY'];
+/* COSMOS cold-start order. Ten deep, and a count of N takes the first N, so the
+   roster degrades gracefully instead of needing a hand-written list per width.
+   The order is deliberate: index complex first, then the vol pillar, then the
+   single names that actually carry gamma, then the two macro hedges. */
+const PANTH_DEFAULT=['SPXW','SPY','QQQ','UVXY','IWM','NVDA','AAPL','TSLA','IBIT','GLD'];
+const PANTH_MAX=10;
 function panthDefaultFor(n){
-  return n<=3?['SPXW','SPY','QQQ']
-       : n===4?['SPXW','SPY','QQQ','UVXY']
-       : ['SPXW','SPY','QQQ','IWM','UVXY'];
+  return PANTH_DEFAULT.slice(0,Math.max(3,Math.min(PANTH_MAX,n||4)));
 }
 function panthNormalize(){
-  const n=Math.max(3,Math.min(5,state.panthCols||4));
+  const n=Math.max(3,Math.min(PANTH_MAX,state.panthCols||4));
   state.panthCols=n;
   state.trinityTickers=[...new Set((state.trinityTickers||[]).filter(Boolean))];
   /* Pad from the default FOR THIS COUNT, not from the flat 5-wide list. Padding
@@ -133,14 +139,18 @@ function panthNormalize(){
 }
 /* one-time migration to the 4-column default. Bumped key, so anyone on the old
    3-column build gets UVXY added once and keeps their own choices after. */
-if(!localStorage.getItem('kairos_ticks_ok2')){
-  state.panthCols=4;
-  state.trinityTickers=panthDefaultFor(4);
-  try{localStorage.setItem('kairos_ticks_ok2','1');}catch(e){}
+/* Migration to the ten-deep Cosmos roster. Bumped key, so an existing user gets
+   the new ordering once and keeps their own edits after that. */
+if(!localStorage.getItem('kairos_ticks_ok3')){
+  state.panthCols=Math.max(4,Math.min(PANTH_MAX,+localStorage.getItem('kairos_cols')||4));
+  state.trinityTickers=panthDefaultFor(state.panthCols);
+  try{localStorage.setItem('kairos_ticks_ok3','1');}catch(e){}
 }
 panthNormalize();
 window.panthNormalize=panthNormalize;
 window.panthDefaultFor=panthDefaultFor;
+/* Cosmos opens on 0DTE. The whole point of the wall is same-session structure,
+   and ALL buries today's book under three weeks of standing open interest. */
 if(!['gex','vex'].includes(state.metric))state.metric='gex';
 if(!['spot','king'].includes(state.centerOn))state.centerOn='king';
 state.histAll={};
@@ -993,19 +1003,41 @@ function buildImbalance(sym){
   const strikes=Object.values(by).sort((a,b)=>b.k-a.k);
   return{spot,source:ch.src,strikes};
 }
+/* In-flight map. Switching tickers quickly, or a scheduled poll landing on the
+   same symbol a click just requested, used to fire two or three complete chain
+   storms for one ticker. Every caller now awaits the SAME promise. */
+const _symInFlight={};
 async function getSym(sym,maxExp,force){
   sym=cleanSym(sym);if(!sym)return null;
-  const need=maxExp||(state.expiry==='30d'?8:5);
+  /* Only fetch the expirations the current filter can actually display.
+     expiryFilt discards everything past the window anyway, so pulling five
+     chains to render 0DTE was throwing away four multi-megabyte responses per
+     ticker switch. This is the single biggest cause of the switch lag, and it
+     compounds now that Cosmos opens on 0DTE. Two rather than one so a session
+     with no same-day expiry still has a next one to fall back to, and so the
+     term-structure reads have something to compare against. */
+  const need=maxExp||(state.expiry==='0dte'?2:state.expiry==='7d'?4:state.expiry==='30d'?8:5);
   const ch=state.chains[sym];
   const fresh=!force&&ch&&ch.list&&ch.list.length&&(Date.now()-ch.t<CHAIN_TTL)&&ch.maxExp>=need;
   if(!fresh){
-    let got=null;
-    if(liveOn()){
-      try{got=await fetchChainsTradier(sym,need);}catch(e){console.warn('Tradier',sym,e.message);}
+    const key=sym+'|'+need;
+    if(_symInFlight[key]&&!force){
+      try{await _symInFlight[key];}catch(e){}
+    }else{
+      const p=(async function(){
+        let got=null;
+        if(liveOn()){
+          try{got=await fetchChainsTradier(sym,need);}catch(e){console.warn('Tradier',sym,e.message);}
+        }
+        if(!got){try{got=await fetchChainsCBOE(sym);}catch(e){console.warn('CBOE',sym,e.message);}}
+        if(got){got.t=Date.now();state.chains[sym]=got;if(got.spot)state.spot[sym]=got.spot;}
+        return got;
+      })();
+      _symInFlight[key]=p;
+      let got=null;
+      try{got=await p;}finally{delete _symInFlight[key];}
+      if(!got&&!state.chains[sym])return null;
     }
-    if(!got){try{got=await fetchChainsCBOE(sym);}catch(e){console.warn('CBOE',sym,e.message);}}
-    if(got){got.t=Date.now();state.chains[sym]=got;if(got.spot)state.spot[sym]=got.spot;}
-    else if(!ch)return null;
   }
   const c2=state.chains[sym];if(!c2)return null;
   if(!state.spot[sym]){
@@ -1766,6 +1798,14 @@ function renderNovaHub(){
 
   let h='<div class="nv-deck">';
 
+  /* ── THE ORRERY ──
+     The board rendered as a board rather than as a list. Every position on it
+     is measured: radius is distance to the regime flip in expected moves, size
+     is net gamma at spot, colour is which way dealers hedge. Painted by
+     kairos-nova.js on its own loop, which only runs while this view is open. */
+  h+='<div class="nv-orrery"><canvas id="novaOrrery"></canvas>'+
+     '<div class="nv-orr-cap">THE ORRERY <i>live \u00b7 click a body to open it in Junction</i></div></div>';
+
   /* ── HERO ── */
   h+='<div class="nv-hero">'+
      '<div class="nv-hero-core">'+novaCore(!!hub)+'</div>'+
@@ -1825,6 +1865,16 @@ function renderNovaHub(){
   el.innerHTML=h;
 }
 window.renderNovaHub=renderNovaHub;
+/* The canvas is recreated every time the hub re-renders, so the painter has to
+   be re-pointed at the new node rather than holding a stale reference. */
+(function(){
+  const _rn=renderNovaHub;
+  window.renderNovaHub=function(){
+    const r=_rn.apply(this,arguments);
+    try{if(window.KairosNovaOrrery&&state.view==='nova')setTimeout(window.KairosNovaOrrery.start,20);}catch(e){}
+    return r;
+  };
+})();
 document.addEventListener('click',function(e){
   const t=e.target.closest('[data-novasym]');if(!t)return;
   state.focus=t.dataset.novasym;state._juncTab='ladder';
@@ -2681,6 +2731,7 @@ document.addEventListener('click',e=>{
 document.getElementById('btnRefresh').onclick=()=>refresh(true);
 document.getElementById('expiryFilter').onchange=e=>{
   state.expiry=e.target.value;
+  try{localStorage.setItem('kairos_exp',state.expiry);}catch(err){}
   /* re-filter the cached chains synchronously so the switch is instant and can
      never be swallowed by an in-flight refresh (which is what made 0DTE look
      dead while a load was running) */
@@ -2768,6 +2819,17 @@ function setView(v){
   if(_or)_or.classList.toggle('hidden',v==='ideas');
   const _ap=document.getElementById('aetherPulse');
   if(_ap)_ap.classList.toggle('hidden',v==='ideas');
+  if(v==='ideas'){
+    const db=document.getElementById('aetherDetailBtn'),dd=document.getElementById('aetherDetail');
+    if(db&&!db._wired){
+      db._wired=true;
+      db.onclick=function(){
+        const on=dd.classList.toggle('open');
+        db.classList.toggle('on',on);
+        db.innerHTML=on?'HIDE STRUCTURE DETAIL \u2191':'SHOW STRUCTURE DETAIL \u2193';
+      };
+    }
+  }
   document.getElementById('imbSec').classList.toggle('hidden',true);
   const _ns=document.getElementById('novaSec');
   if(_ns){

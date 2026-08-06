@@ -1,5 +1,5 @@
 /* ============================================================================
-   KAIROS NEXUS v10 — THE LADDER
+   KAIROS CHRONOS v11 — THE LADDER  (was Nexus)
    Lightweight Charts v5. Exposure drawn as horizontal levels through time.
 
    WHY THIS CHANGED AGAIN
@@ -47,6 +47,23 @@
   const fieldT = {}, fieldStamp = {};
   let chart = null, priceSeries = null, undertow = null, fieldPrim = null;
   let curSym = null, bars = [], barsT = 0, metric = 'gex';
+  let tf = (function () { try { return localStorage.getItem('kairos_chronos_tf') || '5min'; } catch (e) { return '5min'; } })();
+  let tools = (function () {
+    try { return JSON.parse(localStorage.getItem('kairos_chronos_tools') || 'null') || { vwap: true, ema: false, pd: true }; }
+    catch (e) { return { vwap: true, ema: false, pd: true }; }
+  })();
+  let overlays = { vwap: null, ema9: null, ema21: null };
+  let pdLines = {};
+  /* Tradier serves 1/5/15-minute bars natively. Anything coarser is aggregated
+     here rather than asking for another endpoint, which keeps this to one
+     request per timeframe change. */
+  const TF = {
+    '1min':  { api: '1min',  agg: 1,  days: 3,  label: '1m' },
+    '5min':  { api: '5min',  agg: 1,  days: 6,  label: '5m' },
+    '15min': { api: '15min', agg: 1,  days: 12, label: '15m' },
+    '30min': { api: '15min', agg: 2,  days: 20, label: '30m' },
+    '1h':    { api: '15min', agg: 4,  days: 40, label: '1h' },
+  };
   let lines = {};
   let ready = false, libFail = false, opening = false;
 
@@ -54,11 +71,18 @@
   const LWC = () => window.LightweightCharts;
   const onNexus = () => S.view === 'arena';
 
+  /* NAMING. "Aegis" and "Maelstrom" were flavour, and flavour is the wrong
+     thing to put on an axis label: it makes the reader translate before they
+     can think. What a positive-gamma level actually does is ABSORB - dealers
+     hedge against the move, so price gets soaked up at that strike. What a
+     negative one does is ACCELERATE - dealers hedge with the move, so price
+     gets pushed through. Those are the words now, everywhere. */
   const PAL = {
     gex: { pos: [45, 212, 191], neg: [244, 114, 62] },
     vex: { pos: [56, 189, 248], neg: [232, 121, 249] },
     king: [242, 193, 78],
   };
+  const REGIME = { pos: 'ABSORBING', neg: 'ACCELERATING' };
 
   function cssVar(n, fb) {
     try { return getComputedStyle(document.documentElement).getPropertyValue(n).trim() || fb; }
@@ -120,14 +144,16 @@
   }
 
   /* ---------- price bars --------------------------------------------------- */
-  async function loadBars(sym) {
+  let barsTf = '';
+  async function loadBars(sym, force) {
     if (!sym) return;
-    if (curSym === sym && bars.length && Date.now() - barsT < 45000) return;
+    if (!force && curSym === sym && barsTf === tf && bars.length && Date.now() - barsT < 45000) return;
+    const cfg = TF[tf] || TF['5min'];
     const p = (n) => String(n).padStart(2, '0');
-    const d = new Date(Date.now() - 5 * 86400000);
+    const d = new Date(Date.now() - cfg.days * 86400000);
     const start = d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate());
     const path = '/markets/timesales?symbol=' + encodeURIComponent(sym) +
-                 '&interval=1min&start=' + start + '&session_filter=open';
+                 '&interval=' + cfg.api + '&start=' + start + '&session_filter=open';
     try {
       let j = null;
       if (window.KairosBackend && window.KairosBackend.enabled) j = await window.KairosBackend.proxy(path);
@@ -145,7 +171,94 @@
         last = t;
         out.push({ time: t, open: +r.open, high: +r.high, low: +r.low, close: +r.close });
       }
-      if (out.length) { bars = out; barsT = Date.now(); }
+      if (!out.length) return;
+      /* Aggregate up when the requested timeframe is coarser than what Tradier
+         serves. OHLC composition, not resampling of closes, so a 1h candle has
+         the real high and low of its four 15-minute children. */
+      let final = out;
+      if (cfg.agg > 1) {
+        final = [];
+        for (let i = 0; i < out.length; i += cfg.agg) {
+          const grp = out.slice(i, i + cfg.agg);
+          if (!grp.length) continue;
+          final.push({
+            time: grp[0].time,
+            open: grp[0].open,
+            high: Math.max.apply(null, grp.map(x => x.high)),
+            low: Math.min.apply(null, grp.map(x => x.low)),
+            close: grp[grp.length - 1].close,
+          });
+        }
+      }
+      bars = final; barsT = Date.now(); barsTf = tf;
+    } catch (e) {}
+  }
+
+  /* ---------- study overlays ----------------------------------------------
+     Three studies, all computed from the bars already in memory so none of them
+     costs a request. VWAP resets at each session boundary, which is the only
+     way it means anything; a continuous VWAP across days is a different and far
+     less useful number. */
+  function ema(src, n) {
+    const k = 2 / (n + 1); let prev = null; const out = [];
+    for (const b of src) { prev = prev == null ? b.close : b.close * k + prev * (1 - k); out.push({ time: b.time, value: prev }); }
+    return out;
+  }
+  function vwapSeries(src) {
+    const out = []; let pv = 0, vol = 0, day = null;
+    for (const b of src) {
+      const d = new Date(b.time * 1000).toISOString().slice(0, 10);
+      if (d !== day) { day = d; pv = 0; vol = 0; }
+      const tp = (b.high + b.low + b.close) / 3;
+      /* No per-bar volume on timesales here, so each bar is weighted equally.
+         That makes this a session TWAP rather than a true VWAP, and it is
+         labelled TWAP on the chart for exactly that reason. */
+      pv += tp; vol += 1;
+      out.push({ time: b.time, value: pv / vol });
+    }
+    return out;
+  }
+  function priorDay(src) {
+    if (!src.length) return null;
+    const byDay = {};
+    for (const b of src) {
+      const d = new Date(b.time * 1000).toISOString().slice(0, 10);
+      const e = byDay[d] || (byDay[d] = { h: -1e18, l: 1e18, c: 0 });
+      e.h = Math.max(e.h, b.high); e.l = Math.min(e.l, b.low); e.c = b.close;
+    }
+    const days = Object.keys(byDay).sort();
+    if (days.length < 2) return null;
+    return byDay[days[days.length - 2]];
+  }
+
+  function applyTools() {
+    if (!chart || !priceSeries) return;
+    const L = LWC();
+    const kill = (k) => { if (overlays[k]) { try { chart.removeSeries(overlays[k]); } catch (e) {} overlays[k] = null; } };
+    ['vwap', 'ema9', 'ema21'].forEach(kill);
+    Object.keys(pdLines).forEach(k => { try { priceSeries.removePriceLine(pdLines[k]); } catch (e) {} });
+    pdLines = {};
+    if (!bars.length) return;
+    try {
+      if (tools.vwap) {
+        overlays.vwap = chart.addSeries(L.LineSeries, { color: 'rgba(242,193,78,.55)', lineWidth: 1, priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false });
+        overlays.vwap.setData(vwapSeries(bars));
+      }
+      if (tools.ema) {
+        overlays.ema9 = chart.addSeries(L.LineSeries, { color: 'rgba(56,189,248,.6)', lineWidth: 1, priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false });
+        overlays.ema9.setData(ema(bars, 9));
+        overlays.ema21 = chart.addSeries(L.LineSeries, { color: 'rgba(232,121,249,.5)', lineWidth: 1, priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false });
+        overlays.ema21.setData(ema(bars, 21));
+      }
+      if (tools.pd) {
+        const pd = priorDay(bars);
+        if (pd) {
+          const add = (price, title) => {
+            try { pdLines[title] = priceSeries.createPriceLine({ price, color: 'rgba(148,163,184,.4)', lineWidth: 1, lineStyle: 1, axisLabelVisible: true, title }); } catch (e) {}
+          };
+          add(pd.h, 'PDH'); add(pd.l, 'PDL'); add(pd.c, 'PDC');
+        }
+      }
     } catch (e) {}
   }
 
@@ -324,15 +437,40 @@
             if (y == null) continue;
             const isKing = (m.kingK != null && lv.k === m.kingK);
 
-            // Collect this level's live samples, and its strongest reading.
+            /* THICKNESS. Two things have to be legible at once and they fight:
+               how big this level is compared to the others, and how much it is
+               changing through the session. Scaling purely against the global
+               peak wins the first and loses the second, which is why every band
+               looked like a flat rail.
+
+               So thickness is a blend. A baseline from the level's size relative
+               to the King (comparability), plus a swing term from where this
+               reading sits inside the level's OWN range across the window
+               (dynamics). A level that has been rebuilt from a third of its size
+               to its full size now visibly swells; a level that genuinely has not
+               moved stays flat, which is the honest answer overnight when open
+               interest is frozen. */
+            let ownMin = Infinity, ownMax = 0;
+            for (let i = firstX; i <= lastX; i++) {
+              const a = Math.abs(lv.vals[i]);
+              if (!a) continue;
+              if (a < ownMin) ownMin = a;
+              if (a > ownMax) ownMax = a;
+            }
+            if (!isFinite(ownMin)) continue;
+            const ownSpan = ownMax - ownMin;
+
             const pts = [];
             let strongest = 0, lastSign = 0;
             for (let i = firstX; i <= lastX; i++) {
               const v = lv.vals[i];
               if (!v || !isFinite(xs[i])) continue;
-              const mag = Math.sqrt(Math.abs(v) / m.peak);
+              const a = Math.abs(v);
+              const base = Math.sqrt(a / m.peak);                       // vs the King
+              const swing = ownSpan > 0 ? (a - ownMin) / ownSpan : 1;   // vs itself
+              const mag = Math.max(0, Math.min(1, base * 0.62 + swing * base * 0.38));
               pts.push({ x: xs[i], h: NX.MIN_PX + mag * (NX.MAX_PX - NX.MIN_PX), v, srv: lv.srv[i] });
-              if (mag > strongest) { strongest = mag; }
+              if (base > strongest) strongest = base;
               lastSign = v > 0 ? 1 : -1;
             }
             if (!pts.length) continue;
@@ -442,12 +580,14 @@
 
     chart = L.createChart(host, {
       layout: {
-        background: { color: 'transparent' },
+        background: { type: 'solid', color: '#000000' },
         textColor: cssVar('--muted', '#94a3b8'),
         fontFamily: '"JetBrains Mono", monospace', fontSize: 10, attributionLogo: false,
         panes: { separatorColor: cssVar('--border', '#1e293b'), separatorHoverColor: 'rgba(45,212,191,.25)' },
       },
-      grid: { vertLines: { color: 'rgba(148,163,184,.045)' }, horzLines: { color: 'rgba(148,163,184,.045)' } },
+      /* No grid, solid black. The levels ARE the horizontal reference, and a
+         grid behind them competed with the thing the chart exists to show. */
+      grid: { vertLines: { visible: false }, horzLines: { visible: false } },
       rightPriceScale: { borderColor: cssVar('--border', '#1e293b'), scaleMargins: { top: 0.06, bottom: 0.06 } },
       timeScale: { borderColor: cssVar('--border', '#1e293b'), timeVisible: true, secondsVisible: false, rightOffset: 6 },
       crosshair: {
@@ -487,6 +627,7 @@
     try {
       if (bars.length) priceSeries.setData(bars);
       if (undertow) undertow.setData(undertowData());
+      applyTools();
       drawLines(curSym);
       if (fieldPrim) fieldPrim.poke();
     } catch (e) {}
@@ -519,7 +660,16 @@
     try {
       await loadBars(curSym);
       redraw();
-      if (changed) { try { chart.timeScale().fitContent(); } catch (e) {} }
+      /* fitContent() only resets the TIME axis. The price scale keeps whatever
+         range it was manually dragged to, which is why switching from MSFT to
+         IWM sometimes left the candles off-screen: it was still scaled to 500,
+         not 300. autoScale has to be re-armed explicitly. */
+      if (changed) {
+        try {
+          priceSeries.priceScale().applyOptions({ autoScale: true });
+          chart.timeScale().fitContent();
+        } catch (e) {}
+      }
       hydrate(curSym);
     } finally { opening = false; }
   }
@@ -549,21 +699,32 @@
     const spot = S.spot[curSym] || d.spot || 0;
     const dp = spot > 2000 ? 0 : 1;
     const net1 = ps && ps.net1 != null ? ps.net1 : null;
-    const regime = net1 == null ? null : (net1 > 0 ? 'AEGIS' : 'MAELSTROM');
+    const regime = net1 == null ? null : (net1 > 0 ? REGIME.pos : REGIME.neg);
     const cell = (l, v, c, tip) =>
       '<div class="nx-cell"' + (tip ? ' data-tip="' + tip + '"' : '') + '><b>' + l + '</b><span' +
       (c ? ' style="color:' + c + '"' : '') + '>' + v + '</span></div>';
     const cols = (field[curSym] || []).length;
+    /* The old bar spent two of its five slots on EM and a column counter, which
+       are diagnostics rather than levels. Replaced with the two prices you would
+       actually draw on a chart, plus how far the regime boundary is in percent,
+       which is the number that says how stable the regime call even is. */
+    const gap = (ps && ps.fl != null && spot > 0) ? Math.abs(spot - ps.fl) / spot * 100 : null;
+    const gapTone = gap == null ? '' : gap < 0.5 ? '#f4723e' : gap < 1.5 ? 'var(--gold)' : 'var(--teal)';
+    const cwDist = (ps && ps.cw != null && spot > 0) ? ((ps.cw - spot) / spot * 100) : null;
+    const pwDist = (ps && ps.pw != null && spot > 0) ? ((ps.pw - spot) / spot * 100) : null;
+    const sub = (v) => v == null ? '' : '<em>' + (v > 0 ? '+' : '') + v.toFixed(2) + '%</em>';
     el.innerHTML =
       cell('REGIME @ SPOT', regime || '\u2014',
-        regime === 'AEGIS' ? 'var(--teal)' : regime === 'MAELSTROM' ? '#f4723e' : '',
-        'Net exposure within \u00b11% of spot. Positive: dealers fade moves and price is held. Negative: dealers chase and moves amplify. This is the local book, not the sign of the largest node.') +
-      cell('KING', king ? (+king.k).toFixed(dp) : '\u2014', 'var(--gold)', 'The single largest node on this metric.') +
-      cell('FLIP', ps && ps.fl != null ? (+ps.fl).toFixed(dp) : '\u2014', 'var(--muted)',
-        'Zero-gamma level, from a full Black-Scholes re-price across a \u00b17% spot grid rather than per-strike sign changes.') +
-      cell('EM \u00b11\u03c3', ps && ps.em ? '\u00b1' + ps.em.toFixed(dp) : '\u2014', 'var(--cyan)', 'One session, implied by ATM IV.') +
-      cell('SOUNDINGS', cols ? String(cols) : '0', cols ? 'var(--text)' : 'var(--faint)',
-        'Recorded field columns for this symbol. Server columns accumulate 24/5; local columns only while a tab is open.');
+        regime === REGIME.pos ? 'var(--teal)' : regime === REGIME.neg ? '#f4723e' : '',
+        'Net exposure within \u00b11% of spot. ABSORBING: dealers hedge against the move, so price gets soaked up here. ACCELERATING: dealers hedge with the move, so price gets pushed through. This is the local book, not the sign of the largest node somewhere else.') +
+      cell('KING', king ? (+king.k).toFixed(dp) : '\u2014', 'var(--gold)', 'The single largest node on this metric. The strongest magnet on the board.') +
+      cell('CALL WALL', (ps && ps.cw != null ? (+ps.cw).toFixed(dp) : '\u2014') + sub(cwDist), 'var(--teal)',
+        'The heaviest positive node above spot. In an absorbing regime this is the ceiling dealers defend, and a CLOSE above it, not a touch, is what breaks it.') +
+      cell('PUT WALL', (ps && ps.pw != null ? (+ps.pw).toFixed(dp) : '\u2014') + sub(pwDist), '#e879f9',
+        'The heaviest negative node below spot. The floor in an absorbing regime, and the trapdoor once price closes through it.') +
+      cell('FLIP', (ps && ps.fl != null ? (+ps.fl).toFixed(dp) : '\u2014')
+        + (gap != null ? '<em style="color:' + gapTone + '">' + gap.toFixed(2) + '% away</em>' : ''), 'var(--muted)',
+        'Zero-gamma level, from a full Black-Scholes re-price across a \u00b17% spot grid rather than per-strike sign changes. Inside about 0.5% the regime is fragile and one catalyst flips it; past roughly 3% it is firmly set. The distance matters more than the side.');
   }
   setInterval(function () { if (onNexus()) hud(); }, 6000);
 
@@ -633,6 +794,27 @@
       hud(); redraw();
     });
 
+    const tfs = $('nexusTf');
+    if (tfs) tfs.addEventListener('click', async function (e) {
+      const b2 = e.target.closest('button[data-tf]'); if (!b2) return;
+      tfs.querySelectorAll('button').forEach(x => x.classList.remove('on'));
+      b2.classList.add('on');
+      tf = b2.dataset.tf;
+      try { localStorage.setItem('kairos_chronos_tf', tf); } catch (x) {}
+      await loadBars(curSym, true);
+      redraw();
+      try { priceSeries.priceScale().applyOptions({ autoScale: true }); chart.timeScale().fitContent(); } catch (x) {}
+    });
+    const tls = $('nexusTools');
+    if (tls) tls.addEventListener('click', function (e) {
+      const b2 = e.target.closest('button[data-tool]'); if (!b2) return;
+      const k = b2.dataset.tool;
+      tools[k] = !tools[k];
+      b2.classList.toggle('on', !!tools[k]);
+      try { localStorage.setItem('kairos_chronos_tools', JSON.stringify(tools)); } catch (x) {}
+      applyTools();
+    });
+
     const fit = $('nexusFit');
     if (fit) fit.onclick = function () {
       try { chart.timeScale().fitContent(); priceSeries.priceScale().applyOptions({ autoScale: true }); } catch (e) {}
@@ -654,12 +836,15 @@
     if (onNexus() && !document.hidden) loadBars(curSym).then(redraw);
   }, 60000);
 
-  window.KairosNexus = {
+  /* Chronos was Nexus. Both names are exported so nothing that referenced the
+     old one silently breaks. */
+  window.KairosChronos = window.KairosNexus = {
     NX, open, redraw, hud, hydrate, toggleFull,
+    tf: function () { return tf; }, tools: function () { return tools; },
     field: function () { return field; },
     chart: function () { return chart; },
     levels: function () { return buildLevels(); },
     metric: function () { return metric; },
   };
-  console.log('%cKairos Nexus \u2014 THE LADDER. Exposure as horizontal levels through time: thickness is strength, and price runs across them.', 'color:#2dd4bf;font-weight:bold');
+  console.log('%cKairos Chronos \u2014 THE LADDER. Exposure as horizontal levels through time: thickness is strength, and price runs across them.', 'color:#2dd4bf;font-weight:bold');
 })();

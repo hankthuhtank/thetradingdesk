@@ -564,6 +564,14 @@ function zSetTab(t){
   const cardsEl=document.getElementById('cards'),zw=document.getElementById('zeroWrap'),ck=document.getElementById('zeroClock');
   if(cardsEl)cardsEl.classList.toggle('hidden',t!=='swing');
   if(zw)zw.classList.toggle('hidden',t!=='zero');
+  /* Both of these are the READINESS layer, not a second set of contracts. The
+     Forge above is the answer; these say whether the board is even set up for
+     one. Collapsed by default, because two lists of contracts on one screen was
+     the single most confusing thing in the app. */
+  const dl=document.getElementById('aetherDetail');
+  if(dl)dl.classList.remove('open');
+  const db=document.getElementById('aetherDetailBtn');
+  if(db){db.classList.remove('on');db.textContent='SHOW STRUCTURE DETAIL';}
   if(ck)ck.classList.toggle('hidden',t!=='zero');
   if(t==='zero'){zRender();zFeed(true);}
   else if(typeof renderCards==='function')renderCards();
