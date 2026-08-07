@@ -1011,6 +1011,113 @@ i.lgd.r-h{background:rgba(126,166,214,.45)} i.lgd.r-s{background:rgba(248,113,11
   .lg-sec{padding:18px 16px}
 }
 
+
+/* ============================================================
+   THE OPTIONS FLOOR — the assembly bench
+   ============================================================ */
+.obench{border:1px solid rgba(34,211,238,.3);border-radius:16px;overflow:hidden;
+  background:linear-gradient(180deg,rgba(34,211,238,.05),transparent 32%),var(--panel)}
+.ob-head{padding:18px 20px;border-bottom:1px solid var(--line)}
+.ob-head h3{font-family:var(--disp);font-size:1.2rem;text-transform:uppercase}
+.ob-head p{font-size:.82rem;color:var(--dim);margin-top:5px}
+.ob-k1{color:var(--cyan)} .ob-k2{color:var(--gold)}
+.ob-picker{display:flex;gap:5px;flex-wrap:wrap;margin-top:13px}
+.ob-picker button{font-family:var(--mono);font-size:.57rem;letter-spacing:.05em;color:var(--faint);border:1px solid var(--line);border-radius:7px;padding:6px 9px;transition:.15s}
+.ob-picker button:hover{color:var(--text);border-color:var(--dim)}
+.ob-picker button.on{border-color:var(--cyan);color:var(--cyan);background:rgba(34,211,238,.1)}
+.ob-body{display:grid;grid-template-columns:1fr 320px}
+.ob-stage{padding:14px 16px;border-right:1px solid var(--line);background:var(--bg-2);min-width:0}
+#optSVG{width:100%;height:auto;display:block}
+.ob-ctl{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:14px;padding-top:13px;border-top:1px solid var(--line-2)}
+.ob-ctl.live{grid-template-columns:1fr 1fr;border-top:1px dashed rgba(245,185,66,.3)}
+.oc{display:flex;flex-direction:column;gap:6px}
+.oc span{font-family:var(--mono);font-size:.55rem;letter-spacing:.13em;text-transform:uppercase;color:var(--faint);display:flex;justify-content:space-between;gap:8px}
+.oc span b{color:var(--text)}
+.oc input{width:100%;accent-color:var(--cyan)}
+.oc.hot span b{color:var(--gold)} .oc.hot input{accent-color:var(--gold)}
+.ob-note{font-size:.79rem;color:var(--dim);line-height:1.6;margin-top:13px;padding-left:12px;border-left:2px solid rgba(34,211,238,.4)}
+.ob-note b{color:var(--text)} .op-want{color:var(--faint)}
+.ob-side{padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.op-nums{display:grid;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:11px;overflow:hidden}
+.op-n{background:var(--panel);padding:10px 13px}
+.on-k{display:block;font-family:var(--mono);font-size:.53rem;letter-spacing:.13em;text-transform:uppercase;color:var(--faint)}
+.on-v{display:block;font-family:var(--disp);font-size:1.22rem;margin:3px 0 2px}
+.on-v.warn{color:var(--red)}
+.on-s{font-size:.66rem;color:var(--faint)}
+.op-greeks{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:11px;overflow:hidden}
+.op-g{background:var(--bg-2);padding:9px 11px}
+.op-g b{display:block;font-family:var(--mono);font-size:.53rem;letter-spacing:.13em;text-transform:uppercase;color:var(--cyan)}
+.op-g span{display:block;font-family:var(--mono);font-size:.95rem;color:var(--text);margin:2px 0}
+.op-g em{font-style:normal;font-size:.62rem;color:var(--faint);line-height:1.35}
+.ob-fine{font-size:.68rem;color:var(--faint);line-height:1.55}
+.op-grid{stroke:rgba(126,166,214,.13)}
+.op-zero{stroke:rgba(126,166,214,.45);stroke-width:1.2}
+.op-ax{font-family:var(--mono);font-size:9px;fill:var(--faint)}
+.op-k{stroke:rgba(126,166,214,.28);stroke-dasharray:2 4}
+.op-kt{font-family:var(--mono);font-size:9px;fill:var(--faint);text-anchor:middle}
+.op-exp{stroke:var(--cyan);stroke-width:2.4;stroke-linejoin:round}
+.op-now{stroke:var(--gold);stroke-width:2;stroke-dasharray:5 4;stroke-linejoin:round}
+.op-win{fill:rgba(52,211,153,.13)} .op-lose{fill:rgba(248,113,113,.13)}
+.op-spot{stroke:rgba(227,217,198,.5);stroke-width:1}
+.op-spott{font-family:var(--mono);font-size:9px;fill:var(--dim);text-anchor:middle}
+.op-be{fill:var(--gold)}
+.olib{display:flex;flex-direction:column;gap:26px}
+.og-h{margin-bottom:10px}
+.og-h h4{font-family:var(--mono);font-size:.62rem;letter-spacing:.16em;text-transform:uppercase;color:var(--cyan);margin-bottom:5px}
+.og-h p{font-size:.8rem;color:var(--faint);line-height:1.55;max-width:88ch}
+.ostruct{border:1px solid var(--line);border-radius:11px;background:var(--panel);margin-bottom:7px;overflow:hidden}
+.ostruct summary{padding:13px 16px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:14px;list-style:none;flex-wrap:wrap}
+.ostruct summary::-webkit-details-marker{display:none}
+.ostruct[open],.ostruct.on{border-color:rgba(34,211,238,.4)}
+.os-n{font-family:var(--disp);font-size:1.02rem;text-transform:uppercase}
+.ostruct[open] .os-n{color:var(--cyan)}
+.os-tags{display:flex;gap:6px;flex-wrap:wrap}
+.os-tags i{font-style:normal;font-family:var(--mono);font-size:.53rem;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);border:1px solid var(--line);border-radius:5px;padding:3px 6px}
+.os-tags i.bad{color:var(--red);border-color:rgba(248,113,113,.4)}
+.os-tags i.ok{color:var(--green);border-color:rgba(52,211,153,.3)}
+.os-b{padding:0 16px 15px}
+.os-r{display:grid;grid-template-columns:126px 1fr;gap:13px;padding:10px 0;border-top:1px solid var(--line-2);font-size:.84rem}
+.os-r .k{font-family:var(--mono);font-size:.54rem;letter-spacing:.12em;text-transform:uppercase;color:var(--cyan);padding-top:3px}
+.os-r .v{color:var(--dim);line-height:1.6}
+.os-r.trap .k{color:var(--red)} .os-r.trap .v{color:var(--text)}
+.os-load{margin-top:12px;font-family:var(--mono);font-size:.57rem;letter-spacing:.12em;text-transform:uppercase;border:1px solid rgba(34,211,238,.4);color:var(--cyan);border-radius:8px;padding:9px 13px;transition:.16s}
+.os-load:hover{background:rgba(34,211,238,.12)}
+.ols{border:1px solid var(--line);border-radius:12px;background:var(--panel);overflow:hidden;margin-bottom:8px}
+.ols summary{padding:14px 18px;cursor:pointer;display:flex;gap:14px;align-items:baseline;list-style:none}
+.ols summary::-webkit-details-marker{display:none}
+.ols[open]{border-color:rgba(34,211,238,.35)}
+.ol-i{font-family:var(--mono);font-size:.66rem;color:var(--cyan)}
+.ol-n{font-family:var(--disp);font-size:1.02rem;text-transform:uppercase}
+.ols[open] .ol-n{color:var(--cyan)}
+.ol-b{padding:0 18px 16px 46px;max-width:96ch}
+.ol-b p{font-size:.85rem;color:var(--dim);line-height:1.66}
+.ol-t{margin-top:10px;padding-left:13px;border-left:2px solid rgba(34,211,238,.4);color:var(--text)!important;font-size:.81rem!important}
+@media(max-width:1000px){
+  .ob-body{grid-template-columns:1fr}
+  .ob-stage{border-right:none;border-bottom:1px solid var(--line)}
+  .ob-ctl{grid-template-columns:1fr 1fr}
+  .op-nums{grid-template-columns:1fr 1fr}
+}
+@media(max-width:640px){
+  .ob-ctl,.ob-ctl.live{grid-template-columns:1fr}
+  .op-nums,.op-greeks{grid-template-columns:1fr}
+  .os-r{grid-template-columns:1fr;gap:5px}
+  .ol-b{padding-left:18px}
+}
+
+/* ---- hub landing pages ---- */
+.hubv{padding:8px 0}
+.hub-h{max-width:80ch;margin-bottom:30px}
+.hub-h h2{font-family:var(--disp);font-size:clamp(1.9rem,4.2vw,3rem);line-height:1.05;margin:10px 0 12px}
+.hub-h p{font-size:.95rem;color:var(--dim);line-height:1.65}
+.hub-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px}
+.hub-c{border:1px solid var(--line);border-radius:15px;background:var(--panel);padding:22px 24px;text-align:left;display:flex;flex-direction:column;gap:9px;transition:border-color .2s,transform .2s}
+.hub-c:hover{transform:translateY(-2px)}
+.hub-c .hc-i{width:38px;height:38px;display:grid;place-items:center;border:1px solid var(--line);border-radius:10px}
+.hub-c h3{font-family:var(--disp);font-size:1.22rem;text-transform:uppercase}
+.hub-c p{font-size:.83rem;color:var(--dim);line-height:1.6;flex:1}
+.hub-c .hc-m{font-family:var(--mono);font-size:.56rem;letter-spacing:.13em;text-transform:uppercase;color:var(--faint);display:flex;justify-content:space-between;gap:10px;padding-top:10px;border-top:1px solid var(--line-2)}
+
 #cmdk{position:fixed;inset:0;z-index:200;background:rgba(4,6,10,.85);display:none;align-items:flex-start;justify-content:center;padding-top:12vh}
 #cmdk.open{display:flex}
 .cmdk-win{width:min(580px,92%);border:1px solid var(--line);border-radius:14px;background:var(--panel);overflow:hidden;box-shadow:0 40px 90px rgba(0,0,0,.8)}
@@ -1354,14 +1461,10 @@ body.paged .section{padding-top:40px}
     <button class="menu-btn" id="menuBtn" aria-expanded="false" aria-controls="navLinks">Menu</button>
     <ul class="nav-links" id="navLinks">
       <li><a href="#terminal">Terminal</a></li>
-      <li><a href="#tools">Tools</a></li>
-      <li><a href="#ledger">Fundamentals</a></li>
-      <li><a href="#encyclopedia">Encyclopedia</a></li>
-      <li><a href="#patterns">Candlesticks</a></li>
-      <li><a href="#indicators">Indicators</a></li>
-      <li><a href="#strategies">Strategies</a></li>
-      <li><a href="#riskdesk">Risk &amp; Mind</a></li>
-      <li><a href="#sessions">1:1 Sessions</a></li>
+      <li><a href="#library">Library</a></li>
+      <li><a href="#playbook">Playbook</a></li>
+      <li><a href="#workbench">Workbench</a></li>
+      <li><a href="#sessions">Sessions</a></li>
     </ul>
     <button class="nav-cmd" onclick="openCmdk()">Search <kbd>/</kbd></button>
   </div>
@@ -1890,6 +1993,74 @@ body.paged .section{padding-top:40px}
   </div>
 </section>
 
+<!-- OPTIONS / THE OPTIONS FLOOR -->
+<section class="section page-view hidden" id="options" data-page="options">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div class="eyebrow">THE OPTIONS FLOOR</div>
+      <h2 class="disp">Direction is the easy part. <span class="g">The structure decides.</span></h2>
+      <p>Most losing option trades were correct about direction. They died on the wrong expiry, the wrong strike, or a volatility crush nobody accounted for. Build any structure on the bench below and watch what time and volatility do to it before price moves at all.</p>
+    </div>
+
+    <!-- THE ASSEMBLY BENCH — the signature piece. The Toolkit's payoff
+         tool draws the shape at expiration; this draws the road there. -->
+    <div class="obench reveal" id="optBench">
+      <div class="ob-head">
+        <div>
+          <h3>The Assembly Bench</h3>
+          <p>Nineteen structures, priced live with Black-Scholes. The <b class="ob-k1">solid line</b> is expiration. The <b class="ob-k2">curved line</b> is today.</p>
+        </div>
+        <div class="ob-picker" id="optPicker"></div>
+      </div>
+
+      <div class="ob-body">
+        <div class="ob-stage">
+          <svg id="optSVG" viewBox="0 0 760 340" role="img" aria-label="Option payoff, today versus expiration"></svg>
+          <div class="ob-ctl">
+            <label class="oc"><span>Spot <b id="optSpotL">100</b></span>
+              <input id="optSpot" type="range" min="20" max="600" step="1" value="100"></label>
+            <label class="oc"><span>Days to expiry <b id="optDteL">45d</b></span>
+              <input id="optDte" type="range" min="7" max="120" step="1" value="45"></label>
+            <label class="oc"><span>Implied volatility <b id="optIvL">30%</b></span>
+              <input id="optIv" type="range" min="10" max="120" step="1" value="30"></label>
+          </div>
+          <div class="ob-ctl live">
+            <label class="oc hot"><span>Time passing <b id="optElapsedL">entry day</b></span>
+              <input id="optElapsed" type="range" min="0" max="45" step="1" value="0"></label>
+            <label class="oc hot"><span>Volatility shift <b id="optIvShiftL">0%</b></span>
+              <input id="optIvShift" type="range" min="-60" max="60" step="1" value="0"></label>
+          </div>
+          <p class="ob-note" id="optNote"></p>
+        </div>
+
+        <div class="ob-side">
+          <div class="op-nums" id="optNums"></div>
+          <div class="op-greeks" id="optGreeks"></div>
+          <p class="ob-fine">Zero rates, no dividend, European pricing. The shape and the direction of every number are right; the last cent is not the point. Strikes snap to a realistic increment for the spot you set.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="sec-head reveal" style="margin:64px 0 22px">
+      <div class="eyebrow">THE STRUCTURE LIBRARY</div>
+      <h2 class="disp" style="font-size:clamp(1.6rem,3.4vw,2.4rem)">Nineteen structures, <span class="c">and what each one is really for.</span></h2>
+      <p>Grouped by what you are actually betting on. Every one opens onto the bench, so you can see it before you trade it.</p>
+    </div>
+    <div class="olib reveal" id="optLib"></div>
+
+    <div class="sec-head reveal" style="margin:64px 0 22px">
+      <div class="eyebrow">THE EIGHT THAT DECIDE EVERYTHING</div>
+      <h2 class="disp" style="font-size:clamp(1.6rem,3.4vw,2.4rem)">What nobody explains <span class="c">until it costs you.</span></h2>
+    </div>
+    <div class="lessons reveal" id="optLessons"></div>
+  </div>
+</section>
+
+<!-- HUB LANDING PAGES — populated from SECTIONS at runtime -->
+<section class="section page-view hidden" id="library" data-page="library"><div class="wrap"><div class="hubv" data-hub="library"></div></div></section>
+<section class="section band page-view hidden" id="playbook" data-page="playbook"><div class="wrap"><div class="hubv" data-hub="playbook"></div></div></section>
+<section class="section page-view hidden" id="workbench" data-page="workbench"><div class="wrap"><div class="hubv" data-hub="workbench"></div></div></section>
+
 <!-- SESSIONS — the path, and the optional human in the loop -->
 <section class="section band page-view hidden" id="sessions" data-page="sessions">
   <div class="wrap">
@@ -2230,6 +2401,7 @@ body.paged .section{padding-top:40px}
 <script src="indicators.js"></script>
 <script src="riskdesk.js"></script>
 <script src="ledger.js"></script>
+<script src="options.js"></script>
 <script>
 'use strict';
 const $=(s,el=document)=>el.querySelector(s);
@@ -2240,6 +2412,7 @@ const STRATEGIES=T.STRATEGIES||[], STRAT_FAMS=T.STRAT_FAMS||[['all','All']], STR
 const INDICATORS=T.INDICATORS||[], IND_CATS=T.IND_CATS||[], IND_SERIES=T.IND_SERIES||[];
 const TIERS=T.TIERS||[], HEDGES=T.HEDGES||[], CONTRACTS=T.CONTRACTS||[], MISTAKES=T.MISTAKES||[], QUOTES=T.QUOTES||[];
 const LEDGER_GROUPS=T.LEDGER_GROUPS||[], LEDGER_METRICS=T.LEDGER_METRICS||[], LEDGER_SERIES=T.LEDGER_SERIES||[], LEDGER_LESSONS=T.LEDGER_LESSONS||[];
+const OPT_CATS=T.OPT_CATS||[], OPT_STRUCTURES=T.OPT_STRUCTURES||[], OPT_LESSONS=T.OPT_LESSONS||[];
 const GREEN='#34d399', RED='#f87171', CYAN='#22d3ee', GOLD='#f5b942', VIOLET='#a855f7', DIM='#8a94a6', FAINT='#586173';
 const reduceMotion=matchMedia('(prefers-reduced-motion: reduce)').matches;
 /* ============================================================
@@ -3310,6 +3483,226 @@ function openPattern(i){
 renderPatterns();
 
 /* ============================================================
+   THE OPTIONS FLOOR - the Assembly Bench
+   The payoff tool in the Toolkit draws the shape at expiration.
+   This one draws the road there: the same structure priced today
+   with real Black-Scholes, so you can watch the curve collapse
+   onto the kinked expiry line as days pass and volatility moves.
+   That gap between the two lines is where most option money is
+   actually won and lost, and almost nothing visualises it.
+   ============================================================ */
+const oCnd=x=>{const a=Math.abs(x),k=1/(1+.2316419*a),
+  p=1-.3989422804014327*Math.exp(-a*a/2)*k*(.319381530+k*(-.356563782+k*(1.781477937+k*(-1.821255978+k*1.330274429))));
+  return x<0?1-p:p;};
+const oNpdf=x=>.3989422804014327*Math.exp(-x*x/2);
+/* zero rates, no dividend: the shape is the lesson here, not the third decimal */
+function oBs(S,K,T,v,type){
+  if(T<=0||v<=0){const i=type==='c'?Math.max(0,S-K):Math.max(0,K-S);
+    return {p:i,d:type==='c'?(S>K?1:0):(S<K?-1:0),g:0,th:0,ve:0};}
+  const st=Math.sqrt(T), d1=(Math.log(S/K)+v*v/2*T)/(v*st), d2=d1-v*st;
+  const nd1=oCnd(d1), nd2=oCnd(d2);
+  const call=S*nd1-K*nd2, put=call-S+K;
+  const g=oNpdf(d1)/(S*v*st), ve=S*oNpdf(d1)*st/100;
+  const th=(-S*oNpdf(d1)*v/(2*st))/365;
+  return type==='c'?{p:call,d:nd1,g,th,ve}:{p:put,d:nd1-1,g,th,ve};
+}
+const OPT_CAT_LABEL=Object.fromEntries(OPT_CATS.map(c=>[c[0],c[1]]));
+const OPT={id:'bcs', spot:100, dte:45, iv:30, elapsed:0, ivShift:0};
+
+function strikeStep(s){ return s<25?0.5 : s<200?1 : s<1000?5 : 25; }
+const optStruct=()=>OPT_STRUCTURES.find(x=>x.id===OPT.id)||OPT_STRUCTURES[0];
+const optShares=()=>optStruct().sh||0;
+function optLegs(){
+  const st=optStruct();
+  const step=strikeStep(OPT.spot);
+  return st.legs.map(l=>({t:l.t, s:l.s, x:l.x||1,
+    K:Math.max(step, Math.round(OPT.spot*(1+l.k/100)/step)*step)}));
+}
+/* value of the whole position at price S, with `used` days already gone */
+function posValue(S,used,ivPct){
+  const v=Math.max(.01,ivPct/100);
+  return optLegs().reduce((sum,l)=>{
+    const T=Math.max(0,(OPT.dte*l.x-used))/365;
+    return sum+l.s*oBs(S,l.K,T,v,l.t).p*100;
+  }, optShares()*S);
+}
+function posGreeks(S,used,ivPct){
+  const v=Math.max(.01,ivPct/100); const o={d:optShares(),g:0,th:0,ve:0};
+  optLegs().forEach(l=>{
+    const T=Math.max(0,(OPT.dte*l.x-used))/365, r=oBs(S,l.K,T,v,l.t);
+    o.d+=l.s*r.d*100; o.g+=l.s*r.g*100; o.th+=l.s*r.th*100; o.ve+=l.s*r.ve*100;
+  });
+  return o;
+}
+const optEntry=()=>posValue(OPT.spot,0,OPT.iv);          /* debit if >0 */
+const optNowIV=()=>Math.max(1,OPT.iv*(1+OPT.ivShift/100));
+const oUsd=v=>(v<0?'-$':'$')+Math.abs(v).toLocaleString(undefined,{maximumFractionDigits:0});
+const oUsd2=v=>(v<0?'-$':'$')+Math.abs(v).toFixed(2);
+
+function optCurves(){
+  const lo=OPT.spot*.72, hi=OPT.spot*1.28, N=160, entry=optEntry();
+  const xs=[],expy=[],nowy=[];
+  for(let i=0;i<=N;i++){
+    const S=lo+(hi-lo)*i/N;
+    xs.push(S);
+    expy.push(posValue(S,OPT.dte,OPT.iv)-entry);          /* near legs dead */
+    nowy.push(posValue(S,OPT.elapsed,optNowIV())-entry);
+  }
+  return {xs,expy,nowy,entry,lo,hi};
+}
+function breakevens(xs,ys){
+  const out=[];
+  for(let i=1;i<xs.length;i++){
+    if((ys[i-1]<0&&ys[i]>=0)||(ys[i-1]>0&&ys[i]<=0)){
+      const t=Math.abs(ys[i-1])/(Math.abs(ys[i-1])+Math.abs(ys[i]));
+      out.push(xs[i-1]+(xs[i]-xs[i-1])*t);
+    }
+  }
+  return out;
+}
+/* probability the position finishes profitable, integrating the
+   lognormal terminal distribution over the winning regions */
+function probProfit(xs,expy){
+  const T=OPT.dte/365, v=OPT.iv/100, S0=OPT.spot;
+  if(T<=0)return null;
+  const st=v*Math.sqrt(T); let p=0;
+  for(let i=1;i<xs.length;i++){
+    if(expy[i]<=0)continue;
+    const a=Math.log(xs[i-1]/S0)/st+st/2, b=Math.log(xs[i]/S0)/st+st/2;
+    p+=oCnd(b)-oCnd(a);
+  }
+  return Math.max(0,Math.min(1,p));
+}
+
+function drawOptChart(){
+  const c=optCurves(), W=760,H=340,PL=58,PR=16,PT=18,PB=34;
+  const yv=c.expy.concat(c.nowy);
+  let ylo=Math.min(...yv), yhi=Math.max(...yv);
+  const pad=Math.max((yhi-ylo)*.12, 20); ylo-=pad; yhi+=pad;
+  const X=s=>PL+(s-c.lo)/(c.hi-c.lo)*(W-PL-PR);
+  const Y=v=>PT+(yhi-v)/(yhi-ylo)*(H-PT-PB);
+  let s='';
+  /* profit / loss shading against the expiry line */
+  const zone=(cmp,cls)=>{let d='',open=false;
+    c.xs.forEach((S,i)=>{const ok=cmp(c.expy[i]);
+      if(ok&&!open){d+=`M${X(S).toFixed(1)} ${Y(0).toFixed(1)}`;open=true;}
+      if(ok)d+=`L${X(S).toFixed(1)} ${Y(c.expy[i]).toFixed(1)}`;
+      if((!ok||i===c.xs.length-1)&&open){d+=`L${X(S).toFixed(1)} ${Y(0).toFixed(1)}Z`;open=false;}});
+    return d?`<path class="${cls}" d="${d}"/>`:'';};
+  s+=zone(v=>v>0,'op-win')+zone(v=>v<0,'op-lose');
+  /* grid */
+  for(let i=0;i<=4;i++){const v=ylo+(yhi-ylo)*i/4;
+    s+=`<line class="op-grid" x1="${PL}" x2="${W-PR}" y1="${Y(v).toFixed(1)}" y2="${Y(v).toFixed(1)}"/>`;
+    s+=`<text class="op-ax" x="${PL-7}" y="${(Y(v)+3.5).toFixed(1)}" text-anchor="end">${oUsd(v)}</text>`;}
+  s+=`<line class="op-zero" x1="${PL}" x2="${W-PR}" y1="${Y(0).toFixed(1)}" y2="${Y(0).toFixed(1)}"/>`;
+  /* strikes */
+  const seen=new Set();
+  optLegs().forEach(l=>{ if(seen.has(l.K))return; seen.add(l.K);
+    s+=`<line class="op-k" x1="${X(l.K).toFixed(1)}" x2="${X(l.K).toFixed(1)}" y1="${PT}" y2="${H-PB}"/>`;
+    s+=`<text class="op-kt" x="${X(l.K).toFixed(1)}" y="${H-PB+13}">${l.K}</text>`;});
+  /* the two lines: the shape at expiry, and the shape right now */
+  const path=a=>c.xs.map((S,i)=>(i?'L':'M')+X(S).toFixed(1)+' '+Y(a[i]).toFixed(1)).join('');
+  s+=`<path class="op-exp" d="${path(c.expy)}" fill="none"/>`;
+  s+=`<path class="op-now" d="${path(c.nowy)}" fill="none"/>`;
+  /* spot */
+  s+=`<line class="op-spot" x1="${X(OPT.spot).toFixed(1)}" x2="${X(OPT.spot).toFixed(1)}" y1="${PT}" y2="${H-PB}"/>`;
+  s+=`<text class="op-spott" x="${X(OPT.spot).toFixed(1)}" y="${PT-5}">spot ${OPT.spot}</text>`;
+  breakevens(c.xs,c.expy).forEach(b=>{
+    s+=`<circle class="op-be" cx="${X(b).toFixed(1)}" cy="${Y(0).toFixed(1)}" r="4"/>`;});
+  $('#optSVG').innerHTML=s;
+  paintOptRead(c);
+}
+function paintOptRead(c){
+  const st=optStruct();
+  const mx=Math.max(...c.expy), mn=Math.min(...c.expy), n=c.expy.length;
+  /* Unbounded is a question about slope at the edges, not value. A capped
+     spread sits flat at its maximum for every price above the short strike,
+     so testing "is the edge equal to the max" calls every spread unlimited. */
+  const tol=Math.max(1e-6,(mx-mn)*1e-4);
+  const dR=c.expy[n-1]-c.expy[n-2], dL=c.expy[0]-c.expy[1];
+  /* Price cannot go below zero, so the downside is always bounded even
+     when it runs off the left of the chart. Only a naked short call is
+     genuinely unlimited. Where the curve is still moving at the left
+     edge, price the position at zero and use that as the real extreme. */
+  const floor=posValue(.01,OPT.dte,OPT.iv)-c.entry;
+  const openUp=dR>tol, openDn=dR<-tol;
+  const mxT=(dL>tol)?Math.max(mx,floor):mx;
+  const mnT=(dL<-tol)?Math.min(mn,floor):mn;
+  const bes=breakevens(c.xs,c.expy), pop=probProfit(c.xs,c.expy);
+  const nowPL=c.nowy[Math.round((OPT.spot-c.lo)/(c.hi-c.lo)*(c.xs.length-1))];
+  const g=posGreeks(OPT.spot,OPT.elapsed,optNowIV());
+  $('#optNums').innerHTML=[
+    ['Net '+(c.entry>=0?'debit':'credit'), oUsd2(Math.abs(c.entry)), c.entry>=0?'paid to open':'received to open'],
+    ['Max profit', openUp?'Unlimited':oUsd(mxT), openUp?'no upside cap':'at expiry'],
+    ['Max loss', openDn?'UNDEFINED':oUsd(mnT), openDn?'unlimited above, size accordingly':(dL<-tol?'if it goes to zero':'the most this can cost')],
+    ['Breakeven'+(bes.length>1?'s':''), bes.length?bes.map(b=>b.toFixed(2)).join(' / '):'none in range', 'at expiry'],
+    ['Chance of profit', pop==null?'\u2014':(pop*100).toFixed(0)+'%', 'at expiry, from current IV'],
+    ['P/L right now', oUsd2(nowPL), `day ${OPT.elapsed} of ${OPT.dte}`]
+  ].map(([k,v,sub])=>`<div class="op-n"><span class="on-k">${k}</span><span class="on-v${/UNDEF|Unlimited/.test(v)?' warn':''}">${v}</span><span class="on-s">${sub}</span></div>`).join('');
+  $('#optGreeks').innerHTML=[
+    ['Delta',g.d.toFixed(1),'shares of equivalent exposure'],
+    ['Gamma',g.g.toFixed(2),'how fast delta changes'],
+    ['Theta',oUsd2(g.th),'per day, at this spot'],
+    ['Vega',oUsd2(g.ve),'per 1 point of IV']
+  ].map(([k,v,s])=>`<div class="op-g"><b>${k}</b><span>${v}</span><em>${s}</em></div>`).join('');
+  const decay=nowPL-(c.expy[Math.round((OPT.spot-c.lo)/(c.hi-c.lo)*(c.xs.length-1))]);
+  $('#optNote').innerHTML=st
+    ? `<b>${st.n}</b> \u00b7 ${st.dir} \u00b7 ${st.risk} risk \u00b7 needs level ${st.lvl}. <span class="op-want">${st.want}</span>`
+      +(OPT.elapsed>0||OPT.ivShift!==0
+        ? ` The gap between the two lines at spot is <b>${oUsd2(decay)}</b>: that is what time and volatility are worth to this position right now, before price does anything at all.`
+        : ' Move the two sliders below and watch the curved line fall onto the kinked one. That collapse is time decay, and it is the whole game for a buyer.')
+    : '';
+}
+function pickOpt(id){
+  OPT.id=id; OPT.elapsed=0; OPT.ivShift=0;
+  $('#optElapsed').value=0; $('#optIvShift').value=0;
+  $$('#optPicker button').forEach(b=>b.classList.toggle('on',b.dataset.o===id));
+  $$('.ostruct').forEach(b=>b.classList.toggle('on',b.dataset.o===id));
+  syncOptLabels(); drawOptChart();
+}
+function syncOptLabels(){
+  $('#optSpotL').textContent=OPT.spot;
+  $('#optDteL').textContent=OPT.dte+'d';
+  $('#optIvL').textContent=OPT.iv+'%';
+  $('#optElapsedL').textContent=OPT.elapsed?`${OPT.elapsed} days gone \u00b7 ${OPT.dte-OPT.elapsed} left`:'entry day';
+  $('#optIvShiftL').textContent=(OPT.ivShift>0?'+':'')+OPT.ivShift+'% \u00b7 IV now '+optNowIV().toFixed(0);
+}
+function renderOptPicker(){
+  $('#optPicker').innerHTML=OPT_STRUCTURES.map(s=>
+    `<button data-o="${s.id}" class="${s.id===OPT.id?'on':''}" onclick="pickOpt('${s.id}')">${s.n}</button>`).join('');
+}
+function renderOptLibrary(){
+  $('#optLib').innerHTML=OPT_CATS.map(([k,label,blurb])=>{
+    const rows=OPT_STRUCTURES.filter(s=>s.cat===k);
+    return `<div class="ogrp"><div class="og-h"><h4>${label}</h4><p>${blurb}</p></div>
+      ${rows.map(s=>`<details class="ostruct" data-o="${s.id}">
+        <summary><span class="os-n">${s.n}</span>
+          <span class="os-tags"><i class="${/UNDEF/i.test(s.risk)?'bad':'ok'}">${s.risk}</i><i>${s.dir}</i><i>lvl ${s.lvl}</i></span></summary>
+        <div class="os-b">
+          <div class="os-r"><span class="k">You want</span><span class="v">${s.want}</span></div>
+          <div class="os-r"><span class="k">When to use it</span><span class="v">${s.when}</span></div>
+          <div class="os-r"><span class="k">Where it fails</span><span class="v">${s.fails}</span></div>
+          <div class="os-r trap"><span class="k">The trap</span><span class="v">${s.trap}</span></div>
+          <button class="os-load" onclick="loadOpt('${s.id}')">Build it on the bench \u2192</button>
+        </div></details>`).join('')}</div>`;}).join('');
+}
+function loadOpt(id){
+  pickOpt(id);
+  const el=$('#optBench'); if(el)el.scrollIntoView({behavior:'smooth',block:'start'});
+}
+$('#optSpot').addEventListener('input',e=>{OPT.spot=+e.target.value||100;syncOptLabels();drawOptChart();});
+$('#optDte').addEventListener('input',e=>{OPT.dte=+e.target.value;
+  if(OPT.elapsed>OPT.dte){OPT.elapsed=OPT.dte;$('#optElapsed').value=OPT.dte;}
+  $('#optElapsed').max=OPT.dte; syncOptLabels();drawOptChart();});
+$('#optIv').addEventListener('input',e=>{OPT.iv=+e.target.value;syncOptLabels();drawOptChart();});
+$('#optElapsed').addEventListener('input',e=>{OPT.elapsed=+e.target.value;syncOptLabels();drawOptChart();});
+$('#optIvShift').addEventListener('input',e=>{OPT.ivShift=+e.target.value;syncOptLabels();drawOptChart();});
+$('#optLessons').innerHTML=OPT_LESSONS.map((l,i)=>
+  `<details class="ols"${i===0?' open':''}><summary><span class="ol-i">${String(i+1).padStart(2,'0')}</span><span class="ol-n">${l.n}</span></summary>
+   <div class="ol-b"><p>${l.b}</p><p class="ol-t">${l.t}</p></div></details>`).join('');
+renderOptPicker(); renderOptLibrary(); syncOptLabels(); drawOptChart();
+
+/* ============================================================
    THE INSTRUMENT PANEL - the bench
    Every diagram is the real formula computed on one fixed sample
    series (TDESK.IND_SERIES). Changing a settings chip recomputes
@@ -4373,6 +4766,7 @@ const CMDS=[
   {label:'Tools & Calculators',kind:'page',run:()=>location.hash='tools'},
   {label:'Encyclopedia',kind:'page',run:()=>location.hash='encyclopedia'},
   {label:'Candlestick Analysis',kind:'page',run:()=>location.hash='patterns'},
+  {label:'Options \u2014 the assembly bench',kind:'page',run:()=>location.hash='options'},
   {label:'Fundamentals \u2014 look up a company',kind:'page',run:()=>location.hash='ledger'},
   {label:'Indicators & the Instrument Panel',kind:'page',run:()=>location.hash='indicators'},
   {label:'Fibonacci Lab',kind:'tool',run:()=>{location.hash='indicators';setTimeout(()=>{const el=document.getElementById('fibLab');if(el)el.scrollIntoView({behavior:'smooth'});},140);}},
@@ -4387,6 +4781,7 @@ const CMDS=[
   ...ENC.map((e,i)=>({label:e.t,kind:'term',run:()=>openEnc(i)})),
   ...PATTERNS.map((p,i)=>({label:p.n,kind:'pattern',run:()=>openPattern(i)})),
   ...INDICATORS.map((x,i)=>({label:x.n,kind:'indicator',run:()=>{location.hash='indicators';setTimeout(()=>openInd(i),160);}})),
+  ...OPT_STRUCTURES.map(s=>({label:s.n,kind:'structure',run:()=>{location.hash='options';setTimeout(()=>loadOpt(s.id),160);}})),
   ...MISTAKES.map(m=>({label:m.n,kind:'psychology',run:()=>{location.hash='riskdesk';setTimeout(()=>setRdTab('mind',document.querySelectorAll('#rdTabs button')[2]),140);}}))
 ];
 function openCmdk(){cmdk.classList.add('open');document.body.classList.add('locked');cmdkInput.value='';renderCmdk('');cmdkInput.focus();}
@@ -4432,6 +4827,11 @@ const SECTIONS=[
    ic:'M4 20h16M4 20V9M9 20v-5M14 20V4M19 20v-8',
    desc:'What each instrument measures, the settings that are actually standard, and the trap. Plus a Fibonacci lab built from your own swing.',
    count:()=>INDICATORS.length+' instruments'},
+  {id:'options', name:'Options', crumb:'THE OPTIONS FLOOR', kind:'structures + the bench',
+   accent:'var(--cyan)', fade:'rgba(34,211,238,.13)',
+   ic:'M3 17l4-8 4 5 3-7 3 4 4-9M3 21h18',
+   desc:'Nineteen structures priced live, with a bench that shows what time and volatility do to a position before price moves at all.',
+   count:()=>OPT_STRUCTURES.length+' structures'},
   {id:'strategies', name:'Strategies', crumb:'THE STRATEGY PLAYBOOK', kind:'playbook',
    accent:'var(--violet)', fade:'rgba(168,85,247,.14)',
    ic:'M3 20h18M6 20V10M12 20V4M18 20v-7',
@@ -4442,6 +4842,9 @@ const SECTIONS=[
    ic:'M12 3l8 4v5c0 5-3.4 8.3-8 9-4.6-.7-8-4-8-9V7zM9 12l2 2 4-4',
    desc:'How much to risk at the size you actually are, how to hedge what you cannot lose, and the ten ways a working brain breaks a working plan.',
    count:()=>TIERS.length+' rungs \u00b7 2 lanes'},
+  {id:'library', hub:true, name:'Library', crumb:'THE LIBRARY', kind:'hub', accent:'var(--gold)', fade:'rgba(245,185,66,.13)', ic:'M4 5h16v14H4z', desc:'', count:()=>''},
+  {id:'playbook', hub:true, name:'Playbook', crumb:'THE PLAYBOOK', kind:'hub', accent:'var(--violet)', fade:'rgba(168,85,247,.14)', ic:'M4 5h16v14H4z', desc:'', count:()=>''},
+  {id:'workbench', hub:true, name:'Workbench', crumb:'THE WORKBENCH', kind:'hub', accent:'var(--cyan)', fade:'rgba(34,211,238,.13)', ic:'M4 5h16v14H4z', desc:'', count:()=>''},
   {id:'sessions', name:'1:1 Sessions', crumb:'THE PATH \u00b7 1:1 SESSIONS', kind:'the path + 1:1', wide:true,
    accent:'var(--gold)', fade:'rgba(245,185,66,.13)',
    ic:'M12 4 2 9l10 5 10-5zM6 12v5c0 1.5 3 3 6 3s6-1.5 6-3v-5',
@@ -4454,12 +4857,12 @@ const PAGE_ALIAS={learn:'sessions'};   /* the learning path lives on the session
 const icon=(d,sz)=>`<svg width="${sz}" height="${sz}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${d}"/></svg>`;
 
 /* ---- left rail ---- */
-$('#railNav').innerHTML=SECTIONS.map((x,i)=>
+$('#railNav').innerHTML=SECTIONS.filter(x=>!x.hub).map((x,i)=>
   `${i===SECTIONS.length-1?'<div class="rail-sep"></div>':''}<a class="rail-btn" href="#${x.id}" data-go="${x.id}"><span class="rail-ic">${icon(x.ic,19)}</span><span class="rail-tx"><b>${x.name}</b><small>${x.kind}</small></span></a>`
 ).join('');
 
 /* ---- front-page portals ---- */
-$('#portalGrid').innerHTML=SECTIONS.map(x=>x.wide
+$('#portalGrid').innerHTML=SECTIONS.filter(x=>!x.hub).map(x=>x.wide
   ? `<a class="portal wide" href="#${x.id}" style="--accent:${x.accent};--accent-fade:${x.fade}">
        <span class="pic">${icon(x.ic,19)}</span>
        <span class="pwt">
@@ -4490,6 +4893,42 @@ function currentPage(){
   const id=PAGE_ALIAS[h]||h;
   return PAGE_IDS.includes(id)?id:'';
 }
+
+/* ============================================================
+   HUBS
+   Nine top-level pages was three too many to scan. The nav now
+   carries five, each opening a hub that holds its pages. Nothing
+   moved: every section and every deep link is unchanged, the
+   rail still lists everything, and the palette still reaches any
+   page in two keystrokes.
+   ============================================================ */
+const HUBS=[
+ {id:'library', name:'Library', crumb:'THE LIBRARY',
+  head:'Everything worth knowing, <span class="g">in reading order.</span>',
+  desc:'The reference half of the desk. Vocabulary, candles, instruments, and options, each built to be read once and returned to often.',
+  kids:['encyclopedia','patterns','indicators','options']},
+ {id:'playbook', name:'Playbook', crumb:'THE PLAYBOOK',
+  head:'How people actually trade, <span class="g">and stay alive doing it.</span>',
+  desc:'Strategies graded by real evidence, then everything that decides whether you are still here in three years: scaling, hedging, and the mind.',
+  kids:['strategies','riskdesk']},
+ {id:'workbench', name:'Workbench', crumb:'THE WORKBENCH',
+  head:'The math and the company, <span class="g">done properly.</span>',
+  desc:'Where you go with a specific question. Every calculator that matters, and a live company file for any ticker you can name.',
+  kids:['tools','ledger']}
+];
+const HUB_BY_ID=Object.fromEntries(HUBS.map(h=>[h.id,h]));
+$$('.hubv').forEach(box=>{
+  const h=HUB_BY_ID[box.dataset.hub]; if(!h)return;
+  box.innerHTML=`<div class="hub-h reveal"><div class="eyebrow">${h.crumb}</div>
+      <h2>${h.head}</h2><p>${h.desc}</p></div>
+    <div class="hub-grid reveal">${h.kids.map(id=>{const s=SEC_BY_ID[id]; if(!s)return '';
+      return `<a class="hub-c" href="#${s.id}" style="border-color:${s.fade}">
+        <span class="hc-i" style="color:${s.accent};border-color:${s.fade}">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="${s.ic}"/></svg></span>
+        <h3>${s.name}</h3><p>${s.desc}</p>
+        <span class="hc-m"><span>${s.kind}</span><span>${typeof s.count==='function'?s.count():''}</span></span></a>`;}).join('')}</div>`;
+});
+
 function route(){
   const p=currentPage();
   document.body.classList.toggle('paged',!!p);
