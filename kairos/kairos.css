@@ -1294,3 +1294,29 @@ span.nv-tag{flex-shrink:0}
   .nx-sp{flex:0 0 auto}
   .nx-ic{width:26px;height:24px;font-size:.72rem}
 }
+
+/* ---- COSMOS mini charts -------------------------------------------------
+   A ladder tells you where the levels are and nothing about whether price is
+   currently being held by them. Answering that used to mean leaving the wall
+   for Chronos. Each pillar answers it in place now.
+
+   Deliberately spare: no grid, no crosshair, no axis chrome. At this height any
+   decoration costs more than it returns, and the pane has exactly one job. */
+.cc-stage{position:relative;height:190px;border-top:1px solid var(--border);
+  background:#000;overflow:hidden}
+.cc-stage:empty::after{content:'loading chart\00a0…';position:absolute;inset:0;
+  display:flex;align-items:center;justify-content:center;
+  font-size:.58rem;color:var(--faint);letter-spacing:.08em}
+.cosmos-bar{display:flex;align-items:center;gap:8px;margin:0 0 6px}
+.cosmos-bar.hidden{display:none}
+.cb-lab{font-size:.52rem;font-weight:700;letter-spacing:.14em;color:var(--faint)}
+#cosmosTf button{padding:3px 9px;font-size:.6rem}
+.trinity[data-cols="4"] .cc-stage{height:170px}
+.trinity[data-cols="5"] .cc-stage{height:155px}
+@media(max-width:720px){
+  /* On a phone the ladder is already tight, so the chart takes a smaller share
+     rather than pushing the strikes off-screen. */
+  .cc-stage{height:135px!important}
+  .cosmos-bar{margin-bottom:4px}
+  .cb-lab{display:none}
+}

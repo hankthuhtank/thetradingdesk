@@ -181,7 +181,11 @@
     const p = (n) => String(n).padStart(2, '0');
     const d = new Date(Date.now() - cfg.days * 86400000);
     const start = d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate());
-    const path = '/markets/timesales?symbol=' + encodeURIComponent(sym) +
+    /* SPXW is an OPTION ROOT, not something you can pull price history for, so
+       the bars request 404'd and Chronos rendered an empty chart for it. Map to
+       the underlying the same way the rest of the app does. */
+    const px = (window.underOf ? window.underOf(sym) : sym);
+    const path = '/markets/timesales?symbol=' + encodeURIComponent(px) +
                  '&interval=' + cfg.api + '&start=' + start + '&session_filter=open';
     try {
       let j = null;
@@ -543,45 +547,54 @@
             if (!isFinite(ownMin)) continue;
             const ownSpan = ownMax - ownMin;
 
-            const pts = [];
-            let strongest = 0, lastSign = 0;
+            /* DISCRETE MARKERS, not a continuous ribbon.
+               The ribbon forced continuity: it drew ONE polygon from a level's
+               first reading to its last, so a strike torn down at noon still ran
+               as an unbroken bar to the right edge. Every level looked like a
+               flat rail, which is exactly the complaint.
+
+               Each sounding now gets its own marker. Height AND opacity both
+               track the exposure at that minute, so a level being built grows
+               and brightens while one being drained thins and fades. Where a
+               level has no reading, nothing is drawn: appearing and vanishing
+               become visible events instead of being interpolated away. */
+            let strongest = 0, lastSign = 0, drew = 0;
+            let lastX2 = null, lastH = 0;
+            ctx.save();
             for (let i = firstX; i <= lastX; i++) {
               const v = lv.vals[i];
               if (!v || !isFinite(xs[i])) continue;
               const a = Math.abs(v);
               const base = Math.sqrt(a / m.peak);                       // vs the King
               const swing = ownSpan > 0 ? (a - ownMin) / ownSpan : 1;   // vs itself
-              const mag = Math.max(0, Math.min(1, base * 0.62 + swing * base * 0.38));
-              pts.push({ x: xs[i], h: NX.MIN_PX + mag * (NX.MAX_PX - NX.MIN_PX), v, srv: lv.srv[i] });
+              /* Weighted toward the level's OWN range so intraday change is the
+                 dominant visual, with a floor from its size against the King so
+                 a small level can never masquerade as a big one. */
+              const mag = Math.max(0.05, Math.min(1, base * 0.42 + swing * 0.58));
+              const h = NX.MIN_PX + mag * (NX.MAX_PX - NX.MIN_PX);
+              const rgbI = isKing ? PAL.king : (v > 0 ? pal.pos : pal.neg);
+              const aI = (0.12 + mag * 0.80) * (lv.srv[i] ? 0.82 : 1);
+              ctx.fillStyle = 'rgba(' + rgbI[0] + ',' + rgbI[1] + ',' + rgbI[2] + ',' + aI.toFixed(3) + ')';
+              const w = Math.max(1.5, segW * 0.86);
+              const px = (xs[i] - w / 2) * hr, py = (y - h / 2) * vr;
+              const pw = Math.max(1, w * hr), ph = Math.max(1, h * vr);
+              const r2 = Math.min(ph / 2, pw / 2, 3 * vr);
+              if (r2 > 0.8 && ctx.roundRect) { ctx.beginPath(); ctx.roundRect(px, py, pw, ph, r2); ctx.fill(); }
+              else ctx.fillRect(px, py, pw, ph);
               if (base > strongest) strongest = base;
               lastSign = v > 0 ? 1 : -1;
+              lastX2 = xs[i]; lastH = h; drew++;
             }
-            if (!pts.length) continue;
+            ctx.restore();
+            if (!drew) continue;
 
             const rgb = isKing ? PAL.king : (lastSign > 0 ? pal.pos : pal.neg);
             const alpha = (0.22 + strongest * 0.66);
-            ctx.fillStyle = 'rgba(' + rgb[0] + ',' + rgb[1] + ',' + rgb[2] + ',' + alpha.toFixed(3) + ')';
-
-            if (pts.length === 1) {
-              const p = pts[0];
-              ctx.fillRect(Math.round((p.x - segW / 2) * hr), Math.round((y - p.h / 2) * vr),
-                Math.max(1, Math.round(segW * hr)), Math.max(1, Math.round(p.h * vr)));
-            } else {
-              ctx.beginPath();
-              ctx.moveTo((pts[0].x - segW / 2) * hr, (y - pts[0].h / 2) * vr);
-              for (let i = 0; i < pts.length; i++) ctx.lineTo(pts[i].x * hr, (y - pts[i].h / 2) * vr);
-              ctx.lineTo((pts[pts.length - 1].x + segW / 2) * hr, (y - pts[pts.length - 1].h / 2) * vr);
-              ctx.lineTo((pts[pts.length - 1].x + segW / 2) * hr, (y + pts[pts.length - 1].h / 2) * vr);
-              for (let i = pts.length - 1; i >= 0; i--) ctx.lineTo(pts[i].x * hr, (y + pts[i].h / 2) * vr);
-              ctx.lineTo((pts[0].x - segW / 2) * hr, (y + pts[0].h / 2) * vr);
-              ctx.closePath();
-              ctx.fill();
-            }
 
             /* Strike label at the right edge. With nine levels there is room to
                name them, and a level you cannot read the price of is only half
                a level. */
-            const lastP = pts[pts.length - 1];
+            const lastP = { x: lastX2, h: lastH };
             ctx.font = '600 ' + Math.round(9 * vr) + 'px "JetBrains Mono", monospace';
             ctx.fillStyle = 'rgba(' + rgb[0] + ',' + rgb[1] + ',' + rgb[2] + ',' + Math.min(1, alpha + 0.25).toFixed(3) + ')';
             ctx.textAlign = 'left';

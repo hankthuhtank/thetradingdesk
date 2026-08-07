@@ -15,18 +15,19 @@
 <link rel="preconnect" href="https://kairos-api.safihelal.workers.dev" crossorigin>
 <link rel="preconnect" href="https://unpkg.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="kairos.css?v=7.8.0">
+<link rel="stylesheet" href="kairos.css?v=2.0.0">
 <!-- Lightweight Charts powers Chronos. Deferred, and Chronos degrades to a clear
      message rather than a broken canvas if it fails to load. -->
 <script defer src="https://unpkg.com/lightweight-charts@5.1.0/dist/lightweight-charts.standalone.production.js"></script>
 <!-- defer: downloaded in parallel during HTML parse, executed in document order
      after it. Five synchronous tags at ~350KB were serialising the whole boot. -->
-<script defer src="kairos-core.js?v=7.8.0"></script>
-<script defer src="kairos-backend.js?v=7.8.0"></script>
-<script defer src="kairos-quant.js?v=7.8.0"></script>
-<script defer src="kairos-modules.js?v=7.8.0"></script>
-<script defer src="kairos-nexus.js?v=7.8.0"></script>
-<script defer src="kairos-mythos.js?v=7.8.0"></script>
+<script defer src="kairos-core.js?v=2.0.0"></script>
+<script defer src="kairos-backend.js?v=2.0.0"></script>
+<script defer src="kairos-quant.js?v=2.0.0"></script>
+<script defer src="kairos-modules.js?v=2.0.0"></script>
+<script defer src="kairos-nexus.js?v=2.0.0"></script>
+<script defer src="kairos-cosmoschart.js?v=2.0.0"></script>
+<script defer src="kairos-mythos.js?v=2.0.0"></script>
 </head>
 <body>
 <datalist id="tickerList"></datalist>
@@ -62,6 +63,12 @@
 </div>
 <main>
   <div id="presetBar" class="hidden"></div>
+  <div id="cosmosBar" class="cosmos-bar hidden">
+    <span class="cb-lab">CHARTS</span>
+    <div class="mtoggle" id="cosmosTf" data-tip="Candle interval for the mini charts under each ladder. The structural levels drawn on them are the same ones Chronos selects, so the two screens can never disagree about which levels matter.">
+      <button data-tf="1min">1m</button><button data-tf="5min" class="on">5m</button>
+    </div>
+  </div>
   <div id="trinityWrap"><div id="juncTabs" class="mtoggle hidden" style="margin:0 0 8px"><button data-j="ladder" class="on">Ladder</button><button data-j="regime" data-tip="Session flow and the premium tape, side by side — where the money went and which way it is pressing.">Regime</button><button data-j="vix" data-tip="Everything VIX: term structure, vol regime, the VIX options GEX ladder, and daily pivots.">VIX Desk</button></div><div id="novaJunction" class="nova hidden"></div><div class="trinity" id="trinity"></div><div id="juncRegime" class="hidden">
       <div id="flowConsole" class="flowcon"></div>
       <div class="reg-split">
@@ -205,7 +212,7 @@
     <h2>The Eight Screens</h2>
     <p class="guide-lede">Kairos reads dealer positioning: where market makers are hedged, and what that implies about how price behaves around those levels. Every number is computed from live option chains. Nothing here is a signal or advice.</p>
     <div class="guide-grid">
-      <div class="guide-item"><b>Cosmos</b><span>Three to five ladders side by side. Opens on <b>0DTE</b>, because same-session structure is the point and ALL buries today's book under three weeks of standing open interest. Use it to check <i>agreement</i>: when the pillars point the same way, structure is aligned; when they diverge, size down or pass. Phones show four across and scroll sideways for the fifth.</span></div>
+      <div class="guide-item"><b>Cosmos</b><span>Three to five ladders side by side, each with a compact chart beneath it showing that symbol's own structural levels against live candles: a ladder tells you <i>where</i> the levels are, the chart tells you whether price is actually being held by them. 1m or 5m. Three to five ladders side by side. Opens on <b>0DTE</b>, because same-session structure is the point and ALL buries today's book under three weeks of standing open interest. Use it to check <i>agreement</i>: when the pillars point the same way, structure is aligned; when they diverge, size down or pass. Phones show four across and scroll sideways for the fifth.</span></div>
       <div class="guide-item"><b>Junction</b><span>One symbol, full depth. The strike ladder plus a strike &times; expiry grid showing where gamma sits per expiration. Opens centred on spot. The VIX Desk tab holds the whole volatility picture: term structure, regime, VIX's own ladder, daily pivots.</span></div>
       <div class="guide-item"><b>Mythos</b><span>Sector and theme rotation against SPY, plotted as relative strength (x) versus momentum (y). Bodies should rotate clockwise: Leading &rarr; Weakening &rarr; Lagging &rarr; Improving. Normalisation is <b>cross-sectional</b>, so 100 means the median of the field on that date and quadrant positions are comparable between names. The replay bar scrubs the rotation forward one session at a time; the &#8635; badge says whether a body is genuinely rotating or just jittering across a boundary.</span></div>
       <div class="guide-item"><b>Aether</b><span>The idea engine, in two layers. <b>THE FORGE</b> on top is the answer: one contract per symbol with entry, stop, T1 and T2 in both underlying and contract terms. Below it, <i>structure detail</i> is the working: whether each symbol is set up for a trade at all. Two tabs pick the horizon, not two different products.</span></div>
@@ -295,9 +302,7 @@
 <div class="settings" id="settings">
   <h3 style="margin-bottom:14px">Settings</h3>
   <div class="fg"><label>Build</label>
-    <div id="buildInfo" data-html="7.8.0" style="font-family:'JetBrains Mono';font-size:.72rem;color:var(--teal)">
-      html v7.8.0 &middot; js <span style="color:var(--faint)">loading&hellip;</span>
-    </div>
+    <div id="buildInfo" data-html="2.0.0" style="font-family:'JetBrains Mono';font-size:.78rem;color:var(--teal)">Kairos v2.0</div>
   </div>
   <input type="password" id="tok" style="display:none" autocomplete="off">
   <input type="hidden" id="poll" value="10">

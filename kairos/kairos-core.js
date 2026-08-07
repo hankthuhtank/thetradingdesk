@@ -57,7 +57,7 @@ const CHAIN_TTL=90000;
    disagree, which is what a half-deployed set of files looks like: new HTML
    pointing at cached JS, or new JS under old HTML. That state is invisible
    otherwise, and it costs an entire debugging session every time it happens. */
-const KAIROS_BUILD='7.8.0';
+const KAIROS_BUILD='2.0.0';
 window.KAIROS_BUILD=KAIROS_BUILD;
 (function(){
   try{
@@ -79,18 +79,19 @@ window.KAIROS_BUILD=KAIROS_BUILD;
     }else{
       console.log('%cKairos v'+KAIROS_BUILD,'color:#f2c14e;font-weight:bold');
     }
-    /* Paint the real numbers into Settings. The badge used to be a hardcoded
-       string, so it reported what the HTML CLAIMED rather than what was running,
-       which is exactly the trap that cost a whole debugging round. */
+    /* Settings shows the product name only. The version cross-check still runs:
+       on a mismatch the console warns and the orange banner drops in above, which
+       is where that information is actually useful. There is no reason to make
+       the reader parse two build numbers on every visit when they agree, which
+       is almost always. */
     document.addEventListener('DOMContentLoaded',function(){
       const el=document.getElementById('buildInfo');
       if(!el)return;
       const htmlV=el.dataset.html||html||'?';
-      const match=(htmlV===KAIROS_BUILD);
-      el.innerHTML='html <b>v'+htmlV+'</b> \u00b7 js <b>v'+KAIROS_BUILD+'</b> '+
-        (match?'<span style="color:var(--teal)">\u2713 in sync</span>'
-              :'<span style="color:#f4723e;font-weight:700">\u2717 MISMATCH</span>');
-      el.style.color=match?'var(--teal)':'#f4723e';
+      if(htmlV!==KAIROS_BUILD){
+        el.innerHTML='Kairos v2.0 <span style="color:#f4723e;font-weight:700">\u00b7 BUILD MISMATCH</span>';
+        el.style.color='#f4723e';
+      }
     });
   }catch(e){}
 })();
@@ -1424,7 +1425,8 @@ function renderTrinity(){
         </div>
         <div class="king-pill ${pillCls()}${kg&&mval(kg)<0?' kneg':''}" data-tip="Biggest absolute ${metricLabel(state.metric)} node — the magnet for that force. Strike first: that is the level price is drawn to. Exposure size is secondary.">★ ${mlab} ${kg?kg.k:'\u2014'}${kg?` <i style="font-style:normal;opacity:.66;font-weight:600">${mdisp(mval(kg),d.spot)}</i>`:''}</div>
       </div>
-      <div class="strikes"></div>`;
+      <div class="strikes"></div>
+      <div class="cc-stage" data-sym="${sym}"></div>`;
     el.appendChild(p);
     p.querySelector('.ticker-sel').onchange=e=>{
       const old=e.target.dataset.old,neu=cleanSym(e.target.value);
@@ -2981,6 +2983,10 @@ function setView(v){
   document.getElementById('mtoggle').classList.toggle('dim',v==='ideas'||v==='imb'||v==='tape');
   const showPresets=['single','chart'].includes(v);
   document.getElementById('presetBar').classList.toggle('hidden',!showPresets);
+  /* The chart timeframe control belongs to Cosmos only. */
+  const _cb=document.getElementById('cosmosBar');
+  if(_cb)_cb.classList.toggle('hidden',v!=='trinity');
+  if(v==='trinity'&&window.KairosCosmosChart)setTimeout(window.KairosCosmosChart.sync,60);
   document.getElementById('centertoggle').classList.toggle('dim',!(v==='trinity'||v==='single'));
   if(showPresets)renderPresets();
   if(v==='single'){
