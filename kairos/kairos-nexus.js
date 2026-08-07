@@ -52,9 +52,13 @@
   let chart = null, priceSeries = null, undertow = null, fieldPrim = null;
   let curSym = null, bars = [], barsT = 0, metric = 'gex';
   let tf = (function () { try { return localStorage.getItem('kairos_chronos_tf') || '5min'; } catch (e) { return '5min'; } })();
-  /* Studies removed. They were bolted on without earning their place and the
-     chart is about dealer structure, not moving averages. */
-  let tools = { vwap: false, ema: false, pd: false };
+  /* Two studies only: VWAP and the 9/21 EMA pair. Off by default so the chart
+     opens clean; the toggles persist per device. */
+  let tools = (function () {
+    try { const o = JSON.parse(localStorage.getItem('kairos_chronos_tools') || 'null');
+      return { vwap: !!(o && o.vwap), ema: !!(o && o.ema), pd: false }; }
+    catch (e) { return { vwap: false, ema: false, pd: false }; }
+  })();
   let overlays = { vwap: null, ema9: null, ema21: null };
   let pdLines = {};
   /* Tradier serves 1/5/15-minute bars natively. Anything coarser is aggregated
@@ -189,7 +193,7 @@
         const t = Math.floor(new Date(r.time).getTime() / 1000);
         if (!(t > last) || !(+r.close > 0)) continue;
         last = t;
-        out.push({ time: t, open: +r.open, high: +r.high, low: +r.low, close: +r.close });
+        out.push({ time: t, open: +r.open, high: +r.high, low: +r.low, close: +r.close, vol: +r.volume || 0 });
       }
       if (!out.length) return;
       /* Aggregate up when the requested timeframe is coarser than what Tradier
@@ -207,6 +211,7 @@
             high: Math.max.apply(null, grp.map(x => x.high)),
             low: Math.min.apply(null, grp.map(x => x.low)),
             close: grp[grp.length - 1].close,
+            vol: grp.reduce((a, x) => a + (x.vol || 0), 0),
           });
         }
       }
@@ -224,17 +229,21 @@
     for (const b of src) { prev = prev == null ? b.close : b.close * k + prev * (1 - k); out.push({ time: b.time, value: prev }); }
     return out;
   }
+  /* A real VWAP. Tradier's timesales payload carries per-bar volume, which the
+     earlier version ignored and then apologised for by calling itself a TWAP.
+     Typical price times volume, accumulated, reset at every session boundary,
+     because a VWAP that runs across days is a different and far less useful
+     number. Falls back to equal weighting only if a bar genuinely has no
+     volume field. */
   function vwapSeries(src) {
     const out = []; let pv = 0, vol = 0, day = null;
     for (const b of src) {
       const d = new Date(b.time * 1000).toISOString().slice(0, 10);
       if (d !== day) { day = d; pv = 0; vol = 0; }
       const tp = (b.high + b.low + b.close) / 3;
-      /* No per-bar volume on timesales here, so each bar is weighted equally.
-         That makes this a session TWAP rather than a true VWAP, and it is
-         labelled TWAP on the chart for exactly that reason. */
-      pv += tp; vol += 1;
-      out.push({ time: b.time, value: pv / vol });
+      const w = (b.vol > 0) ? b.vol : 1;
+      pv += tp * w; vol += w;
+      out.push({ time: b.time, value: vol > 0 ? pv / vol : tp });
     }
     return out;
   }
@@ -261,7 +270,7 @@
     if (!bars.length) return;
     try {
       if (tools.vwap) {
-        overlays.vwap = chart.addSeries(L.LineSeries, { color: 'rgba(242,193,78,.55)', lineWidth: 1, priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false });
+        overlays.vwap = chart.addSeries(L.LineSeries, { color: 'rgba(242,193,78,.7)', lineWidth: 2, priceLineVisible: false, lastValueVisible: true, crosshairMarkerVisible: false, title: 'VWAP' });
         overlays.vwap.setData(vwapSeries(bars));
       }
       if (tools.ema) {

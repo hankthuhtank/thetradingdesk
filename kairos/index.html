@@ -15,18 +15,18 @@
 <link rel="preconnect" href="https://kairos-api.safihelal.workers.dev" crossorigin>
 <link rel="preconnect" href="https://unpkg.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="kairos.css?v=7.5.0">
+<link rel="stylesheet" href="kairos.css?v=7.6.0">
 <!-- Lightweight Charts powers Chronos. Deferred, and Chronos degrades to a clear
      message rather than a broken canvas if it fails to load. -->
 <script defer src="https://unpkg.com/lightweight-charts@5.1.0/dist/lightweight-charts.standalone.production.js"></script>
 <!-- defer: downloaded in parallel during HTML parse, executed in document order
      after it. Five synchronous tags at ~350KB were serialising the whole boot. -->
-<script defer src="kairos-core.js?v=7.5.0"></script>
-<script defer src="kairos-backend.js?v=7.5.0"></script>
-<script defer src="kairos-quant.js?v=7.5.0"></script>
-<script defer src="kairos-modules.js?v=7.5.0"></script>
-<script defer src="kairos-nexus.js?v=7.5.0"></script>
-<script defer src="kairos-mythos.js?v=7.5.0"></script>
+<script defer src="kairos-core.js?v=7.6.0"></script>
+<script defer src="kairos-backend.js?v=7.6.0"></script>
+<script defer src="kairos-quant.js?v=7.6.0"></script>
+<script defer src="kairos-modules.js?v=7.6.0"></script>
+<script defer src="kairos-nexus.js?v=7.6.0"></script>
+<script defer src="kairos-mythos.js?v=7.6.0"></script>
 </head>
 <body>
 <datalist id="tickerList"></datalist>
@@ -144,7 +144,20 @@
         <span class="nx-lg" data-tip="Negative exposure. Dealers hedge WITH the move, so price gets pushed through this strike."><s class="mae"></s>ACCELERATES &middot; &minus;</span>
         <span class="nx-lg" data-tip="The single largest node right now."><s class="kng"></s>KING</span>
       </span>
-      
+    </div>
+    <div class="nx-top nx-top2">
+      <div class="mtoggle nx-tf" id="nexusTf" data-tip="Candle interval. 30m and 1h are composed from 15-minute bars by OHLC, so their highs and lows are real rather than resampled closes.">
+        <button data-tf="1min">1m</button>
+        <button data-tf="5min" class="on">5m</button>
+        <button data-tf="15min">15m</button>
+        <button data-tf="30min">30m</button>
+        <button data-tf="1h">1h</button>
+      </div>
+      <div class="mtoggle nx-tools" id="nexusTools" data-tip="Two studies, both computed from the bars already loaded, so neither costs a request.">
+        <button data-tool="vwap" data-tip="Volume-weighted average price, reset every session.">VWAP</button>
+        <button data-tool="ema" data-tip="9 and 21 period EMAs on the selected interval.">9/21 EMA</button>
+      </div>
+    </div>
     <div class="nx-hud" id="nexusHud"></div>
     <div class="nx-stage" id="nexusStage">
       <div class="nx-wait" id="nexusWait">Reading the ladder&hellip;<br><span style="color:var(--faint)">levels draw as soon as recorded columns land</span></div>
@@ -274,8 +287,8 @@
 <div class="settings" id="settings">
   <h3 style="margin-bottom:14px">Settings</h3>
   <div class="fg"><label>Build</label>
-    <div id="buildInfo" data-html="7.5.0" style="font-family:'JetBrains Mono';font-size:.72rem;color:var(--teal)">
-      html v7.5.0 &middot; js <span style="color:var(--faint)">loading&hellip;</span>
+    <div id="buildInfo" data-html="7.6.0" style="font-family:'JetBrains Mono';font-size:.72rem;color:var(--teal)">
+      html v7.6.0 &middot; js <span style="color:var(--faint)">loading&hellip;</span>
     </div>
     <div style="font-size:.6rem;color:var(--faint);line-height:1.6;margin-top:4px">
       Both numbers must match. If they do not, one of the files did not deploy: hard-refresh with Ctrl+Shift+R, and if it persists, re-upload the file with the older number.
@@ -290,6 +303,6 @@
 </div>
 <footer>Kairos · Aether · Mythos · Chronos · All Powered by Tradier Live · Structure is context, not a signal</footer>
 
-<!-- moved to <head> with defer, plus kairos-nexus.js -->
+<!-- scripts are deferred in <head> -->
 </body>
 </html>

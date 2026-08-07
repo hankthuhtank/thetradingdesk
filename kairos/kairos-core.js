@@ -57,7 +57,7 @@ const CHAIN_TTL=90000;
    disagree, which is what a half-deployed set of files looks like: new HTML
    pointing at cached JS, or new JS under old HTML. That state is invisible
    otherwise, and it costs an entire debugging session every time it happens. */
-const KAIROS_BUILD='7.5.0';
+const KAIROS_BUILD='7.6.0';
 window.KAIROS_BUILD=KAIROS_BUILD;
 (function(){
   try{

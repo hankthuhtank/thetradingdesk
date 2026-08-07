@@ -1249,3 +1249,10 @@ span.nv-tag{flex-shrink:0}
   .hs-c i{font-size:.42rem}
   .hs-c:nth-child(4),.hs-c:nth-child(5){display:none}
 }
+
+/* ---- CHRONOS second control row ----
+   Timeframes and studies get their own line so the top row keeps the ticker,
+   metric and legend on one horizontal band instead of wrapping unpredictably. */
+.nx-top2{margin-top:-2px}
+.nx-tf button,.nx-tools button{padding:4px 8px;font-size:.62rem}
+.nx-tools button{letter-spacing:.03em}
