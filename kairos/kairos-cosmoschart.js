@@ -43,6 +43,9 @@
     try { return localStorage.getItem('kairos_cosmos_tf') === '1min' ? '1min' : '5min'; }
     catch (e) { return '5min'; }
   })();
+  let shown = (function () {
+    try { return localStorage.getItem('kairos_cosmos_on') !== '0'; } catch (e) { return true; }
+  })();
 
   const PAL = { pos: [45, 212, 191], neg: [244, 114, 62], king: [242, 193, 78] };
   const rgba = (c, a) => 'rgba(' + c[0] + ',' + c[1] + ',' + c[2] + ',' + a + ')';
@@ -213,8 +216,30 @@
      renderTrinity rebuilds the pillars wholesale, so a chart's host node is
      replaced under it. Rather than diff, dispose any chart whose host has left
      the document and rebuild against the new one. */
+  function applyShown() {
+    document.body.classList.toggle('cc-off', !shown);
+    document.querySelectorAll('#cosmosTf button').forEach(b => { b.disabled = !shown; });
+    const tfBox = document.getElementById('cosmosTf');
+    if (tfBox) tfBox.style.opacity = shown ? '' : '.4';
+    document.querySelectorAll('#cosmosOn button').forEach(b =>
+      b.classList.toggle('on', (b.dataset.on === '1') === shown));
+    /* Hidden means the panes are display:none, so LightweightCharts sees a zero
+       height container. Dispose them rather than leave zero-size charts alive,
+       and rebuild on the way back. */
+    if (!shown) {
+      Object.keys(charts).forEach(k => { try { charts[k].chart.remove(); } catch (e) {} delete charts[k]; });
+    } else {
+      setTimeout(sync, 40);
+    }
+  }
+  function setShown(v) {
+    shown = !!v;
+    try { localStorage.setItem('kairos_cosmos_on', shown ? '1' : '0'); } catch (e) {}
+    applyShown();
+  }
+
   async function sync() {
-    if (!onCosmos() || document.hidden) return;
+    if (!shown || !onCosmos() || document.hidden) return;
     const hosts = document.querySelectorAll('.cc-stage[data-sym]');
     const live = new Set();
     for (const host of hosts) {
@@ -247,9 +272,14 @@
   }
 
   document.addEventListener('click', function (e) {
-    const b = e.target.closest && e.target.closest('#cosmosTf button[data-tf]');
-    if (b) setTf(b.dataset.tf);
+    if (!e.target.closest) return;
+    const b = e.target.closest('#cosmosTf button[data-tf]');
+    if (b) { setTf(b.dataset.tf); return; }
+    const o = e.target.closest('#cosmosOn button[data-on]');
+    if (o) setShown(o.dataset.on === '1');
   });
+  document.addEventListener('DOMContentLoaded', applyShown);
+  applyShown();
 
   /* The pillars are re-rendered on every refresh, so poll rather than hook a
      render callback that does not exist. Cheap: it only walks a handful of DOM
@@ -258,7 +288,8 @@
   document.addEventListener('visibilitychange', function () { if (!document.hidden) sync(); });
 
   window.KairosCosmosChart = {
-    sync, setTf, levelsFor,
+    sync, setTf, setShown, levelsFor,
+    shown: function () { return shown; },
     tf: function () { return tf; },
     charts: function () { return charts; },
   };

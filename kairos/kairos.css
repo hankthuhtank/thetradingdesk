@@ -1300,23 +1300,38 @@ span.nv-tag{flex-shrink:0}
    currently being held by them. Answering that used to mean leaving the wall
    for Chronos. Each pillar answers it in place now.
 
-   Deliberately spare: no grid, no crosshair, no axis chrome. At this height any
+   FIFTY-FIFTY. The chart was on a fixed 190px inside a pillar roughly 800px
+   tall, so it read as a footnote. Both halves are flex:1 now and split the
+   pillar evenly whatever the viewport does. min-height:0 is load-bearing: a
+   flex child defaults to min-content, and without it the ladder refuses to
+   shrink and the chart gets whatever is left over, which is how it ended up
+   small in the first place.
+
+   Deliberately spare: no grid, no crosshair, no axis chrome. At this size any
    decoration costs more than it returns, and the pane has exactly one job. */
-.cc-stage{position:relative;height:190px;border-top:1px solid var(--border);
-  background:#000;overflow:hidden}
-.cc-stage:empty::after{content:'loading chart\00a0…';position:absolute;inset:0;
+.panel .strikes{flex:1 1 50%;min-height:0}
+.cc-stage{position:relative;flex:1 1 50%;min-height:0;
+  border-top:1px solid var(--border);background:#000;overflow:hidden}
+.cc-stage:empty::after{content:'chart\00a0…';position:absolute;inset:0;
   display:flex;align-items:center;justify-content:center;
-  font-size:.58rem;color:var(--faint);letter-spacing:.08em}
+  font-size:.56rem;color:var(--faint);letter-spacing:.08em}
+/* Hidden: the ladder takes the whole pillar back. */
+body.cc-off .cc-stage{display:none}
+body.cc-off .panel .strikes{flex:1 1 auto}
+/* Junction renders into the same panel component but has no chart, so any
+   stage that survives a view switch must not steal half its height. */
+.panel.single-mode .cc-stage{display:none}
+
 .cosmos-bar{display:flex;align-items:center;gap:8px;margin:0 0 6px}
 .cosmos-bar.hidden{display:none}
 .cb-lab{font-size:.52rem;font-weight:700;letter-spacing:.14em;color:var(--faint)}
-#cosmosTf button{padding:3px 9px;font-size:.6rem}
-.trinity[data-cols="4"] .cc-stage{height:170px}
-.trinity[data-cols="5"] .cc-stage{height:155px}
+#cosmosTf button,#cosmosOn button{padding:3px 9px;font-size:.6rem}
+#cosmosTf button:disabled{cursor:default}
 @media(max-width:720px){
-  /* On a phone the ladder is already tight, so the chart takes a smaller share
-     rather than pushing the strikes off-screen. */
-  .cc-stage{height:135px!important}
+  /* On a phone the pillar is short and the strikes matter more, so the chart
+     takes a third rather than a half. */
+  .panel .strikes{flex:1 1 65%}
+  .cc-stage{flex:1 1 35%}
   .cosmos-bar{margin-bottom:4px}
   .cb-lab{display:none}
 }

@@ -1417,6 +1417,20 @@ function renderTrinity(){
     }
 
     // Triad list
+    /* The pillar is rebuilt wholesale on every refresh, which destroyed the
+       chart node underneath it and forced kairos-cosmoschart to dispose and
+       recreate the whole LightweightCharts instance. That is the black
+       "loading" flash every ten seconds.
+
+       Detach the existing stage first and re-attach it after, so the SAME node
+       (and therefore the same chart, with its zoom and data intact) survives.
+       Only reused when the symbol matches: a ticker switch genuinely does need
+       a fresh chart. */
+    const _keepCC=(function(){
+      const n=p.querySelector('.cc-stage');
+      return (n&&n.dataset.sym===sym)?n:null;
+    })();
+    if(_keepCC)_keepCC.remove();
     p.innerHTML=`
       <div class="p-head">
         <div class="p-left">
@@ -1425,8 +1439,14 @@ function renderTrinity(){
         </div>
         <div class="king-pill ${pillCls()}${kg&&mval(kg)<0?' kneg':''}" data-tip="Biggest absolute ${metricLabel(state.metric)} node — the magnet for that force. Strike first: that is the level price is drawn to. Exposure size is secondary.">★ ${mlab} ${kg?kg.k:'\u2014'}${kg?` <i style="font-style:normal;opacity:.66;font-weight:600">${mdisp(mval(kg),d.spot)}</i>`:''}</div>
       </div>
-      <div class="strikes"></div>
-      <div class="cc-stage" data-sym="${sym}"></div>`;
+      <div class="strikes"></div>`;
+    /* Re-attach the surviving chart, or create the stage for the first time. */
+    if(_keepCC)p.appendChild(_keepCC);
+    else{
+      const st=document.createElement('div');
+      st.className='cc-stage';st.dataset.sym=sym;
+      p.appendChild(st);
+    }
     el.appendChild(p);
     p.querySelector('.ticker-sel').onchange=e=>{
       const old=e.target.dataset.old,neu=cleanSym(e.target.value);
