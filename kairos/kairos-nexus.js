@@ -54,6 +54,11 @@
   let tf = (function () { try { return localStorage.getItem('kairos_chronos_tf') || '5min'; } catch (e) { return '5min'; } })();
   /* Two studies only: VWAP and the 9/21 EMA pair. Off by default so the chart
      opens clean; the toggles persist per device. */
+  /* Price-scale mode. 0 = linear, 1 = logarithmic, matching
+     LightweightCharts.PriceScaleMode. Persisted per device. */
+  let scaleMode = (function () {
+    try { return +localStorage.getItem('kairos_chronos_scale') === 1 ? 1 : 0; } catch (e) { return 0; }
+  })();
   let tools = (function () {
     try { const o = JSON.parse(localStorage.getItem('kairos_chronos_tools') || 'null');
       return { vwap: !!(o && o.vwap), ema: !!(o && o.ema), pd: false }; }
@@ -670,6 +675,7 @@
         borderColor: cssVar('--border', '#1e293b'),
         scaleMargins: { top: 0.06, bottom: 0.06 },
         autoScale: true,
+        mode: scaleMode,
       },
       /* Mouse wheel over the chart now zooms the PRICE axis as well as time,
          and dragging the price axis rescales it. Lightweight Charts ships with
@@ -738,6 +744,7 @@
       try {
         priceSeries.priceScale().applyOptions({
           autoScale: true,
+          mode: scaleMode,
           scaleMargins: { top: pmargin, bottom: pmargin },
         });
       } catch (x) {}
@@ -748,7 +755,7 @@
       const r = host.getBoundingClientRect();
       if (e.clientX < r.right - 68) return;
       pmargin = 0.06;
-      try { priceSeries.priceScale().applyOptions({ autoScale: true, scaleMargins: { top: 0.06, bottom: 0.06 } }); } catch (x) {}
+      try { priceSeries.priceScale().applyOptions({ autoScale: true, mode: scaleMode, scaleMargins: { top: 0.06, bottom: 0.06 } }); } catch (x) {}
     });
 
     ready = true;
@@ -954,6 +961,25 @@
     if (fit) fit.onclick = function () {
       try { chart.timeScale().fitContent(); priceSeries.priceScale().applyOptions({ autoScale: true }); } catch (e) {}
     };
+    const sc = $('nexusScale');
+    if (sc) sc.addEventListener('click', function (e) {
+      const b2 = e.target.closest('button[data-scale]'); if (!b2) return;
+      sc.querySelectorAll('button').forEach(x => x.classList.remove('on'));
+      b2.classList.add('on');
+      scaleMode = +b2.dataset.scale === 1 ? 1 : 0;
+      try { localStorage.setItem('kairos_chronos_scale', String(scaleMode)); } catch (x) {}
+      /* The level primitive reads y positions through priceToCoordinate, so it
+         follows the scale change for free: on a log axis the bands re-space
+         themselves exactly as the candles do, with no separate handling. */
+      try {
+        priceSeries.priceScale().applyOptions({ mode: scaleMode, autoScale: true });
+        chart.timeScale().fitContent();
+        if (fieldPrim) fieldPrim.poke();
+      } catch (x) {}
+    });
+    /* Restore the saved choice on the control after a rebuild. */
+    if (sc) sc.querySelectorAll('button').forEach(b => b.classList.toggle('on', +b.dataset.scale === scaleMode));
+
     const fs = $('nexusFull');
     if (fs) fs.onclick = toggleFull;
     /* The explainer is long and useful, and inlining it shoved the chart up the

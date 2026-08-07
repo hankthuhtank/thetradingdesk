@@ -15,18 +15,18 @@
 <link rel="preconnect" href="https://kairos-api.safihelal.workers.dev" crossorigin>
 <link rel="preconnect" href="https://unpkg.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="kairos.css?v=7.7.0">
+<link rel="stylesheet" href="kairos.css?v=7.8.0">
 <!-- Lightweight Charts powers Chronos. Deferred, and Chronos degrades to a clear
      message rather than a broken canvas if it fails to load. -->
 <script defer src="https://unpkg.com/lightweight-charts@5.1.0/dist/lightweight-charts.standalone.production.js"></script>
 <!-- defer: downloaded in parallel during HTML parse, executed in document order
      after it. Five synchronous tags at ~350KB were serialising the whole boot. -->
-<script defer src="kairos-core.js?v=7.7.0"></script>
-<script defer src="kairos-backend.js?v=7.7.0"></script>
-<script defer src="kairos-quant.js?v=7.7.0"></script>
-<script defer src="kairos-modules.js?v=7.7.0"></script>
-<script defer src="kairos-nexus.js?v=7.7.0"></script>
-<script defer src="kairos-mythos.js?v=7.7.0"></script>
+<script defer src="kairos-core.js?v=7.8.0"></script>
+<script defer src="kairos-backend.js?v=7.8.0"></script>
+<script defer src="kairos-quant.js?v=7.8.0"></script>
+<script defer src="kairos-modules.js?v=7.8.0"></script>
+<script defer src="kairos-nexus.js?v=7.8.0"></script>
+<script defer src="kairos-mythos.js?v=7.8.0"></script>
 </head>
 <body>
 <datalist id="tickerList"></datalist>
@@ -141,6 +141,9 @@
       <div class="mtoggle nx-g" id="nexusTools" data-tip="Two studies, both computed from the bars already loaded, so neither costs a request.">
         <button data-tool="vwap" data-tip="Volume-weighted average price, reset each session.">VWAP</button><button data-tool="ema" data-tip="9 and 21 period EMAs on the selected interval.">EMA</button>
       </div>
+      <div class="mtoggle nx-g" id="nexusScale" data-tip="Price axis scaling. LINEAR spaces equal dollar moves equally. LOG spaces equal PERCENTAGE moves equally, which is the honest axis when a chart covers a wide range or when you are comparing the size of two moves that happened at different price levels.">
+        <button data-scale="0" class="on">LIN</button><button data-scale="1">LOG</button>
+      </div>
       <span class="nx-sp"></span>
       <button class="nx-ic" id="nexusFit" data-tip="Fit the whole recorded window and re-scale price" aria-label="fit">&#9678;</button>
       <button class="nx-ic" id="nexusFull" data-tip="Fill the screen" aria-label="fullscreen">&#9974;</button>
@@ -150,8 +153,6 @@
     <div class="nx-stage" id="nexusStage">
       <div class="nx-wait" id="nexusWait">Reading the ladder&hellip;<br><span style="color:var(--faint)">levels draw as soon as recorded columns land</span></div>
     </div>
-  </div>
-  <div id="nexusNote" class="nx-note">Every horizontal band is a <b>level</b>: one strike, drawn across the whole recorded window. Its <b>thickness is how much exposure sits there</b> at that minute, so a level being built thickens and a level being torn down narrows to nothing. Price runs across them, which is the point: you can see whether it is being held up by a wall or falling through a hole. <b>Absorbing</b> (+) holds price because dealers hedge against the move; <b>accelerating</b> (&minus;) gives way because they hedge with it. The <b>King</b> is gold. Levels are ranked by their <em>peak</em> strength across the window rather than by their current value, so a wall that dominated the morning and has since been dismantled stays visible, because that is usually the more useful fact. Thickness is on a square root scale, so the King never blacks out the rest of the ladder. Columns from the server <b>Chronicle</b> (accumulated 24/5) render slightly dimmer than ones this browser recorded. Server columns older than the vega rollout carry no VEX, and in VEX mode they are <b>omitted rather than drawn as zero</b>. The lower pane is the <b>undertow</b>: net exposure within &plusmn;1% of spot through time, which is what dealers are doing <em>here</em> rather than the sign of the largest node somewhere else. Candles are Tradier 1-minute bars. Nothing here is a signal.</div>
   </div>
   <div class="novasec hidden" id="novaSec"></div>
   <div class="surfaced hidden" id="ideasSec">
@@ -190,6 +191,7 @@
       <div class="guide-item"><b>Timeframe</b><span>1m through 1h. The 30m and 1h candles are composed from 15-minute bars by OHLC, so their highs and lows are real rather than resampled closes.</span></div>
       <div class="guide-item"><b>VWAP</b><span>Volume-weighted average price, using the per-bar volume from the feed and reset at every session boundary. A VWAP that runs across days is a different and far less useful number.</span></div>
       <div class="guide-item"><b>EMA</b><span>9 and 21 period exponential moving averages on the selected interval.</span></div>
+      <div class="guide-item"><b>LIN / LOG</b><span>Price axis scaling. Linear spaces equal <i>dollar</i> moves equally. Logarithmic spaces equal <i>percentage</i> moves equally, which is the honest axis over a wide range and when comparing the size of two moves that happened at different price levels. The exposure bands follow the axis automatically, so on a log scale they re-space exactly as the candles do.</span></div>
       <div class="guide-item"><b>Zooming</b><span>Wheel over the chart pans and zooms time. Wheel over the <i>price axis</i> zooms price. Drag either axis to rescale it, and double-click an axis to reset it.</span></div>
       <div class="guide-item"><b>&#9678; and &#9974;</b><span>Fit the whole recorded window and re-scale price; fill the screen.</span></div>
     </div>
@@ -293,8 +295,8 @@
 <div class="settings" id="settings">
   <h3 style="margin-bottom:14px">Settings</h3>
   <div class="fg"><label>Build</label>
-    <div id="buildInfo" data-html="7.7.0" style="font-family:'JetBrains Mono';font-size:.72rem;color:var(--teal)">
-      html v7.7.0 &middot; js <span style="color:var(--faint)">loading&hellip;</span>
+    <div id="buildInfo" data-html="7.8.0" style="font-family:'JetBrains Mono';font-size:.72rem;color:var(--teal)">
+      html v7.8.0 &middot; js <span style="color:var(--faint)">loading&hellip;</span>
     </div>
     <div style="font-size:.6rem;color:var(--faint);line-height:1.6;margin-top:4px">
       Both numbers must match. If they do not, one of the files did not deploy: hard-refresh with Ctrl+Shift+R, and if it persists, re-upload the file with the older number.

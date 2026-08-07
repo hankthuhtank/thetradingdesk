@@ -1054,7 +1054,13 @@ span.nv-tag{flex-shrink:0}
 
 /* The explainer is long and useful but it should not push the chart around, so
    it is collapsed by default and toggled from the top bar. */
-/* .nx-note moved into #nexusNoteModal; see the CHRONOS header block below. */
+/* The explainer lives in #nexusNoteModal now. This rule is deliberately
+   defensive: an orphaned .nx-note left behind by a stale index.html would
+   otherwise render as a wall of text at the bottom of EVERY view, because it
+   sits as a sibling of the view sections and nothing else suppresses it.
+   Only the copy inside the modal is ever shown. */
+.nx-note{display:none!important}
+#nexusNoteModal .nx-note,#nexusNoteModal .nx-note-body{display:block!important}
 
 /* True fullscreen, plus a fixed-position fallback for iOS Safari, which has no
    element fullscreen API. */
