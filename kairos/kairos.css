@@ -69,6 +69,19 @@ main{padding:10px;display:flex;flex-direction:column;gap:10px}
   .trinity::-webkit-scrollbar{display:none}
   .trinity>*{flex:0 0 calc(25% - 2px);scroll-snap-align:start;min-width:0}
   .trinity[data-cols="3"]>*{flex:0 0 calc(33.33% - 2px)}
+  /* JUNCTION IS NOT COSMOS. The swipe rail above is for the multi-pillar board;
+     Junction renders ONE panel into the same container and was inheriting the
+     25% flex-basis, which is why the strike x expiry grid was crushed into a
+     narrow column with the rest of the screen empty. One column means full
+     width, and the grid scrolls inside itself for the expirations. */
+  .trinity[data-cols="1"]{display:block;overflow:visible}
+  .trinity[data-cols="1"]>*{flex:none;width:100%;min-width:0}
+  .trinity[data-cols="1"] .sgrid-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .trinity[data-cols="1"] table.sgrid{margin:0;width:100%}
+  .trinity[data-cols="1"] .sgrid td{min-width:56px;max-width:none;padding:2px 5px;font-size:.58rem}
+  .trinity[data-cols="1"] .sgrid th{padding:5px 5px;font-size:.58rem}
+  .trinity[data-cols="1"] .sgrid th.sk,.trinity[data-cols="1"] .sgrid td.sk{
+    min-width:44px;padding:2px 5px;font-size:.62rem}
   .trinity .ticker-sel{max-width:58px;font-size:.74rem}
   .trinity .price{font-size:.7rem}
   .trinity .badge-src{display:none}
@@ -1041,11 +1054,7 @@ span.nv-tag{flex-shrink:0}
 
 /* The explainer is long and useful but it should not push the chart around, so
    it is collapsed by default and toggled from the top bar. */
-.nx-note{display:none;font-size:.66rem;line-height:1.75;color:var(--muted);
-  border-top:1px solid var(--border);padding-top:8px}
-.nx-note.open{display:block}
-.nx-note b{color:var(--text)}
-.nx-note em{color:var(--gold);font-style:normal}
+/* .nx-note moved into #nexusNoteModal; see the CHRONOS header block below. */
 
 /* True fullscreen, plus a fixed-position fallback for iOS Safari, which has no
    element fullscreen API. */
@@ -1256,3 +1265,26 @@ span.nv-tag{flex-shrink:0}
 .nx-top2{margin-top:-2px}
 .nx-tf button,.nx-tools button{padding:4px 8px;font-size:.62rem}
 .nx-tools button{letter-spacing:.03em}
+
+/* ---- CHRONOS header, rebuilt as one bar ---------------------------------
+   Ticker, three toggle groups, then icon-only actions pushed right. The old
+   header wrapped unpredictably across two rows with three word-buttons
+   competing with a legend; the legend moved into the How-to-read modal where
+   it can be explained properly instead of abbreviated. */
+.nx-bar{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.nx-bar .nx-g button{padding:4px 8px;font-size:.63rem}
+.nx-sp{flex:1 1 auto}
+.nx-ic{width:28px;height:26px;flex:0 0 auto;display:inline-flex;align-items:center;
+  justify-content:center;background:transparent;border:1px solid var(--border);
+  border-radius:6px;color:var(--muted);font-size:.8rem;cursor:pointer;
+  font-family:inherit;line-height:1;transition:border-color .15s,color .15s}
+.nx-ic:hover{border-color:var(--teal);color:var(--teal)}
+#nexusNoteModal .nx-note-body{font-size:.74rem;line-height:1.8;color:var(--muted)}
+#nexusNoteModal .nx-note-body b{color:var(--text)}
+#nexusNoteModal .nx-note-body em{color:var(--gold);font-style:normal}
+@media(max-width:720px){
+  .nx-bar{gap:5px}
+  .nx-bar .nx-g button{padding:4px 6px;font-size:.58rem}
+  .nx-sp{flex:0 0 auto}
+  .nx-ic{width:26px;height:24px;font-size:.72rem}
+}

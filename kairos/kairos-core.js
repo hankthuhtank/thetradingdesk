@@ -57,7 +57,7 @@ const CHAIN_TTL=90000;
    disagree, which is what a half-deployed set of files looks like: new HTML
    pointing at cached JS, or new JS under old HTML. That state is invisible
    otherwise, and it costs an entire debugging session every time it happens. */
-const KAIROS_BUILD='7.6.0';
+const KAIROS_BUILD='7.7.0';
 window.KAIROS_BUILD=KAIROS_BUILD;
 (function(){
   try{
@@ -2828,6 +2828,8 @@ document.getElementById('save').onclick=()=>{
 document.addEventListener('keydown',e=>{
   if(e.key==='Escape'){
     document.querySelectorAll('.modal-bg.open').forEach(m=>m.classList.remove('open'));
+    /* nexusNoteModal uses the same .modal-bg pattern, so it is covered by the
+       line above. Kept explicit here as a note for future modals. */
     document.getElementById('settings').classList.remove('open');
     closeCombo();
   }

@@ -716,6 +716,41 @@
       if (panes && panes[1] && panes[1].setHeight) panes[1].setHeight(78);
     } catch (e) { undertow = null; }
 
+    /* WHEEL-ZOOM ON THE PRICE AXIS.
+       Lightweight Charts gives you drag-to-rescale on the price scale but no
+       wheel handler, which is why the y-axis felt half-implemented: you could
+       only resize it by grabbing and dragging.
+
+       There is no public API to set a price range directly, but scaleMargins is
+       exactly equivalent for this purpose. Bigger margins squeeze the data into
+       less vertical space, so the axis spans a wider price range: that is zoom
+       out. Smaller margins fill the pane: zoom in. The handler only fires when
+       the pointer is actually over the axis strip, so scrolling across the chart
+       body still pans time the way it should. */
+    let pmargin = 0.06;
+    host.addEventListener('wheel', function (e) {
+      const r = host.getBoundingClientRect();
+      const axisW = 68;                       // right-hand price scale strip
+      if (e.clientX < r.right - axisW) return;   // not over the axis: let time handle it
+      e.preventDefault();
+      const step = e.deltaY > 0 ? 1.14 : 1 / 1.14;
+      pmargin = Math.max(0.005, Math.min(0.42, pmargin * step));
+      try {
+        priceSeries.priceScale().applyOptions({
+          autoScale: true,
+          scaleMargins: { top: pmargin, bottom: pmargin },
+        });
+      } catch (x) {}
+    }, { passive: false });
+
+    /* Double-click the axis to return to the default framing. */
+    host.addEventListener('dblclick', function (e) {
+      const r = host.getBoundingClientRect();
+      if (e.clientX < r.right - 68) return;
+      pmargin = 0.06;
+      try { priceSeries.priceScale().applyOptions({ autoScale: true, scaleMargins: { top: 0.06, bottom: 0.06 } }); } catch (x) {}
+    });
+
     ready = true;
     return true;
   }
@@ -921,12 +956,22 @@
     };
     const fs = $('nexusFull');
     if (fs) fs.onclick = toggleFull;
+    /* The explainer is long and useful, and inlining it shoved the chart up the
+       page every time it opened. It is a modal now, same pattern as the Kairos
+       guide: opens over the top, closes on the X, on Escape, or on a click
+       outside it. */
     const nt = $('nexusNoteToggle');
     if (nt) nt.onclick = function () {
-      const n = $('nexusNote'); if (!n) return;
-      n.classList.toggle('open');
-      nt.textContent = n.classList.contains('open') ? 'HIDE' : 'HOW TO READ';
+      const m = $('nexusNoteModal'); if (m) m.classList.add('open');
     };
+    const nc = $('nexusNoteClose');
+    if (nc) nc.onclick = function () {
+      const m = $('nexusNoteModal'); if (m) m.classList.remove('open');
+    };
+    const nm = $('nexusNoteModal');
+    if (nm) nm.addEventListener('click', function (e) {
+      if (e.target === nm) nm.classList.remove('open');
+    });
   })();
 
   document.addEventListener('visibilitychange', function () {

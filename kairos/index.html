@@ -15,18 +15,18 @@
 <link rel="preconnect" href="https://kairos-api.safihelal.workers.dev" crossorigin>
 <link rel="preconnect" href="https://unpkg.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="kairos.css?v=7.6.0">
+<link rel="stylesheet" href="kairos.css?v=7.7.0">
 <!-- Lightweight Charts powers Chronos. Deferred, and Chronos degrades to a clear
      message rather than a broken canvas if it fails to load. -->
 <script defer src="https://unpkg.com/lightweight-charts@5.1.0/dist/lightweight-charts.standalone.production.js"></script>
 <!-- defer: downloaded in parallel during HTML parse, executed in document order
      after it. Five synchronous tags at ~350KB were serialising the whole boot. -->
-<script defer src="kairos-core.js?v=7.6.0"></script>
-<script defer src="kairos-backend.js?v=7.6.0"></script>
-<script defer src="kairos-quant.js?v=7.6.0"></script>
-<script defer src="kairos-modules.js?v=7.6.0"></script>
-<script defer src="kairos-nexus.js?v=7.6.0"></script>
-<script defer src="kairos-mythos.js?v=7.6.0"></script>
+<script defer src="kairos-core.js?v=7.7.0"></script>
+<script defer src="kairos-backend.js?v=7.7.0"></script>
+<script defer src="kairos-quant.js?v=7.7.0"></script>
+<script defer src="kairos-modules.js?v=7.7.0"></script>
+<script defer src="kairos-nexus.js?v=7.7.0"></script>
+<script defer src="kairos-mythos.js?v=7.7.0"></script>
 </head>
 <body>
 <datalist id="tickerList"></datalist>
@@ -129,40 +129,29 @@
   </div>
   <div class="imb hidden" id="imbSec"><span id="imbMeta"></span><div class="imb-stats" id="imbStats"></div></div>
   <div class="tape hidden" id="tapeSec"><span id="tapeMeta"></span><div id="tapeNote"></div></div>
-  <div class="nexus hidden" id="nexusSec">
-    <div class="nx-top">
-      <input id="nexusTicker" class="ticker-sel" list="tickerList" value="SPY" style="width:88px" autocomplete="off" data-tip="Type any optionable ticker">
-      <div class="mtoggle" id="nexusMetric" data-tip="Which book to draw. GEX is dealer gamma: how hard the book resists or amplifies. VEX is vanna: how the hedge shifts as volatility moves.">
-        <button data-m="gex" class="on">GEX</button>
-        <button data-m="vex">VEX</button>
+    <div class="nexus hidden" id="nexusSec">
+    <div class="nx-bar">
+      <input id="nexusTicker" class="ticker-sel" list="tickerList" value="SPY" style="width:78px" autocomplete="off" data-tip="Type any optionable ticker">
+      <div class="mtoggle nx-g" id="nexusMetric" data-tip="Which book to draw. GEX is dealer gamma: how hard the book resists or amplifies. VEX is vanna: how the hedge shifts as volatility moves.">
+        <button data-m="gex" class="on">GEX</button><button data-m="vex">VEX</button>
       </div>
-      <button class="btn nx-btn" id="nexusFit" data-tip="Fit the whole recorded window and re-scale price">FIT</button>
-      <button class="btn nx-btn" id="nexusFull" data-tip="Fill the screen">FULL</button>
-      <button class="btn nx-btn nx-howto" id="nexusNoteToggle">HOW TO READ</button>
-      <span class="nx-legend">
-        <span class="nx-lg" data-tip="Positive exposure. Dealers hedge AGAINST the move, so price gets soaked up at this strike."><s class="aeg"></s>ABSORBS &middot; +</span>
-        <span class="nx-lg" data-tip="Negative exposure. Dealers hedge WITH the move, so price gets pushed through this strike."><s class="mae"></s>ACCELERATES &middot; &minus;</span>
-        <span class="nx-lg" data-tip="The single largest node right now."><s class="kng"></s>KING</span>
-      </span>
-    </div>
-    <div class="nx-top nx-top2">
-      <div class="mtoggle nx-tf" id="nexusTf" data-tip="Candle interval. 30m and 1h are composed from 15-minute bars by OHLC, so their highs and lows are real rather than resampled closes.">
-        <button data-tf="1min">1m</button>
-        <button data-tf="5min" class="on">5m</button>
-        <button data-tf="15min">15m</button>
-        <button data-tf="30min">30m</button>
-        <button data-tf="1h">1h</button>
+      <div class="mtoggle nx-g" id="nexusTf" data-tip="Candle interval. 30m and 1h are built from 15-minute bars by OHLC, so their highs and lows are real rather than resampled closes.">
+        <button data-tf="1min">1m</button><button data-tf="5min" class="on">5m</button><button data-tf="15min">15m</button><button data-tf="30min">30m</button><button data-tf="1h">1h</button>
       </div>
-      <div class="mtoggle nx-tools" id="nexusTools" data-tip="Two studies, both computed from the bars already loaded, so neither costs a request.">
-        <button data-tool="vwap" data-tip="Volume-weighted average price, reset every session.">VWAP</button>
-        <button data-tool="ema" data-tip="9 and 21 period EMAs on the selected interval.">9/21 EMA</button>
+      <div class="mtoggle nx-g" id="nexusTools" data-tip="Two studies, both computed from the bars already loaded, so neither costs a request.">
+        <button data-tool="vwap" data-tip="Volume-weighted average price, reset each session.">VWAP</button><button data-tool="ema" data-tip="9 and 21 period EMAs on the selected interval.">EMA</button>
       </div>
+      <span class="nx-sp"></span>
+      <button class="nx-ic" id="nexusFit" data-tip="Fit the whole recorded window and re-scale price" aria-label="fit">&#9678;</button>
+      <button class="nx-ic" id="nexusFull" data-tip="Fill the screen" aria-label="fullscreen">&#9974;</button>
+      <button class="nx-ic" id="nexusNoteToggle" data-tip="How to read this chart" aria-label="how to read">?</button>
     </div>
     <div class="nx-hud" id="nexusHud"></div>
     <div class="nx-stage" id="nexusStage">
       <div class="nx-wait" id="nexusWait">Reading the ladder&hellip;<br><span style="color:var(--faint)">levels draw as soon as recorded columns land</span></div>
     </div>
-    <div id="nexusNote" class="nx-note">Every horizontal band is a <b>level</b>: one strike, drawn across the whole recorded window. Its <b>thickness is how much exposure sits there</b> at that minute, so a level being built thickens and a level being torn down narrows to nothing. Price runs across them, which is the point: you can see whether it is being held up by a wall or falling through a hole. <b>Absorbing</b> (+) holds price because dealers hedge against the move; <b>accelerating</b> (&minus;) gives way because they hedge with it. The <b>King</b> is gold. Levels are ranked by their <em>peak</em> strength across the window rather than by their current value, so a wall that dominated the morning and has since been dismantled stays visible, because that is usually the more useful fact. Thickness is on a square root scale, so the King never blacks out the rest of the ladder. Columns from the server <b>Chronicle</b> (accumulated 24/5) render slightly dimmer than ones this browser recorded. Server columns older than the vega rollout carry no VEX, and in VEX mode they are <b>omitted rather than drawn as zero</b>. The lower pane is the <b>undertow</b>: net exposure within &plusmn;1% of spot through time, which is what dealers are doing <em>here</em> rather than the sign of the largest node somewhere else. Candles are Tradier 1-minute bars. Nothing here is a signal.</div>
+  </div>
+  <div id="nexusNote" class="nx-note">Every horizontal band is a <b>level</b>: one strike, drawn across the whole recorded window. Its <b>thickness is how much exposure sits there</b> at that minute, so a level being built thickens and a level being torn down narrows to nothing. Price runs across them, which is the point: you can see whether it is being held up by a wall or falling through a hole. <b>Absorbing</b> (+) holds price because dealers hedge against the move; <b>accelerating</b> (&minus;) gives way because they hedge with it. The <b>King</b> is gold. Levels are ranked by their <em>peak</em> strength across the window rather than by their current value, so a wall that dominated the morning and has since been dismantled stays visible, because that is usually the more useful fact. Thickness is on a square root scale, so the King never blacks out the rest of the ladder. Columns from the server <b>Chronicle</b> (accumulated 24/5) render slightly dimmer than ones this browser recorded. Server columns older than the vega rollout carry no VEX, and in VEX mode they are <b>omitted rather than drawn as zero</b>. The lower pane is the <b>undertow</b>: net exposure within &plusmn;1% of spot through time, which is what dealers are doing <em>here</em> rather than the sign of the largest node somewhere else. Candles are Tradier 1-minute bars. Nothing here is a signal.</div>
   </div>
   <div class="novasec hidden" id="novaSec"></div>
   <div class="surfaced hidden" id="ideasSec">
@@ -189,6 +178,23 @@
   </div>
 </main>
 
+<div class="modal-bg" id="nexusNoteModal">
+  <div class="modal help">
+    <button class="close" id="nexusNoteClose">&times;</button>
+    <h2>How to read Chronos</h2>
+    <p class="guide-lede">Exposure drawn as horizontal levels through time, over real candles.</p>
+    <div class="nx-note-body">Every horizontal band is a <b>level</b>: one strike, drawn across the whole recorded window. Its <b>thickness is how much exposure sits there</b> at that minute, so a level being built thickens and a level being torn down narrows to nothing. Price runs across them, which is the point: you can see whether it is being held up by a wall or falling through a hole. <b>Absorbing</b> (+) holds price because dealers hedge against the move; <b>accelerating</b> (&minus;) gives way because they hedge with it. The <b>King</b> is gold. Levels are ranked by their <em>peak</em> strength across the window rather than by their current value, so a wall that dominated the morning and has since been dismantled stays visible, because that is usually the more useful fact. Thickness is on a square root scale, so the King never blacks out the rest of the ladder. Columns from the server <b>Chronicle</b> (accumulated 24/5) render slightly dimmer than ones this browser recorded. Server columns older than the vega rollout carry no VEX, and in VEX mode they are <b>omitted rather than drawn as zero</b>. The lower pane is the <b>undertow</b>: net exposure within &plusmn;1% of spot through time, which is what dealers are doing <em>here</em> rather than the sign of the largest node somewhere else. Candles are Tradier 1-minute bars. Nothing here is a signal.</div>
+    <h2>The controls</h2>
+    <div class="guide-grid">
+      <div class="guide-item"><b>GEX / VEX</b><span>Which book to draw. GEX is dealer gamma: how hard the book resists or amplifies a move. VEX is vanna: how the hedge shifts as implied volatility moves.</span></div>
+      <div class="guide-item"><b>Timeframe</b><span>1m through 1h. The 30m and 1h candles are composed from 15-minute bars by OHLC, so their highs and lows are real rather than resampled closes.</span></div>
+      <div class="guide-item"><b>VWAP</b><span>Volume-weighted average price, using the per-bar volume from the feed and reset at every session boundary. A VWAP that runs across days is a different and far less useful number.</span></div>
+      <div class="guide-item"><b>EMA</b><span>9 and 21 period exponential moving averages on the selected interval.</span></div>
+      <div class="guide-item"><b>Zooming</b><span>Wheel over the chart pans and zooms time. Wheel over the <i>price axis</i> zooms price. Drag either axis to rescale it, and double-click an axis to reset it.</span></div>
+      <div class="guide-item"><b>&#9678; and &#9974;</b><span>Fit the whole recorded window and re-scale price; fill the screen.</span></div>
+    </div>
+  </div>
+</div>
 <div class="modal-bg" id="helpModal">
   <div class="modal help">
     <button class="close" id="closeHelp">×</button>
@@ -202,7 +208,7 @@
       <div class="guide-item"><b>Mythos</b><span>Sector and theme rotation against SPY, plotted as relative strength (x) versus momentum (y). Bodies should rotate clockwise: Leading &rarr; Weakening &rarr; Lagging &rarr; Improving. Normalisation is <b>cross-sectional</b>, so 100 means the median of the field on that date and quadrant positions are comparable between names. The replay bar scrubs the rotation forward one session at a time; the &#8635; badge says whether a body is genuinely rotating or just jittering across a boundary.</span></div>
       <div class="guide-item"><b>Aether</b><span>The idea engine, in two layers. <b>THE FORGE</b> on top is the answer: one contract per symbol with entry, stop, T1 and T2 in both underlying and contract terms. Below it, <i>structure detail</i> is the working: whether each symbol is set up for a trade at all. Two tabs pick the horizon, not two different products.</span></div>
       <div class="guide-item"><b>Nova</b><span>The command deck. Every tracked symbol on one board with its gamma regime, plus a written briefing that ranks and explains what the engine computed. Nova never originates a number and never tells you what to do.</span></div>
-      <div class="guide-item"><b>Chronos</b><span>Exposure as horizontal levels through time, over real candles. Each band is one strike; its <b>thickness is how much exposure sits there</b>, so a level being built thickens and one being torn down narrows. Only <i>significant</i> levels draw: local peaks in the profile that reach at least 15% of the King. Structure lines for King, call wall, put wall and the flip are drawn live.</span></div>
+      <div class="guide-item"><b>Chronos</b><span>Exposure as horizontal levels through time, over real candles. The <b>?</b> button opens a full how-to-read panel with the controls explained. Each band is one strike; its <b>thickness is how much exposure sits there</b>, so a level being built thickens and one being torn down narrows. Only <i>significant</i> levels draw: local peaks in the profile that reach at least 15% of the King. Structure lines for King, call wall, put wall and the flip are drawn live.</span></div>
       <div class="guide-item"><b>Regime</b><span>Flow through the day. Net call and put premium (bought minus sold) plus net delta flow, the directional pressure, against spot. Hover or drag to scrub the session tick by tick.</span></div>
       <div class="guide-item"><b>Tape</b><span>Where today's option dollars actually went, ranked by premium. Cross-reference against the ladder: premium clustering at a structural level means something different than premium scattered away from it.</span></div>
     </div>
@@ -287,8 +293,8 @@
 <div class="settings" id="settings">
   <h3 style="margin-bottom:14px">Settings</h3>
   <div class="fg"><label>Build</label>
-    <div id="buildInfo" data-html="7.6.0" style="font-family:'JetBrains Mono';font-size:.72rem;color:var(--teal)">
-      html v7.6.0 &middot; js <span style="color:var(--faint)">loading&hellip;</span>
+    <div id="buildInfo" data-html="7.7.0" style="font-family:'JetBrains Mono';font-size:.72rem;color:var(--teal)">
+      html v7.7.0 &middot; js <span style="color:var(--faint)">loading&hellip;</span>
     </div>
     <div style="font-size:.6rem;color:var(--faint);line-height:1.6;margin-top:4px">
       Both numbers must match. If they do not, one of the files did not deploy: hard-refresh with Ctrl+Shift+R, and if it persists, re-upload the file with the older number.
