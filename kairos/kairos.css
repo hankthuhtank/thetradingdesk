@@ -1340,8 +1340,13 @@ body.cc-off .panel .strikes{flex:1 1 auto}
   .cosmos-bar{width:100%;gap:6px;margin:2px 0 6px}
   .cb-lab{display:inline;font-size:.48rem}
   #cosmosTf button,#cosmosOn button{padding:6px 12px;font-size:.66rem;min-height:30px}
-  /* On a phone the pillar is short and the strikes matter more, so the chart
-     takes a third rather than a half. */
-  .panel .strikes{flex:1 1 64%}
-  .cc-stage{flex:1 1 36%}
+  /* Phone: the chart earns a bit more room than before, since it is now
+     interactive and worth looking at. The ladder still leads because that is
+     what you scroll. */
+  .panel .strikes{flex:1 1 56%}
+  .cc-stage{flex:1 1 44%;min-height:210px}
+  /* touch-action lets LightweightCharts take horizontal drags and pinch while
+     leaving vertical page scroll to the browser. Without it the two fight and
+     panning feels broken on iOS. */
+  .cc-stage canvas{touch-action:pan-y pinch-zoom}
 }

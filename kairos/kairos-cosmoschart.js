@@ -202,7 +202,10 @@
         last = t;
         out.push({ time: t, open: +r.open, high: +r.high, low: +r.low, close: +r.close });
       }
-      if (out.length) { c.bars = out.slice(-260); c.barsT = Date.now(); c.tf = tf; }
+      if (out.length) {
+        if (c.tf !== tf) c.fitted = false;   // a timeframe change deserves a refit
+        c.bars = out.slice(-260); c.barsT = Date.now(); c.tf = tf;
+      }
     } catch (e) {}
   }
 
@@ -217,10 +220,35 @@
       },
       grid: { vertLines: { visible: false }, horzLines: { visible: false } },
       rightPriceScale: { borderVisible: false, scaleMargins: { top: 0.12, bottom: 0.12 }, autoScale: true },
-      timeScale: { borderVisible: false, timeVisible: true, secondsVisible: false, rightOffset: 2, fixLeftEdge: true },
-      crosshair: { mode: 0, vertLine: { visible: false, labelVisible: false }, horzLine: { visible: false, labelVisible: false } },
-      handleScale: { mouseWheel: false, pinch: false, axisPressedMouseMove: false },
-      handleScroll: { mouseWheel: false, pressedMouseMove: false, horzTouchDrag: false, vertTouchDrag: false },
+      timeScale: { borderVisible: false, timeVisible: true, secondsVisible: false, rightOffset: 3, barSpacing: 3, minBarSpacing: 0.4 },
+      crosshair: {
+        mode: 0,
+        vertLine: { visible: true, color: 'rgba(148,163,184,.3)', width: 1, style: 3, labelVisible: false },
+        horzLine: { visible: true, color: 'rgba(148,163,184,.3)', width: 1, style: 3, labelVisible: true, labelBackgroundColor: '#0b1220' },
+      },
+      /* These panes were frozen: every interaction handler was off, so you
+         could see the levels and never look around them. Full pan and zoom on
+         both axes now, including pinch and vertical touch drag so a phone can
+         actually work the chart. */
+      handleScale: {
+        mouseWheel: true, pinch: true,
+        axisPressedMouseMove: { time: true, price: true },
+        axisDoubleClickReset: { time: true, price: true },
+      },
+      handleScroll: {
+        mouseWheel: true, pressedMouseMove: true,
+        horzTouchDrag: true,
+        /* vertTouchDrag stays OFF on purpose. With it on, a vertical swipe
+           anywhere over the chart pans the price scale instead of scrolling the
+           page, and since the chart is half the pillar you would be trapped
+           every time you tried to scroll past it. Horizontal drag pans time,
+           pinch zooms, and dragging the price axis itself still rescales price,
+           so nothing is actually lost. */
+        vertTouchDrag: false,
+      },
+      /* Tighter bars so a narrow pane still shows a session's worth of shape
+         instead of a dozen fat candles. minBarSpacing lets you keep zooming out
+         past the default floor. */
       autoSize: true,
     });
     const series = chart.addSeries(L.CandlestickSeries, {
@@ -231,7 +259,7 @@
     });
     const prim = makePrim(sym);
     try { series.attachPrimitive(prim); } catch (e) {}
-    return { chart, series, prim, host, bars: [], barsT: 0, tf: '' };
+    return { chart, series, prim, host, bars: [], barsT: 0, tf: '', fitted: false };
   }
 
   /* ---------- lifecycle ----------------------------------------------------
@@ -279,7 +307,13 @@
       }
       await loadBars(sym);
       try {
-        if (c.bars.length) c.series.setData(c.bars);
+        if (c.bars.length) {
+          c.series.setData(c.bars);
+          /* Fit ONCE, on the first data for this symbol and timeframe. After
+             that the pane is yours: refitting on every refresh would yank the
+             view back every ten seconds and make panning pointless. */
+          if (!c.fitted) { c.chart.timeScale().fitContent(); c.fitted = true; }
+        }
         /* A node that is MOVED rather than resized does not always trigger the
            ResizeObserver autoSize relies on, so nudge the chart to re-measure
            after a pillar rebuild. Cheap, and it prevents a zero-height canvas
@@ -289,8 +323,17 @@
         c.prim.poke();
       } catch (e) {}
     }
+    /* DISPOSE ON ROSTER CHANGE ONLY, never on DOM absence.
+       renderTrinity clears its container with innerHTML='' before rebuilding,
+       and sync() awaits inside its loop, so a snapshot of .cc-stage nodes taken
+       mid-rebuild comes back EMPTY. Keying disposal off that snapshot meant
+       every chart got torn down and rebuilt on each refresh cycle: the flash.
+
+       The roster is the only honest source of truth for which symbols should
+       have a chart. A node being briefly detached says nothing at all. */
+    const roster = new Set(S.trinityTickers || []);
     Object.keys(charts).forEach(k => {
-      if (!live.has(k)) {
+      if (!roster.has(k)) {
         try { charts[k].chart.remove(); } catch (e) {}
         delete charts[k]; delete stages[k];
       }
