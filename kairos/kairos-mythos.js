@@ -772,56 +772,76 @@ function orrPad(W){return Math.round(Math.max(20,Math.min(42,W*0.078)));}
    than by tail history. Tails may stretch it somewhat but cannot run away with
    it; anything past the edge is clipped instead of rescaling everything else.
    None of this touches the numbers, only how they map to pixels. */
-function orrAxisRange(cur,tail){
-  if(!cur.length)return 6;
-  const a=cur.map(Math.abs).sort((p,q)=>p-q);
-  /* 90th percentile, not the max: one body at an extreme should not squash the
-     other eighteen. */
-  const q90=a[Math.min(a.length-1,Math.floor(a.length*0.90))];
-  const maxCur=a[a.length-1];
-  /* Slightly more headroom than the first pass. 1.45/1.06 pushed the outermost
-     bodies right up against the frame, and once a body sits on the border its
-     glow and label have nowhere to go. Everything now lands comfortably inside.
-     These constants are viewport-independent ON PURPOSE: making them react to
-     pane width is exactly how the two devices drifted apart before. */
-  let r=Math.max(q90*1.60,maxCur*1.14,3);
-  const tmax=tail.length?Math.max.apply(null,tail.map(Math.abs)):0;
-  if(tmax>r)r=Math.min(tmax,r*1.35);
-  return r;
+/* ---- ASINH AXIS SCALING --------------------------------------------------
+   The previous attempt used the range to fix crowding: set it from the CURRENT
+   bodies, let tails overshoot, then clip. That was the wrong tool. Shrinking
+   the range to spread the middle guarantees that anything outside it leaves the
+   plot, and clipping only hides that rather than solving it. You could see the
+   result in the bottom-left corner, trails running straight off the box.
+
+   The two jobs need to be separated:
+
+     CONTAINMENT is the range's job. It spans everything that will be drawn,
+     bodies AND tails, so nothing can ever exit. Period.
+
+     SPREAD is the transform's job. asinh is linear near zero and logarithmic
+     for large values, which is precisely the shape wanted here: it magnifies
+     the crowded middle where cross-sectional z-scores pile up, and eases the
+     rare extremes back in without discarding them.
+
+   Written as asinh(d/s) / asinh(R/s), the ends land exactly on -1 and +1, so
+   containment is a property of the formula rather than of a clamp. It is
+   monotonic and fixes zero, so ordering and quadrant are untouched.
+
+   s is the typical body deviation (median absolute), which is what sets the
+   magnification: the centre gets roughly (R/s)/asinh(R/s) times more room than
+   a linear map would give it. On a normal field that is 4 to 5x. When the data
+   is genuinely tight, R/s is small, asinh degrades gracefully to linear and
+   nothing is distorted. It self-adjusts rather than needing a tuned constant. */
+function orrAxisScale(cur,tail){
+  const all=cur.concat(tail).map(Math.abs).filter(v=>isFinite(v));
+  if(!all.length)return {R:6,s:2};
+  /* R spans EVERYTHING drawn, with 4% of breathing room so the outermost point
+     sits just inside the frame instead of on it. */
+  const R=Math.max(3,Math.max.apply(null,all))*1.04;
+  /* s is the typical CURRENT body, since that is the cluster being spread.
+     Bounded so the magnification stays sane at both extremes. */
+  const c=cur.map(Math.abs).filter(v=>isFinite(v)).sort((p,q)=>p-q);
+  let s=c.length?(c[Math.floor(c.length/2)]||0):0;
+  s=Math.max(s,R/40);        // cap magnification: never crush the outer region
+  s=Math.min(s,R/1.2);       // and never flatten to pure linear when spread is wanted
+  return {R:R,s:s};
 }
-/* Gentle spread. Cross-sectional z-scores pile up near zero with a few
-   outliers, so a linear map leaves the middle crowded and the corners bare. A
-   signed power below 1 opens the centre and eases the extremes back in. It is
-   monotonic and fixes zero, so ordering and quadrant are untouched: nothing
-   changes side, things just stop overlapping. */
-/* 0.74 rather than 0.68: still opens the crowded centre, but eases off enough
-   that the outer bodies stop crowding the frame. */
-const ORR_SPREAD=0.74;
+
+/* ONE PROJECTION, used by the painter and the hit test alike. A diverging copy
+   is how tap targets end up somewhere other than what you see, and the comment
+   above orrGeom already warned about exactly that. */
 function orrProject(W,H,PAD){
   const curX=orrPts.map(p=>p.x-100), curY=orrPts.map(p=>p.y-100);
   const tlX=[],tlY=[];
   orrPts.forEach(p=>(p.tail||[]).forEach(t=>{tlX.push(t.x-100);tlY.push(t.y-100);}));
-  const RX=orrAxisRange(curX,tlX), RY=orrAxisRange(curY,tlY);
-  const warp=(d,R)=>{
-    if(!(R>0))return 0;
-    const n=Math.min(Math.abs(d)/R,1.9);
-    return (d<0?-1:1)*Math.pow(n,ORR_SPREAD);
+  const AX=orrAxisScale(curX,tlX), AY=orrAxisScale(curY,tlY);
+  /* Normalised to exactly [-1,1] by construction: the ends ARE the frame. The
+     clamp is a guard against a NaN creeping in, not the thing keeping points on
+     the plot. That distinction is the whole fix. */
+  const warp=(d,A)=>{
+    if(!(A.R>0)||!(A.s>0)||!isFinite(d))return 0;
+    const n=Math.asinh(d/A.s)/Math.asinh(A.R/A.s);
+    return Math.max(-1,Math.min(1,n));
   };
   const halfW=(W-2*PAD)/2, halfH=(H-2*PAD)/2;
   const cxp=PAD+halfW, cyp=PAD+halfH;
-  /* 1.0 is exactly the frame. Bodies clamp to 0.97 so the marker and its label
-     always sit inside; tail points may reach 1.05 and are then cut by the clip
-     region rather than painting into the margin. */
-  const clB=v=>Math.max(-0.97,Math.min(0.97,v));
-  const clT=v=>Math.max(-1.05,Math.min(1.05,v));
+  /* Bodies pull in a further 3% so a marker and its label always clear the
+     frame. Tails use the full width: they fit by construction now. */
   return {
-    RX:RX, RY:RY,
-    X:v=>cxp+clB(warp(v-100,RX))*halfW,
-    Y:v=>cyp-clB(warp(v-100,RY))*halfH,
-    TX:v=>cxp+clT(warp(v-100,RX))*halfW,
-    TY:v=>cyp-clT(warp(v-100,RY))*halfH,
+    RX:AX.R, RY:AY.R, SX:AX.s, SY:AY.s,
+    X:v=>cxp+warp(v-100,AX)*halfW*0.97,
+    Y:v=>cyp-warp(v-100,AY)*halfH*0.97,
+    TX:v=>cxp+warp(v-100,AX)*halfW,
+    TY:v=>cyp-warp(v-100,AY)*halfH,
   };
 }
+
 function orrGeom(){
   const cv=orrCv();if(!cv)return null;
   const W=cv.clientWidth||700,H=cv.clientHeight||520,PAD=orrPad(W);
