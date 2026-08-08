@@ -772,73 +772,51 @@ function orrPad(W){return Math.round(Math.max(20,Math.min(42,W*0.078)));}
    than by tail history. Tails may stretch it somewhat but cannot run away with
    it; anything past the edge is clipped instead of rescaling everything else.
    None of this touches the numbers, only how they map to pixels. */
-/* ---- ASINH AXIS SCALING --------------------------------------------------
-   The previous attempt used the range to fix crowding: set it from the CURRENT
-   bodies, let tails overshoot, then clip. That was the wrong tool. Shrinking
-   the range to spread the middle guarantees that anything outside it leaves the
-   plot, and clipping only hides that rather than solving it. You could see the
-   result in the bottom-left corner, trails running straight off the box.
+/* ---- STATIC AXIS SCALING -------------------------------------------------
+   Every previous version computed the axis range from the data in the current
+   frame. That is the flaw underneath all of it, and it is why paths appeared to
+   change day to day: during replay the playhead moves, the data in frame
+   changes, the range changes with it, and the SAME historical point gets drawn
+   somewhere different. The trails were not moving. The ruler was.
 
-   The two jobs need to be separated:
+   So the ruler is now a constant. tanh maps the whole real line into (-1,1):
 
-     CONTAINMENT is the range's job. It spans everything that will be drawn,
-     bodies AND tails, so nothing can ever exit. Period.
+     - NOTHING CAN EVER LEAVE THE PLOT. Not because of a clamp or a clip, but
+       because the function has no output outside that interval. A hundred-sigma
+       freak value still lands inside the frame.
+     - IDENTICAL ON EVERY DEVICE. It reads no pane size and no viewport. Only
+       the number.
+     - STATIC. A given RS-Ratio always maps to the same fraction of the axis,
+       today, tomorrow, and at every step of a replay. Trails hold still, and a
+       body's position means the same thing across sessions.
 
-     SPREAD is the transform's job. asinh is linear near zero and logarithmic
-     for large values, which is precisely the shape wanted here: it magnifies
-     the crowded middle where cross-sectional z-scores pile up, and eases the
-     rare extremes back in without discarding them.
+   ORR_K sets where the curve bends. At 3.2 a typical body (|d| around 1 to 2)
+   sits 30 to 55% out from the centre, the bulk of the field spans about 73% of
+   the axis, and outliers past |d| = 8 ease into the last few percent without
+   ever touching the edge. Cross-sectional z-scores scaled by ORR_Z land almost
+   entirely inside |d| = 6, so this covers the real range comfortably.
 
-   Written as asinh(d/s) / asinh(R/s), the ends land exactly on -1 and +1, so
-   containment is a property of the formula rather than of a clamp. It is
-   monotonic and fixes zero, so ordering and quadrant are untouched.
-
-   s is the typical body deviation (median absolute), which is what sets the
-   magnification: the centre gets roughly (R/s)/asinh(R/s) times more room than
-   a linear map would give it. On a normal field that is 4 to 5x. When the data
-   is genuinely tight, R/s is small, asinh degrades gracefully to linear and
-   nothing is distorted. It self-adjusts rather than needing a tuned constant. */
-function orrAxisScale(cur,tail){
-  const all=cur.concat(tail).map(Math.abs).filter(v=>isFinite(v));
-  if(!all.length)return {R:6,s:2};
-  /* R spans EVERYTHING drawn, with 4% of breathing room so the outermost point
-     sits just inside the frame instead of on it. */
-  const R=Math.max(3,Math.max.apply(null,all))*1.04;
-  /* s is the typical CURRENT body, since that is the cluster being spread.
-     Bounded so the magnification stays sane at both extremes. */
-  const c=cur.map(Math.abs).filter(v=>isFinite(v)).sort((p,q)=>p-q);
-  let s=c.length?(c[Math.floor(c.length/2)]||0):0;
-  s=Math.max(s,R/40);        // cap magnification: never crush the outer region
-  s=Math.min(s,R/1.2);       // and never flatten to pure linear when spread is wanted
-  return {R:R,s:s};
+   Raise ORR_K to pull everything toward the centre, lower it to push outward.
+   That is the only knob, and it is deliberately not automatic. */
+const ORR_K=3.2;
+function orrWarp(d){
+  if(!isFinite(d))return 0;
+  return Math.tanh(d/ORR_K);
 }
 
 /* ONE PROJECTION, used by the painter and the hit test alike. A diverging copy
    is how tap targets end up somewhere other than what you see, and the comment
    above orrGeom already warned about exactly that. */
 function orrProject(W,H,PAD){
-  const curX=orrPts.map(p=>p.x-100), curY=orrPts.map(p=>p.y-100);
-  const tlX=[],tlY=[];
-  orrPts.forEach(p=>(p.tail||[]).forEach(t=>{tlX.push(t.x-100);tlY.push(t.y-100);}));
-  const AX=orrAxisScale(curX,tlX), AY=orrAxisScale(curY,tlY);
-  /* Normalised to exactly [-1,1] by construction: the ends ARE the frame. The
-     clamp is a guard against a NaN creeping in, not the thing keeping points on
-     the plot. That distinction is the whole fix. */
-  const warp=(d,A)=>{
-    if(!(A.R>0)||!(A.s>0)||!isFinite(d))return 0;
-    const n=Math.asinh(d/A.s)/Math.asinh(A.R/A.s);
-    return Math.max(-1,Math.min(1,n));
-  };
   const halfW=(W-2*PAD)/2, halfH=(H-2*PAD)/2;
   const cxp=PAD+halfW, cyp=PAD+halfH;
-  /* Bodies pull in a further 3% so a marker and its label always clear the
-     frame. Tails use the full width: they fit by construction now. */
+  /* Bodies inset 3% so a marker and its label always clear the frame; tails run
+     the full width because they fit by construction. */
   return {
-    RX:AX.R, RY:AY.R, SX:AX.s, SY:AY.s,
-    X:v=>cxp+warp(v-100,AX)*halfW*0.97,
-    Y:v=>cyp-warp(v-100,AY)*halfH*0.97,
-    TX:v=>cxp+warp(v-100,AX)*halfW,
-    TY:v=>cyp-warp(v-100,AY)*halfH,
+    X:v=>cxp+orrWarp(v-100)*halfW*0.97,
+    Y:v=>cyp-orrWarp(v-100)*halfH*0.97,
+    TX:v=>cxp+orrWarp(v-100)*halfW,
+    TY:v=>cyp-orrWarp(v-100)*halfH,
   };
 }
 
@@ -846,7 +824,7 @@ function orrGeom(){
   const cv=orrCv();if(!cv)return null;
   const W=cv.clientWidth||700,H=cv.clientHeight||520,PAD=orrPad(W);
   const pr=orrProject(W,H,PAD);
-  return {W:W,H:H,PAD:PAD,X:pr.X,Y:pr.Y,RX:pr.RX,RY:pr.RY};
+  return {W:W,H:H,PAD:PAD,X:pr.X,Y:pr.Y};
 }
 /* Hit test against the EASED display positions where available, so what you
    tap is what you see mid-animation rather than where the body is headed. */
