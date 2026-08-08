@@ -220,6 +220,10 @@ function orrXZ(rows,refIdx){
 /* FIXED window length. Every device computes over exactly these many calendar
    bars, so the numbers cannot drift with what happens to be cached locally. */
 const ORR_WINDOW=150;
+/* Minimum REAL bars for a body to be plotted: the trend leg plus room for the
+   momentum lookback and the visible tail. A fixed count, so every device makes
+   the same call. */
+const ORR_MIN_BARS=ORR_TREND_W+22;
 
 function orrAlignSet(map){
   const cal=(orrCal&&orrCal.length)?orrCal:null;
@@ -255,10 +259,36 @@ function orrAlignSet(map){
      seed lands, instead of depending on fetch order. */
   const idx={};cal.forEach((d,i)=>idx[d]=i);
   const end=cal.length-1;
-  const start=Math.max(0,cal.length-ORR_WINDOW);
+
+  /* WINDOW START COMES FROM THE SECTORS, NOT FROM A FIXED CONSTANT.
+
+     Pinning it at 150 bars was wrong whenever the calendar was shorter than
+     that, which it usually is: the server seed returns around 110 daily bars,
+     so start collapsed to 0 and every body then had to carry data from the very
+     first bar. XLV at 108 bars got dropped. Most themes got dropped. Below two
+     survivors this returned null and Mythos rendered nothing.
+
+     The sector ETFs are the right anchor. They are always fetched, always
+     complete, and identical on every device, so the latest first-bar among THEM
+     is both a safe start and a deterministic one. Themes must clear that line or
+     be held out; they can no longer drag it. */
+  const isSector=(k)=>ORR_SECTORS.some(s=>s.cat==='sector'&&(s.sym===k||s.etf===k));
+  const firstOf={};
+  for(const k of keys){
+    const c=map[k];
+    const e=orrEnd[k];
+    const last=(e&&idx[e]!=null)?idx[e]:end;
+    firstOf[k]=last-(c.length-1);
+  }
+  const secFirst=keys.filter(isSector).map(k=>firstOf[k]).filter(v=>v>=0);
+  let start=secFirst.length?Math.max.apply(null,secFirst):0;
+  if(start<0)start=0;
+  // Never look back further than the window, and never shorter than the maths needs.
+  start=Math.max(start,cal.length-ORR_WINDOW);
+  if(end-start<ORR_TREND_W+10)start=Math.max(0,end-(ORR_TREND_W+10));
   if(end-start<ORR_TREND_W+10)return null;
 
-  const rows={},stale={},dropped=[];
+  const rows={},stale={},dropped=[],short={};
   for(const k of keys){
     const c=map[k];
     const e=orrEnd[k];
@@ -269,22 +299,68 @@ function orrAlignSet(map){
       const p=last-(c.length-1-j);
       if(p>=0&&p<cal.length)row[p]=c[j];
     }
-    /* first REAL bar, before any carry-forward */
+    /* first REAL bar, before any fill */
     let first=-1;
     for(let i=0;i<cal.length;i++){if(row[i]!=null){first=i;break;}}
-    if(first<0||first>start){dropped.push(k);continue;}   // does not cover the window
-    /* carry the last known close across trailing gaps only */
+    if(first<0){dropped.push(k);continue;}
+
+    /* INCLUSION IS A BAR COUNT, NOT AN ALIGNMENT TEST.
+
+       Requiring a body to reach the window start dropped six themes that were
+       on screen the day before: the themes carry 88 to 104 bars against the
+       sectors' 110, which is plenty of history, just not identical history.
+
+       What actually matters is whether a body has enough real bars for the
+       trend leg plus the visible tail. It does not need to reach the window
+       start, because it contributes NOTHING to the statistics: the mean and
+       standard deviation come from the sector reference set alone. A short body
+       is scored against that scale, it does not shape it.
+
+       So the rule is a fixed bar count, identical on every device, and the
+       leading gap is back-filled. Those early bars sit inside the moving-average
+       warm-up and behind the visible tail, so nothing that is displayed rests on
+       filled data. */
+    const realBars=end-first+1;
+    if(realBars<ORR_MIN_BARS){dropped.push(k);continue;}
+
     let prev=null;
     for(let i=0;i<cal.length;i++){
       if(row[i]!=null)prev=row[i];
-      else if(prev!=null)row[i]=prev;
+      else if(prev!=null)row[i]=prev;      // trailing staleness
     }
+    // leading gap: back-fill with the body's own first close
+    const f0=row[first];
+    for(let i=0;i<first;i++)row[i]=f0;
+    if(first>start)short[k]=first-start;
     rows[k]=row;
   }
-  const ks=Object.keys(rows);
+  let ks=Object.keys(rows);
+  /* Last-resort relaxation. If the qualification somehow leaves nothing to plot,
+     showing a slightly shorter window beats showing an empty screen: readmit the
+     held-out bodies against the latest start they can all cover. That path is
+     device-dependent by nature, so it is flagged. */
+  let relaxed=false;
+  if(ks.length<2&&dropped.length){
+    let s2=start;
+    for(const k of dropped){if(firstOf[k]>s2)s2=firstOf[k];}
+    if(end-s2>=ORR_TREND_W+10){
+      relaxed=true;start=s2;
+      for(const k of dropped){
+        const c=map[k],e=orrEnd[k];
+        const last=(e&&idx[e]!=null)?idx[e]:end;
+        const row=new Array(cal.length).fill(null);
+        for(let j=0;j<c.length;j++){const p=last-(c.length-1-j);if(p>=0&&p<cal.length)row[p]=c[j];}
+        let prev=null;
+        for(let i=0;i<cal.length;i++){if(row[i]!=null)prev=row[i];else if(prev!=null)row[i]=prev;}
+        rows[k]=row;
+      }
+      dropped.length=0;
+      ks=Object.keys(rows);
+    }
+  }
   if(ks.length<2)return null;
   const o={};ks.forEach(k=>o[k]=rows[k].slice(start,end+1));
-  return {series:o,dates:cal.slice(start,end+1),stale,dropped};
+  return {series:o,dates:cal.slice(start,end+1),stale,dropped,relaxed,short};
 }
 
 /* Equal-weight index for a synthetic basket, built BEFORE normalisation so the
