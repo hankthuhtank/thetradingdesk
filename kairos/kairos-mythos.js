@@ -178,17 +178,33 @@ function orrSMA(a,w){
 }
 /* z-score COLUMN-wise: at each date, across every body in the plot. This single
    function is what makes quadrant position comparable between XLU and SMH. */
-function orrXZ(rows){
+/* z-score COLUMN-wise, but scored against a FIXED REFERENCE SET.
+
+   Fixing the window alone did not make devices agree, because a cross-sectional
+   z-score depends on WHICH bodies are in the sample, not only on the window. A
+   theme cached on the laptop and not on the phone changed the mean and the
+   standard deviation, and therefore moved every other body on the plot.
+
+   So the statistics come from the ELEVEN SECTOR ETFs only. They are always
+   fetched, always complete, and identical everywhere. Themes are then placed on
+   that same scale rather than contributing to it. A theme appearing or failing
+   to load can no longer shift anything else by even a pixel.
+
+   It is also the better definition: "leading" now means leading relative to the
+   sector field, a stable reference, instead of relative to whatever mix of
+   bodies this particular browser happened to have in cache. */
+function orrXZ(rows,refIdx){
   const n=rows.length;if(!n)return[];
   const L=rows[0].length;
   const out=rows.map(()=>new Array(L).fill(0));
+  const ref=(refIdx&&refIdx.length>=5)?refIdx:rows.map((_,i)=>i);
   for(let t=0;t<L;t++){
     let m=0,c=0;
-    for(let i=0;i<n;i++){const v=rows[i][t];if(isFinite(v)){m+=v;c++;}}
+    for(const i of ref){const v=rows[i][t];if(isFinite(v)){m+=v;c++;}}
     if(c<2)continue;
     m/=c;
     let s2=0;
-    for(let i=0;i<n;i++){const v=rows[i][t];if(isFinite(v))s2+=(v-m)*(v-m);}
+    for(const i of ref){const v=rows[i][t];if(isFinite(v))s2+=(v-m)*(v-m);}
     const sd=Math.sqrt(s2/(c-1))||1e-9;
     for(let i=0;i<n;i++){const v=rows[i][t];out[i][t]=isFinite(v)?(v-m)/sd:0;}
   }
@@ -201,6 +217,10 @@ function orrXZ(rows){
    position silently compared Tuesday's XLE against Monday's XLU on the same
    tail point. Trailing gaps carry the last close forward and the body is
    flagged so the rail can say so rather than pretend. */
+/* FIXED window length. Every device computes over exactly these many calendar
+   bars, so the numbers cannot drift with what happens to be cached locally. */
+const ORR_WINDOW=150;
+
 function orrAlignSet(map){
   const cal=(orrCal&&orrCal.length)?orrCal:null;
   const keys=Object.keys(map).filter(k=>map[k]&&map[k].length>=ORR_TREND_W+10);
@@ -210,34 +230,61 @@ function orrAlignSet(map){
     const n=Math.min.apply(null,keys.map(k=>map[k].length));
     if(n<ORR_TREND_W+10)return null;
     const o={};keys.forEach(k=>o[k]=map[k].slice(-n));
-    return {series:o,dates:null,stale:{}};
+    return {series:o,dates:null,stale:{},dropped:[]};
   }
+
+  /* ---- WHY THIS IS NOT DEVICE-DEPENDENT ANY MORE ------------------------
+     Two devices were showing different Mythos plots, and the cause is a direct
+     consequence of cross-sectional normalisation: a body's coordinates depend
+     on WHICH OTHER BODIES share the plot and on the window they share. The old
+     code let both of those vary per device.
+
+       1. The universe was "whatever this browser happens to have cached",
+          because orrCloses fills in over time and localStorage differs. A theme
+          loaded on the laptop and not on the phone shifted every other body.
+
+       2. The window start was max(first bar) across the set, so ONE symbol with
+          a short history dragged the start later FOR EVERYONE and re-scored the
+          entire field.
+
+     Both are fixed by inverting the rule. The window is now a fixed 150 calendar
+     bars ending at the last session, identical everywhere. A body must cover
+     that whole window with REAL data to be plotted; one that cannot is DROPPED
+     rather than accommodated, so a straggler can no longer reshape the field.
+     The set then converges to the same members on every device as soon as the
+     seed lands, instead of depending on fetch order. */
   const idx={};cal.forEach((d,i)=>idx[d]=i);
-  const rows={},stale={};
-  let start=0;
+  const end=cal.length-1;
+  const start=Math.max(0,cal.length-ORR_WINDOW);
+  if(end-start<ORR_TREND_W+10)return null;
+
+  const rows={},stale={},dropped=[];
   for(const k of keys){
     const c=map[k];
     const e=orrEnd[k];
-    const end=(e&&idx[e]!=null)?idx[e]:cal.length-1;
-    stale[k]=(cal.length-1)-end;
+    const last=(e&&idx[e]!=null)?idx[e]:end;
+    stale[k]=end-last;
     const row=new Array(cal.length).fill(null);
     for(let j=0;j<c.length;j++){
-      const p=end-(c.length-1-j);
+      const p=last-(c.length-1-j);
       if(p>=0&&p<cal.length)row[p]=c[j];
     }
-    let first=-1,last=null;
+    /* first REAL bar, before any carry-forward */
+    let first=-1;
+    for(let i=0;i<cal.length;i++){if(row[i]!=null){first=i;break;}}
+    if(first<0||first>start){dropped.push(k);continue;}   // does not cover the window
+    /* carry the last known close across trailing gaps only */
+    let prev=null;
     for(let i=0;i<cal.length;i++){
-      if(row[i]!=null){if(first<0)first=i;last=row[i];}
-      else if(last!=null)row[i]=last;
+      if(row[i]!=null)prev=row[i];
+      else if(prev!=null)row[i]=prev;
     }
-    if(first<0)continue;
-    if(first>start)start=first;
     rows[k]=row;
   }
   const ks=Object.keys(rows);
-  if(ks.length<2||cal.length-start<ORR_TREND_W+10)return null;
-  const o={};ks.forEach(k=>o[k]=rows[k].slice(start));
-  return {series:o,dates:cal.slice(start),stale};
+  if(ks.length<2)return null;
+  const o={};ks.forEach(k=>o[k]=rows[k].slice(start,end+1));
+  return {series:o,dates:cal.slice(start,end+1),stale,dropped};
 }
 
 /* Equal-weight index for a synthetic basket, built BEFORE normalisation so the
@@ -275,15 +322,26 @@ function orrRRGSet(map,bench,tf){
     const sm=orrSMA(rs,ORR_TREND_W);
     return rs.map((v,i)=>sm[i]>0?v/sm[i]-1:0);
   });
+  /* Indices of the reference bodies: the sector ETFs, which every device has.
+     If too few are present (a drill-down into one sector's members, say) the
+     whole set is used instead, which is correct there because that scope has no
+     stable outside reference to borrow. */
+  const refIdx=[];
+  keys.forEach((k,i)=>{
+    const sec=ORR_SECTORS.filter(s=>s.cat==='sector').some(s=>s.sym===k||s.etf===k);
+    if(sec)refIdx.push(i);
+  });
+
   // 2) cross-sectional z at each date -> RS-Ratio
-  const ratio=orrXZ(raw).map(r=>r.map(z=>100+z*ORR_Z));
+  const ratio=orrXZ(raw,refIdx).map(r=>r.map(z=>100+z*ORR_Z));
   // 3) RS-Momentum is the rate of change of RS-Ratio over tf, normalised alike
   const rawM=ratio.map(r=>r.map((v,i)=>i>=tf?v-r[i-tf]:0));
-  const mom=orrXZ(rawM).map(r=>r.map(z=>100+z*ORR_Z));
+  const mom=orrXZ(rawM,refIdx).map(r=>r.map(z=>100+z*ORR_Z));
 
   const bodies={};
   keys.forEach((k,i)=>{bodies[k]={ratio:ratio[i],mom:mom[i],closes:al.series[k],stale:al.stale[k]||0};});
-  return {bodies,dates:al.dates,len:ratio[0].length};
+  return {bodies,dates:al.dates,len:ratio[0].length,
+    dropped:al.dropped||[],refCount:refIdx.length};
 }
 
 /* Read one body at a playhead position. p === null means live (last bar). */
@@ -800,7 +858,16 @@ function orrRenderRail(){
     r.onclick=()=>orrPick(r.dataset.sym);
   });
   const meta=document.getElementById('orrMeta');
-  if(meta)meta.textContent=orrPts.length+' bodies · '+(orrScope?orrScope.name:(orrCat==='all'?'sectors + themes':orrCat))+' · RS vs '+ORR_BENCH;
+  if(meta){
+    /* A body without the full window is held out rather than allowed to reshape
+       the field, so name the count instead of just showing fewer bodies. */
+    const held=(orrSet&&orrSet.dropped)?orrSet.dropped.length:0;
+    meta.textContent=orrPts.length+' bodies'
+      +(held?' \u00b7 '+held+' warming':'')
+      +' \u00b7 '+(orrScope?orrScope.name:(orrCat==='all'?'sectors + themes':orrCat))
+      +' \u00b7 RS vs '+ORR_BENCH;
+    meta.title=held?(held+' body/bodies do not yet have the full 150-session window and are held out. Including a partial series would move every other body, because the plot is scored cross-sectionally against the sector field.'):'';
+  }
 }
 
 /* ---- pick: sector -> drill into members; stock -> options picture ---- */
