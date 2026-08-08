@@ -1300,38 +1300,48 @@ span.nv-tag{flex-shrink:0}
    currently being held by them. Answering that used to mean leaving the wall
    for Chronos. Each pillar answers it in place now.
 
-   FIFTY-FIFTY. The chart was on a fixed 190px inside a pillar roughly 800px
-   tall, so it read as a footnote. Both halves are flex:1 now and split the
-   pillar evenly whatever the viewport does. min-height:0 is load-bearing: a
-   flex child defaults to min-content, and without it the ladder refuses to
-   shrink and the chart gets whatever is left over, which is how it ended up
-   small in the first place.
-
-   Deliberately spare: no grid, no crosshair, no axis chrome. At this size any
-   decoration costs more than it returns, and the pane has exactly one job. */
+   FIFTY-FIFTY. Both halves are flex:1 and split the pillar evenly at any
+   viewport height. min-height:0 is load-bearing: a flex child defaults to
+   min-content, so without it the ladder refuses to shrink and the chart only
+   gets the leftovers, which is how it ended up tiny in the first place. */
 .panel .strikes{flex:1 1 50%;min-height:0}
+
+/* A real seam between the two halves, not just a hairline. The inset shadow
+   reads as the chart sitting BELOW the ladder rather than beside it, which is
+   what makes the pillar scan as one object instead of two stacked panels. */
 .cc-stage{position:relative;flex:1 1 50%;min-height:0;
-  border-top:1px solid var(--border);background:#000;overflow:hidden}
+  border-top:1px solid var(--border);
+  background:#000;overflow:hidden;
+  box-shadow:inset 0 7px 12px -8px rgba(0,0,0,.95);
+  border-radius:0 0 11px 11px}
+.cc-stage::before{content:'';position:absolute;left:0;right:0;top:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(45,212,191,.22),transparent);
+  pointer-events:none;z-index:2}
 .cc-stage:empty::after{content:'chart\00a0…';position:absolute;inset:0;
   display:flex;align-items:center;justify-content:center;
   font-size:.56rem;color:var(--faint);letter-spacing:.08em}
 /* Hidden: the ladder takes the whole pillar back. */
 body.cc-off .cc-stage{display:none}
 body.cc-off .panel .strikes{flex:1 1 auto}
-/* Junction renders into the same panel component but has no chart, so any
-   stage that survives a view switch must not steal half its height. */
+/* Junction uses the same panel component but has no chart, so a stage that
+   survives a view switch must not steal half its height. */
 .panel.single-mode .cc-stage{display:none}
 
-.cosmos-bar{display:flex;align-items:center;gap:8px;margin:0 0 6px}
+.cosmos-bar{display:flex;align-items:center;gap:8px;margin:0 0 6px;flex-wrap:wrap}
 .cosmos-bar.hidden{display:none}
 .cb-lab{font-size:.52rem;font-weight:700;letter-spacing:.14em;color:var(--faint)}
 #cosmosTf button,#cosmosOn button{padding:3px 9px;font-size:.6rem}
 #cosmosTf button:disabled{cursor:default}
+
 @media(max-width:720px){
+  /* The controls were being pushed off-screen by the ticker rail sharing this
+     row. Give the bar its own full-width line and make the targets thumb-sized:
+     a toggle you cannot reach is the same as one that does not exist. */
+  .cosmos-bar{width:100%;gap:6px;margin:2px 0 6px}
+  .cb-lab{display:inline;font-size:.48rem}
+  #cosmosTf button,#cosmosOn button{padding:6px 12px;font-size:.66rem;min-height:30px}
   /* On a phone the pillar is short and the strikes matter more, so the chart
      takes a third rather than a half. */
-  .panel .strikes{flex:1 1 65%}
-  .cc-stage{flex:1 1 35%}
-  .cosmos-bar{margin-bottom:4px}
-  .cb-lab{display:none}
+  .panel .strikes{flex:1 1 64%}
+  .cc-stage{flex:1 1 36%}
 }

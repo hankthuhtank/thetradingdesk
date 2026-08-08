@@ -36,6 +36,28 @@
   };
 
   const charts = {};    // sym -> {chart, series, prim, host, bars, barsT, tf}
+  const stages = {};    // sym -> the persistent stage element
+
+  /* THE RENDERER DOES NOT OWN THESE NODES.
+     renderTrinity builds each pillar with document.createElement on every
+     refresh, so anything it creates is thrown away ten seconds later. That is
+     why the charts kept going black: the host element was destroyed, the chart
+     was disposed with it, and a new one was built from scratch each cycle.
+
+     The stage is created ONCE per symbol here and handed to the renderer to
+     append. Detaching a node and re-attaching it preserves its children, so the
+     canvases, the chart instance, its data and its zoom all survive a pillar
+     rebuild untouched. */
+  function stageFor(sym) {
+    let st = stages[sym];
+    if (!st) {
+      st = document.createElement('div');
+      st.className = 'cc-stage';
+      st.dataset.sym = sym;
+      stages[sym] = st;
+    }
+    return st;
+  }
   const LWC = () => window.LightweightCharts;
   const onCosmos = () => S.view === 'trinity';
 
@@ -246,20 +268,32 @@
       const sym = host.dataset.sym;
       live.add(sym);
       let c = charts[sym];
-      if (c && !document.body.contains(c.host)) { try { c.chart.remove(); } catch (e) {} c = null; delete charts[sym]; }
+      /* No disposal on detach any more. The node is ours and survives the
+         rebuild, so a chart is only ever torn down when its symbol leaves the
+         roster or the panes are switched off. */
       if (!c) {
+        if (!host.clientHeight) continue;   // not laid out yet; next tick
         c = build(sym, host);
-        if (!c) return;              // library not ready yet; try again next tick
+        if (!c) return;                     // library not ready; next tick
         charts[sym] = c;
       }
       await loadBars(sym);
       try {
         if (c.bars.length) c.series.setData(c.bars);
+        /* A node that is MOVED rather than resized does not always trigger the
+           ResizeObserver autoSize relies on, so nudge the chart to re-measure
+           after a pillar rebuild. Cheap, and it prevents a zero-height canvas
+           surviving as a blank pane. */
+        const w = host.clientWidth, h2 = host.clientHeight;
+        if (w && h2) c.chart.resize(w, h2);
         c.prim.poke();
       } catch (e) {}
     }
     Object.keys(charts).forEach(k => {
-      if (!live.has(k)) { try { charts[k].chart.remove(); } catch (e) {} delete charts[k]; }
+      if (!live.has(k)) {
+        try { charts[k].chart.remove(); } catch (e) {}
+        delete charts[k]; delete stages[k];
+      }
     });
   }
 
@@ -280,6 +314,18 @@
   });
   document.addEventListener('DOMContentLoaded', applyShown);
   applyShown();
+  /* Boot-time visibility. setView() owns this bar, but it only runs on a
+     navigation, and Cosmos is the view the app OPENS on. Without this the
+     controls stayed hidden for anyone who never left the wall. */
+  (function () {
+    const show = function () {
+      const b = document.getElementById('cosmosBar');
+      if (b) b.classList.toggle('hidden', S.view !== 'trinity');
+    };
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', show);
+    else show();
+    setTimeout(show, 200);
+  })();
 
   /* The pillars are re-rendered on every refresh, so poll rather than hook a
      render callback that does not exist. Cheap: it only walks a handful of DOM
@@ -288,7 +334,7 @@
   document.addEventListener('visibilitychange', function () { if (!document.hidden) sync(); });
 
   window.KairosCosmosChart = {
-    sync, setTf, setShown, levelsFor,
+    sync, setTf, setShown, levelsFor, stageFor,
     shown: function () { return shown; },
     tf: function () { return tf; },
     charts: function () { return charts; },
