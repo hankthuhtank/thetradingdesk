@@ -779,9 +779,14 @@ function orrAxisRange(cur,tail){
      other eighteen. */
   const q90=a[Math.min(a.length-1,Math.floor(a.length*0.90))];
   const maxCur=a[a.length-1];
-  let r=Math.max(q90*1.45,maxCur*1.06,3);
+  /* Slightly more headroom than the first pass. 1.45/1.06 pushed the outermost
+     bodies right up against the frame, and once a body sits on the border its
+     glow and label have nowhere to go. Everything now lands comfortably inside.
+     These constants are viewport-independent ON PURPOSE: making them react to
+     pane width is exactly how the two devices drifted apart before. */
+  let r=Math.max(q90*1.60,maxCur*1.14,3);
   const tmax=tail.length?Math.max.apply(null,tail.map(Math.abs)):0;
-  if(tmax>r)r=Math.min(tmax,r*1.45);
+  if(tmax>r)r=Math.min(tmax,r*1.35);
   return r;
 }
 /* Gentle spread. Cross-sectional z-scores pile up near zero with a few
@@ -789,7 +794,9 @@ function orrAxisRange(cur,tail){
    signed power below 1 opens the centre and eases the extremes back in. It is
    monotonic and fixes zero, so ordering and quadrant are untouched: nothing
    changes side, things just stop overlapping. */
-const ORR_SPREAD=0.68;
+/* 0.74 rather than 0.68: still opens the crowded centre, but eases off enough
+   that the outer bodies stop crowding the frame. */
+const ORR_SPREAD=0.74;
 function orrProject(W,H,PAD){
   const curX=orrPts.map(p=>p.x-100), curY=orrPts.map(p=>p.y-100);
   const tlX=[],tlY=[];
@@ -802,11 +809,17 @@ function orrProject(W,H,PAD){
   };
   const halfW=(W-2*PAD)/2, halfH=(H-2*PAD)/2;
   const cxp=PAD+halfW, cyp=PAD+halfH;
-  const cl=v=>Math.max(-1.06,Math.min(1.06,v));
+  /* 1.0 is exactly the frame. Bodies clamp to 0.97 so the marker and its label
+     always sit inside; tail points may reach 1.05 and are then cut by the clip
+     region rather than painting into the margin. */
+  const clB=v=>Math.max(-0.97,Math.min(0.97,v));
+  const clT=v=>Math.max(-1.05,Math.min(1.05,v));
   return {
     RX:RX, RY:RY,
-    X:v=>cxp+cl(warp(v-100,RX))*halfW,
-    Y:v=>cyp-cl(warp(v-100,RY))*halfH,
+    X:v=>cxp+clB(warp(v-100,RX))*halfW,
+    Y:v=>cyp-clB(warp(v-100,RY))*halfH,
+    TX:v=>cxp+clT(warp(v-100,RX))*halfW,
+    TY:v=>cyp-clT(warp(v-100,RY))*halfH,
   };
 }
 function orrGeom(){
@@ -871,6 +884,11 @@ function orrDraw(dt){
   /* One projection, shared with the hit test. See orrProject(). */
   const _pr=orrProject(W,H,PAD);
   const X=_pr.X, Y=_pr.Y;
+  /* Tails use a slightly wider clamp than bodies and are drawn inside a clip
+     region, so a trail leaving the plot is cut at the frame instead of stopping
+     short of it. Bodies keep the tighter clamp so a marker and its label always
+     land inside. */
+  const TX=_pr.TX, TY=_pr.TY;
   const cx=X(100),cy=Y(100);
 
   // quadrant fills
@@ -920,6 +938,16 @@ function orrDraw(dt){
     d.x+=(tgtX-d.x)*k;d.y+=(tgtY-d.y)*k;
   }
 
+  /* CLIP TO THE FRAME. Tail points are clamped just past the edge so a trail
+     heading off-plot still reads as leaving rather than stopping dead, but that
+     tolerance is exactly what let lines paint outside the grid on a wide pane.
+     Clipping cuts them at the border instead: the trail runs to the frame and
+     ends there, which is both tidier and more honest than drawing history in
+     the margin. Bodies and labels are drawn after ctx.restore() so they are
+     never clipped. */
+  ctx.save();
+  ctx.beginPath();ctx.rect(PAD,PAD,W-2*PAD,H-2*PAD);ctx.clip();
+
   // --- TAILS FIRST, under the bodies. Default: hidden. Only the focused body
   //     shows a bright tail — this is what kills the spaghetti. ---
   for(const p of orrPts){
@@ -932,9 +960,9 @@ function orrDraw(dt){
     for(let i=1;i<p.tail.length;i++){
       const a=(i/p.tail.length)*(isFocus?0.85:(orrTrail==='all'?0.26:0.85));
       ctx.strokeStyle='rgba('+col+','+a.toFixed(2)+')';ctx.lineWidth=2;
-      ctx.beginPath();ctx.moveTo(X(p.tail[i-1].x),Y(p.tail[i-1].y));ctx.lineTo(X(p.tail[i].x),Y(p.tail[i].y));ctx.stroke();
+      ctx.beginPath();ctx.moveTo(TX(p.tail[i-1].x),TY(p.tail[i-1].y));ctx.lineTo(TX(p.tail[i].x),TY(p.tail[i].y));ctx.stroke();
     }
-    if(isFocus||orrTrail!=='all')for(let i=0;i<p.tail.length-1;i++){ctx.fillStyle='rgba('+col+',.5)';ctx.beginPath();ctx.arc(X(p.tail[i].x),Y(p.tail[i].y),2*SC,0,7);ctx.fill();}
+    if(isFocus||orrTrail!=='all')for(let i=0;i<p.tail.length-1;i++){ctx.fillStyle='rgba('+col+',.5)';ctx.beginPath();ctx.arc(TX(p.tail[i].x),TY(p.tail[i].y),2*SC,0,7);ctx.fill();}
   }
 
   /* Scrubbed into the past: a wash and a stamp, so a screenshot can never be
@@ -949,6 +977,8 @@ function orrDraw(dt){
     ctx.fillText('\u25c0 REPLAY \u00b7 '+orrHeadDate(),PAD+4,PAD+13*SC);
     ctx.restore();
   }
+  ctx.restore();   // end of the clipped region: tails only
+
   // --- BODIES ---
   for(const p of orrPts){
     const col=ORR_PHASECOL[p.phase];
