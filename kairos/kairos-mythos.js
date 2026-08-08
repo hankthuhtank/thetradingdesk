@@ -748,15 +748,72 @@ let orrPhase2=0;
    copy would have put every tap target in the wrong place on a phone - taps
    landing on nothing, or on the wrong body. One formula, one source of truth. */
 function orrPad(W){return Math.round(Math.max(20,Math.min(42,W*0.078)));}
+
+/* ---- ONE PROJECTION, USED BY BOTH THE PAINTER AND THE HIT TEST -----------
+   The old scaling was duplicated: the drawing code had its own copy and
+   orrGeom() had another. Changing one and not the other is exactly how tap
+   targets end up in the wrong place, and the comment above this function
+   already warned about it, so the new scaling lives here and both callers use
+   it.
+
+   AXIS SCALING. The previous rule was one symmetric range shared by BOTH axes,
+   set to the single largest deviation found anywhere - including every point of
+   every tail. Two problems followed.
+
+     1. One long tail excursion set the range for the whole plot, so the bodies
+        you actually read collapsed into a knot around the crosshair while most
+        of the pane sat empty.
+     2. Sharing one range between x and y meant the axis with less spread wasted
+        its space. With wildly different aspect ratios, identical data looked
+        spread out on a wide desktop pane and like a single blob on a square
+        phone one.
+
+   Each axis now gets its OWN range, set by the CURRENT body positions rather
+   than by tail history. Tails may stretch it somewhat but cannot run away with
+   it; anything past the edge is clipped instead of rescaling everything else.
+   None of this touches the numbers, only how they map to pixels. */
+function orrAxisRange(cur,tail){
+  if(!cur.length)return 6;
+  const a=cur.map(Math.abs).sort((p,q)=>p-q);
+  /* 90th percentile, not the max: one body at an extreme should not squash the
+     other eighteen. */
+  const q90=a[Math.min(a.length-1,Math.floor(a.length*0.90))];
+  const maxCur=a[a.length-1];
+  let r=Math.max(q90*1.45,maxCur*1.06,3);
+  const tmax=tail.length?Math.max.apply(null,tail.map(Math.abs)):0;
+  if(tmax>r)r=Math.min(tmax,r*1.45);
+  return r;
+}
+/* Gentle spread. Cross-sectional z-scores pile up near zero with a few
+   outliers, so a linear map leaves the middle crowded and the corners bare. A
+   signed power below 1 opens the centre and eases the extremes back in. It is
+   monotonic and fixes zero, so ordering and quadrant are untouched: nothing
+   changes side, things just stop overlapping. */
+const ORR_SPREAD=0.68;
+function orrProject(W,H,PAD){
+  const curX=orrPts.map(p=>p.x-100), curY=orrPts.map(p=>p.y-100);
+  const tlX=[],tlY=[];
+  orrPts.forEach(p=>(p.tail||[]).forEach(t=>{tlX.push(t.x-100);tlY.push(t.y-100);}));
+  const RX=orrAxisRange(curX,tlX), RY=orrAxisRange(curY,tlY);
+  const warp=(d,R)=>{
+    if(!(R>0))return 0;
+    const n=Math.min(Math.abs(d)/R,1.9);
+    return (d<0?-1:1)*Math.pow(n,ORR_SPREAD);
+  };
+  const halfW=(W-2*PAD)/2, halfH=(H-2*PAD)/2;
+  const cxp=PAD+halfW, cyp=PAD+halfH;
+  const cl=v=>Math.max(-1.06,Math.min(1.06,v));
+  return {
+    RX:RX, RY:RY,
+    X:v=>cxp+cl(warp(v-100,RX))*halfW,
+    Y:v=>cyp-cl(warp(v-100,RY))*halfH,
+  };
+}
 function orrGeom(){
   const cv=orrCv();if(!cv)return null;
   const W=cv.clientWidth||700,H=cv.clientHeight||520,PAD=orrPad(W);
-  let mx=6;orrPts.forEach(p=>{p.tail.concat([{x:p.x,y:p.y}]).forEach(t=>{mx=Math.max(mx,Math.abs(t.x-100),Math.abs(t.y-100));});});
-  mx*=1.15;
-  const lo=100-mx,hi=100+mx;
-  return {W:W,H:H,PAD:PAD,
-    X:v=>PAD+(v-lo)/(hi-lo)*(W-2*PAD),
-    Y:v=>PAD+(hi-v)/(hi-lo)*(H-2*PAD)};
+  const pr=orrProject(W,H,PAD);
+  return {W:W,H:H,PAD:PAD,X:pr.X,Y:pr.Y,RX:pr.RX,RY:pr.RY};
 }
 /* Hit test against the EASED display positions where available, so what you
    tap is what you see mid-animation rather than where the body is headed. */
@@ -792,13 +849,28 @@ function orrDraw(dt){
   const SC=NARROW?Math.max(0.72,W/520):1;
   const PAD=orrPad(W);
   const FS=(px,wt)=>(wt||700)+' '+(px*SC).toFixed(1)+'px "JetBrains Mono",monospace';
-  // axis bounds: center 100, symmetric, padded to the data
-  let mx=6;
-  orrPts.forEach(p=>{p.tail.concat([{x:p.x,y:p.y}]).forEach(t=>{mx=Math.max(mx,Math.abs(t.x-100),Math.abs(t.y-100));});});
-  mx=mx*1.15;
-  const lo=100-mx,hi=100+mx;
-  const X=v=>PAD+(v-lo)/(hi-lo)*(W-2*PAD);
-  const Y=v=>PAD+(hi-v)/(hi-lo)*(H-2*PAD);
+  /* ---- AXIS SCALING -------------------------------------------------------
+     The old rule was one symmetric range shared by BOTH axes, set to the single
+     largest deviation found anywhere - including every point of every tail. Two
+     things went wrong with that.
+
+     First, one long tail excursion set the range for the whole plot, so the
+     bodies you actually read collapsed into a knot around the crosshair while
+     most of the pane sat empty.
+
+     Second, sharing one range between x and y meant the axis with less spread
+     wasted its space. Combined with wildly different aspect ratios, the same
+     numbers looked spread out on a wide desktop pane and like a single blob on
+     a square phone one. Identical data, different apparent structure.
+
+     Now: each axis gets its OWN range, and that range is set by the CURRENT
+     body positions rather than by tail history. Tails may extend it somewhat but
+     cannot run away with it, and anything past the edge is clipped instead of
+     rescaling everything else. None of this touches the numbers; it is purely
+     how they are mapped to pixels. */
+  /* One projection, shared with the hit test. See orrProject(). */
+  const _pr=orrProject(W,H,PAD);
+  const X=_pr.X, Y=_pr.Y;
   const cx=X(100),cy=Y(100);
 
   // quadrant fills
