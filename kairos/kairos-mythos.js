@@ -75,6 +75,9 @@ let orrTouch=false;   // set true the first time we see a real touch pointer
 let orrCloses={};           // sym -> [daily closes]
 let orrEnd={};              // sym -> last bar date 'YYYY-MM-DD'
 let orrCal=null;            // shared trading calendar (SPY's dates)
+/* Provenance per symbol: 'srv' means it came from the Worker, which every
+   device shares. Anything else is a local fetch and is treated as provisional. */
+let orrSrc={};
 
 /* ---- REPLAY --------------------------------------------------------------
    The full RS-Ratio / RS-Momentum series was always computed and then thrown
@@ -97,25 +100,50 @@ let orrDisp={};
    We need ~1 series per symbol; daily bars don't change intraday, so cache
    hard (6h in-memory + localStorage) so Mythos is instant on reload. ---- */
 let orrFetchT={};
-const ORR_DCACHE='kairos_orr_daily_v1';
-(function(){try{const o=JSON.parse(localStorage.getItem(ORR_DCACHE)||'{}');if(o&&o.day===new Date().toISOString().slice(0,10)){orrCloses=o.c||{};orrEnd=o.e||{};orrCal=o.cal||null;Object.keys(orrCloses).forEach(k=>orrFetchT[k]=Date.now()-3600000);}}catch(e){}})();
+const ORR_DCACHE='kairos_orr_daily_v3';   /* bumped: caches without a provenance map would look entirely local */
+(function(){try{const o=JSON.parse(localStorage.getItem(ORR_DCACHE)||'{}');if(o&&o.day===new Date().toISOString().slice(0,10)){orrCloses=o.c||{};orrEnd=o.e||{};orrCal=o.cal||null;orrSrc=o.s||{};Object.keys(orrCloses).forEach(k=>orrFetchT[k]=Date.now()-3600000);}}catch(e){}})();
 let orrDSaveT=0;
 /* seed the rotation from the server's hourly snapshot — a cold device gets
    the whole universe in one payload instead of ~44 daily-history requests */
+/* THE SERVER IS THE SOURCE OF TRUTH FOR THIS PLOT.
+
+   The old rule only filled symbols that were ABSENT, so whichever source landed
+   first won permanently. A device that fetched XLK directly from Tradier kept
+   that copy forever, while another device that got it from the Worker kept a
+   slightly different one: different bar count, different start date, sometimes a
+   different last session. Because Mythos scores cross-sectionally, one symbol
+   differing shifts EVERY body on the plot. That is the whole reason two devices
+   disagreed after the window and reference-set fixes.
+
+   Server data now overwrites unconditionally. Every device runs the same
+   Worker payload, so the arrays, the calendar and the end-dates are identical
+   by construction rather than by luck. Local fetches still happen for symbols
+   the Worker has not covered yet, but they are marked and get replaced the
+   moment the server has them. */
 window.orrSeed=function(map,ends,cal){
   if(!map)return;let n=0;
   Object.keys(map).forEach(k=>{
-    if(!orrCloses[k]||!orrCloses[k].length){
+    const cur=orrCloses[k];
+    const same=cur&&cur.length===map[k].length&&orrSrc[k]==='srv';
+    if(!same){
       orrCloses[k]=map[k];
+      orrSrc[k]='srv';
       if(ends&&ends[k])orrEnd[k]=ends[k];
       orrFetchT[k]=Date.now();n++;
     }
   });
-  if(cal&&cal.length&&(!orrCal||cal.length>orrCal.length))orrCal=cal;
-  if(n)orrDSave();
+  /* The calendar must come from the server too, and must REPLACE whatever a
+     local SPY fetch produced. A calendar that differs by even one session
+     shifts the alignment of every symbol against it. */
+  if(cal&&cal.length){
+    if(!orrCal||orrCal.length!==cal.length||orrCal[orrCal.length-1]!==cal[cal.length-1]){
+      orrCal=cal;n++;
+    }
+  }
+  if(n){orrDSave();try{orrSet=null;if(typeof orrCompute==='function')orrCompute();}catch(e){}}
   return n;
 };
-function orrDSave(){const now=Date.now();if(now-orrDSaveT<4000)return;orrDSaveT=now;try{localStorage.setItem(ORR_DCACHE,JSON.stringify({day:new Date().toISOString().slice(0,10),c:orrCloses,e:orrEnd,cal:orrCal}));}catch(e){}}
+function orrDSave(){const now=Date.now();if(now-orrDSaveT<4000)return;orrDSaveT=now;try{localStorage.setItem(ORR_DCACHE,JSON.stringify({day:new Date().toISOString().slice(0,10),c:orrCloses,e:orrEnd,cal:orrCal,s:orrSrc}));}catch(e){}}
 async function orrDaily(sym){
   if(orrCloses[sym]&&Date.now()-(orrFetchT[sym]||0)<6*3600000)return orrCloses[sym];
   if(!(typeof liveOn==='function'?liveOn():(state.tradierToken&&state.tradierToken.length>8)))return orrCloses[sym]||null;
@@ -129,6 +157,7 @@ async function orrDaily(sym){
     if(closes.length>=50){
       orrCloses[sym]=closes;
       orrEnd[sym]=rows[rows.length-1].date;
+      orrSrc[sym]='local';   // provisional until the Worker covers it
       /* The benchmark's dates ARE the trading calendar every other series is
          aligned onto, so capture them whenever SPY comes back. */
       if(sym===ORR_BENCH)orrCal=rows.map(x=>x.date);
@@ -402,10 +431,17 @@ function orrRRGSet(map,bench,tf){
      If too few are present (a drill-down into one sector's members, say) the
      whole set is used instead, which is correct there because that scope has no
      stable outside reference to borrow. */
+  /* The reference set must be sectors that came FROM THE SERVER. A sector the
+     Worker has not covered yet, filled in by a local Tradier call, would carry a
+     slightly different series and move the mean and standard deviation that
+     every other body is scored against. Excluding it costs one reference during
+     warm-up and buys identical numbers on every device. orrXZ falls back to the
+     whole set if fewer than five references survive, which is the right
+     behaviour on a cold start and inside a drill-down. */
   const refIdx=[];
   keys.forEach((k,i)=>{
     const sec=ORR_SECTORS.filter(s=>s.cat==='sector').some(s=>s.sym===k||s.etf===k);
-    if(sec)refIdx.push(i);
+    if(sec&&orrSrc[k]==='srv')refIdx.push(i);
   });
 
   // 2) cross-sectional z at each date -> RS-Ratio
