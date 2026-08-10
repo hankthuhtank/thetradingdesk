@@ -720,6 +720,29 @@
       upColor: 'rgba(226,232,240,.92)', downColor: 'rgba(100,116,139,.92)',
       wickUpColor: 'rgba(226,232,240,.5)', wickDownColor: 'rgba(100,116,139,.5)',
       borderVisible: false, priceLineVisible: false, lastValueVisible: true,
+      /* Same trap as the Cosmos panes: auto-scale fits the CANDLES only, so a
+         level above the session high was drawn off-screen and looked like it
+         was never selected. Extend the range to cover the levels within 3% of
+         spot; anything further would squash the candles to accommodate a price
+         today cannot reach. */
+      autoscaleInfoProvider: (original) => {
+        const res = original();
+        if (!res || !res.priceRange) return res;
+        const m = buildLevels();
+        if (!m.levels.length) return res;
+        const d = S.data[curSym];
+        const spot = (d && (S.spot[curSym] || d.spot)) || 0;
+        if (!spot) return res;
+        let min = res.priceRange.minValue, max = res.priceRange.maxValue;
+        const reach = spot * 0.03;
+        for (const lv of m.levels) {
+          if (Math.abs(lv.k - spot) > reach) continue;
+          if (lv.k < min) min = lv.k;
+          if (lv.k > max) max = lv.k;
+        }
+        const pad = (max - min) * 0.05 || spot * 0.001;
+        return { priceRange: { minValue: min - pad, maxValue: max + pad } };
+      },
     });
 
     fieldPrim = makeFieldPrimitive();

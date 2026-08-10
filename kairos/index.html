@@ -98,10 +98,11 @@
             <button data-cat="sector">SECTORS</button>
             <button data-cat="theme">THEMES</button>
           </div>
-          <div class="mtoggle" id="orrTf" data-tip="Momentum lookback for the rotation. Faster = more sensitive, more noise.">
-            <button data-tf="5" class="on">1W</button>
-            <button data-tf="10">2W</button>
-            <button data-tf="21">1M</button>
+          <span class="orr-lab" data-tip="How far back the VERTICAL axis measures. RS-Momentum is the rate of change of relative strength over this many sessions, so a shorter setting reacts faster and turns on noise, a longer one turns only on a real shift in leadership. Nothing to do with the replay range, which is set by how much history the plot holds.">MOMENTUM</span>
+          <div class="mtoggle" id="orrTf" data-tip="How far back the VERTICAL axis measures. RS-Momentum is the rate of change of relative strength over this many sessions. Shorter reacts faster and picks up noise; longer only turns on a real shift in leadership. This is not a date range and does not affect replay.">
+            <button data-tf="5" class="on">5d</button>
+            <button data-tf="10">10d</button>
+            <button data-tf="21">21d</button>
           </div>
           <div class="mtoggle" id="orrTrailSel" data-tip="Rotation trails. ONE draws the trail of whichever body you hover (mouse) or tap (touch). ALL draws every trail dimmed — busier, but shows the whole field's direction at once. On a phone, tap a body once to pin its trail, tap again to open it.">
             <button data-tr="off">○ OFF</button>

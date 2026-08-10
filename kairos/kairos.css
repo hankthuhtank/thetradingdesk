@@ -1350,3 +1350,11 @@ body.cc-off .panel .strikes{flex:1 1 auto}
      panning feels broken on iOS. */
   .cc-stage canvas{touch-action:pan-y pinch-zoom}
 }
+
+/* ---- Mythos momentum label ----
+   "1W / 2W / 1M" read like a date range and got mistaken for the replay span.
+   It is the momentum lookback: how many sessions the vertical axis measures
+   change over. Naming it removes the ambiguity that the labels created. */
+.orr-lab{font-size:.5rem;font-weight:700;letter-spacing:.14em;color:var(--faint);
+  cursor:help;margin-right:-2px}
+@media(max-width:720px){.orr-lab{display:none}}

@@ -829,10 +829,20 @@ function orrPad(W){return Math.round(Math.max(20,Math.min(42,W*0.078)));}
    Raise ORR_K to pull everything toward the centre, lower it to push outward.
    That is the only knob, and it is deliberately not automatic: an automatic one
    is what made the plot move underneath you. */
-const ORR_K=4.5;
+const ORR_K=4.0;
+/* BREATHING ROOM. tanh saturates toward 1.0, which is the frame, so anything
+   with a large deviation ended up pinned against the edge no matter how ORR_K
+   was tuned. ORR_K controls how fast the curve bends; it cannot create a margin,
+   because the curve's own limit IS the margin.
+
+   ORR_FILL caps the reach explicitly. At 0.82 even a fully saturated body stops
+   at 82% of the half-axis, leaving a permanent 18% gutter, so nothing can ever
+   sit in the corner however extreme it gets. The field still spans about 80% of
+   the axis, so the middle keeps its spread. */
+const ORR_FILL=0.82;
 function orrWarp(d){
   if(!isFinite(d))return 0;
-  return Math.tanh(d/ORR_K);
+  return Math.tanh(d/ORR_K)*ORR_FILL;
 }
 
 /* ONE PROJECTION, used by the painter and the hit test alike. A diverging copy

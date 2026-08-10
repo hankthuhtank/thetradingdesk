@@ -256,6 +256,34 @@
       wickUpColor: 'rgba(226,232,240,.45)', wickDownColor: 'rgba(100,116,139,.45)',
       borderVisible: false, priceLineVisible: true, lastValueVisible: true,
       priceLineColor: 'rgba(56,189,248,.5)', priceLineStyle: 2,
+      /* THE PRICE SCALE MUST INCLUDE THE LEVELS.
+         Auto-scaling fits the CANDLES and nothing else, so any level outside
+         the bar range was drawn correctly and then placed off-screen. On SPXW
+         that hid a 30.5M node at 7800 sitting just above the session high,
+         which is exactly the level worth seeing. The selection was never the
+         problem; the viewport was.
+
+         Levels beyond a sensible distance are still ignored, because a node 8%
+         away would flatten the candles into a ribbon to accommodate something
+         price cannot reach today. */
+      autoscaleInfoProvider: (original) => {
+        const res = original();
+        if (!res || !res.priceRange) return res;
+        const lv = levelsFor(sym);
+        if (!lv.length) return res;
+        const d = S.data[sym];
+        const spot = (d && (S.spot[sym] || d.spot)) || 0;
+        if (!spot) return res;
+        let min = res.priceRange.minValue, max = res.priceRange.maxValue;
+        const reach = spot * 0.025;     // include levels within 2.5% of spot
+        for (const L2 of lv) {
+          if (Math.abs(L2.k - spot) > reach) continue;
+          if (L2.k < min) min = L2.k;
+          if (L2.k > max) max = L2.k;
+        }
+        const pad = (max - min) * 0.06 || spot * 0.001;
+        return { priceRange: { minValue: min - pad, maxValue: max + pad } };
+      },
     });
     const prim = makePrim(sym);
     try { series.attachPrimitive(prim); } catch (e) {}
