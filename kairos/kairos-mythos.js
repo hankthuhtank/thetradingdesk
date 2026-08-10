@@ -317,7 +317,7 @@ function orrAlignSet(map){
   if(end-start<ORR_TREND_W+10)start=Math.max(0,end-(ORR_TREND_W+10));
   if(end-start<ORR_TREND_W+10)return null;
 
-  const rows={},stale={},dropped=[],short={};
+  const rows={},stale={},dropped=[],short={},firstReal={};
   for(const k of keys){
     const c=map[k];
     const e=orrEnd[k];
@@ -360,6 +360,12 @@ function orrAlignSet(map){
     // leading gap: back-fill with the body's own first close
     const f0=row[first];
     for(let i=0;i<first;i++)row[i]=f0;
+    /* Index INSIDE the sliced window where this body's real data begins. The
+       back-fill above is a flat constant, which is fine behind the moving-average
+       warm-up but is not something to plot: relative strength measured against a
+       flat line manufactures huge deviations that are an artefact of the fill,
+       not of the market. That is what pinned three themes into the corner. */
+    firstReal[k]=Math.max(0,first-start);
     if(first>start)short[k]=first-start;
     rows[k]=row;
   }
@@ -389,7 +395,7 @@ function orrAlignSet(map){
   }
   if(ks.length<2)return null;
   const o={};ks.forEach(k=>o[k]=rows[k].slice(start,end+1));
-  return {series:o,dates:cal.slice(start,end+1),stale,dropped,relaxed,short};
+  return {series:o,dates:cal.slice(start,end+1),stale,dropped,relaxed,short,firstReal};
 }
 
 /* Equal-weight index for a synthetic basket, built BEFORE normalisation so the
@@ -450,9 +456,21 @@ function orrRRGSet(map,bench,tf){
   const rawM=ratio.map(r=>r.map((v,i)=>i>=tf?v-r[i-tf]:0));
   const mom=orrXZ(rawM,refIdx).map(r=>r.map(z=>100+z*ORR_Z));
 
+  /* Earliest index at which the plot means anything: the sector reference has
+     to clear its own trend warm-up. The scrub starts here rather than at zero,
+     because the bars before it are moving-average warm-up, not history. */
   const bodies={};
-  keys.forEach((k,i)=>{bodies[k]={ratio:ratio[i],mom:mom[i],closes:al.series[k],stale:al.stale[k]||0};});
-  return {bodies,dates:al.dates,len:ratio[0].length,
+  keys.forEach((k,i)=>{
+    const fr=(al.firstReal&&al.firstReal[k])||0;
+    bodies[k]={ratio:ratio[i],mom:mom[i],closes:al.series[k],stale:al.stale[k]||0,
+      /* Nothing before this index is trustworthy: it needs real bars AND the
+         trend leg's warm-up on top of them. */
+      validFrom:fr+ORR_TREND_W};
+  });
+  /* minIdx is the first bar the plot is honest about. Everything before it is
+     the trend leg filling its window, which is why the replay slider used to run
+     back to a date with nothing on the chart. */
+  return {bodies,dates:al.dates,len:ratio[0].length,minIdx:ORR_TREND_W+tf,
     dropped:al.dropped||[],refCount:refIdx.length};
 }
 
@@ -607,8 +625,13 @@ async function orrCompute(){
 function orrApplyHead(){
   if(!orrSet||!orrSet.bodies){orrPts=[];return;}
   const out=[];
+  const head=orrHeadIdx();
   Object.keys(orrSet.bodies).forEach(k=>{
     const m=orrMetaMap[k];if(!m)return;
+    /* Skip a body until its own data is real at this point in the replay. Left
+       in, it plots the artefact of a flat back-fill rather than anything the
+       market did. */
+    if(head<(orrSet.bodies[k].validFrom||0))return;
     const a=orrAt(orrSet.bodies[k],orrHead,ORR_TAIL);
     out.push(Object.assign({},m,{
       x:a.x,y:a.y,tail:a.tail,phase:orrPhase(a.x,a.y),ret:a.ret,
@@ -618,7 +641,8 @@ function orrApplyHead(){
   });
   orrPts=out;
 }
-function orrHeadIdx(){return orrHead==null?(orrSet?orrSet.len-1:0):orrHead;}
+function orrMinIdx(){return orrSet?Math.min(orrSet.minIdx||0,orrSet.len-1):0;}
+function orrHeadIdx(){return orrHead==null?(orrSet?orrSet.len-1:0):Math.max(orrHead,orrMinIdx());}
 /* Format as MON DD, which is what you actually track a rotation by. "T-45" is
    only meaningful if you are counting sessions in your head, which nobody is. */
 const ORR_MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -657,7 +681,7 @@ function orrPlayToggle(){
   /* Pressing play while parked at the live edge rewinds first, otherwise play
      would appear to do nothing at all. */
   if(!orrPlaying&&(orrHead==null||orrHead>=orrSet.len-1)){
-    orrHead=Math.max(0,orrSet.len-1-Math.min(90,orrSet.len-1));
+    orrHead=Math.max(orrMinIdx(),orrSet.len-1-Math.min(90,orrSet.len-1));
   }
   orrPlaying=!orrPlaying;
   orrAcc=0;
@@ -667,7 +691,7 @@ function orrPlayToggle(){
 }
 function orrSeek(i){
   if(!orrSet)return;
-  let h=Math.max(0,Math.min(orrSet.len-1,i|0));
+  let h=Math.max(orrMinIdx(),Math.min(orrSet.len-1,i|0));
   orrHead=(h>=orrSet.len-1)?null:h;      // snap to live at the right edge
   orrApplyHead();orrRenderRail();orrRenderReplay();
   if(orrReduce)orrDraw(0);
@@ -709,7 +733,13 @@ function orrRenderReplay(){
   const btn=document.getElementById('orrPlay');
   if(btn)btn.textContent=orrPlaying?'\u275a\u275a':'\u25b6';
   const sc=document.getElementById('orrScrub');
-  if(sc){sc.max=String(L);if(+sc.value!==i)sc.value=String(i);}
+  if(sc){
+    /* Floor the slider at the first meaningful bar so it cannot be dragged into
+       the warm-up region, which showed a date weeks before any body existed. */
+    sc.min=String(orrMinIdx());
+    sc.max=String(L);
+    if(+sc.value!==i)sc.value=String(i);
+  }
   const lab=document.getElementById('orrWhen');
   if(lab){
     lab.textContent=orrHead==null?'LIVE':orrHeadDate();
@@ -790,15 +820,16 @@ function orrPad(W){return Math.round(Math.max(20,Math.min(42,W*0.078)));}
        today, tomorrow, and at every step of a replay. Trails hold still, and a
        body's position means the same thing across sessions.
 
-   ORR_K sets where the curve bends. At 3.2 a typical body (|d| around 1 to 2)
-   sits 30 to 55% out from the centre, the bulk of the field spans about 73% of
-   the axis, and outliers past |d| = 8 ease into the last few percent without
-   ever touching the edge. Cross-sectional z-scores scaled by ORR_Z land almost
-   entirely inside |d| = 6, so this covers the real range comfortably.
+   ORR_K sets where the curve bends. 4.5 rather than 3.2: at 3.2 the outermost
+   bodies all saturated within about a pixel of each other and piled into the
+   corner. At 4.5 the field still spans roughly 83% of the axis while |d| = 6 and
+   |d| = 8 sit 30px apart on an 800px axis, so the outer bodies stay legible as
+   separate things instead of one clump.
 
    Raise ORR_K to pull everything toward the centre, lower it to push outward.
-   That is the only knob, and it is deliberately not automatic. */
-const ORR_K=3.2;
+   That is the only knob, and it is deliberately not automatic: an automatic one
+   is what made the plot move underneath you. */
+const ORR_K=4.5;
 function orrWarp(d){
   if(!isFinite(d))return 0;
   return Math.tanh(d/ORR_K);
