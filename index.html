@@ -5,10 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>The Trading Desk — The All-In-One Trading Terminal</title>
 <meta name="description" content="A free, all-in-one terminal for traders.">
-<meta name="theme-color" content="#070a0f">
+<meta name="theme-color" content="#05090B">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=Michroma&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lightweight-charts@5/dist/lightweight-charts.standalone.production.js" defer></script>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cline x1='5' y1='2' x2='5' y2='18' stroke='%23f87171' stroke-width='1.6'/%3E%3Crect x='2.5' y='6' width='5' height='6' fill='%23f87171'/%3E%3Cline x1='14' y1='2' x2='14' y2='18' stroke='%2334d399' stroke-width='1.6'/%3E%3Crect x='11.5' y='7' width='5' height='7' fill='%2334d399'/%3E%3C/svg%3E">
 <style>
 :root{
@@ -173,15 +174,10 @@ header{position:relative;padding:72px 0 40px;border-bottom:1px solid var(--line)
 .sec-head p{color:var(--dim);max-width:640px;font-size:1.04rem;margin-top:14px}
 .band{background:var(--bg-2);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
 
-/* featured tools: kairos + delphi */
 .flagship{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 .flag{position:relative;border:1px solid var(--line);border-radius:16px;background:linear-gradient(160deg,var(--panel-2),var(--panel));padding:30px;overflow:hidden;transition:transform .25s,border-color .25s}
 .flag::before{content:"";position:absolute;inset:0;background:radial-gradient(120% 80% at 100% 0%,var(--accent-fade,rgba(34,211,238,.14)),transparent 60%);pointer-events:none}
 .flag:hover{transform:translateY(-5px)}
-.flag.kairos{--accent:var(--cyan);--accent-fade:rgba(34,211,238,.16)}
-.flag.kairos:hover{border-color:rgba(34,211,238,.5)}
-.flag.delphi{--accent:var(--gold);--accent-fade:rgba(245,185,66,.16)}
-.flag.delphi:hover{border-color:rgba(245,185,66,.5)}
 .flag .ftop{display:flex;align-items:center;gap:12px;margin-bottom:18px;position:relative}
 .flag .fic{width:46px;height:46px;border-radius:11px;display:grid;place-items:center;border:1px solid var(--accent);color:var(--accent);background:var(--accent-fade)}
 .flag .fname{font-family:var(--disp);font-weight:700;text-transform:uppercase;font-size:1.45rem;line-height:1}
@@ -1434,6 +1430,7 @@ body.paged .section{padding-top:40px}
   *{animation-duration:.001s!important;transition-duration:.001s!important}
 }
 </style>
+<link rel="stylesheet" href="cockpit.css">
 </head>
 <body>
 
@@ -1474,11 +1471,12 @@ body.paged .section{padding-top:40px}
   <div class="wrap hero-grid">
     <div class="hero reveal">
       <div class="badge"><b>◆</b> FREE · EDUCATIONAL ONLY · NO SIGNALS, EVER</div>
-      <h1 class="disp">One <span class="c">terminal</span> for the whole trader’s desk.</h1>
-      <p class="sub">Trading simplified. Data and education all in one place. <b>No login, no signals, nothing fake.</b></p>
+      <h1 class="disp">Learn the market the way a <span class="c">desk</span> actually reads it.</h1>
+      <p class="sub">A full curriculum and a live terminal in the same window. Run the preflight below and it routes you, in order, through everything worth knowing. <b>No login, no signals, nothing fake.</b></p>
       <div class="cta-row">
-        <a class="btn btn-primary" href="#terminal">Open the terminal</a>
-        <a class="btn btn-ghost" href="#ledger" onclick="showPage('ledger');return false;">Research Stocks</a>
+        <a class="btn btn-primary" href="#sessions" onclick="showPage('sessions');return false;">Start the path</a>
+        <a class="btn btn-ghost" href="#terminal">Open the live board</a>
+        <a class="btn btn-ghost" href="#ledger" onclick="showPage('ledger');return false;">Research stocks</a>
         <a class="btn btn-ghost" href="#patterns" onclick="showPage('patterns');return false;">Learn candlesticks</a>
         <a class="btn btn-ghost" href="#encyclopedia" onclick="showPage('encyclopedia');return false;">Open the encyclopedia</a>
       </div>
@@ -1510,39 +1508,10 @@ body.paged .section{padding-top:40px}
   <div class="wrap">
     <div class="sec-head reveal">
       <div class="eyebrow">01 // THE TERMINAL</div>
-      <h2 class="disp">The market, <span class="c">live</span> — in one glance.</h2>
-      <p>Real quotes and real structure, never a simulation dressed up as a feed. The heatmap and indices above update on their own. Below: the two flagship terminals, this week’s earnings laid out as a calendar, and three live boards that frame the tape before you read any single chart.</p>
+      <h2 class="disp">The board, <span class="c">live.</span></h2>
+      <p>Real quotes and real structure, never a simulation dressed up as a feed. Market state, the wire, the macro calendar and a chart, all weighted the same, because no single one of them tells you what is happening. Click any symbol anywhere on the page to pull it into the chart.</p>
     </div>
-    <div class="flagship reveal" style="margin-bottom:16px">
-      <div class="flag kairos">
-        <div class="ftop">
-          <span class="fic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M3 3v18h18"/><path d="M7 15l3-4 3 2 4-7"/></svg></span>
-          <span class="fname">Kairos<small>DEALER EXPOSURE TERMINAL</small></span>
-          <span class="ftag">Live</span>
-        </div>
-        <p><b>A live GEX / VEX terminal.</b> It models where market-maker hedging must buy and sell — the gamma and vanna walls that quietly pin price and flip it — re-priced from live spot on every tick.</p>
-        <div class="fpts">
-          <div class="fpt"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg><span><b>Call &amp; Put Walls</b> — gamma-weighted support &amp; resistance the desks actually hedge to.</span></div>
-          <div class="fpt"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg><span><b>GEX + VEX</b> — gamma pins, vanna moves the walls when volatility shifts.</span></div>
-          <div class="fpt"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg><span><b>Flow tape &amp; ideas</b> — where fresh option dollars are opening, honestly labeled.</span></div>
-        </div>
-        <a class="btn btn-primary fcta" href="/kairos">Launch Kairos →</a>
-      </div>
-      <div class="flag delphi">
-        <div class="ftop">
-          <span class="fic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span>
-          <span class="fname">Delphi<small>PREDICTION-MARKET SCANNER</small></span>
-          <span class="ftag">Live</span>
-        </div>
-        <p><b>An edge-scanner for prediction markets.</b> It reads Polymarket in real time — whale flow, structural mispricings, and yield — the way a desk scans an order book, in a noir oracle terminal.</p>
-        <div class="fpts">
-          <div class="fpt"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg><span><b>Live whale tape</b> — tiered flags on the size that’s actually moving odds.</span></div>
-          <div class="fpt"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg><span><b>Structural scans &amp; yield</b> — mispricings and carry across markets.</span></div>
-          <div class="fpt"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg><span><b>Market drill-in</b> — live order book and price history per market.</span></div>
-        </div>
-        <a class="btn btn-gold fcta" href="/delphi">Launch Delphi →</a>
-      </div>
-    </div>
+    <div id="ckBoard" class="reveal" style="margin-bottom:16px"></div>
     <div class="flagship reveal" style="margin-bottom:16px">
       <button class="flag wide" style="text-align:left;--accent:var(--gold);--accent-fade:rgba(245,185,66,.14)" onclick="openModal('m-earn')" aria-label="Open the full earnings calendar">
         <div class="ftop" style="margin-bottom:6px">
@@ -4756,8 +4725,8 @@ function pickTier(t){ const sel=$('#bk-tier'); [...sel.options].forEach(o=>{if(o
 const cmdk=$('#cmdk'), cmdkInput=$('#cmdkInput'), cmdkList=$('#cmdkList');
 const CMDS=[
   ...TOOLS.map(t=>({label:t.name,kind:'tool',run:()=>openModal(t.id)})),
-  {label:'Kairos — GEX terminal',kind:'launch',run:()=>location.href='/kairos'},
-  {label:'Delphi — prediction scanner',kind:'launch',run:()=>location.href='/delphi'},
+  {label:'Preflight · the learning path',kind:'learn',run:()=>{location.hash='';setTimeout(()=>{const p=document.querySelector('.ck-pre');if(p)p.scrollIntoView({behavior:'smooth',block:'center'});},80);}},
+  {label:'Live board · chart, wire, macro',kind:'live',run:()=>{location.hash='#terminal';}},
   {label:'Earnings this week',kind:'live',run:()=>openModal('m-earn')},
   {label:'Market Pulse — indices + volatility',kind:'live',run:()=>openModal('m-market')},
   {label:'Cross-Asset — bonds, dollar, metals, crypto',kind:'live',run:()=>openModal('m-cross')},
@@ -5021,7 +4990,7 @@ function gexBriefHTML(){
     <div class="gexb-wt">Running it efficiently \u00b7 the operating procedure</div>
     <ol class="gexb-wf">${B.workflow.map(w=>`<li><b>${esc(w[0])}</b><span>${esc(w[1])}</span></li>`).join('')}</ol>
     <div class="gexb-cav"><b>What GEX is not</b><ul>${B.caveats.map(c=>`<li>${esc(c)}</li>`).join('')}</ul></div>
-    <a class="gexb-go" href="/kairos">Read the live map in Kairos \u2192</a>
+    <a class="gexb-go" href="#encyclopedia" onclick="XR.open('enc','Gamma Exposure');return false;">Open gamma exposure in the encyclopedia \u2192</a>
   </div>`;
 }
 function stratCard(x){
@@ -5173,5 +5142,6 @@ pollWhenVisible(()=>loadWireStrip(true),300000);
 pollWhenVisible(loadIdx,60000);
 pollWhenVisible(loadHeatmap,60000);
 </script>
+<script src="cockpit.js"></script>
 </body>
 </html>
