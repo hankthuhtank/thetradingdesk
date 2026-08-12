@@ -393,6 +393,55 @@ function rotDim(){
   $$('.rot-b').forEach(g=>g.classList.toggle('dim',!!ROT.focus&&g.dataset.k!==ROT.focus));
   $$('.rot-li').forEach(b=>b.classList.toggle('on',ROT.focus===b.dataset.k));
 }
+/* the side panel: what the hovered body actually means */
+function rotSay(p){
+  const el=$('#rotRead'); if(!el)return;
+  if(!p){
+    el.innerHTML=`<span class="k">The map</span><span class="v">Relative rotation</span>
+      <p>Each body is measured against SPY, then scored across the sector field so a utility and a semiconductor basket are comparable. Right of centre is outperforming, above centre is accelerating. The trail is the last six sessions, and money tends to travel clockwise.</p>
+      <small>Hover a body to read it. Click a sector to open its constituents.</small>`;
+    return;
+  }
+  const q=p.q;
+  const spin=q?(q.dir==='cw'?'Rotating clockwise, the normal direction.'
+    :q.dir==='ccw'?'Rotating counter-clockwise, which is unusual and often marks a failed move.'
+    :'Barely rotating. This is drift rather than a real move.'):'';
+  const clean=q?(q.quality>0.55?'The path is a clean arc, so the rotation is real.'
+    :q.quality>0.28?'The path is uneven. Treat it as a lean, not a signal.'
+    :'The path is a scribble. That is jitter across a boundary, not rotation.'):'';
+  el.innerHTML=`<span class="k" style="color:rgb(${PHASE_COL[p.phase]})">${p.phase}</span>
+    <span class="v">${esc(p.k)} <em>${esc(rotName(p.k))}</em></span>
+    <p>${PHASE_SAY[p.phase]}</p>
+    <div class="rot-nums">
+      <span>RS-Ratio <b>${p.x.toFixed(1)}</b></span>
+      <span>RS-Mom <b>${p.y.toFixed(1)}</b></span>
+      <span>5-day <b class="${dirC(p.ret)}">${pctf(p.ret*100)}</b></span>
+      <span>Quality <b>${q?(q.quality*100).toFixed(0)+'%':'\u2014'}</b></span>
+    </div>
+    <small>${spin} ${clean}</small>`;
+}
+/* dim everything except the focused body, without a full redraw */
+function rotDim(){
+  $$('.rot-b').forEach(g=>g.classList.toggle('dim',!!ROT.focus&&g.dataset.k!==ROT.focus));
+  $$('.rot-li').forEach(b=>b.classList.toggle('on',ROT.focus===b.dataset.k));
+}
+/* click a group to open its constituents; click anything else to chart it */
+function rotClick(k){
+  const g=ROT_GROUPS.find(x=>x.sym===k);
+  if(!ROT.drill && g && g.members && g.members.length>2){
+    rotStop(); ROT.drill=k; ROT.head=null;
+    const host=$('#rotPlot');
+    if(host) host.innerHTML='<div class="dk-skel"></div><div class="dk-skel"></div><div class="dk-skel"></div>';
+    rotLoad(); return;
+  }
+  /* a group charts its ETF where one exists, since a synthetic basket has no
+     ticker of its own */
+  toChart(g && g.etf ? g.etf : k);
+}
+
+/* leave a drill-down and return to the full field */
+function rotBackOut(){ rotStop(); ROT.drill=null; ROT.head=null; rotLoad(); }
+
 /* ---- replay ----------------------------------------------------------
    A setInterval that redrew a whole frame every 110ms is a slideshow. This runs
    on requestAnimationFrame and advances a FRACTIONAL playhead by elapsed
@@ -450,6 +499,172 @@ function rotStep(){
 }
 
 /* ============================================================
+   THE READ
+   Market conditions, not market prices. Three questions: how
+   nervous is the options market, are dealers amplifying moves or
+   damping them, and is the move broad or narrow.
+
+   The VIX half is public data and comes straight from the quote
+   feed. The gamma half comes from Kairos through a deliberately
+   coarse channel: prior close, buckets, never a level. Enough to
+   teach what dealer positioning does to a tape, not enough to
+   trade off, which is the point.
+   ============================================================ */
+const GAMMA_SAY={
+  short:['Dealers are short gamma','They hedge in the direction of the move, which amplifies it. Trends extend, dips get sold harder, and ranges break more often than they hold.'],
+  long: ['Dealers are long gamma','They hedge against the move, which damps it. Rallies get sold and dips get bought mechanically, so price compresses and reverts toward the middle.']
+};
+const FLIP_SAY={
+  near:['Close to the flip','Small moves could change the regime, so today can behave one way in the morning and the other by the afternoon.'],
+  mid: ['Some room to the flip','A normal session could reach it, but the current regime is the base case.'],
+  far: ['Far from the flip','Today is very likely to behave the way it is behaving now, all session.']
+};
+const CONC_SAY={
+  tight: ['Tight','A few strikes hold most of the positioning, so price tends to get pinned and pushed around by them.'],
+  normal:['Normal','Positioning is spread out enough that no single level dominates.'],
+  loose: ['Loose','Nothing much is holding price in place, so it can travel without meeting resistance from hedging.']
+};
+
+async function loadRead(){
+  const host=$('#dkRead'); if(!host) return;
+
+  /* VIX comes straight from the quote feed rather than through Kairos. The
+     whole term structure is public data, so routing it through the private
+     channel made the panel depend on a cron that has nothing to do with it. */
+  let vix=null, gamma=null, breadth=null, tnx=null;
+  try{
+    const q=(await get('/v1/yquote?symbols=^VIX,^VIX9D,^VIX3M,^TNX')).quotes||{};
+    const g=s=>q[s]&&q[s].c!=null?q[s].c:null;
+    const spot=g('^VIX');
+    if(spot) vix={spot, v9d:g('^VIX9D'), v3m:g('^VIX3M'), chg:q['^VIX']?q['^VIX'].dp:null};
+    tnx=g('^TNX');
+  }catch(e){}
+  try{ const r=await get('/v1/read'); if(r&&r.symbols) gamma=r; }catch(e){}
+  try{
+    const d=await get('/v1/strength'); const rows=d.rows||[];
+    if(rows.length) breadth={adv:rows.filter(r=>r.m1>0).length, tot:rows.length,
+      top:rows.slice(0,3).map(r=>r.symbol), bot:rows.slice(-3).map(r=>r.symbol)};
+  }catch(e){}
+
+  if(!vix&&!breadth&&!gamma){
+    host.innerHTML=stateBox('THE READ IS OFFLINE','No condition feed is reachable right now.');
+    setBar('#dkRead','offline'); return;
+  }
+
+  /* the headline: one sentence, assembled only from what is actually true */
+  const clauses=[];
+  if(vix){
+    clauses.push(vix.spot<14?'volatility is priced cheap'
+      :vix.spot<20?'volatility is priced normally'
+      :vix.spot<28?'volatility is bid':'volatility is being paid for aggressively');
+    if(vix.v3m) clauses.push(vix.spot>vix.v3m
+      ?'the curve is inverted, which is the shape stress makes'
+      :'the curve is in its normal shape');
+  }
+  if(breadth){
+    const p=breadth.adv/breadth.tot;
+    clauses.push((clauses.length?'and ':'')+(p>=.7?'participation is broad'
+      :p>=.45?'participation is mixed'
+      :p>=.25?'a minority of the market is carrying it'
+      :'almost nothing is participating'));
+  }
+  if(gamma&&gamma.symbols&&gamma.symbols.SPY)
+    clauses.push('with dealers positioned to '+(gamma.symbols.SPY.gammaSign==='short'?'amplify':'damp')+' moves');
+  const headline=clauses.length?clauses.join(', ').replace(/^./,c=>c.toUpperCase())+'.':'';
+
+  const cards=[];
+
+  if(vix){
+    const v=vix.spot;
+    const band=v<14?['Calm','The options market is pricing small daily moves. Protection is cheap, and so is complacency.']
+      :v<20?['Normal','Ordinary two-way risk. Nothing in the volatility surface is shouting.']
+      :v<28?['Elevated','The market is paying up for protection. Size should come down before conviction does.']
+      :['Stressed','Fear is being bought aggressively. Historically these readings mark the middle of a move, not the end.'];
+    const inv=vix.v3m&&v>vix.v3m;
+    const front=vix.v9d&&v?vix.v9d/v:null;
+    const pts=[['9D',vix.v9d],['30D',v],['3M',vix.v3m]].filter(x=>x[1]!=null);
+    let curve='';
+    if(pts.length>=2){
+      const vals=pts.map(p=>p[1]);
+      const lo=Math.min(...vals)*.94, hi=Math.max(...vals)*1.06;
+      const W=210,H=58, px=i=>10+(i/(pts.length-1))*(W-20), py=x=>H-10-((x-lo)/(hi-lo))*(H-24);
+      curve=`<svg class="vx-curve" viewBox="0 0 ${W} ${H}" role="img" aria-label="VIX term structure">
+        <path d="${pts.map((p,i)=>(i?'L':'M')+px(i).toFixed(1)+' '+py(p[1]).toFixed(1)).join(' ')}"
+          fill="none" stroke="${inv?'var(--red)':'var(--cyan)'}" stroke-width="2"/>
+        ${pts.map((p,i)=>`<circle cx="${px(i).toFixed(1)}" cy="${py(p[1]).toFixed(1)}" r="3"
+          fill="${inv?'var(--red)':'var(--cyan)'}"/>
+          <text x="${px(i).toFixed(1)}" y="${H-1}" text-anchor="middle" class="vx-lab">${p[0]}</text>
+          <text x="${px(i).toFixed(1)}" y="${(py(p[1])-7).toFixed(1)}" text-anchor="middle" class="vx-val">${fmt(p[1],1)}</text>`).join('')}
+      </svg>`;
+    }
+    cards.push(`<div class="rd-card">
+      <div class="rd-h"><span class="rd-t">Volatility</span>
+        <span class="rd-v ${dirC(vix.chg)}">${fmt(v,2)}</span></div>
+      <div class="rd-scale"><i style="left:${Math.max(0,Math.min(100,(v/45)*100)).toFixed(1)}%"></i>
+        <span>10</span><span>20</span><span>30</span><span>45</span></div>
+      <div class="rd-row"><b>${band[0]}</b><p>${band[1]}</p></div>
+      ${curve}
+      <div class="rd-row"><b>${inv?'Backwardation':'Contango'}</b>
+        <p>${inv?'Near-term volatility costs more than far-term, which happens when something is wrong right now. This is the shape that marks stress.'
+                :'Far-term volatility costs more than near-term, the normal shape. The market expects today to be calmer than next quarter.'}</p>
+        ${front?`<span class="rd-sub">Front pressure ${front.toFixed(2)}, nine-day against thirty-day.</span>`:''}</div>
+    </div>`);
+  }
+
+  if(gamma&&gamma.symbols&&Object.keys(gamma.symbols).length){
+    cards.push(`<div class="rd-card">
+      <div class="rd-h"><span class="rd-t">Dealer positioning</span>
+        <span class="rd-tag">prior close</span></div>
+      ${Object.keys(gamma.symbols).map(s=>{
+        const x=gamma.symbols[s], g=GAMMA_SAY[x.gammaSign]||['',''];
+        const f=x.flipBucket?FLIP_SAY[x.flipBucket]:null, c=x.concentration?CONC_SAY[x.concentration]:null;
+        return `<div class="rd-sym">
+          <div class="rd-sh"><b>${esc(s)}</b>
+            <span class="rd-pill ${x.gammaSign}">${x.gammaSign==='short'?'SHORT GAMMA':'LONG GAMMA'}</span>
+            ${x.dayCount>1?`<span class="rd-days">${x.dayCount} sessions</span>`:''}</div>
+          <p>${g[1]}</p>
+          <div class="rd-mini">${f?`<span><b>${f[0]}</b>${f[1]}</span>`:''}${c?`<span><b>${c[0]} book</b>${c[1]}</span>`:''}</div>
+        </div>`;}).join('')}
+      <p class="rd-note">Deliberately coarse and one session behind. The point is the mechanism, not a level to trade against.</p>
+    </div>`);
+  } else {
+    cards.push(`<div class="rd-card">
+      <div class="rd-h"><span class="rd-t">Dealer positioning</span><span class="rd-tag">waiting</span></div>
+      <div class="rd-row"><b>Not published yet</b>
+        <p>Dealers hedge the options they sell, and that hedging is mechanical rather than discretionary. Short gamma amplifies a move; long gamma damps it. When the read is live it appears here as a direction and a distance, never as a price level.</p>
+        <span class="rd-sub">Published one session behind and in buckets, by design.</span></div>
+    </div>`);
+  }
+
+  if(breadth){
+    const pct=breadth.adv/breadth.tot*100;
+    const say=pct>=70?['Broad','Most of the market is participating. Moves built on this tend to hold.']
+      :pct>=45?['Mixed','Roughly half the market is working. No strong message either way.']
+      :pct>=25?['Narrow','A minority is carrying the index. That is fragile, because it depends on a handful of names.']
+      :['Very narrow','Almost nothing is participating. An index holding up on this is being held up by a few names.'];
+    cards.push(`<div class="rd-card">
+      <div class="rd-h"><span class="rd-t">Breadth</span>
+        <span class="rd-v">${breadth.adv}<em>/${breadth.tot}</em></span></div>
+      <div class="rd-bar"><i style="width:${pct.toFixed(0)}%"></i></div>
+      <div class="rd-row"><b>${say[0]}</b><p>${say[1]}</p>
+        <span class="rd-sub">Groups outperforming SPY over the last month.</span></div>
+      <div class="rd-lead">
+        <span class="k">Leading</span>
+        <span class="g">${breadth.top.map(s=>`<em class="up" data-sym="${esc(s)}">${esc(s)}</em>`).join('')}</span>
+        <span class="k">Lagging</span>
+        <span class="g">${breadth.bot.map(s=>`<em class="dn" data-sym="${esc(s)}">${esc(s)}</em>`).join('')}</span>
+      </div>
+      ${tnx?`<p class="rd-note">US 10-year at ${fmt(tnx,2)}%. Rising yields pressure long-duration growth first.</p>`:''}
+    </div>`);
+  }
+
+  host.innerHTML=(headline?`<p class="rd-lede">${esc(headline)}</p>`:'')
+    +`<div class="rd-grid">${cards.join('')}</div>`;
+  $$('em[data-sym]',host).forEach(em=>em.addEventListener('click',()=>toChart(em.dataset.sym)));
+  setBar('#dkRead', vix?'live':'partial');
+}
+
+/* ============================================================
    THE TERMINAL: chart, snapshot, calendar
    ============================================================ */
 /* Intraday ranges are capped by the provider: one-minute bars only go back a
@@ -484,7 +699,9 @@ window.deskChart=toChart;
 function chartMsg(on,t,d){
   const m=$('#dkMsg'); if(!m)return;
   m.classList.toggle('on',!!on);
-  if(on){$('.t',m).textContent=t||'';$('.d',m).textContent=d||'';}
+  if(!on)return;
+  const a=$('.t',m), b=$('.d',m);
+  if(a)a.textContent=t||''; if(b)b.textContent=d||'';
 }
 function paintChart(){
   const LWC=window.LightweightCharts,host=$('#dkCanvas');
@@ -1136,10 +1353,21 @@ function ambience(){
 /* ============================================================
    BOOT
    ============================================================ */
+/* Each step is isolated. Panels are independent by nature, so one throwing
+   must never stop the others: that turns a single typo into a blank page with
+   nothing to diagnose from. Failures are logged with the step that caused
+   them, which is the difference between a five-minute fix and an afternoon. */
+function step(name,fn){
+  try{ fn(); }
+  catch(e){ console.error('[terminal] '+name+' failed:', e); }
+}
 function init(){
-  installXref(); wireSymbol(); wireTape(); watchOptions(); enhanceStrats(); reveals(); ambience();
+  step('xref',installXref); step('symbol',wireSymbol); step('tape',wireTape);
+  step('options',watchOptions); step('strategies',enhanceStrats);
+  step('reveals',reveals); step('ambience',ambience);
   if(!SLOW) watchNumbers();
 
+  step('controls',()=>{
   $$('#dkTf button').forEach(b=>b.addEventListener('click',e=>{
     e.stopPropagation();
     if(b.dataset.tf){$$('#dkTf [data-tf]').forEach(x=>x.classList.toggle('on',x===b));loadChart(C.sym,b.dataset.tf);}
@@ -1157,10 +1385,12 @@ function init(){
     rotStop(); ROT.tf=ROT_TF[b.dataset.rtf]||5; rotBuild(); rotDraw();
   }));
   const back=$('#rotBack'); if(back)back.addEventListener('click',rotBackOut);
+  });
 
   const lab=$('#tkNow'); if(lab) lab.textContent='NVDA';
-  loadChart('NVDA','6M');
-  loadRead(); loadEcon();
+  step('chart',()=>loadChart('NVDA','6M'));
+  step('read',loadRead);
+  step('econ',loadEcon);
 
   /* The Rotation pulls a year of closes for forty symbols, so it waits until
      it is actually about to be seen rather than competing with the panels
