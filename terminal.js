@@ -560,13 +560,28 @@ async function loadRead(){
   /* VIX comes straight from the quote feed rather than through Kairos. The
      whole term structure is public data, so routing it through the private
      channel made the panel depend on a cron that has nothing to do with it. */
-  let vix=null, gamma=null, breadth=null, tnx=null;
+  let vix=null, gamma=null, breadth=null, tnx=null, tape=null, risk=null;
   try{
-    const q=(await get('/v1/yquote?symbols=^VIX,^VIX9D,^VIX3M,^TNX')).quotes||{};
+    const q=(await get('/v1/yquote?symbols=^VIX,^VIX9D,^VIX3M,^TNX,SPY,QQQ,IWM,DIA,GLD,TLT,HYG,UUP')).quotes||{};
     const g=s=>q[s]&&q[s].c!=null?q[s].c:null;
+    const d=s=>q[s]&&q[s].dp!=null?q[s].dp:null;
     const spot=g('^VIX');
-    if(spot) vix={spot, v9d:g('^VIX9D'), v3m:g('^VIX3M'), chg:q['^VIX']?q['^VIX'].dp:null};
+    if(spot) vix={spot, v9d:g('^VIX9D'), v3m:g('^VIX3M'), chg:d('^VIX')};
     tnx=g('^TNX');
+    tape=[['SPY','S&P 500'],['QQQ','Nasdaq 100'],['IWM','Russell 2000'],['DIA','Dow 30'],
+          ['GLD','Gold'],['TLT','20Y Treasuries']]
+      .map(([s,n])=>({s,n,c:g(s),dp:d(s)})).filter(x=>x.c!=null);
+    /* Risk appetite, read off relationships rather than asserted: small caps
+       against large, high yield credit against treasuries, and the dollar.
+       Each leg is a comparison the market itself is making. */
+    const legs=[];
+    if(d('IWM')!=null&&d('SPY')!=null)
+      legs.push({k:'Small vs large', v:d('IWM')-d('SPY'), on:'Small caps leading', off:'Large caps leading'});
+    if(d('HYG')!=null&&d('TLT')!=null)
+      legs.push({k:'Credit vs duration', v:d('HYG')-d('TLT'), on:'Credit bid', off:'Duration bid'});
+    if(d('UUP')!=null)
+      legs.push({k:'Dollar', v:-d('UUP'), on:'Dollar easing', off:'Dollar firming'});
+    if(legs.length) risk={legs, score:legs.filter(l=>l.v>0).length, of:legs.length};
   }catch(e){}
   try{ const r=await get('/v1/read'); if(r&&r.symbols) gamma=r; }catch(e){}
   try{
@@ -602,6 +617,19 @@ async function loadRead(){
   const headline=clauses.length?clauses.join(', ').replace(/^./,c=>c.toUpperCase())+'.':'';
 
   const cards=[];
+
+  /* The majors first. Conditions mean less without knowing what actually
+     happened, and this was the piece the panel was missing entirely. */
+  let band='';
+  if(tape&&tape.length){
+    band=`<div class="rd-tape">${tape.map(x=>`
+      <button class="rd-tk" data-sym="${esc(x.s)}">
+        <span class="s">${esc(x.s)}</span>
+        <span class="n">${esc(x.n)}</span>
+        <span class="p">${fmt(x.c,2)}</span>
+        <span class="d ${dirC(x.dp)}">${pctf(x.dp)}</span>
+      </button>`).join('')}</div>`;
+  }
 
   if(vix){
     const v=vix.spot;
@@ -660,7 +688,7 @@ async function loadRead(){
     cards.push(`<div class="rd-card">
       <div class="rd-h"><span class="rd-t">Dealer positioning</span><span class="rd-tag">waiting</span></div>
       <div class="rd-row"><b>Not published yet</b>
-        <p>Dealers hedge the options they sell, and that hedging is mechanical rather than discretionary. Short gamma amplifies a move; long gamma damps it. When the read is live it appears here as a direction and a distance, never as a price level.</p>
+        <p>Dealers hedge the options they sell, and that hedging is mechanical rather than discretionary. Short gamma amplifies a move; long gamma damps it. When the read is published it appears here as a direction and a distance, never as a price level.</p>
         <span class="rd-sub">Published one session behind and in buckets, by design.</span></div>
     </div>`);
   }
@@ -687,10 +715,30 @@ async function loadRead(){
     </div>`);
   }
 
+  /* risk appetite */
+  if(risk){
+    const tone=risk.score===risk.of?['Risk on','Every relationship the market watches is leaning the same way, toward risk.']
+      :risk.score===0?['Risk off','Every relationship is leaning defensive at once, which is rarer than it sounds and usually means something.']
+      :['Mixed','The relationships disagree, so the tape is being pushed by something other than a clean appetite for risk.'];
+    cards.push(`<div class="rd-card">
+      <div class="rd-h"><span class="rd-t">Risk appetite</span>
+        <span class="rd-v">${risk.score}<em>/${risk.of}</em></span></div>
+      <div class="rd-row"><b>${tone[0]}</b><p>${tone[1]}</p></div>
+      <div class="rd-legs">${risk.legs.map(l=>`
+        <div class="rd-leg ${l.v>0?'on':'off'}">
+          <span class="k">${esc(l.k)}</span>
+          <span class="v">${esc(l.v>0?l.on:l.off)}</span>
+          <span class="n">${(l.v>=0?'+':'')+l.v.toFixed(2)}%</span>
+        </div>`).join('')}</div>
+      <p class="rd-note">Each leg is one asset measured against another today. Relationships describe appetite more honestly than any single index does.</p>
+    </div>`);
+  }
+
   host.innerHTML=(headline?`<p class="rd-lede">${esc(headline)}</p>`:'')
-    +`<div class="rd-grid">${cards.join('')}</div>`;
+    +band+`<div class="rd-grid">${cards.join('')}</div>`;
+  $$('.rd-tk',host).forEach(b=>b.addEventListener('click',()=>toChart(b.dataset.sym)));
   $$('em[data-sym]',host).forEach(em=>em.addEventListener('click',()=>toChart(em.dataset.sym)));
-  setBar('#dkRead', vix?'live':'partial');
+  setBar('#dkRead', vix?'current':'partial');
 }
 
 /* ============================================================
@@ -1162,6 +1210,93 @@ async function loadEcon(){
   }
 }
 
+
+/* ============================================================
+   THE WEEK
+   Economic releases and earnings on the same five-day grid,
+   because they compete for the same attention: a CPI print and a
+   megacap report both decide what a Tuesday looks like, and
+   reading them in two separate scrolling lists loses that.
+
+   Each day is a column. Macro sits on top, earnings underneath,
+   and the day you are in is marked. Nothing scrolls sideways.
+   ============================================================ */
+const WK_DAY=['Mon','Tue','Wed','Thu','Fri'];
+function weekDays(){
+  const now=new Date();
+  const et=new Date(now.toLocaleString('en-US',{timeZone:'America/New_York'}));
+  const dow=et.getDay();                      /* 0 Sun to 6 Sat */
+  const back=dow===0?6:dow-1;                 /* wind back to Monday */
+  const mon=new Date(et); mon.setDate(et.getDate()-back);
+  const out=[];
+  for(let i=0;i<5;i++){
+    const d=new Date(mon); d.setDate(mon.getDate()+i);
+    out.push({iso:d.toISOString().slice(0,10), dom:d.getDate(),
+              label:WK_DAY[i], isToday:i===Math.min(4,Math.max(0,back))&&dow>=1&&dow<=5});
+  }
+  return out;
+}
+async function loadWeek(){
+  const host=$('#dkWeek'); if(!host) return;
+  const days=weekDays();
+  const byDay={}; days.forEach(d=>byDay[d.iso]={macro:[],earn:[]});
+
+  let macroErr=null, earnErr=null, schedOnly=false;
+  try{
+    const d=await get('/v1/econ?days=8');
+    schedOnly=String(d.src||'').indexOf('official-schedule')>-1;
+    (d.events||[]).forEach(e=>{ if(byDay[e.date]) byDay[e.date].macro.push(e); });
+  }catch(e){ macroErr=e.message; }
+
+  /* earnings come from the existing Finnhub-backed calendar the page already
+     loads, so this costs no extra upstream call */
+  try{
+    if(typeof window.fetchEarnings==='function'){
+      const {list}=await window.fetchEarnings();
+      (list||[]).forEach(e=>{ if(byDay[e.date]) byDay[e.date].earn.push(e); });
+    } else earnErr='The earnings calendar is not loaded on this page.';
+  }catch(e){ earnErr=(e&&e.nokey)?'No market-data key is configured.':'Earnings unavailable right now.'; }
+
+  const cols=days.map(d=>{
+    const m=byDay[d.iso].macro.sort((a,b)=>b.impact-a.impact).slice(0,4);
+    const er=byDay[d.iso].earn
+      .sort((a,b)=>(b.epsEstimate!=null?1:0)-(a.epsEstimate!=null?1:0))
+      .slice(0,5);
+    const more=byDay[d.iso].earn.length-er.length;
+    return `<div class="wk-col${d.isToday?' today':''}">
+      <div class="wk-dh"><span class="dw">${d.label}</span><span class="dn">${d.dom}</span></div>
+      <div class="wk-sec">
+        <span class="wk-lbl">Macro</span>
+        ${m.length?m.map(e=>`<div class="wk-ev i${e.impact}" title="${esc(e.event)}">
+            <span class="tm">${esc((e.time||'').slice(0,5)||'\u2014')}</span>
+            <span class="nm">${esc(e.event)}</span>
+            ${e.actual?`<span class="ac">${esc(e.actual)}</span>`:''}
+          </div>`).join('')
+          :`<div class="wk-quiet">${macroErr?esc(macroErr):'Nothing scheduled'}</div>`}
+      </div>
+      <div class="wk-sec">
+        <span class="wk-lbl">Earnings</span>
+        ${er.length?er.map(e=>`<div class="wk-er ${e.hour==='bmo'?'bmo':e.hour==='amc'?'amc':''}">
+            <button data-sym="${esc(e.symbol)}">${esc(e.symbol)}</button>
+            ${e.epsEstimate!=null?`<span class="es">est ${fmt(e.epsEstimate,2)}</span>`:''}
+          </div>`).join('')+(more>0?`<div class="wk-more">+${more} more</div>`:'')
+          :`<div class="wk-quiet">${earnErr?esc(earnErr):'No notable reports'}</div>`}
+      </div>
+    </div>`;
+  }).join('');
+
+  host.innerHTML=`<div class="wk-week">${cols}</div>
+    <div class="wk-foot">
+      <span><i class="k3"></i> Market moving</span>
+      <span><i class="k2"></i> Worth watching</span>
+      <span><i class="bmo"></i> Before open</span>
+      <span><i class="amc"></i> After close</span>
+      ${schedOnly?'<span class="wk-src">Consensus figures were unavailable, so macro shows the official release schedule.</span>':''}
+    </div>`;
+  $$('.wk-er button',host).forEach(b=>b.addEventListener('click',()=>toChart(b.dataset.sym)));
+  setBar('#dkWeek', days[0].iso.slice(5)+' to '+days[4].iso.slice(5));
+}
+
 /* ============================================================
    CROSS REFERENCING
    A term inside an entry opens that entry directly, and the
@@ -1471,7 +1606,7 @@ function init(){
   const lab=$('#tkNow'); if(lab) lab.textContent='NVDA';
   step('chart',()=>loadChart('NVDA','6M'));
   step('read',loadRead);
-  step('econ',loadEcon);
+  step('week',loadWeek);
 
   /* The Rotation pulls a year of closes for forty symbols, so it waits until
      it is actually about to be seen rather than competing with the panels
@@ -1488,7 +1623,7 @@ function init(){
   }
 
   everyVisible(loadRead,900000);
-  everyVisible(loadEcon,900000);
+  everyVisible(loadWeek,900000);
   everyVisible(()=>loadChart(),120000);
   addEventListener('hashchange',()=>setTimeout(reveals,60));
   let rz; addEventListener('resize',()=>{clearTimeout(rz);rz=setTimeout(()=>{if(ROT.set)rotDraw();},240);});

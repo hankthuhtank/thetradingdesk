@@ -2264,6 +2264,78 @@ body::before{
 .rg-row .n{font-family:var(--mono);font-size:.62rem;color:var(--faint);text-align:right}
 .rg-row p{grid-column:2/-1;font-size:.72rem;line-height:1.45;color:var(--dim);margin-top:4px}
 
+/* ============================================================
+   THE READ, broadened
+   ============================================================ */
+.rd-tape{display:grid;grid-template-columns:repeat(6,1fr);gap:1px;background:var(--line);
+  border-bottom:1px solid var(--line)}
+@media(max-width:900px){.rd-tape{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:520px){.rd-tape{grid-template-columns:repeat(2,1fr)}}
+.rd-tk{background:var(--panel);padding:11px 13px;text-align:left;transition:background .2s}
+.rd-tk:hover{background:rgba(34,211,238,.07)}
+.rd-tk .s{display:block;font-family:var(--mono);font-size:.7rem;font-weight:600}
+.rd-tk .n{display:block;font-size:.58rem;color:var(--faint);margin:2px 0 5px}
+.rd-tk .p{font-family:var(--mono);font-size:.82rem;margin-right:7px}
+.rd-tk .d{font-family:var(--mono);font-size:.66rem}
+.rd-legs{display:flex;flex-direction:column;gap:1px;margin-top:12px;background:var(--line);
+  border:1px solid var(--line);border-radius:9px;overflow:hidden}
+.rd-leg{display:grid;grid-template-columns:auto 1fr auto;gap:9px;align-items:baseline;
+  padding:8px 11px;background:var(--panel-2)}
+.rd-leg .k{font-family:var(--mono);font-size:.56rem;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--faint)}
+.rd-leg .v{font-size:.75rem}
+.rd-leg .n{font-family:var(--mono);font-size:.64rem}
+.rd-leg.on .v,.rd-leg.on .n{color:var(--green)}
+.rd-leg.off .v,.rd-leg.off .n{color:var(--red)}
+
+/* ============================================================
+   THE WEEK
+   Five columns, macro over earnings. No sideways scrolling.
+   ============================================================ */
+.wk-week{display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:var(--line)}
+.wk-col{background:var(--panel);display:flex;flex-direction:column;min-height:0}
+.wk-col.today{background:linear-gradient(180deg,rgba(34,211,238,.07),transparent 40%)}
+.wk-dh{display:flex;align-items:baseline;gap:7px;padding:11px 13px 9px;
+  border-bottom:1px solid var(--line)}
+.wk-dh .dw{font-family:var(--mono);font-size:.68rem;letter-spacing:.16em;text-transform:uppercase;
+  font-weight:600}
+.wk-col.today .wk-dh .dw{color:var(--cyan)}
+.wk-dh .dn{font-family:var(--mono);font-size:.62rem;color:var(--faint);margin-left:auto}
+.wk-sec{padding:10px 13px;border-bottom:1px solid var(--line-2)}
+.wk-sec:last-child{border-bottom:none;flex:1}
+.wk-lbl{display:block;font-family:var(--mono);font-size:.52rem;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--faint);margin-bottom:8px}
+.wk-ev{display:grid;grid-template-columns:auto 1fr;gap:6px;margin-bottom:8px;align-items:baseline}
+.wk-ev .tm{font-family:var(--mono);font-size:.56rem;color:var(--faint)}
+.wk-ev .nm{font-size:.7rem;line-height:1.35;overflow:hidden;text-overflow:ellipsis;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.wk-ev.i3 .nm{color:var(--text);font-weight:600}
+.wk-ev.i3 .tm{color:var(--red)}
+.wk-ev.i2 .tm{color:var(--gold)}
+.wk-ev .ac{grid-column:2;font-family:var(--mono);font-size:.6rem;color:var(--cyan)}
+.wk-er{display:flex;align-items:baseline;gap:7px;margin-bottom:6px}
+.wk-er button{font-family:var(--mono);font-size:.68rem;font-weight:600;color:var(--text);
+  transition:color .2s}
+.wk-er button:hover{color:var(--cyan)}
+.wk-er.bmo button{border-left:2px solid var(--gold);padding-left:6px}
+.wk-er.amc button{border-left:2px solid var(--violet);padding-left:6px}
+.wk-er .es{font-family:var(--mono);font-size:.56rem;color:var(--faint)}
+.wk-more{font-family:var(--mono);font-size:.58rem;color:var(--faint);margin-top:4px}
+.wk-quiet{font-size:.66rem;color:var(--faint);line-height:1.4}
+.wk-foot{display:flex;gap:16px;flex-wrap:wrap;padding:11px 15px;border-top:1px solid var(--line);
+  font-family:var(--mono);font-size:.58rem;color:var(--faint);align-items:center}
+.wk-foot i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;
+  vertical-align:middle}
+.wk-foot .k3{background:var(--red)} .wk-foot .k2{background:var(--gold)}
+.wk-foot .bmo{background:var(--gold);border-radius:1px;width:3px;height:10px}
+.wk-foot .amc{background:var(--violet);border-radius:1px;width:3px;height:10px}
+.wk-foot .wk-src{color:var(--faint);opacity:.8}
+@media(max-width:860px){
+  .wk-week{grid-template-columns:repeat(2,1fr)}
+  .wk-col:nth-child(5){grid-column:span 2}
+}
+@media(max-width:480px){.wk-week{grid-template-columns:1fr}.wk-col:nth-child(5){grid-column:span 1}}
+
 </style>
 
 <script src="https://unpkg.com/lightweight-charts@5/dist/lightweight-charts.standalone.production.js" defer></script>
@@ -2316,10 +2388,10 @@ body::before{
         <a class="btn btn-ghost" href="#encyclopedia" onclick="showPage('encyclopedia');return false;">Open the encyclopedia</a>
       </div>
     </div>
-    <div class="command reveal" aria-label="Live market command center">
-      <div class="cbar"><span class="dots"><s></s><s></s><s></s></span> COMMAND CENTER <span class="live"><span class="d"></span>LIVE</span></div>
+    <div class="command reveal" aria-label="Market command center">
+      <div class="cbar"><span class="dots"><s></s><s></s><s></s></span> COMMAND CENTER <span class="feedok"><span class="d"></span>ACTIVE</span></div>
       <div class="cbody">
-        <button class="tlight" id="tLight" onclick="openModal('m-market')" title="Reading live conditions…">
+        <button class="tlight" id="tLight" onclick="openModal('m-market')" title="Reading current conditions…">
           <span class="tl-dot" aria-hidden="true"></span>
           <span class="tl-tx" id="tlText" aria-live="polite">—</span>
           <span class="tl-go" aria-hidden="true">→</span>
@@ -2329,7 +2401,7 @@ body::before{
         <div class="heatmap" id="heatmap"></div>
         <!-- The Wire, in the command center. News that lives four screens down
              is news you read tomorrow. -->
-        <div class="hm-title wire-head"><span><span class="wdot"></span>THE WIRE · LIVE</span><span id="wireStamp">—</span></div>
+        <div class="hm-title wire-head"><span><span class="wdot"></span>THE WIRE · LATEST</span><span id="wireStamp">—</span></div>
         <div class="wire-strip" id="wireStrip"><div class="wire-sk"></div><div class="wire-sk"></div><div class="wire-sk"></div></div>
         <button class="wire-more" id="wireMore" onclick="toggleWireStrip()" aria-expanded="false">Show more headlines <span class="wm-c">▾</span></button>
       </div>
@@ -2343,7 +2415,7 @@ body::before{
   <div class="wrap">
     <div class="sec-head reveal">
       <div class="eyebrow">01 // THE TERMINAL</div>
-      <h2 class="disp">The market, <span class="c">live</span> and in one glance.</h2>
+      <h2 class="disp">The market, <span class="c">read</span> at a glance.</h2>
       <p>Real quotes and real structure, never a simulation dressed up as a feed. Headlines first, then the conditions the market is operating under, then any ticker you want in depth, then where money is actually rotating. Every reading carries what it means, not just what it is.</p>
     </div>
     <!-- The Compass, then the Stage. Chart, calendar and snapshot
@@ -2448,39 +2520,17 @@ body::before{
       <div class="dk-body flush" id="rotPlot"><div class="dk-skel"></div><div class="dk-skel"></div><div class="dk-skel"></div></div>
     </section>
 
-    <h3 class="tsec">The week ahead &middot; what is scheduled</h3>
+    <h3 class="tsec">The week &middot; what is scheduled</h3>
     <section class="cmdbox reveal">
-      <div class="wk-grid">
-        <section class="dk-pane wk-a">
-          <div class="dk-bar"><span class="dot"></span><span class="t">Economic Calendar</span>
-            <span class="s">loading</span></div>
-          <div class="dk-body flush" id="dkEcon"><div class="dk-skel"></div><div class="dk-skel"></div></div>
-        </section>
-        <section class="dk-pane wk-b" id="wkEarn">
-      <button class="flag wide" style="text-align:left;--accent:var(--gold);--accent-fade:rgba(245,185,66,.14)" onclick="openModal('m-earn')" aria-label="Open the full earnings calendar">
-        <div class="ftop" style="margin-bottom:6px">
-          <span class="fic" style="border-color:var(--gold);color:var(--gold);background:rgba(245,185,66,.12)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg></span>
-          <span class="fname" style="font-size:1.25rem">Earnings This Week<small>LIVE WEEKLY CALENDAR</small></span>
-          <span class="ftag" style="color:var(--gold);border-color:var(--gold)">Live</span>
-        </div>
-        <div class="ew-head"><span class="ew-range" id="earnRange">—</span></div>
-        <div id="earnWeek"><div class="ew-grid">
-          <div class="ew-day"><div class="ew-dh"><span class="ew-dow">Mon</span></div><div class="ew-quiet">Loading…</div></div>
-          <div class="ew-day"><div class="ew-dh"><span class="ew-dow">Tue</span></div><div class="ew-quiet">Loading…</div></div>
-          <div class="ew-day"><div class="ew-dh"><span class="ew-dow">Wed</span></div><div class="ew-quiet">Loading…</div></div>
-          <div class="ew-day"><div class="ew-dh"><span class="ew-dow">Thu</span></div><div class="ew-quiet">Loading…</div></div>
-          <div class="ew-day"><div class="ew-dh"><span class="ew-dow">Fri</span></div><div class="ew-quiet">Loading…</div></div>
-        </div></div>
-        <div class="ew-legend"><span><i class="bmo"></i> Before open</span><span><i class="amc"></i> After close</span><span style="color:var(--cyan)">Tap for the full week, with estimates →</span></div>
-      </button>
-        </section>
-      </div>
+      <div class="dk-bar"><span class="dot"></span><span class="t">The Week</span>
+        <span class="s">loading</span></div>
+      <div id="dkWeek"><div class="dk-skel"></div><div class="dk-skel"></div><div class="dk-skel"></div></div>
     </section>
     <div class="boards reveal">
       <button class="flag board" style="text-align:left;--accent:var(--violet);--accent-fade:rgba(168,85,247,.14)" onclick="openModal('m-market')">
         <div class="ftop"><span class="fic" style="border-color:var(--violet);color:var(--violet);background:rgba(168,85,247,.12)"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 17l5-6 4 3 3-5 6 5M3 21h18"/></svg></span><span class="fname">Market Pulse<small>BREADTH · RANGE · VOL</small></span></div>
         <p class="bdesc">The four big index ETFs with intraday range, sector breadth, and the volatility regime — the shared tape the whole floor watches.</p>
-        <div class="board-live" id="pulseLive"><span class="lg">Live board · tap to open</span></div>
+        <div class="board-live" id="pulseLive"><span class="lg">Open the board</span></div>
         <div class="board-tap" style="--accent:var(--violet)">Open the pulse board →</div>
       </button>
       <button class="flag board" style="text-align:left;--accent:var(--cyan);--accent-fade:rgba(34,211,238,.14)" onclick="openModal('m-cross')">
@@ -2490,12 +2540,12 @@ body::before{
         <div class="board-tap">Open the macro board →</div>
       </button>
       <!-- The Wire now lives in the command center, so this slot carries the
-           live board that used to sit in the toolkit. Live data belongs in the
+           live board that used to sit in the toolkit. Current data belongs in the
            terminal; the toolkit is for things that calculate. -->
       <button class="flag board" style="text-align:left;--accent:var(--gold);--accent-fade:rgba(245,185,66,.14)" onclick="openModal('m-crypto')">
         <div class="ftop"><span class="fic" style="border-color:var(--gold);color:var(--gold);background:rgba(245,185,66,.12)"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 2v20M8 6h8a3 3 0 0 1 0 6H8h8a3 3 0 0 1 0 6H8"/></svg></span><span class="fname">Crypto Pulse<small>24/7 RISK APPETITE</small></span></div>
-        <p class="bdesc">Bitcoin and the majors, live and keyless via CoinGecko. Crypto trades while equities sleep, so it is often the first thing to price a weekend headline.</p>
-        <div class="board-live" id="cryptoLive"><span class="lg">Live board · tap to open</span></div>
+        <p class="bdesc">Bitcoin and the majors, keyless via CoinGecko. Crypto trades while equities sleep, so it is often the first thing to price a weekend headline.</p>
+        <div class="board-live" id="cryptoLive"><span class="lg">Open the board</span></div>
         <div class="board-tap" style="--accent:var(--gold)">Open the crypto board →</div>
       </button>
     </div>
@@ -2654,14 +2704,14 @@ body::before{
     <div class="sec-head reveal" style="margin:70px 0 26px">
       <div class="eyebrow">THE ONE THAT DRAWS LEVELS</div>
       <h2 class="disp" style="font-size:clamp(1.6rem,3.4vw,2.4rem)">The Fibonacci <span class="g">Lab.</span></h2>
-      <p>Fibonacci is the only instrument on the panel that outputs prices rather than a squiggle, which is why it gets a workbench of its own. Type a swing off your own chart, drag the anchors, and the ladder rebuilds live.</p>
+      <p>Fibonacci is the only instrument on the panel that outputs prices rather than a squiggle, which is why it gets a workbench of its own. Type a swing off your own chart, drag the anchors, and the ladder rebuilds as you drag.</p>
     </div>
 
     <div class="fiblab reveal" id="fibLab">
       <div class="fl-head">
         <div class="fl-h1">
           <span class="fl-phi" aria-hidden="true">&#966;</span>
-          <div><h3>The Fibonacci Lab</h3><p>Drag the swing anchors and the price marker. The ladder, the golden pocket, and the depth read all recompute live.</p></div>
+          <div><h3>The Fibonacci Lab</h3><p>Drag the swing anchors and the price marker. The ladder, the golden pocket, and the depth read all recompute as you move them.</p></div>
         </div>
         <div class="fl-acts">
           <button class="fl-copy" onclick="fibCopy('text',this)">Copy levels</button>
@@ -2880,7 +2930,7 @@ body::before{
     <div class="sec-head reveal">
       <div class="eyebrow">THE LEDGER</div>
       <h2 class="disp">A company is not a ticker. <span class="g">It’s a set of numbers.</span></h2>
-      <p>Type a symbol and the whole picture loads live: what the business is, where every dollar of revenue actually goes, what you are paying for it, whether it survives a bad year, how it has trended for a decade, whether it keeps beating expectations, and what news is moving it this week. Every figure links back to what it means and why it moves the share price.</p>
+      <p>Type a symbol and the whole picture loads: what the business is, where every dollar of revenue actually goes, what you are paying for it, whether it survives a bad year, how it has trended for a decade, whether it keeps beating expectations, and what news is moving it this week. Every figure links back to what it means and why it moves the share price.</p>
     </div>
 
     <div class="lg-search reveal">
@@ -2923,7 +2973,7 @@ body::before{
       <div class="ob-head">
         <div>
           <h3>The Assembly Bench</h3>
-          <p>Nineteen structures, priced live with Black-Scholes. The <b class="ob-k1">solid line</b> is expiration. The <b class="ob-k2">curved line</b> is today.</p>
+          <p>Nineteen structures, priced with Black-Scholes. The <b class="ob-k1">solid line</b> is expiration. The <b class="ob-k2">curved line</b> is today.</p>
         </div>
         <div class="ob-picker" id="optPicker"></div>
       </div>
@@ -2990,7 +3040,7 @@ body::before{
     <div class="sec-head reveal" style="text-align:center;max-width:none;margin:88px 0 0">
       <div class="eyebrow" style="justify-content:center">WANT A HUMAN IN THE LOOP?</div>
       <h2 class="disp">Optional <span class="g">1:1 help.</span></h2>
-      <p style="margin:14px auto 0">Everything above — and everything else on this site — is free and always will be. If you want someone to walk you through the eight stages live, answer the "but why," and catch the mistakes before they cost you, that’s what a session is for.</p>
+      <p style="margin:14px auto 0">Everything above — and everything else on this site — is free and always will be. If you want someone to walk you through the eight stages with you, answer the "but why," and catch the mistakes before they cost you, that’s what a session is for.</p>
     </div>
     <div class="tiers reveal">
       <div class="tier t1">
@@ -3220,7 +3270,7 @@ body::before{
 
 <div class="modal" id="m-crypto" role="dialog" aria-modal="true" aria-label="Crypto pulse"><div class="mwin"><div class="mbar"><span class="dots"><s></s><s></s><s></s></span><span class="mt">TOOL // CRYPTO PULSE (LIVE)</span><button class="mx" onclick="closeModal('m-crypto')" aria-label="Close">×</button></div><div class="mbody">
   <h3>Crypto Pulse</h3><p class="msub">Live prices via CoinGecko — real feed, clearly labeled.</p>
-  <div id="cryptoOut"><p class="mnote">Loading live prices…</p></div>
+  <div id="cryptoOut"><p class="mnote">Loading prices…</p></div>
   <button class="mbtn ghost" onclick="loadCrypto()">Refresh</button>
   <p class="mnote">Context only — crypto risk appetite often bleeds into equities and back. No reads, no calls.</p>
 </div></div></div>
@@ -3285,14 +3335,14 @@ body::before{
   <p class="mnote"><b>The mechanics.</b> §1256 contracts are split 60% long-term / 40% short-term <em>regardless of holding period</em> — a position held nine minutes is taxed mostly at the long-term rate. Positions open on 31 December are marked to market as if sold, and that becomes the new basis. Losses can be carried back three years on Form 6781. <b>This is a general illustration, not tax advice, and it ignores state tax, NIIT and your full situation — the numbers here are federal-rate arithmetic only. Talk to a CPA who knows trader taxation before acting on it.</b></p>
 </div></div></div>
 
-<div class="modal" id="m-wire" role="dialog" aria-modal="true" aria-label="The wire — market news"><div class="mwin"><div class="mbar"><span class="dots"><s></s><s></s><s></s></span><span class="mt">LIVE // THE WIRE</span><button class="mx" onclick="closeModal('m-wire')" aria-label="Close">×</button></div><div class="mbody">
+<div class="modal" id="m-wire" role="dialog" aria-modal="true" aria-label="The wire — market news"><div class="mwin"><div class="mbar"><span class="dots"><s></s><s></s><s></s></span><span class="mt">THE WIRE</span><button class="mx" onclick="closeModal('m-wire')" aria-label="Close">×</button></div><div class="mbody">
   <h3>The Wire</h3><p class="msub">Live general-market headlines via Finnhub — clearly sourced, links out to the original.</p>
   <div id="wireOut"><p class="mnote">Loading the wire…</p></div>
   <button class="mbtn ghost" onclick="loadWire()" style="margin-top:14px">Refresh</button>
   <p class="mnote">Headlines are third-party and link to their source — this is context, never a call to act. A red-tape day and a green-tape day read differently; know which one you’re in before you trust a single chart.</p>
 </div></div></div>
 
-<div class="modal" id="m-earn" role="dialog" aria-modal="true" aria-label="Earnings this week"><div class="mwin wide"><div class="mbar"><span class="dots"><s></s><s></s><s></s></span><span class="mt">LIVE // EARNINGS THIS WEEK</span><button class="mx" onclick="closeModal('m-earn')" aria-label="Close">×</button></div><div class="mbody">
+<div class="modal" id="m-earn" role="dialog" aria-modal="true" aria-label="Earnings this week"><div class="mwin wide"><div class="mbar"><span class="dots"><s></s><s></s><s></s></span><span class="mt">EARNINGS THIS WEEK</span><button class="mx" onclick="closeModal('m-earn')" aria-label="Close">×</button></div><div class="mbody">
   <h3>Earnings This Week</h3><p class="msub" id="earnFullSub">The trading week laid out day by day — notable names highlighted, with consensus EPS where the calendar has it.</p>
   <div id="earnFull"><p class="mnote">Loading the calendar…</p></div>
   <p class="mnote">Live via Finnhub earnings calendar. <b>BMO</b> = before market open, <b>AMC</b> = after market close. Names shown are the widely-followed large- and mid-caps; the day count includes every confirmed report. Around earnings, implied volatility is rich and the post-report IV crush is brutal — respect the event.</p>
@@ -4017,7 +4067,7 @@ async function klPull(){
     const chg=pc?((C-pc)/pc*100):0;
     src.innerHTML=`<b>${sym}</b> \u00b7 H ${H.toFixed(2)} \u00b7 L ${L.toFixed(2)} \u00b7 last ${C.toFixed(2)}`+
       (pc?` \u00b7 <span class="${chg>=0?'kl-up':'kl-dn'}">${chg>=0?'+':''}${chg.toFixed(2)}%</span> vs prior close`:'')+
-      `<span class="kl-live">live quote</span>`;
+      `<span class="kl-live">current quote</span>`;
     calcLevels();
   }catch(e){
     src.innerHTML='<span class="kl-warn">'+(e&&e.rate?'Finnhub rate limit hit (60/min on the free tier). Give it a moment.':e&&e.auth?'That Finnhub key was rejected.':'Could not reach the quote feed. Enter the numbers by hand below.')+'</span>';
@@ -4042,7 +4092,7 @@ function calcLevels(){
 }
 /* crypto */
 async function loadCrypto(){
-  const out=$('#cryptoOut'); out.innerHTML='<p class="mnote">Loading live prices…</p>';
+  const out=$('#cryptoOut'); out.innerHTML='<p class="mnote">Loading prices…</p>';
   try{
     const r=await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana,ripple,dogecoin&vs_currencies=usd&include_24hr_change=true');
     const d=await r.json();
@@ -4129,7 +4179,7 @@ function renderPulsePreview(){
   const spy=SHARED.idx&&SHARED.idx.find(x=>x.s==='SPY');
   if(spy&&spy.q&&typeof spy.q.dp==='number'){ const up=spy.q.dp>=0; parts.push(`<span><span class="lg">SPY</span> <b class="${up?'up':'dn'}">${pct(spy.q.dp)}</b></span>`); }
   if(SHARED.sectors){ const b=breadthOf(SHARED.sectors); if(b.total){ parts.push(`<span><span class="lg">Breadth</span> <b>${b.g}/${b.total}</b> green</span>`); if(b.lead) parts.push(`<span><span class="lg">Lead</span> <b>${b.lead.sym}</b> <span class="${b.lead.p>=0?'up':'dn'}">${pct(b.lead.p)}</span></span>`); } }
-  el.innerHTML=parts.length?parts.join(''):`<span class="lg">Live board · tap to open</span>`;
+  el.innerHTML=parts.length?parts.join(''):`<span class="lg">Open the board</span>`;
 }
 async function loadMarket(){
   const out=$('#marketOut'), keyWrap=$('#mktKeyWrap'), key=mktKey();
