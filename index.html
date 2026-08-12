@@ -1834,12 +1834,12 @@ body.paged .section{padding-top:40px}
 .rot-q{font-family:var(--mono);font-size:9.5px;letter-spacing:.17em;opacity:.9}
 .rot-ax{font-family:var(--mono);font-size:8.5px;letter-spacing:.14em;fill:var(--faint)}
 .rot-b{cursor:pointer;outline:none}
-.rot-b text{font-family:var(--mono);font-size:10px;font-weight:600;fill:#e6edf3;
+.rot-b text{font-family:var(--mono);font-size:8px;font-weight:600;fill:#e6edf3;
   pointer-events:none;transition:fill .2s}
 .rot-b .core{transition:r .25s var(--ease)}
 .rot-b .halo{transition:opacity .25s}
 .rot-b .tail{opacity:.75;transition:opacity .25s,stroke-width .25s}
-.rot-b:hover .core,.rot-b:focus-visible .core{r:9}
+.rot-b:hover .core,.rot-b:focus-visible .core{r:6.5}
 .rot-b:hover .tail,.rot-b:focus-visible .tail{opacity:1;stroke-width:2.4}
 .rot-b:hover text,.rot-b:focus-visible text{fill:var(--c)}
 .rot-b:hover .halo,.rot-b:focus-visible .halo{opacity:.34;animation:rotPing 1.5s ease-out infinite}
@@ -1867,7 +1867,14 @@ body.paged .section{padding-top:40px}
 .rot-li .d{width:8px;height:8px;border-radius:50%;background:var(--c)}
 .rot-li .s{font-family:var(--mono);font-size:.7rem;font-weight:600}
 .rot-li .p{font-family:var(--mono);font-size:.58rem;color:var(--faint)}
-@media(max-width:640px){.rot-wrap{padding:12px}.rot-ctl{width:100%;margin-left:0;margin-top:8px}}
+@media(max-width:640px){
+  .rot-wrap{padding:10px 8px;gap:12px}
+  .rot-ctl{width:100%;margin-left:0;margin-top:6px;flex-wrap:wrap}
+  .rot-svg{max-height:58vh}
+  .rot-b text{font-size:7px}
+  .rot-q,.rot-ax{font-size:7.5px}
+  .rot-list{max-height:160px}
+}
 
 /* ============================================================
    SNAPSHOT, STAGE, OPTION PLAYBOOKS, STRATEGY HIERARCHY
