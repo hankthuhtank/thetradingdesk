@@ -263,6 +263,28 @@ function rotName(k){
   const g=ROT_GROUPS.find(x=>x.sym===k||x.etf===k);
   return g?g.name:k;
 }
+/* the extent of what is actually drawn at this playhead, with a floor so a
+   very quiet field still fills the plot rather than magnifying noise */
+function rotBounds(set,head){
+  let mx=2.2,my=2.2;
+  Object.keys(set.bodies).forEach(k=>{
+    const a=rotAt(set.bodies[k],ROT.tail,head);
+    const pts=a.tail.concat([{x:a.x,y:a.y}]);
+    pts.forEach(p=>{
+      const dx=Math.abs(p.x-100), dy=Math.abs(p.y-100);
+      if(dx>mx)mx=dx; if(dy>my)my=dy;
+    });
+  });
+  return {rx:mx*1.14, ry:my*1.14};
+}
+function rotMakeScale(set){
+  const {W,H,P}=set.dims, rx=set.rx, ry=set.ry;
+  set.scale={
+    W,H,
+    sx:v=>(P+((v-100+rx)/(2*rx))*(W-P*2)).toFixed(1),
+    sy:v=>(H-P-((v-100+ry)/(2*ry))*(H-P*2)).toFixed(1)
+  };
+}
 function rotDraw(){
   const host=$('#rotPlot'); if(!host) return;
   const set=ROT.set;
@@ -281,32 +303,26 @@ function rotDraw(){
 
   /* Scale to the data with a symmetric pad so the centre cross stays at
      100/100 and the quadrants keep their meaning. */
-  /* Scale over the WHOLE series, not just the visible frame, so the axes
-     hold still during replay. A rescaling axis makes every body appear to
-     drift even when it has not moved, which is the single thing that made
-     the old replay unreadable. */
-  let mx=3,my=3;
-  keys.forEach(k=>{
-    const s=set.bodies[k];
-    for(let i=set.minIdx;i<L;i++){
-      const dx=Math.abs(s.ratio[i]-100), dy=Math.abs(s.mom[i]-100);
-      if(dx>mx)mx=dx; if(dy>my)my=dy;
-    }
-  });
-  const rx=mx*1.1, ry=my*1.1;
-  const W=620,H=460,P=38;
-  const sx=v=>(P+((v-100+rx)/(2*rx))*(W-P*2)).toFixed(1);
-  const sy=v=>(H-P-((v-100+ry)/(2*ry))*(H-P*2)).toFixed(1);
-  set.scale={sx,sy,W,H};
+  /* Scale to what is on screen, not to the whole year. Bounding a year of
+     extremes squeezed every current position into the middle of the plot,
+     which is the opposite of readable. The scale is eased between frames
+     instead, so replay breathes rather than snapping. */
+  const W=620,H=460,P=34;
+  set.dims={W,H,P};
+  const tgt=rotBounds(set,ROT.head);
+  set.rx=tgt.rx; set.ry=tgt.ry;
+  rotMakeScale(set);
+  const sx=set.scale.sx, sy=set.scale.sy;
 
   /* Markers are sized in viewBox units, and the SVG stretches to its
      container, so a fixed radius looked like a beach ball on a wide screen.
      Everything below scales down as the field gets crowded and is drawn with
      vector-effect so strokes stay hairline at any width. */
-  /* Small. A rotation map is read by POSITION, so a large marker is just
-     occlusion: it hides the very neighbours you are comparing against. */
+  /* A rotation map is read by POSITION, so a marker only has to be findable,
+     not big: past a certain size it hides the very neighbours you are
+     comparing it against. */
   const dense=Math.min(1,14/Math.max(8,keys.length));
-  const R=2.2+dense*1.1, HALO=R*1.9, FS=(6.6+dense*1.4).toFixed(1);
+  const R=3.6+dense*1.2, HALO=R*1.8, FS=(8+dense*1.6).toFixed(1);
 
   const bodies=pts.map((p,i)=>{
     const col=PHASE_COL[p.phase];
@@ -348,7 +364,7 @@ function rotDraw(){
       </svg>
       <div class="rot-scrub">
         <button class="rot-play" id="rotPlay" aria-label="Play the rotation">${ROT.playing?'\u25a0':'\u25b6'}</button>
-        <input type="range" id="rotHead" min="${set.minIdx}" max="${L-1}" value="${ROT.head}"
+        <input type="range" id="rotHead" min="${set.minIdx}" max="${L-1}" step="0.1" value="${ROT.head}"
                aria-label="Replay position">
         <span class="rot-date" id="rotDate">${dateLab}</span>
         <button class="rot-now" id="rotNow">Now</button>
@@ -381,8 +397,10 @@ function rotDraw(){
 
   /* replay */
   const head=$('#rotHead');
-  head.addEventListener('input',()=>{ ROT.head=+head.value; rotStop(); rotDraw(); });
-  $('#rotNow').addEventListener('click',()=>{ ROT.head=L-1; rotStop(); rotDraw(); });
+  /* Dragging moves the existing nodes rather than rebuilding the plot, so the
+     field animates under the cursor instead of redrawing once per notch. */
+  head.addEventListener('input',()=>{ ROT.head=+head.value; rotStop(); rotStep(); });
+  $('#rotNow').addEventListener('click',()=>{ ROT.head=L-1; rotStop(); rotStep(); });
   $('#rotPlay').addEventListener('click',rotToggle);
 
   setBar('#rotPlot',(ROT.drill?rotName(ROT.drill)+' \u00b7 ':'')+keys.length+' bodies');
@@ -477,7 +495,15 @@ function rotStop(){
    a rescaling axis makes every body drift even when it has not moved. */
 function rotStep(){
   const set=ROT.set; if(!set||!set.scale)return;
-  const {sx,sy,W,H}=set.scale, L=set.len;
+  const L=set.len;
+  /* ease the axes toward the frame's own extent. A hard rescale per frame
+     makes stationary bodies appear to drift; no rescale at all leaves the
+     field crushed into the centre. Eighteen percent a frame is the middle. */
+  const tgt=rotBounds(set,ROT.head);
+  set.rx+=(tgt.rx-set.rx)*0.18;
+  set.ry+=(tgt.ry-set.ry)*0.18;
+  rotMakeScale(set);
+  const {sx,sy}=set.scale;
   Object.keys(set.bodies).forEach(k=>{
     const g=document.querySelector('.rot-b[data-k="'+CSS.escape(k)+'"]'); if(!g)return;
     const a=rotAt(set.bodies[k],ROT.tail,ROT.head);
@@ -682,6 +708,37 @@ const C={sym:'NVDA',tf:'6M',type:'candles',vol:true,ma:false,bars:[],meta:null};
 
 /* Everything in the workspace is visible at once now, so charting a symbol
    just reloads the panels and scrolls the workspace into view. */
+
+/* ---- the watch strip ----------------------------------------------------
+   The quick list is the user's, not mine. It starts on companies rather than
+   index funds, because the panels beside it (fundamentals, analyst split)
+   only mean something for an operating business. */
+const WKEY='tdesk_watch_v1';
+const WDEF=['NVDA','AAPL','TSLA','MSFT','AMZN'];
+let WATCH=(()=>{ try{ const v=JSON.parse(localStorage.getItem(WKEY)); return Array.isArray(v)&&v.length?v:WDEF.slice(); }
+                 catch(e){ return WDEF.slice(); } })();
+function drawWatch(){
+  const host=$('#tkQuick'); if(!host)return;
+  host.innerHTML=WATCH.map(s=>`<span class="tk-chip${C.sym===s?' on':''}">
+      <button class="go" data-sym="${esc(s)}">${esc(s)}</button>
+      <button class="x" data-drop="${esc(s)}" aria-label="Remove ${esc(s)}" title="Remove">\u2715</button>
+    </span>`).join('')
+    +`<button class="tk-add" id="tkAdd" title="Add the charted symbol">+ ${esc(C.sym||'add')}</button>`;
+  $$('.go',host).forEach(b=>b.addEventListener('click',()=>toChart(b.dataset.sym)));
+  $$('.x',host).forEach(b=>b.addEventListener('click',e=>{
+    e.stopPropagation();
+    WATCH=WATCH.filter(x=>x!==b.dataset.drop); saveWatch();
+  }));
+  const add=$('#tkAdd');
+  if(add) add.addEventListener('click',()=>{
+    const s=(C.sym||'').toUpperCase();
+    if(!s||WATCH.includes(s))return;
+    WATCH.push(s); if(WATCH.length>10)WATCH.shift();
+    saveWatch();
+  });
+}
+function saveWatch(){ try{ localStorage.setItem(WKEY,JSON.stringify(WATCH)); }catch(e){} drawWatch(); }
+
 function toChart(sym){
   const s=String(sym||'').toUpperCase();
   const lab=$('#tkNow'); if(lab) lab.textContent=s;
@@ -784,7 +841,8 @@ async function loadChart(sym,tf){
     const d=await get(`/v1/candles?symbol=${encodeURIComponent(C.sym)}&range=${cfg.range}&interval=${cfg.interval}`);
     if(my!==seq)return;
     C.bars=d.bars; C.meta=d;
-    chartMsg(false); paintChart(); writeQuote(); loadSnapshot(C.sym); loadRegime(C.sym); loadGex(C.sym);
+    chartMsg(false); paintChart(); writeQuote(); drawWatch();
+    loadSnapshot(C.sym); loadRegime(C.sym); loadGex(C.sym);
   }catch(e){
     if(my!==seq)return;
     chartMsg(true,'NO DATA',e.message);
@@ -940,13 +998,19 @@ async function loadRegime(sym){
     const above=[s20&&last>s20,s50&&last>s50,s200&&last>s200].filter(Boolean).length;
     const tset=[s20,s50,s200].filter(x=>x!=null).length;
     const stack=(s20&&s50&&s20>s50)&&(!s200||s50>s200);
+    /* index 5 is the one-line version shown in the panel; index 2 is the full
+       explanation, which moves to the tooltip */
     rows.push(['Trend',
       above===tset&&stack?'Strong uptrend':above===tset?'Uptrend':above===0?'Downtrend':'Mixed',
       above===tset&&stack?'Price is above every average and the averages are stacked in order, which is what a healthy trend looks like.'
       :above===tset?'Price is above its averages but they are not cleanly stacked, so the trend is real but not yet orderly.'
       :above===0?'Price is below every average. Buying here is fighting the direction of the tape.'
       :`Price is above ${above} of ${tset} averages. The timeframes disagree, which usually means a transition.`,
-      above===tset?'up':above===0?'dn':'']);
+      above===tset?'up':above===0?'dn':'', null,
+      above===tset&&stack?'Above every average, stacked in order.'
+      :above===tset?'Above its averages, not yet cleanly stacked.'
+      :above===0?'Below every average.'
+      :`Above ${above} of ${tset} averages. Timeframes disagree.`]);
     /* momentum */
     rows.push(['Momentum',
       r>70?'Overbought':r>55?'Firm':r>45?'Neutral':r>30?'Soft':'Oversold',
@@ -955,14 +1019,22 @@ async function loadRegime(sym){
       :r>45?'Neither side is in control. Range rules apply rather than trend rules.'
       :r>30?'Sellers have the upper hand. Bounces are more likely to fail than to hold.'
       :'RSI below 30. Stretched to the downside, which marks capitulation as often as it marks a bottom.',
-      r>55?'up':r<45?'dn':'', fmt(r,0)]);
+      r>55?'up':r<45?'dn':'', fmt(r,0),
+      r>70?'Stretched, though it can persist in a trend.'
+      :r>55?'Buyers have the upper hand.'
+      :r>45?'Neither side in control. Range rules apply.'
+      :r>30?'Sellers have the upper hand.'
+      :'Stretched to the downside.']);
     /* volatility */
     rows.push(['Volatility',
       pctile>75?'Elevated':pctile>40?'Normal':'Compressed',
       pctile>75?'Daily ranges are wider than usual for this name, so stops need more room and size needs to come down.'
       :pctile>40?'Ranges are about average. Normal position sizing applies.'
       :'Ranges are unusually tight. Compression like this tends to resolve into an expansion, though it does not say which way.',
-      pctile>75?'dn':pctile<25?'':'', pctile.toFixed(0)+'%']);
+      pctile>75?'dn':'', pctile.toFixed(0)+'%',
+      pctile>75?'Wider than usual. Wider stops, smaller size.'
+      :pctile>40?'About average. Normal sizing applies.'
+      :'Unusually tight. Compression tends to resolve into expansion.']);
     /* location */
     rows.push(['Location',
       loc>85?'At highs':loc>60?'Upper range':loc>40?'Mid range':loc>15?'Lower range':'At lows',
@@ -971,17 +1043,23 @@ async function loadRegime(sym){
       :loc>40?'Sitting in the middle of the year, where the least information lives.'
       :loc>15?'In the lower half of the year. Every rally has to work through trapped supply above.'
       :'Near the bottom of its yearly range. Cheap relative to the year, and that is exactly what a downtrend looks like from inside it.',
-      loc>60?'up':loc<40?'dn':'', loc.toFixed(0)+'%']);
+      loc>60?'up':loc<40?'dn':'', loc.toFixed(0)+'%',
+      loc>85?'Near the top of the year. No overhead supply.'
+      :loc>60?'Upper half of the year.'
+      :loc>40?'Mid range, where the least information lives.'
+      :loc>15?'Lower half. Rallies work through supply above.'
+      :'Near the low of the year.']);
 
-    host.innerHTML=`<div class="rg-top"><b>${esc(sym)}</b>
-        <span>${bars.length} sessions of daily history</span></div>
-      <div class="rg-grid">${rows.map(x=>`
-        <div class="rg-row">
+    /* Four readings, each one line. The long explanation moves to a tooltip:
+       the panel has to be scannable at a glance, and anything that needs
+       scrolling is not a glance. */
+    host.innerHTML=`<div class="rg-grid">${rows.map(x=>`
+        <div class="rg-row" title="${esc(x[2])}">
           <span class="k">${esc(x[0])}</span>
-          <span class="v ${x[3]||''}">${esc(x[1])}${x[4]?`<em>${esc(x[4])}</em>`:''}</span>
-          <p>${esc(x[2])}</p>
-        </div>`).join('')}</div>
-      <p class="rg-note">Read from this symbol's own daily bars. A regime describes the conditions you are trading into, not what happens next.</p>`;
+          <span class="v ${x[3]||''}">${esc(x[1])}</span>
+          ${x[4]?`<span class="n">${esc(x[4])}</span>`:'<span class="n"></span>'}
+          <p>${esc(x[5]||x[2])}</p>
+        </div>`).join('')}</div>`;
     setBar('#dkRegime',esc(sym));
   }catch(e){
     host.innerHTML=stateBox('NO REGIME',e.message);
@@ -1364,7 +1442,7 @@ function step(name,fn){
 function init(){
   step('xref',installXref); step('symbol',wireSymbol); step('tape',wireTape);
   step('options',watchOptions); step('strategies',enhanceStrats);
-  step('reveals',reveals); step('ambience',ambience);
+  step('reveals',reveals); step('ambience',ambience); step('watch',drawWatch);
   if(!SLOW) watchNumbers();
 
   step('controls',()=>{

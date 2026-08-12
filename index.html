@@ -1980,14 +1980,14 @@ body.paged .section{padding-top:40px}
   grid-template-columns:minmax(0,1.62fr) minmax(0,1fr);
   grid-template-areas:'a b' 'c d';
 }
-.dk-work .dk-a{grid-area:a;height:474px}
-.dk-work .dk-b{grid-area:b;height:474px}
-.dk-work .dk-c{grid-area:c;height:410px}
-.dk-work .dk-d{grid-area:d;height:410px}
+
+
+
+
 @media(max-width:1000px){
   .dk-work{grid-template-columns:1fr;grid-template-areas:'a' 'b' 'c' 'd'}
-  .dk-work .dk-a{height:400px}
-  .dk-work .dk-b,.dk-work .dk-c,.dk-work .dk-d{height:370px}
+  
+  .dk-work .dk-b,.dk-work .dk-c,
 }
 
 /* ---------- REGIME ---------- */
@@ -2081,9 +2081,7 @@ body::before{
    Out of the chart header and into the open, because the control
    that drives four panels should not be hiding inside one of them.
    ============================================================ */
-.tk-bar{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:16px;
-  padding:14px 18px;border:1px solid var(--line);border-radius:14px;
-  background:linear-gradient(160deg,var(--panel-2),var(--panel))}
+
 .tk-box{position:relative;display:flex;align-items:center;gap:11px;flex:1;min-width:260px;
   border:1px solid var(--line);border-radius:10px;padding:9px 14px;background:var(--void);
   transition:border-color .25s,box-shadow .25s}
@@ -2166,7 +2164,67 @@ body::before{
 .rot-b:hover .core{r:4.6}
 .rot-wrap{grid-template-columns:1fr 236px}
 .rot-list{max-height:266px}
-.rot-svg{max-height:440px}
+
+
+/* ============================================================
+   THE COMMAND BOX
+   Related panels share one frame with hairline dividers instead
+   of floating as separate cards with gaps between them. One
+   instrument, several readouts, rather than five loose objects.
+   ============================================================ */
+.cmdbox{border:1px solid var(--line);border-radius:18px;overflow:hidden;margin-bottom:26px;
+  background:linear-gradient(168deg,var(--panel-2),var(--panel));
+  box-shadow:0 18px 50px -34px rgba(0,0,0,.9)}
+.tk-bar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:14px 18px;
+  border-bottom:1px solid var(--line);background:rgba(255,255,255,.018)}
+.dk-work{display:grid;gap:1px;background:var(--line);
+  grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);
+  grid-template-areas:'a b' 'c d';transition:opacity .2s var(--ease)}
+.dk-work.swap{opacity:.4}
+.dk-pane{background:var(--panel);display:flex;flex-direction:column;min-height:0;min-width:0}
+.dk-work .dk-a{grid-area:a;height:456px}
+.dk-work .dk-b{grid-area:b;height:456px}
+.dk-work .dk-c{grid-area:c;height:342px}
+.dk-work .dk-d{grid-area:d;height:342px}
+.dk-pane .dk-bar{background:rgba(255,255,255,.02)}
+@media(max-width:1000px){
+  .dk-work{grid-template-columns:1fr;grid-template-areas:'a' 'b' 'c' 'd'}
+  .dk-work .dk-a{height:380px}
+  .dk-work .dk-b,.dk-work .dk-c,.dk-work .dk-d{height:auto;min-height:300px}
+}
+/* the week ahead: two panes, one frame */
+.wk-grid{display:grid;gap:1px;background:var(--line);grid-template-columns:minmax(0,1fr) minmax(0,1.15fr)}
+.wk-grid .dk-pane{height:392px}
+.wk-b{background:var(--panel);padding:0;overflow:auto}
+.wk-b .flag.wide{width:100%;border:none;border-radius:0;background:transparent;height:100%}
+@media(max-width:1000px){.wk-grid{grid-template-columns:1fr}.wk-grid .dk-pane{height:auto;min-height:330px}}
+
+/* the watch strip: the list is the user's to edit */
+.tk-quick{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-left:auto}
+.tk-chip{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:8px;
+  overflow:hidden;transition:border-color .2s}
+.tk-chip:hover{border-color:var(--cyan)}
+.tk-chip.on{border-color:var(--cyan);background:rgba(34,211,238,.1)}
+.tk-chip .go{font-family:var(--mono);font-size:.66rem;padding:6px 4px 6px 10px;color:var(--dim)}
+.tk-chip.on .go{color:var(--cyan)}
+.tk-chip:hover .go{color:var(--text)}
+.tk-chip .x{font-size:.6rem;padding:6px 8px 6px 4px;color:var(--faint);line-height:1}
+.tk-chip .x:hover{color:var(--red)}
+.tk-add{font-family:var(--mono);font-size:.66rem;padding:6px 11px;border-radius:8px;
+  border:1px dashed var(--line);color:var(--faint);transition:all .2s}
+.tk-add:hover{border-color:var(--cyan);border-style:solid;color:var(--cyan)}
+
+/* regime, condensed to fit without scrolling */
+.rg-grid{display:flex;flex-direction:column;height:100%}
+.rg-row{display:grid;grid-template-columns:74px 1fr auto;gap:10px;padding:11px 16px;
+  border-bottom:1px solid var(--line-2);align-items:baseline;transition:background .2s}
+.rg-row:last-child{border-bottom:none}
+.rg-row:hover{background:rgba(255,255,255,.022)}
+.rg-row .k{font-family:var(--mono);font-size:.55rem;letter-spacing:.13em;text-transform:uppercase;
+  color:var(--faint)}
+.rg-row .v{font-size:.86rem;font-weight:600}
+.rg-row .n{font-family:var(--mono);font-size:.62rem;color:var(--faint);text-align:right}
+.rg-row p{grid-column:2/-1;font-size:.72rem;line-height:1.45;color:var(--dim);margin-top:4px}
 
 </style>
 
@@ -2261,74 +2319,73 @@ body::before{
       <div class="dk-body flush" id="dkRead"><div class="dk-skel"></div><div class="dk-skel"></div><div class="dk-skel"></div></div>
     </section>
 
-    <!-- ONE TICKER. The symbol box sits above the panels rather than
-         buried in the chart header, so it is obvious where you change it. -->
-    <div class="tk-bar reveal">
-      <div class="tk-box">
-        <span class="tk-cue">TICKER</span>
-        <input id="tkSym" placeholder="Type any symbol, then Enter" autocomplete="off"
-               spellcheck="false" aria-label="Change the ticker" aria-autocomplete="list">
-        <div class="dk-sug tk-sug" id="tkSug" role="listbox"></div>
+    <!-- ONE TICKER. A single command box: the symbol control and every panel
+         that follows it live inside the same frame, so it reads as one
+         instrument rather than five things that happen to be near each other. -->
+    <h3 class="tsec">One ticker &middot; everything at once</h3>
+    <section class="cmdbox reveal">
+      <div class="tk-bar">
+        <div class="tk-box">
+          <span class="tk-cue">TICKER</span>
+          <input id="tkSym" placeholder="Type any symbol, then Enter" autocomplete="off"
+                 spellcheck="false" aria-label="Change the ticker" aria-autocomplete="list">
+          <div class="dk-sug tk-sug" id="tkSug" role="listbox"></div>
+        </div>
+        <span class="tk-now" id="tkNow">NVDA</span>
+        <span class="tk-quick" id="tkQuick"></span>
       </div>
-      <span class="tk-now" id="tkNow">NVDA</span>
-      <span class="tk-hint">Chart, fundamentals, regime and dealer flow all follow this symbol.</span>
-      <span class="tk-quick">
-        <button data-sym="SPY">SPY</button><button data-sym="QQQ">QQQ</button>
-        <button data-sym="NVDA">NVDA</button><button data-sym="AAPL">AAPL</button>
-        <button data-sym="TSLA">TSLA</button>
-      </span>
-    </div>
 
-    <div class="dk-work" id="dkWork">
-      <section class="dk-panel dk-a">
-        <div class="dk-bar"><span class="dot"></span><span class="t">Chart</span>
-          <span class="s" id="dkChartSrc"></span></div>
-        <div class="dk-cq">
-          <span class="nm" id="dkQName">Loading</span>
-          <span class="last" id="dkQLast">&mdash;</span>
-          <span class="chg" id="dkQChg"></span>
-          <span class="oh" id="dkOhlc"></span>
-        </div>
-        <div class="dk-tf" id="dkTf">
-          <span class="grp">
-            <button data-tf="1m">1m</button><button data-tf="5m">5m</button>
-            <button data-tf="15m">15m</button><button data-tf="1h">1h</button>
-          </span>
-          <span class="grp">
-            <button data-tf="1D">1D</button><button data-tf="5D">5D</button>
-            <button data-tf="1M">1M</button><button data-tf="3M">3M</button>
-            <button data-tf="6M" class="on">6M</button><button data-tf="1Y">1Y</button>
-            <button data-tf="5Y">5Y</button>
-          </span>
-          <span class="sp"></span>
-          <button data-type="candles" class="on">Candles</button>
-          <button data-type="area">Area</button>
-          <button data-tog="vol" class="on">Vol</button>
-          <button data-tog="ma">MA</button>
-        </div>
-        <div class="dk-cv" id="dkCanvas">
-          <div class="dk-msg on" id="dkMsg"><span class="t">LOADING</span><span class="d"></span></div>
-        </div>
-      </section>
+      <div class="dk-work" id="dkWork">
+        <section class="dk-pane dk-a">
+          <div class="dk-bar"><span class="dot"></span><span class="t">Chart</span>
+            <span class="s" id="dkChartSrc"></span></div>
+          <div class="dk-cq">
+            <span class="nm" id="dkQName">Loading</span>
+            <span class="last" id="dkQLast">&mdash;</span>
+            <span class="chg" id="dkQChg"></span>
+            <span class="oh" id="dkOhlc"></span>
+          </div>
+          <div class="dk-tf" id="dkTf">
+            <span class="grp">
+              <button data-tf="1m">1m</button><button data-tf="5m">5m</button>
+              <button data-tf="15m">15m</button><button data-tf="1h">1h</button>
+            </span>
+            <span class="grp">
+              <button data-tf="1D">1D</button><button data-tf="5D">5D</button>
+              <button data-tf="1M">1M</button><button data-tf="3M">3M</button>
+              <button data-tf="6M" class="on">6M</button><button data-tf="1Y">1Y</button>
+              <button data-tf="5Y">5Y</button>
+            </span>
+            <span class="sp"></span>
+            <button data-type="candles" class="on">Candles</button>
+            <button data-type="area">Area</button>
+            <button data-tog="vol" class="on">Vol</button>
+            <button data-tog="ma">MA</button>
+          </div>
+          <div class="dk-cv" id="dkCanvas">
+            <div class="dk-msg on" id="dkMsg"><span class="t">LOADING</span><span class="d"></span></div>
+          </div>
+        </section>
 
-      <section class="dk-panel dk-b">
-        <div class="dk-bar"><span class="dot"></span><span class="t">Snapshot</span>
-          <span class="s">fundamentals</span></div>
-        <div class="dk-body flush" id="dkSnap"><div class="dk-skel"></div><div class="dk-skel"></div></div>
-      </section>
+        <section class="dk-pane dk-b">
+          <div class="dk-bar"><span class="dot"></span><span class="t">Snapshot</span>
+            <span class="s">fundamentals</span></div>
+          <div class="dk-body flush" id="dkSnap"><div class="dk-skel"></div><div class="dk-skel"></div></div>
+        </section>
 
-      <section class="dk-panel dk-c">
-        <div class="dk-bar"><span class="dot"></span><span class="t">Regime</span>
-          <span class="s">reading</span></div>
-        <div class="dk-body flush" id="dkRegime"><div class="dk-skel"></div><div class="dk-skel"></div></div>
-      </section>
+        <section class="dk-pane dk-c">
+          <div class="dk-bar"><span class="dot"></span><span class="t">Regime</span>
+            <span class="s">reading</span></div>
+          <div class="dk-body flush" id="dkRegime"><div class="dk-skel"></div><div class="dk-skel"></div></div>
+        </section>
 
-      <section class="dk-panel dk-d">
-        <div class="dk-bar"><span class="dot"></span><span class="t">Dealer Flow</span>
-          <span class="s">reading</span></div>
-        <div class="dk-body flush" id="dkGex"><div class="dk-skel"></div><div class="dk-skel"></div></div>
-      </section>
-    </div>
+        <section class="dk-pane dk-d">
+          <div class="dk-bar"><span class="dot"></span><span class="t">Dealer Flow</span>
+            <span class="s">reading</span></div>
+          <div class="dk-body flush" id="dkGex"><div class="dk-skel"></div><div class="dk-skel"></div></div>
+        </section>
+      </div>
+    </section>
 
     <!-- THE ROTATION. Where money is actually moving between
          corners of the market, with six sessions of trail. -->
@@ -2353,13 +2410,15 @@ body::before{
       <div class="dk-body flush" id="rotPlot"><div class="dk-skel"></div><div class="dk-skel"></div><div class="dk-skel"></div></div>
     </section>
 
-    <h3 class="tsec">The week ahead &middot; scheduled releases</h3>
-    <section class="dk-panel reveal" style="height:360px;margin-bottom:8px">
-      <div class="dk-bar"><span class="dot"></span><span class="t">Economic Calendar</span>
-        <span class="s">loading</span></div>
-      <div class="dk-body flush" id="dkEcon"><div class="dk-skel"></div><div class="dk-skel"></div></div>
-    </section>
-    <div class="flagship reveal" style="margin-bottom:16px">
+    <h3 class="tsec">The week ahead &middot; what is scheduled</h3>
+    <section class="cmdbox reveal">
+      <div class="wk-grid">
+        <section class="dk-pane wk-a">
+          <div class="dk-bar"><span class="dot"></span><span class="t">Economic Calendar</span>
+            <span class="s">loading</span></div>
+          <div class="dk-body flush" id="dkEcon"><div class="dk-skel"></div><div class="dk-skel"></div></div>
+        </section>
+        <section class="dk-pane wk-b" id="wkEarn">
       <button class="flag wide" style="text-align:left;--accent:var(--gold);--accent-fade:rgba(245,185,66,.14)" onclick="openModal('m-earn')" aria-label="Open the full earnings calendar">
         <div class="ftop" style="margin-bottom:6px">
           <span class="fic" style="border-color:var(--gold);color:var(--gold);background:rgba(245,185,66,.12)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg></span>
@@ -2376,7 +2435,9 @@ body::before{
         </div></div>
         <div class="ew-legend"><span><i class="bmo"></i> Before open</span><span><i class="amc"></i> After close</span><span style="color:var(--cyan)">Tap for the full week, with estimates →</span></div>
       </button>
-    </div>
+        </section>
+      </div>
+    </section>
     <div class="boards reveal">
       <button class="flag board" style="text-align:left;--accent:var(--violet);--accent-fade:rgba(168,85,247,.14)" onclick="openModal('m-market')">
         <div class="ftop"><span class="fic" style="border-color:var(--violet);color:var(--violet);background:rgba(168,85,247,.12)"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 17l5-6 4 3 3-5 6 5M3 21h18"/></svg></span><span class="fname">Market Pulse<small>BREADTH · RANGE · VOL</small></span></div>
