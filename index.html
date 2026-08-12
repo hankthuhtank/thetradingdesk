@@ -1508,18 +1508,19 @@ body.paged .section{padding-top:40px}
     <div class="sec-head reveal">
       <div class="eyebrow">01 // THE TERMINAL</div>
       <h2 class="disp">The market, <span class="c">live</span> and in one glance.</h2>
-      <p>Real quotes and real structure, never a simulation dressed up as a feed. The Compass ranks what is being bought harder than the index it belongs to. The chart takes any listed symbol. Below that: the week ahead in macro releases, this week’s earnings, and three live boards that frame the tape before you read any single chart.</p>
+      <p>Real quotes and real structure, never a simulation dressed up as a feed. The Compass maps which corners of the market are being bought harder than the index they belong to. Below it, the chart, a company snapshot and the week ahead in macro releases share one panel: click any collapsed header to bring it forward.</p>
     </div>
-    <!-- The Compass and the live chart. Both run on the public Yahoo
-         feed through the Worker, so neither needs a key in the page. -->
-    <div class="dk-row reveal">
-      <section class="dk-panel">
-        <div class="dk-bar"><span class="dot"></span><span class="t">The Compass</span>
-          <span class="s">loading</span></div>
-        <div class="dk-body flush dk-cmp" id="dkCompass"><div class="dk-skel"></div><div class="dk-skel"></div><div class="dk-skel"></div><div class="dk-skel"></div></div>
-      </section>
+    <!-- The Compass, then the Stage. Chart, calendar and snapshot
+         share one area: click any collapsed header to promote it. -->
+    <section class="dk-panel reveal" style="height:390px;margin-bottom:16px">
+      <div class="dk-bar"><span class="dot"></span><span class="t">The Compass</span>
+        <span class="s">loading</span></div>
+      <div class="dk-body flush" id="dkCompass"><div class="dk-skel"></div><div class="dk-skel"></div><div class="dk-skel"></div></div>
+    </section>
 
-      <section class="dk-panel" id="dkChartPanel">
+    <div class="dk-stage reveal" id="dkStage">
+
+      <section class="dk-panel" data-stage="chart" aria-expanded="true">
         <div class="dk-bar"><span class="dot"></span><span class="t">Chart</span>
           <span class="s">
             <span class="dk-sym"><span>SYM</span>
@@ -1549,14 +1550,19 @@ body.paged .section{padding-top:40px}
           <div class="dk-msg on" id="dkMsg"><span class="t">LOADING</span><span class="d"></span></div>
         </div>
       </section>
-    </div>
 
-    <div class="dk-row reveal" style="grid-template-columns:1fr">
-      <section class="dk-panel" style="height:400px">
+      <section class="dk-panel" data-stage="snap" aria-expanded="false">
+        <div class="dk-bar"><span class="dot"></span><span class="t">Snapshot</span>
+          <span class="s">fundamentals</span></div>
+        <div class="dk-body flush" id="dkSnap"><div class="dk-skel"></div><div class="dk-skel"></div></div>
+      </section>
+
+      <section class="dk-panel" data-stage="econ" aria-expanded="false">
         <div class="dk-bar"><span class="dot"></span><span class="t">Economic Calendar</span>
           <span class="s">loading</span></div>
-        <div class="dk-body flush" id="dkEcon"><div class="dk-skel"></div><div class="dk-skel"></div><div class="dk-skel"></div><div class="dk-skel"></div></div>
+        <div class="dk-body flush" id="dkEcon"><div class="dk-skel"></div><div class="dk-skel"></div></div>
       </section>
+
     </div>
     <div class="flagship reveal" style="margin-bottom:16px">
       <button class="flag wide" style="text-align:left;--accent:var(--gold);--accent-fade:rgba(245,185,66,.14)" onclick="openModal('m-earn')" aria-label="Open the full earnings calendar">
@@ -2417,6 +2423,7 @@ body.paged .section{padding-top:40px}
 <script src="riskdesk.js"></script>
 <script src="ledger.js"></script>
 <script src="options.js"></script>
+<script src="optionplays.js"></script>
 <script>
 'use strict';
 const $=(s,el=document)=>el.querySelector(s);

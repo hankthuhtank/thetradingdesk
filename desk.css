@@ -331,3 +331,157 @@
   .sec-head h2::after,.hub-h h2::after{transform:scaleX(1)!important}
   .modal:not(.open) .mwin{opacity:1;transform:none}
 }
+
+/* ============================================================
+   PART TWO · THE COMPASS, THE STAGE, THE SNAPSHOT,
+   OPTION PLAYBOOKS, STRATEGY HIERARCHY
+   ============================================================ */
+
+/* ---------- THE COMPASS: a rotation map, not a list ---------- */
+.cmp-wrap{display:grid;grid-template-columns:1fr 210px;gap:14px;padding:14px 16px 16px;height:100%}
+@media(max-width:1080px){.cmp-wrap{grid-template-columns:1fr}}
+.cmp-svg{width:100%;height:auto;display:block;overflow:visible}
+.cmp-q{font-family:var(--mono);font-size:8.5px;letter-spacing:.16em;opacity:.85}
+.cmp-ax{font-family:var(--mono);font-size:8px;letter-spacing:.14em;fill:var(--faint)}
+.cmp-pt{cursor:pointer;outline:none}
+.cmp-pt .halo{fill:var(--qc);opacity:.12;transform-origin:center;transition:opacity .25s}
+.cmp-pt .core{fill:var(--qc);transition:r .25s var(--ease)}
+.cmp-pt text{font-family:var(--mono);font-size:9.5px;font-weight:600;fill:#e6edf3;
+  transition:fill .2s;pointer-events:none}
+.cmp-pt:hover .core,.cmp-pt:focus-visible .core{r:8}
+.cmp-pt:hover .halo,.cmp-pt:focus-visible .halo{opacity:.3;animation:cmpPing 1.4s ease-out infinite}
+.cmp-pt:hover text,.cmp-pt:focus-visible text{fill:var(--qc)}
+@keyframes cmpPing{0%{opacity:.34}70%{opacity:.05}100%{opacity:.34}}
+/* markers arrive one after another as the panel scrolls in */
+.reveal.in .cmp-pt{animation:cmpIn .5s var(--ease-out) both;animation-delay:var(--d)}
+@keyframes cmpIn{from{opacity:0;transform:scale(.4)}to{opacity:1;transform:scale(1)}}
+.cmp-side{display:flex;flex-direction:column;gap:12px;min-width:0}
+.cmp-read{border:1px solid var(--line);border-radius:12px;padding:12px;background:var(--panel-2)}
+.cmp-read .k{display:block;font-family:var(--mono);font-size:.58rem;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--cyan);margin-bottom:5px}
+.cmp-read .v{display:block;font-weight:600;font-size:.9rem;margin-bottom:6px}
+.cmp-read .v em{font-style:normal;font-weight:400;color:var(--faint);font-size:.72rem}
+.cmp-read p{font-size:.72rem;line-height:1.55;color:var(--dim);margin:0}
+.cmp-read small{display:block;margin-top:8px;font-size:.62rem;color:var(--faint)}
+.cmp-legs{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:9px}
+.cmp-legs span{font-family:var(--mono);font-size:.62rem;color:var(--faint);
+  display:flex;justify-content:space-between;gap:6px}
+.cmp-legs b{font-weight:600}
+.cmp-rank{display:flex;flex-direction:column;gap:1px;border:1px solid var(--line);
+  border-radius:12px;overflow:hidden}
+.cmp-r{display:grid;grid-template-columns:22px 1fr auto;align-items:center;gap:9px;
+  padding:7px 11px;background:var(--panel-2);text-align:left;transition:background .2s}
+.cmp-r:hover{background:rgba(34,211,238,.1)}
+.cmp-r .n{font-family:var(--mono);font-size:.58rem;color:var(--faint)}
+.cmp-r .s{font-family:var(--mono);font-size:.72rem;font-weight:600}
+.cmp-r .v{font-family:var(--mono);font-size:.7rem;font-weight:600}
+
+/* ---------- THE STAGE: panels that trade places ---------- */
+.dk-stage{display:grid;gap:14px;grid-template-columns:1fr;margin-bottom:16px}
+.dk-stage .dk-panel{transition:height .42s var(--ease),opacity .3s}
+.dk-stage .is-big{height:520px}
+.dk-stage .is-pill{height:auto}
+.dk-stage .is-pill .dk-body,.dk-stage .is-pill .dk-cq,.dk-stage .is-pill .dk-tf,
+.dk-stage .is-pill .dk-cv{display:none}
+.dk-stage .dk-bar{cursor:pointer;position:relative}
+.dk-stage .is-pill .dk-bar:hover{background:rgba(34,211,238,.07)}
+.dk-stage .is-pill .dk-bar::after{content:'EXPAND \2197';font-family:var(--mono);font-size:.56rem;
+  letter-spacing:.14em;color:var(--faint);margin-left:auto;flex:none}
+.dk-stage .is-pill .dk-bar .s{margin-left:0}
+.dk-stage .is-pill .dot{opacity:.4;animation:none}
+@media(max-width:640px){.dk-stage .is-big{height:440px}}
+
+/* ---------- THE SNAPSHOT ---------- */
+.snap-id{padding:14px 16px 0}
+.snap-id b{display:block;font-size:.98rem;font-weight:600;letter-spacing:-.015em}
+.snap-id span{display:block;font-family:var(--mono);font-size:.62rem;color:var(--faint);margin-top:3px}
+.snap-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);
+  margin:14px 0 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+@media(max-width:720px){.snap-grid{grid-template-columns:repeat(2,1fr)}}
+.snap-m{background:var(--panel-2);padding:11px 13px}
+.snap-m .k{display:block;font-family:var(--mono);font-size:.56rem;letter-spacing:.13em;
+  text-transform:uppercase;color:var(--faint);margin-bottom:5px}
+.snap-m .v{display:block;font-family:var(--mono);font-size:1rem;font-weight:600;letter-spacing:-.02em}
+.snap-m .h{display:block;font-size:.62rem;color:var(--faint);margin-top:4px;line-height:1.4}
+.snap-street{padding:14px 16px}
+.snap-street .k{display:block;font-family:var(--mono);font-size:.56rem;letter-spacing:.13em;
+  text-transform:uppercase;color:var(--faint);margin-bottom:7px}
+.snap-street .bar{display:flex;height:8px;border-radius:5px;overflow:hidden;background:var(--panel-3)}
+.snap-street .bar i{display:block;transition:width .8s var(--ease)}
+.snap-street .bar .b{background:var(--green)}
+.snap-street .bar .h{background:var(--faint);opacity:.5}
+.snap-street .bar .s{background:var(--red)}
+.snap-street .lg{display:block;font-family:var(--mono);font-size:.64rem;color:var(--faint);margin-top:7px}
+.snap-go{display:block;width:100%;padding:12px 16px;text-align:left;font-family:var(--mono);
+  font-size:.68rem;letter-spacing:.1em;color:var(--cyan);border-top:1px solid var(--line);
+  transition:background .22s,padding-left .22s}
+.snap-go:hover{background:rgba(34,211,238,.08);padding-left:22px}
+.dk-srcnote{padding:11px 16px;font-size:.68rem;color:var(--faint);line-height:1.5;
+  border-bottom:1px solid var(--line);background:rgba(245,185,66,.05)}
+
+/* ---------- OPTION PLAYBOOKS ---------- */
+.play{margin-top:26px;padding-top:22px;border-top:2px solid var(--line)}
+.play-h{display:flex;align-items:center;gap:12px;margin-bottom:9px;flex-wrap:wrap}
+.play-h .ph{font-family:var(--mono);font-size:.7rem;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--cyan)}
+.play .tier{font-family:var(--mono);font-size:.58rem;letter-spacing:.12em;text-transform:uppercase;
+  padding:4px 9px;border-radius:100px;border:1px solid currentColor}
+.play .tier.t1{color:var(--green)} .play .tier.t2{color:var(--cyan)} .play .tier.t3{color:var(--gold)}
+.play-tier{font-size:.76rem;color:var(--faint);line-height:1.55;margin-bottom:16px}
+/* the legs, in the order you would actually enter them */
+.play-legs{list-style:none;counter-reset:leg;display:flex;flex-direction:column;gap:1px;
+  border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-bottom:16px}
+.play-legs li{counter-increment:leg;position:relative;padding:11px 14px 11px 46px;
+  background:var(--panel-2);font-family:var(--mono);font-size:.78rem;line-height:1.5}
+.play-legs li::before{content:counter(leg);position:absolute;left:0;top:0;bottom:0;width:34px;
+  display:grid;place-items:center;font-size:.64rem;font-weight:600;
+  border-right:1px solid var(--line)}
+.play-legs li.lg-buy::before{color:var(--green);background:rgba(52,211,153,.09)}
+.play-legs li.lg-sell::before{color:var(--red);background:rgba(248,113,113,.09)}
+.play-legs li.lg-own::before,.play-legs li.lg-note::before{color:var(--faint)}
+.play-nums{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);
+  border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-bottom:20px}
+@media(max-width:720px){.play-nums{grid-template-columns:1fr}}
+.play-nums div{background:var(--panel-2);padding:12px 14px}
+.play-nums .k{display:block;font-family:var(--mono);font-size:.56rem;letter-spacing:.13em;
+  text-transform:uppercase;color:var(--faint);margin-bottom:6px}
+.play-nums .v{display:block;font-size:.8rem;line-height:1.5}
+.play-steps{display:flex;flex-direction:column;gap:14px}
+.ps{display:grid;grid-template-columns:28px 1fr;gap:13px;align-items:start}
+.ps .n{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;
+  border:1px solid var(--cyan);color:var(--cyan);font-family:var(--mono);font-size:.68rem;font-weight:600}
+.ps b{display:block;font-size:.84rem;margin-bottom:5px}
+.ps p{font-size:.8rem;line-height:1.68;color:var(--dim);max-width:70ch}
+.play-foot{margin-top:20px;padding-top:14px;border-top:1px solid var(--line);
+  font-size:.7rem;color:var(--faint);line-height:1.55}
+
+/* ---------- STRATEGY SECTION HIERARCHY ---------- */
+/* the headers used to sit at nearly the same weight as the cards
+   under them. Now each group opens with a numbered rule and a
+   headline that is unmistakably a level above the tiles. */
+.sgroup{margin-bottom:52px}
+.sgh{display:flex;align-items:baseline;gap:13px;flex-wrap:wrap;padding-bottom:14px;
+  border-bottom:2px solid var(--line);margin-bottom:4px;position:relative}
+.sgh::after{content:'';position:absolute;left:0;bottom:-2px;height:2px;width:64px;background:var(--cyan)}
+.sgh-i{font-family:var(--mono);font-size:.72rem;font-weight:600;color:var(--cyan);
+  letter-spacing:.1em;flex:none}
+.sgh b{font-size:1.42rem;font-weight:700;letter-spacing:-.025em;line-height:1.1}
+.sgh i{font-style:normal;font-family:var(--mono);font-size:.64rem;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--faint)}
+.sgh-n{margin-left:auto;font-family:var(--mono);font-size:.62rem;color:var(--faint);
+  border:1px solid var(--line);border-radius:100px;padding:4px 10px;flex:none}
+.sgh-p{font-size:.88rem;color:var(--dim);line-height:1.6;max-width:70ch;margin:14px 0 20px}
+@media(max-width:640px){.sgh b{font-size:1.16rem}.sgh-n{display:none}}
+
+/* dealer flow gets its own band: it is the one group whose
+   mechanism is structural rather than behavioural */
+.sgroup-gex{position:relative;margin-top:64px;padding:30px 26px 26px;
+  border:1px solid rgba(167,139,250,.28);border-radius:20px;
+  background:linear-gradient(165deg,rgba(167,139,250,.06),transparent 60%)}
+.sgroup-gex::before{content:'STRUCTURAL';position:absolute;top:-9px;left:26px;
+  font-family:var(--mono);font-size:.58rem;letter-spacing:.2em;color:var(--violet);
+  background:var(--void);padding:0 10px}
+.sgroup-gex .sgh{border-bottom-color:rgba(167,139,250,.3)}
+.sgroup-gex .sgh::after{background:var(--violet)}
+.sgroup-gex .sgh-i{color:var(--violet)}
+@media(max-width:640px){.sgroup-gex{padding:24px 14px 16px}}
