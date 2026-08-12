@@ -1879,20 +1879,6 @@ body.paged .section{padding-top:40px}
 /* ============================================================
    SNAPSHOT, STAGE, OPTION PLAYBOOKS, STRATEGY HIERARCHY
    ============================================================ */
-/* ---------- THE STAGE: panels that trade places ---------- */
-.dk-stage{display:grid;gap:14px;grid-template-columns:1fr;margin-bottom:16px}
-.dk-stage .dk-panel{transition:height .42s var(--ease),opacity .3s}
-.dk-stage .is-big{height:520px}
-.dk-stage .is-pill{height:auto}
-.dk-stage .is-pill .dk-body,.dk-stage .is-pill .dk-cq,.dk-stage .is-pill .dk-tf,
-.dk-stage .is-pill .dk-cv{display:none}
-.dk-stage .dk-bar{cursor:pointer;position:relative}
-.dk-stage .is-pill .dk-bar:hover{background:rgba(34,211,238,.07)}
-.dk-stage .is-pill .dk-bar::after{content:'EXPAND \2197';font-family:var(--mono);font-size:.56rem;
-  letter-spacing:.14em;color:var(--faint);margin-left:auto;flex:none}
-.dk-stage .is-pill .dk-bar .s{margin-left:0}
-.dk-stage .is-pill .dot{opacity:.4;animation:none}
-@media(max-width:640px){.dk-stage .is-big{height:440px}}
 
 /* ---------- THE SNAPSHOT ---------- */
 .snap-id{padding:14px 16px 0}
@@ -1989,6 +1975,115 @@ body.paged .section{padding-top:40px}
 .sgroup-gex .sgh-i{color:var(--violet)}
 @media(max-width:640px){.sgroup-gex{padding:24px 14px 16px}}
 
+/* ============================================================
+   THE WORKSPACE
+   Everything about one ticker at once. The chart takes the top
+   row with fundamentals beside it, then regime and the week
+   ahead sit side by side underneath. Nothing collapses, so
+   nothing has to be hunted for.
+   ============================================================ */
+.dk-work{
+  display:grid;gap:16px;margin-bottom:26px;
+  grid-template-columns:minmax(0,1.62fr) minmax(0,1fr);
+  grid-template-areas:'a b' 'c d';
+}
+.dk-work .dk-a{grid-area:a;height:474px}
+.dk-work .dk-b{grid-area:b;height:474px}
+.dk-work .dk-c{grid-area:c;height:410px}
+.dk-work .dk-d{grid-area:d;height:410px}
+@media(max-width:1000px){
+  .dk-work{grid-template-columns:1fr;grid-template-areas:'a' 'b' 'c' 'd'}
+  .dk-work .dk-a{height:400px}
+  .dk-work .dk-b,.dk-work .dk-c,.dk-work .dk-d{height:370px}
+}
+
+/* ---------- REGIME ---------- */
+.rg-top{display:flex;align-items:baseline;gap:11px;padding:14px 18px 0}
+.rg-top b{font-family:var(--mono);font-size:1rem;font-weight:600}
+.rg-top span{font-family:var(--mono);font-size:.6rem;color:var(--faint)}
+.rg-grid{display:flex;flex-direction:column;margin-top:12px}
+.rg-row{display:grid;grid-template-columns:82px 1fr;gap:12px;padding:12px 18px;
+  border-top:1px solid var(--line-2);align-items:baseline;transition:background .2s}
+.rg-row:hover{background:rgba(255,255,255,.022)}
+.rg-row .k{font-family:var(--mono);font-size:.58rem;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--faint)}
+.rg-row .v{font-size:.9rem;font-weight:600;display:flex;align-items:baseline;gap:9px}
+.rg-row .v em{font-style:normal;font-family:var(--mono);font-size:.66rem;font-weight:400;
+  color:var(--faint);border:1px solid var(--line);border-radius:100px;padding:2px 8px}
+.rg-row p{grid-column:2;font-size:.76rem;line-height:1.58;color:var(--dim);margin-top:6px}
+.rg-note{padding:13px 18px;border-top:1px solid var(--line);font-size:.68rem;
+  color:var(--faint);line-height:1.5}
+
+/* ---------- ROTATION: replay scrubber ---------- */
+.rot-main{display:flex;flex-direction:column;gap:12px;min-width:0}
+.rot-scrub{display:flex;align-items:center;gap:12px}
+.rot-play,.rot-now{flex:none;font-family:var(--mono);font-size:.62rem;border:1px solid var(--line);
+  border-radius:8px;padding:5px 11px;color:var(--dim);transition:all .2s}
+.rot-play{width:34px;text-align:center;color:var(--cyan);border-color:var(--cyan)}
+.rot-play:hover{background:var(--cyan);color:var(--void)}
+.rot-now:hover{color:var(--cyan);border-color:var(--cyan)}
+.rot-date{font-family:var(--mono);font-size:.62rem;color:var(--faint);flex:none;min-width:118px;
+  text-align:right}
+#rotHead{flex:1;-webkit-appearance:none;appearance:none;height:4px;border-radius:3px;
+  background:var(--panel-3);outline:none;cursor:pointer}
+#rotHead::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;
+  background:var(--cyan);cursor:pointer;box-shadow:0 0 10px var(--cyan-glow);transition:transform .18s}
+#rotHead::-webkit-slider-thumb:hover{transform:scale(1.25)}
+#rotHead::-moz-range-thumb{width:14px;height:14px;border:none;border-radius:50%;
+  background:var(--cyan);cursor:pointer}
+.rot-b.dim{opacity:.2}
+.rot-b{transition:opacity .28s}
+.rot-li.on{background:rgba(34,211,238,.13)}
+
+/* ============================================================
+   AMBIENCE
+   A slow aurora behind the grid, and a hairline that sweeps the
+   top of the page as you scroll. Both sit behind everything and
+   neither animates layout, so they cost nothing at paint time.
+   ============================================================ */
+.bg-glow{opacity:.5}
+body::before{
+  content:'';position:fixed;inset:-30% -10% auto -10%;height:80vh;z-index:0;pointer-events:none;
+  background:
+    radial-gradient(46% 38% at 18% 26%,rgba(34,211,238,.10),transparent 68%),
+    radial-gradient(42% 34% at 82% 18%,rgba(245,185,66,.07),transparent 66%),
+    radial-gradient(38% 30% at 52% 62%,rgba(167,139,250,.06),transparent 70%);
+  filter:blur(28px);
+  animation:aurora 34s ease-in-out infinite alternate;
+}
+@keyframes aurora{
+  0%{transform:translate3d(0,0,0) scale(1)}
+  50%{transform:translate3d(-3%,2%,0) scale(1.07)}
+  100%{transform:translate3d(3%,-2%,0) scale(1.02)}
+}
+/* scroll progress, drawn on the nav's own bottom edge */
+#nav::after{
+  content:'';position:absolute;left:0;bottom:-1px;height:2px;width:var(--sp,0%);
+  background:linear-gradient(90deg,var(--cyan),var(--gold));
+  box-shadow:0 0 12px var(--cyan-glow);transition:width .12s linear;
+}
+
+/* panels lift and light their edge as they arrive */
+.dk-panel{transition:transform .3s var(--ease),border-color .3s var(--ease),box-shadow .3s var(--ease)}
+.dk-panel:hover{border-color:rgba(34,211,238,.28);box-shadow:0 14px 40px -26px rgba(0,0,0,.9)}
+.dk-bar .dot{position:relative}
+.dk-bar .dot::after{
+  content:'';position:absolute;inset:-4px;border-radius:50%;border:1px solid var(--cyan);
+  opacity:0;animation:dotPing 3.2s ease-out infinite;
+}
+@keyframes dotPing{0%{opacity:.5;transform:scale(.6)}70%{opacity:0;transform:scale(1.5)}100%{opacity:0}}
+
+/* section eyebrows draw their rule in on arrival */
+.tsec{opacity:0;transform:translateX(-8px);transition:opacity .6s var(--ease),transform .6s var(--ease)}
+.tsec.in{opacity:1;transform:none}
+
+@media(prefers-reduced-motion:reduce){
+  body::before{animation:none}
+  .dk-bar .dot::after{animation:none;opacity:0}
+  #nav::after{transition:none}
+  .tsec{opacity:1;transform:none}
+}
+
 </style>
 
 <script src="https://unpkg.com/lightweight-charts@5/dist/lightweight-charts.standalone.production.js" defer></script>
@@ -2073,14 +2168,6 @@ body.paged .section{padding-top:40px}
     </div>
     <!-- The Compass, then the Stage. Chart, calendar and snapshot
          share one area: click any collapsed header to promote it. -->
-    <!-- THE WIRE. Headlines first, because that is what actually
-         changes what you should be looking at today. -->
-    <section class="dk-panel reveal" style="height:330px;margin-bottom:20px">
-      <div class="dk-bar"><span class="dot"></span><span class="t">The Wire</span>
-        <span class="s">loading</span></div>
-      <div class="dk-body flush dk-wire" id="dkWire"><div class="dk-skel"></div><div class="dk-skel"></div><div class="dk-skel"></div></div>
-    </section>
-
     <!-- THE READ. Not what the market did, what conditions it is
          operating under. -->
     <h3 class="tsec">The Read &middot; conditions</h3>
@@ -2090,12 +2177,13 @@ body.paged .section{padding-top:40px}
       <div class="dk-body flush" id="dkRead"><div class="dk-skel"></div><div class="dk-skel"></div><div class="dk-skel"></div></div>
     </section>
 
-    <!-- ONE TICKER. Chart, snapshot and calendar share a stage:
-         click any collapsed header to bring it forward. -->
-    <h3 class="tsec">One ticker &middot; chart, fundamentals, the week ahead</h3>
-    <div class="dk-stage reveal" id="dkStage">
+    <!-- ONE TICKER. Everything about a symbol at once: the chart, what
+         the company is worth, and what kind of market it is in. No
+         collapsing, no scrolling between related things. -->
+    <h3 class="tsec">One ticker &middot; everything at once</h3>
+    <div class="dk-work" id="dkWork">
 
-      <section class="dk-panel" data-stage="chart" aria-expanded="true">
+      <section class="dk-panel dk-a">
         <div class="dk-bar"><span class="dot"></span><span class="t">Chart</span>
           <span class="s">
             <span class="dk-sym"><span>SYM</span>
@@ -2126,13 +2214,19 @@ body.paged .section{padding-top:40px}
         </div>
       </section>
 
-      <section class="dk-panel" data-stage="snap" aria-expanded="false">
+      <section class="dk-panel dk-b">
         <div class="dk-bar"><span class="dot"></span><span class="t">Snapshot</span>
           <span class="s">fundamentals</span></div>
         <div class="dk-body flush" id="dkSnap"><div class="dk-skel"></div><div class="dk-skel"></div></div>
       </section>
 
-      <section class="dk-panel" data-stage="econ" aria-expanded="false">
+      <section class="dk-panel dk-c">
+        <div class="dk-bar"><span class="dot"></span><span class="t">Regime</span>
+          <span class="s">reading</span></div>
+        <div class="dk-body flush" id="dkRegime"><div class="dk-skel"></div><div class="dk-skel"></div></div>
+      </section>
+
+      <section class="dk-panel dk-d">
         <div class="dk-bar"><span class="dot"></span><span class="t">Economic Calendar</span>
           <span class="s">loading</span></div>
         <div class="dk-body flush" id="dkEcon"><div class="dk-skel"></div><div class="dk-skel"></div></div>

@@ -167,8 +167,10 @@ function rotSet(map,bench,tf){
   keys.forEach((k,i)=>{ bodies[k]={ratio:ratio[i],mom:mom[i],closes:al.series[k]}; });
   return {bodies,len:ratio[0].length,minIdx:ROT_TREND_W+tf,refCount:refIdx.length};
 }
-function rotAt(s,tailLen){
-  const L=s.ratio.length, i=L-1, tail=[];
+function rotAt(s,tailLen,head){
+  const L=s.ratio.length;
+  const i=head==null?L-1:Math.max(0,Math.min(L-1,head));
+  const tail=[];
   for(let j=Math.max(0,i-tailLen+1);j<=i;j++) tail.push({x:s.ratio[j],y:s.mom[j]});
   const c=s.closes, back=Math.max(0,i-5);
   return {x:s.ratio[i], y:s.mom[i], tail, ret:c[back]>0?(c[i]/c[back]-1):0};
@@ -200,7 +202,8 @@ function rotQuality(tail){
 }
 
 /* ---- data: one batched pull of daily closes ---- */
-let ROT={set:null,closes:{},scope:'all',drill:null,tf:5,trail:'one',hover:null};
+let ROT={set:null,closes:{},scope:'all',drill:null,tf:5,tail:ROT_TAIL,
+         trail:'one',focus:null,head:null,playing:false};
 const ROT_TF={fast:3,normal:5,slow:10};
 
 async function rotLoad(){
@@ -211,8 +214,8 @@ async function rotLoad(){
        only THIS group's members. Queueing every group's members here was
        about a hundred symbols for a view that shows eight. */
     ROT_GROUPS.filter(g=>g.cat==='sector'&&g.etf).forEach(g=>need.add(g.etf));
-    const d=ROT_GROUPS.find(g=>g.sym===ROT.drill);
-    if(d) d.members.forEach(m=>need.add(m));
+    const grp=ROT_GROUPS.find(g=>g.sym===ROT.drill);
+    if(grp) grp.members.forEach(m=>need.add(m));
   } else {
     ROT_GROUPS.forEach(g=>{
       if(g.etf) need.add(g.etf);
@@ -223,9 +226,9 @@ async function rotLoad(){
   try{
     /* One request for the whole universe. A year of daily closes is enough
        for the 63-session trend leg, the momentum lookback and the tail. */
-    const d=await get('/v1/closes?symbols='+encodeURIComponent(syms.join(',')));
-    ROT.closes=d.closes||{};
-    if(!out[ROT_BENCH]) throw new Error('No benchmark history for '+ROT_BENCH+'.');
+    const res=await get('/v1/closes?symbols='+encodeURIComponent(syms.join(',')));
+    ROT.closes=res.closes||{};
+    if(!ROT.closes[ROT_BENCH]) throw new Error('No history came back for the benchmark, '+ROT_BENCH+'.');
     rotBuild(); rotDraw();
   }catch(e){
     host.innerHTML=stateBox('ROTATION UNAVAILABLE',e.message);
@@ -247,6 +250,7 @@ function rotBuild(){
     });
   }
   ROT.set=rotSet(map,ROT.closes[ROT_BENCH],ROT.tf);
+  ROT.head=null;   /* a new set means a new timeline, so snap back to live */
 }
 function rotName(k){
   const g=ROT_GROUPS.find(x=>x.sym===k||x.etf===k);
@@ -261,75 +265,166 @@ function rotDraw(){
     return;
   }
   const keys=Object.keys(set.bodies);
-  const pts=keys.map(k=>{ const a=rotAt(set.bodies[k],ROT_TAIL);
+  const L=set.len;
+  if(ROT.head==null) ROT.head=L-1;
+  ROT.head=Math.max(set.minIdx,Math.min(L-1,ROT.head));
+
+  const pts=keys.map(k=>{ const a=rotAt(set.bodies[k],ROT.tail,ROT.head);
     return {k,x:a.x,y:a.y,tail:a.tail,ret:a.ret,phase:rotPhase(a.x,a.y),q:rotQuality(a.tail)}; });
 
-  /* scale to the data with a symmetric pad, so the centre cross stays at
-     100/100 and the quadrants keep their meaning */
+  /* Scale to the data with a symmetric pad so the centre cross stays at
+     100/100 and the quadrants keep their meaning. */
   const allX=pts.flatMap(p=>p.tail.map(t=>t.x)).concat(pts.map(p=>p.x));
   const allY=pts.flatMap(p=>p.tail.map(t=>t.y)).concat(pts.map(p=>p.y));
-  const rx=Math.max(3,...allX.map(v=>Math.abs(v-100)))*1.2;
-  const ry=Math.max(3,...allY.map(v=>Math.abs(v-100)))*1.2;
-  const W=560,H=420,P=34;
+  const rx=Math.max(3,...allX.map(v=>Math.abs(v-100)))*1.18;
+  const ry=Math.max(3,...allY.map(v=>Math.abs(v-100)))*1.18;
+  const W=620,H=460,P=38;
   const sx=v=>P+((v-100+rx)/(2*rx))*(W-P*2);
   const sy=v=>H-P-((v-100+ry)/(2*ry))*(H-P*2);
 
+  /* Markers are sized in viewBox units, and the SVG stretches to its
+     container, so a fixed radius looked like a beach ball on a wide screen.
+     Everything below scales down as the field gets crowded and is drawn with
+     vector-effect so strokes stay hairline at any width. */
+  const dense=Math.min(1,18/Math.max(6,keys.length));
+  const R=3.4+dense*1.6, HALO=R*2.5, FS=(7.5+dense*2).toFixed(1);
+
   const bodies=pts.map((p,i)=>{
     const col=PHASE_COL[p.phase];
+    const dim=ROT.focus&&ROT.focus!==p.k;
+    const showTail=ROT.trail==='all'||!ROT.focus||ROT.focus===p.k;
     const path=p.tail.map((t,j)=>`${j?'L':'M'}${sx(t.x).toFixed(1)} ${sy(t.y).toFixed(1)}`).join(' ');
     const dots=p.tail.slice(0,-1).map(t=>
-      `<circle cx="${sx(t.x).toFixed(1)}" cy="${sy(t.y).toFixed(1)}" r="1.8" fill="rgba(${col},.45)"/>`).join('');
-    return `<g class="rot-b" data-k="${esc(p.k)}" data-i="${i}" tabindex="0" role="button"
-        aria-label="${esc(rotName(p.k))}, ${p.phase}" style="--c:rgb(${col});--d:${i*40}ms">
-      <path class="tail" d="${path}" stroke="rgba(${col},.55)" fill="none" stroke-width="1.4"/>
-      ${dots}
-      <circle class="halo" cx="${sx(p.x).toFixed(1)}" cy="${sy(p.y).toFixed(1)}" r="15" fill="rgba(${col},.13)"/>
-      <circle class="core" cx="${sx(p.x).toFixed(1)}" cy="${sy(p.y).toFixed(1)}" r="6" fill="rgb(${col})"/>
-      <text x="${sx(p.x).toFixed(1)}" y="${(sy(p.y)-13).toFixed(1)}" text-anchor="middle">${esc(p.k)}</text>
+      `<circle cx="${sx(t.x).toFixed(1)}" cy="${sy(t.y).toFixed(1)}" r="${(R*.32).toFixed(2)}" fill="rgba(${col},.5)"/>`).join('');
+    return `<g class="rot-b${dim?' dim':''}" data-k="${esc(p.k)}" data-i="${i}" tabindex="0" role="button"
+        aria-label="${esc(rotName(p.k))}, ${p.phase}" style="--c:rgb(${col});--d:${i*32}ms">
+      ${showTail?`<path class="tail" d="${path}" stroke="rgba(${col},.5)" fill="none"
+        stroke-width="1.2" vector-effect="non-scaling-stroke"/>${dots}`:''}
+      <circle class="halo" cx="${sx(p.x).toFixed(1)}" cy="${sy(p.y).toFixed(1)}" r="${HALO.toFixed(1)}" fill="rgba(${col},.14)"/>
+      <circle class="core" cx="${sx(p.x).toFixed(1)}" cy="${sy(p.y).toFixed(1)}" r="${R.toFixed(1)}" fill="rgb(${col})"/>
+      <text x="${sx(p.x).toFixed(1)}" y="${(sy(p.y)-HALO-2).toFixed(1)}" text-anchor="middle"
+        font-size="${FS}">${esc(p.k)}</text>
     </g>`;
   }).join('');
 
+  const dateLab = ROT.head>=L-1 ? 'Latest close' : (L-1-ROT.head)+' sessions back';
+
   host.innerHTML=`<div class="rot-wrap">
-    <svg class="rot-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="Relative rotation map">
-      <rect x="${W/2}" y="${P}" width="${W/2-P}" height="${H/2-P}" fill="rgb(52,211,153)" opacity=".045"/>
-      <rect x="${W/2}" y="${H/2}" width="${W/2-P}" height="${H/2-P}" fill="rgb(242,193,78)" opacity=".045"/>
-      <rect x="${P}" y="${H/2}" width="${W/2-P}" height="${H/2-P}" fill="rgb(232,121,249)" opacity=".045"/>
-      <rect x="${P}" y="${P}" width="${W/2-P}" height="${H/2-P}" fill="rgb(34,211,238)" opacity=".045"/>
-      <line x1="${P}" y1="${H/2}" x2="${W-P}" y2="${H/2}" stroke="rgba(126,166,214,.3)"/>
-      <line x1="${W/2}" y1="${P}" x2="${W/2}" y2="${H-P}" stroke="rgba(126,166,214,.3)"/>
-      <text class="rot-q" x="${W-P-5}" y="${P+13}" text-anchor="end" fill="rgb(52,211,153)">LEADING</text>
-      <text class="rot-q" x="${W-P-5}" y="${H-P-5}" text-anchor="end" fill="rgb(242,193,78)">WEAKENING</text>
-      <text class="rot-q" x="${P+5}" y="${H-P-5}" fill="rgb(232,121,249)">LAGGING</text>
-      <text class="rot-q" x="${P+5}" y="${P+13}" fill="rgb(34,211,238)">IMPROVING</text>
-      <text class="rot-ax" x="${W-P}" y="${H/2+15}" text-anchor="end">RS-RATIO \u2192</text>
-      <text class="rot-ax" x="${W/2+8}" y="${P-6}">\u2191 RS-MOMENTUM</text>
-      <g class="rot-bodies">${bodies}</g>
-    </svg>
+    <div class="rot-main">
+      <svg class="rot-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet"
+           role="img" aria-label="Relative rotation map">
+        <rect x="${W/2}" y="${P}" width="${W/2-P}" height="${H/2-P}" fill="rgb(52,211,153)" opacity=".05"/>
+        <rect x="${W/2}" y="${H/2}" width="${W/2-P}" height="${H/2-P}" fill="rgb(242,193,78)" opacity=".05"/>
+        <rect x="${P}" y="${H/2}" width="${W/2-P}" height="${H/2-P}" fill="rgb(232,121,249)" opacity=".05"/>
+        <rect x="${P}" y="${P}" width="${W/2-P}" height="${H/2-P}" fill="rgb(34,211,238)" opacity=".05"/>
+        <line x1="${P}" y1="${H/2}" x2="${W-P}" y2="${H/2}" stroke="rgba(126,166,214,.28)" vector-effect="non-scaling-stroke"/>
+        <line x1="${W/2}" y1="${P}" x2="${W/2}" y2="${H-P}" stroke="rgba(126,166,214,.28)" vector-effect="non-scaling-stroke"/>
+        <text class="rot-q" x="${W-P-6}" y="${P+13}" text-anchor="end" fill="rgb(52,211,153)">LEADING</text>
+        <text class="rot-q" x="${W-P-6}" y="${H-P-6}" text-anchor="end" fill="rgb(242,193,78)">WEAKENING</text>
+        <text class="rot-q" x="${P+6}" y="${H-P-6}" fill="rgb(232,121,249)">LAGGING</text>
+        <text class="rot-q" x="${P+6}" y="${P+13}" fill="rgb(34,211,238)">IMPROVING</text>
+        <text class="rot-ax" x="${W-P}" y="${H/2+14}" text-anchor="end">RS-RATIO \u2192</text>
+        <text class="rot-ax" x="${W/2+8}" y="${P-8}">\u2191 RS-MOMENTUM</text>
+        <g class="rot-bodies">${bodies}</g>
+      </svg>
+      <div class="rot-scrub">
+        <button class="rot-play" id="rotPlay" aria-label="Play the rotation">${ROT.playing?'\u25a0':'\u25b6'}</button>
+        <input type="range" id="rotHead" min="${set.minIdx}" max="${L-1}" value="${ROT.head}"
+               aria-label="Replay position">
+        <span class="rot-date" id="rotDate">${dateLab}</span>
+        <button class="rot-now" id="rotNow">Now</button>
+      </div>
+    </div>
     <div class="rot-side">
       <div class="rot-read" id="rotRead"></div>
       <div class="rot-list" id="rotList"></div>
     </div>
   </div>`;
 
-  rotSay(null);
-  $('#rotList').innerHTML=pts.slice()
-    .sort((a,b)=>(b.x-100)-(a.x-100))
-    .map(p=>`<button class="rot-li" data-k="${esc(p.k)}" style="--c:rgb(${PHASE_COL[p.phase]})">
+  rotSay(ROT.focus?pts.find(p=>p.k===ROT.focus):null);
+  $('#rotList').innerHTML=pts.slice().sort((a,b)=>(b.x-100)-(a.x-100))
+    .map(p=>`<button class="rot-li${ROT.focus===p.k?' on':''}" data-k="${esc(p.k)}"
+      style="--c:rgb(${PHASE_COL[p.phase]})">
       <span class="d"></span><span class="s">${esc(p.k)}</span>
       <span class="p">${p.phase}</span></button>`).join('');
 
   const byK={}; pts.forEach(p=>byK[p.k]=p);
   const hook=el=>{
     const k=el.dataset.k;
-    el.addEventListener('mouseenter',()=>rotSay(byK[k]));
-    el.addEventListener('focus',()=>rotSay(byK[k]));
+    el.addEventListener('mouseenter',()=>{ROT.focus=k;rotSay(byK[k]);rotDim();});
+    el.addEventListener('mouseleave',()=>{ROT.focus=null;rotSay(null);rotDim();});
+    el.addEventListener('focus',()=>{ROT.focus=k;rotSay(byK[k]);rotDim();});
     el.addEventListener('click',()=>rotClick(k));
     el.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();rotClick(k);}});
   };
   $$('.rot-b',host).forEach(hook);
   $$('.rot-li',host).forEach(hook);
-  setBar('#rotPlot', (ROT.drill?rotName(ROT.drill)+' \u00b7 ':'')+keys.length+' bodies');
+
+  /* replay */
+  const head=$('#rotHead');
+  head.addEventListener('input',()=>{ ROT.head=+head.value; rotStop(); rotDraw(); });
+  $('#rotNow').addEventListener('click',()=>{ ROT.head=L-1; rotStop(); rotDraw(); });
+  $('#rotPlay').addEventListener('click',rotToggle);
+
+  setBar('#rotPlot',(ROT.drill?rotName(ROT.drill)+' \u00b7 ':'')+keys.length+' bodies');
   const back=$('#rotBack'); if(back) back.style.display=ROT.drill?'':'none';
+}
+/* dim everything except the focused body, without a full redraw */
+function rotDim(){
+  $$('.rot-b').forEach(g=>g.classList.toggle('dim',!!ROT.focus&&g.dataset.k!==ROT.focus));
+  $$('.rot-li').forEach(b=>b.classList.toggle('on',ROT.focus===b.dataset.k));
+}
+/* replay: walk the playhead forward one session at a time, then stop at the
+   live bar rather than looping, because looping makes it read as decoration */
+let rotTimer=null;
+function rotToggle(){ ROT.playing?rotStop():rotStart(); }
+function rotStart(){
+  if(!ROT.set)return;
+  const L=ROT.set.len;
+  if(ROT.head>=L-1) ROT.head=ROT.set.minIdx;
+  ROT.playing=true;
+  const btn=$('#rotPlay'); if(btn) btn.textContent='\u25a0';
+  rotTimer=setInterval(()=>{
+    ROT.head++;
+    if(ROT.head>=L-1){ ROT.head=L-1; rotStop(); rotDraw(); return; }
+    rotStep();
+  },110);
+}
+function rotStop(){
+  ROT.playing=false;
+  if(rotTimer){clearInterval(rotTimer);rotTimer=null;}
+  const btn=$('#rotPlay'); if(btn) btn.textContent='\u25b6';
+}
+/* one frame of replay. A full rotDraw per frame rebuilt the DOM ten times a
+   second, which fought the browser; this moves the existing nodes instead. */
+function rotStep(){
+  const set=ROT.set; if(!set)return;
+  const L=set.len;
+  const keys=Object.keys(set.bodies);
+  const pts=keys.map(k=>{const a=rotAt(set.bodies[k],ROT.tail,ROT.head);
+    return {k,x:a.x,y:a.y,tail:a.tail,phase:rotPhase(a.x,a.y)};});
+  const allX=pts.flatMap(p=>p.tail.map(t=>t.x)).concat(pts.map(p=>p.x));
+  const allY=pts.flatMap(p=>p.tail.map(t=>t.y)).concat(pts.map(p=>p.y));
+  const rx=Math.max(3,...allX.map(v=>Math.abs(v-100)))*1.18;
+  const ry=Math.max(3,...allY.map(v=>Math.abs(v-100)))*1.18;
+  const W=620,H=460,P=38;
+  const sx=v=>P+((v-100+rx)/(2*rx))*(W-P*2);
+  const sy=v=>H-P-((v-100+ry)/(2*ry))*(H-P*2);
+  pts.forEach(p=>{
+    const g=document.querySelector('.rot-b[data-k="'+p.k+'"]'); if(!g)return;
+    const col=PHASE_COL[p.phase];
+    const cx=sx(p.x).toFixed(1),cy=sy(p.y).toFixed(1);
+    const core=g.querySelector('.core'),halo=g.querySelector('.halo'),
+          txt=g.querySelector('text'),tl=g.querySelector('.tail');
+    if(core){core.setAttribute('cx',cx);core.setAttribute('cy',cy);core.setAttribute('fill','rgb('+col+')');}
+    if(halo){halo.setAttribute('cx',cx);halo.setAttribute('cy',cy);halo.setAttribute('fill','rgba('+col+',.14)');}
+    if(txt){txt.setAttribute('x',cx);txt.setAttribute('y',(+cy-12).toFixed(1));}
+    if(tl){tl.setAttribute('d',p.tail.map((t,j)=>(j?'L':'M')+sx(t.x).toFixed(1)+' '+sy(t.y).toFixed(1)).join(' '));
+      tl.setAttribute('stroke','rgba('+col+',.5)');}
+    g.style.setProperty('--c','rgb('+col+')');
+  });
+  const hd=$('#rotHead'); if(hd) hd.value=ROT.head;
+  const dt=$('#rotDate'); if(dt) dt.textContent = ROT.head>=L-1?'Latest close':(L-1-ROT.head)+' sessions back';
 }
 function rotSay(p){
   const el=$('#rotRead'); if(!el)return;
@@ -485,33 +580,6 @@ async function loadRead(){
 }
 
 /* ============================================================
-   THE WIRE
-   ============================================================ */
-const ago=ts=>{ if(!ts)return'';
-  const m=Math.floor((Date.now()-ts)/60000);
-  return m<1?'now':m<60?m+'m':m<1440?Math.floor(m/60)+'h':Math.floor(m/1440)+'d'; };
-async function loadWire(){
-  const host=$('#dkWire'); if(!host) return;
-  try{
-    const d=await get('/v1/news'), it=d.items||[];
-    host.innerHTML=it.slice(0,40).map(n=>
-      `<a class="wi" href="${esc(n.url)}" target="_blank" rel="noopener">
-        <div class="wi-h">${esc(n.title)}</div>
-        <div class="wi-m"><span class="src">${esc(n.source)}</span><span>${ago(n.ts)}</span>
-          ${(n.syms||[]).slice(0,3).map(s=>`<em data-sym="${esc(s)}">${esc(s)}</em>`).join('')}</div>
-      </a>`).join('');
-    setBar('#dkWire', it.length+' live');
-    host.addEventListener('click',e=>{
-      const t=e.target.closest('em[data-sym]');
-      if(t){ e.preventDefault(); toChart(t.dataset.sym); }
-    });
-  }catch(e){
-    host.innerHTML=stateBox('WIRE DOWN',e.message);
-    setBar('#dkWire','offline');
-  }
-}
-
-/* ============================================================
    THE TERMINAL: chart, snapshot, calendar
    ============================================================ */
 const TF={'1D':{range:'1d',interval:'5m'},'5D':{range:'5d',interval:'30m'},
@@ -520,21 +588,12 @@ const TF={'1D':{range:'1d',interval:'5m'},'5D':{range:'5d',interval:'30m'},
   '1Y':{range:'1y',interval:'1d'},'5Y':{range:'5y',interval:'1wk'}};
 let chart,sMain,sVol,sMa20,sMa50;
 const C={sym:'NVDA',tf:'6M',type:'area',vol:false,ma:false,bars:[],meta:null};
-let STAGE='chart';
 
-function swapTo(k){
-  if(STAGE===k)return;
-  STAGE=k;
-  $$('#dkStage [data-stage]').forEach(el=>{
-    const on=el.dataset.stage===k;
-    el.classList.toggle('is-big',on); el.classList.toggle('is-pill',!on);
-    el.setAttribute('aria-expanded',on?'true':'false');
-  });
-  if(k==='chart'&&chart) setTimeout(()=>{try{chart.timeScale().fitContent();}catch(e){}},280);
-}
+/* Everything in the workspace is visible at once now, so charting a symbol
+   just reloads the panels and scrolls the workspace into view. */
 function toChart(sym){
-  loadChart(sym); swapTo('chart');
-  const s=$('#dkStage'); if(s) s.scrollIntoView({behavior:SLOW?'auto':'smooth',block:'center'});
+  loadChart(sym);
+  const s=$('#dkWork'); if(s) s.scrollIntoView({behavior:SLOW?'auto':'smooth',block:'start'});
 }
 window.deskChart=toChart;
 
@@ -624,7 +683,7 @@ async function loadChart(sym,tf){
     const d=await get(`/v1/candles?symbol=${encodeURIComponent(C.sym)}&range=${cfg.range}&interval=${cfg.interval}`);
     if(my!==seq)return;
     C.bars=d.bars; C.meta=d;
-    chartMsg(false); paintChart(); writeQuote(); loadSnapshot(C.sym);
+    chartMsg(false); paintChart(); writeQuote(); loadSnapshot(C.sym); loadRegime(C.sym);
   }catch(e){
     if(my!==seq)return;
     chartMsg(true,'NO DATA',e.message);
@@ -723,6 +782,109 @@ async function loadSnapshot(sym){
   }catch(e){
     host.innerHTML=stateBox('NO FUNDAMENTALS',e.message);
     setBar('#dkSnap','offline');
+  }
+}
+
+
+/* ============================================================
+   REGIME
+   What kind of market this one ticker is in right now, read off
+   its own daily bars rather than off an opinion. Four questions,
+   each with a plain answer:
+
+     TREND      where price sits against its own averages
+     MOMENTUM   whether that trend is accelerating or tiring
+     VOLATILITY how wide the daily range is against its own normal
+     LOCATION   where in the yearly range it is trading
+
+   Nothing here needs options data, so it works for every symbol
+   the chart can draw, not just the two the gamma read covers.
+   ============================================================ */
+function sma(a,n){ if(a.length<n)return null; let s=0; for(let i=a.length-n;i<a.length;i++)s+=a[i]; return s/n; }
+function rsi(c,n){
+  if(c.length<n+1)return null;
+  let g=0,l=0;
+  for(let i=c.length-n;i<c.length;i++){ const d=c[i]-c[i-1]; if(d>0)g+=d; else l-=d; }
+  if(l===0)return 100;
+  return 100-100/(1+(g/n)/(l/n));
+}
+async function loadRegime(sym){
+  const host=$('#dkRegime'); if(!host||!sym) return;
+  host.innerHTML='<div class="dk-skel"></div><div class="dk-skel"></div>';
+  setBar('#dkRegime','reading');
+  try{
+    const d=await get(`/v1/candles?symbol=${encodeURIComponent(sym)}&range=1y&interval=1d`);
+    const bars=d.bars||[];
+    if(bars.length<60) throw new Error('Not enough daily history to read a regime.');
+    const c=bars.map(b=>b.c), last=c[c.length-1];
+    const s20=sma(c,20), s50=sma(c,50), s200=c.length>=200?sma(c,200):null;
+    const r=rsi(c,14);
+
+    /* true range against its own median, so "wide" means wide for THIS
+       symbol rather than wide in dollars */
+    const tr=[];
+    for(let i=1;i<bars.length;i++){
+      const b=bars[i],p=bars[i-1];
+      tr.push(Math.max(b.h-b.l,Math.abs(b.h-p.c),Math.abs(b.l-p.c))/b.c*100);
+    }
+    const recent=tr.slice(-14).reduce((a,b)=>a+b,0)/14;
+    const sorted=tr.slice().sort((a,b)=>a-b);
+    const pctile=sorted.filter(v=>v<recent).length/sorted.length*100;
+
+    const hi=Math.max(...c), lo=Math.min(...c);
+    const loc=(last-lo)/(hi-lo)*100;
+
+    const rows=[];
+    /* trend */
+    const above=[s20&&last>s20,s50&&last>s50,s200&&last>s200].filter(Boolean).length;
+    const tset=[s20,s50,s200].filter(x=>x!=null).length;
+    const stack=(s20&&s50&&s20>s50)&&(!s200||s50>s200);
+    rows.push(['Trend',
+      above===tset&&stack?'Strong uptrend':above===tset?'Uptrend':above===0?'Downtrend':'Mixed',
+      above===tset&&stack?'Price is above every average and the averages are stacked in order, which is what a healthy trend looks like.'
+      :above===tset?'Price is above its averages but they are not cleanly stacked, so the trend is real but not yet orderly.'
+      :above===0?'Price is below every average. Buying here is fighting the direction of the tape.'
+      :`Price is above ${above} of ${tset} averages. The timeframes disagree, which usually means a transition.`,
+      above===tset?'up':above===0?'dn':'']);
+    /* momentum */
+    rows.push(['Momentum',
+      r>70?'Overbought':r>55?'Firm':r>45?'Neutral':r>30?'Soft':'Oversold',
+      r>70?'RSI above 70. In a strong trend this can persist for weeks, so treat it as fuel rather than a sell signal on its own.'
+      :r>55?'Buyers have the upper hand without the move being stretched.'
+      :r>45?'Neither side is in control. Range rules apply rather than trend rules.'
+      :r>30?'Sellers have the upper hand. Bounces are more likely to fail than to hold.'
+      :'RSI below 30. Stretched to the downside, which marks capitulation as often as it marks a bottom.',
+      r>55?'up':r<45?'dn':'', fmt(r,0)]);
+    /* volatility */
+    rows.push(['Volatility',
+      pctile>75?'Elevated':pctile>40?'Normal':'Compressed',
+      pctile>75?'Daily ranges are wider than usual for this name, so stops need more room and size needs to come down.'
+      :pctile>40?'Ranges are about average. Normal position sizing applies.'
+      :'Ranges are unusually tight. Compression like this tends to resolve into an expansion, though it does not say which way.',
+      pctile>75?'dn':pctile<25?'':'', pctile.toFixed(0)+'%']);
+    /* location */
+    rows.push(['Location',
+      loc>85?'At highs':loc>60?'Upper range':loc>40?'Mid range':loc>15?'Lower range':'At lows',
+      loc>85?'Trading near the top of its yearly range. There is no overhead supply, which is why breakouts run.'
+      :loc>60?'In the upper half of the year. Buyers have been in control over the longer view.'
+      :loc>40?'Sitting in the middle of the year, where the least information lives.'
+      :loc>15?'In the lower half of the year. Every rally has to work through trapped supply above.'
+      :'Near the bottom of its yearly range. Cheap relative to the year, and that is exactly what a downtrend looks like from inside it.',
+      loc>60?'up':loc<40?'dn':'', loc.toFixed(0)+'%']);
+
+    host.innerHTML=`<div class="rg-top"><b>${esc(sym)}</b>
+        <span>${bars.length} sessions of daily history</span></div>
+      <div class="rg-grid">${rows.map(x=>`
+        <div class="rg-row">
+          <span class="k">${esc(x[0])}</span>
+          <span class="v ${x[3]||''}">${esc(x[1])}${x[4]?`<em>${esc(x[4])}</em>`:''}</span>
+          <p>${esc(x[2])}</p>
+        </div>`).join('')}</div>
+      <p class="rg-note">Read from this symbol's own daily bars. A regime describes the conditions you are trading into, not what happens next.</p>`;
+    setBar('#dkRegime',esc(sym));
+  }catch(e){
+    host.innerHTML=stateBox('NO REGIME',e.message);
+    setBar('#dkRegime','offline');
   }
 }
 
@@ -1003,39 +1165,54 @@ function wireTape(){
   });
 }
 
+
+/* scroll progress on the nav edge, and the section eyebrows arriving */
+function ambience(){
+  if(SLOW) { $$('.tsec').forEach(e=>e.classList.add('in')); return; }
+  let raf;
+  const nav=$('#nav');
+  addEventListener('scroll',()=>{
+    if(raf)return;
+    raf=requestAnimationFrame(()=>{
+      const h=document.documentElement;
+      const p=h.scrollTop/Math.max(1,h.scrollHeight-h.clientHeight)*100;
+      if(nav) nav.style.setProperty('--sp',p.toFixed(1)+'%');
+      raf=null;
+    });
+  },{passive:true});
+  const io=new IntersectionObserver(es=>{
+    es.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
+  },{rootMargin:'0px 0px -8% 0px'});
+  $$('.tsec').forEach(el=>io.observe(el));
+}
+
 /* ============================================================
    BOOT
    ============================================================ */
 function init(){
-  installXref(); wireSymbol(); wireTape(); watchOptions(); enhanceStrats(); reveals();
+  installXref(); wireSymbol(); wireTape(); watchOptions(); enhanceStrats(); reveals(); ambience();
   if(!SLOW) watchNumbers();
 
-  $$('#dkStage [data-stage]').forEach(el=>{
-    el.classList.add(el.dataset.stage===STAGE?'is-big':'is-pill');
-    const bar=$('.dk-bar',el);
-    if(bar)bar.addEventListener('click',e=>{
-      if(e.target.closest('input,.dk-sym,#dkTf'))return;
-      swapTo(el.dataset.stage);
-    });
-  });
   $$('#dkTf button').forEach(b=>b.addEventListener('click',e=>{
     e.stopPropagation();
     if(b.dataset.tf){$$('#dkTf [data-tf]').forEach(x=>x.classList.toggle('on',x===b));loadChart(C.sym,b.dataset.tf);}
     else if(b.dataset.type){$$('#dkTf [data-type]').forEach(x=>x.classList.toggle('on',x===b));C.type=b.dataset.type;paintChart();}
     else if(b.dataset.tog){C[b.dataset.tog]=!C[b.dataset.tog];b.classList.toggle('on',C[b.dataset.tog]);paintChart();}
   }));
-  $$('#rotScope button').forEach(b=>b.addEventListener('click',()=>{
+  $$('#rotScope button').forEach(b=>b.addEventListener('click',e=>{
+    e.stopPropagation();
     $$('#rotScope button').forEach(x=>x.classList.toggle('on',x===b));
-    ROT.scope=b.dataset.scope; ROT.drill=null; rotBuild(); rotDraw();
+    rotStop(); ROT.scope=b.dataset.scope; ROT.drill=null; rotBuild(); rotDraw();
   }));
-  $$('#rotTf button').forEach(b=>b.addEventListener('click',()=>{
+  $$('#rotTf button').forEach(b=>b.addEventListener('click',e=>{
+    e.stopPropagation();
     $$('#rotTf button').forEach(x=>x.classList.toggle('on',x===b));
-    ROT.tf=ROT_TF[b.dataset.rtf]||5; rotBuild(); rotDraw();
+    rotStop(); ROT.tf=ROT_TF[b.dataset.rtf]||5; rotBuild(); rotDraw();
   }));
   const back=$('#rotBack'); if(back)back.addEventListener('click',rotBackOut);
 
   loadChart('NVDA','6M');
-  loadWire(); loadRead(); loadEcon();
+  loadRead(); loadEcon();
 
   /* The Rotation pulls a year of closes for forty symbols, so it waits until
      it is actually about to be seen rather than competing with the panels
@@ -1051,7 +1228,6 @@ function init(){
     }
   }
 
-  everyVisible(loadWire,60000);
   everyVisible(loadRead,900000);
   everyVisible(loadEcon,900000);
   everyVisible(()=>loadChart(),120000);
