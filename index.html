@@ -1428,8 +1428,456 @@ body.paged .section{padding-top:40px}
   .bg-fx{display:none}
   *{animation-duration:.001s!important;transition-duration:.001s!important}
 }
+
+/* ============================================================
+   DESK ENHANCEMENTS  (folded in, was desk.css)
+   ============================================================ */
+/* ============================================================
+   THE TRADING DESK · DESK ENHANCEMENTS
+   Loads after the inline stylesheet. It does not re-theme the
+   site. The palette, the fonts and the rounded panel language
+   are all the originals; this adds hierarchy, motion, and the
+   styling for the new live panels.
+
+   Three problems it solves, in order of how much they cost you:
+     1  section headlines that read as body text
+     2  no motion, so nothing feels alive
+     3  the new panels needed a home in the existing language
+   ============================================================ */
+
+:root{
+  --ease:cubic-bezier(.16,.84,.3,1);
+  --ease-out:cubic-bezier(.22,1,.36,1);
+}
+
+/* ============================================================
+   1. HEADLINE HIERARCHY
+   The original .sec-head sat at the same visual weight as the
+   paragraph under it. Three changes fix it without touching the
+   type family: the eyebrow becomes a chip you cannot miss, the
+   headline gains a rule that draws itself, and the paragraph
+   steps down in size so the gap between them is obvious.
+   ============================================================ */
+.sec-head{max-width:860px}
+.sec-head .eyebrow,.hub-h .eyebrow{
+  display:inline-flex;align-items:center;gap:10px;
+  padding:6px 13px 6px 11px;border:1px solid var(--line);border-radius:100px;
+  background:var(--panel);font-size:.62rem;letter-spacing:.22em;
+}
+.sec-head .eyebrow::before,.hub-h .eyebrow::before{
+  width:6px;height:6px;border-radius:50%;background:var(--cyan);
+  box-shadow:0 0 10px var(--cyan-glow);animation:dkPulse 2.8s ease-in-out infinite;
+}
+.sec-head h2,.hub-h h2{
+  position:relative;padding-bottom:20px;letter-spacing:-.028em;line-height:1.02;
+}
+.sec-head h2::after,.hub-h h2::after{
+  content:'';position:absolute;left:0;bottom:0;height:2px;width:100%;
+  background:linear-gradient(90deg,var(--cyan) 0,rgba(34,211,238,.28) 18%,var(--line) 42%,transparent 100%);
+  transform:scaleX(0);transform-origin:left;
+  transition:transform 1.15s var(--ease) .1s;
+}
+.reveal.in .sec-head h2::after,.sec-head.in h2::after,
+.reveal.in.sec-head h2::after,.hub-h.in h2::after,.reveal.in .hub-h h2::after{transform:scaleX(1)}
+.sec-head p,.hub-h p{font-size:.98rem;line-height:1.66;max-width:66ch}
+
+/* Sub-headings inside a section were the worst offenders: an h3
+   in a panel looked exactly like the bold text beside it. Now it
+   carries a rule marker, so the eye finds the start of a block. */
+.section h3:not(.nomark),.mbody h3:not(.nomark){
+  position:relative;letter-spacing:-.015em;
+}
+.tsec,.subhead{
+  display:flex;align-items:center;gap:11px;margin:34px 0 16px;
+  font-family:var(--mono);font-size:.68rem;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--cyan);
+}
+.tsec::before,.subhead::before{content:'';width:18px;height:2px;background:var(--cyan);flex:none}
+.tsec::after,.subhead::after{content:'';flex:1;height:1px;background:var(--line)}
+
+/* text reduction: long reference paragraphs get a tighter measure
+   and a touch more leading, which is the cheapest readability win
+   available on a page this dense */
+.enc-row .v,.pd-row .v,.mnote{max-width:68ch;line-height:1.68}
+
+/* ============================================================
+   2. MOTION
+   Nothing here moves for its own sake. Reveals stagger down the
+   page, panels lift on hover, live numbers flash their direction,
+   and every one of them is off under reduced motion.
+   ============================================================ */
+@keyframes dkPulse{0%,100%{opacity:1}50%{opacity:.45}}
+@keyframes dkRise{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+@keyframes dkFadeIn{from{opacity:0}to{opacity:1}}
+@keyframes dkUp{0%{color:var(--green);text-shadow:0 0 14px rgba(52,211,153,.6)}100%{}}
+@keyframes dkDn{0%{color:var(--red);text-shadow:0 0 14px rgba(248,113,113,.6)}100%{}}
+@keyframes dkShine{from{background-position:-180% 0}to{background-position:180% 0}}
+@keyframes dkSpin{to{transform:rotate(360deg)}}
+
+/* the original reveal, with a stagger for children */
+.reveal{transition:opacity .68s var(--ease-out),transform .68s var(--ease-out)}
+.reveal.in > .stagger > *{animation:dkRise .6s var(--ease-out) both}
+.reveal.in > .stagger > *:nth-child(1){animation-delay:.02s}
+.reveal.in > .stagger > *:nth-child(2){animation-delay:.07s}
+.reveal.in > .stagger > *:nth-child(3){animation-delay:.12s}
+.reveal.in > .stagger > *:nth-child(4){animation-delay:.17s}
+.reveal.in > .stagger > *:nth-child(5){animation-delay:.22s}
+.reveal.in > .stagger > *:nth-child(6){animation-delay:.27s}
+
+/* cards lift, and the accent edge lights */
+.portal,.tool,.hub-c,.enc-c,.pcard,.scard,.flag{
+  transition:transform .3s var(--ease),border-color .3s var(--ease),box-shadow .3s var(--ease);
+}
+.portal:hover,.tool:hover,.hub-c:hover,.enc-c:hover,.pcard:hover{
+  transform:translateY(-3px);
+  box-shadow:0 10px 34px -18px rgba(0,0,0,.85);
+}
+.flag:hover{transform:translateY(-3px)}
+
+/* buttons get a sweep on hover rather than only a colour change */
+.btn{position:relative;overflow:hidden}
+.btn::after{
+  content:'';position:absolute;inset:0;pointer-events:none;opacity:0;
+  background:linear-gradient(100deg,transparent 20%,rgba(255,255,255,.14) 50%,transparent 80%);
+  background-size:180% 100%;
+}
+.btn:hover::after{opacity:1;animation:dkShine .8s var(--ease) 1}
+
+/* a live number that changed flashes its direction, once */
+.dk-up{animation:dkUp 1.1s var(--ease) 1}
+.dk-dn{animation:dkDn 1.1s var(--ease) 1}
+
+/* nav links get an underline that grows from the cursor side */
+.nav-links a{position:relative}
+.nav-links a::after{
+  content:'';position:absolute;left:0;right:0;bottom:-4px;height:1.5px;background:var(--cyan);
+  transform:scaleX(0);transform-origin:right;transition:transform .3s var(--ease);
+}
+.nav-links a:hover::after{transform:scaleX(1);transform-origin:left}
+
+/* modal entrance */
+.modal .mwin{transition:transform .32s var(--ease-out),opacity .32s var(--ease-out)}
+.modal:not(.open) .mwin{transform:translateY(14px) scale(.985);opacity:0}
+.modal.open .mwin{transform:none;opacity:1}
+
+/* the tape pauses under the cursor, and cells are clickable now */
+.tape-track i{transition:color .2s}
+.tape-track i[data-sym]{cursor:pointer}
+.tape-track i[data-sym]:hover b{color:var(--cyan)}
+
+/* ============================================================
+   3. THE LIVE BOARDS
+   New panels, written in the original panel language: rounded
+   corners, panel-2 fill, hairline border.
+   ============================================================ */
+.dk-panel{
+  border:1px solid var(--line);border-radius:16px;overflow:hidden;
+  background:linear-gradient(160deg,var(--panel-2),var(--panel));
+  display:flex;flex-direction:column;min-height:0;
+}
+.dk-bar{
+  display:flex;align-items:center;gap:11px;flex:none;padding:13px 18px;
+  border-bottom:1px solid var(--line);background:rgba(255,255,255,.015);
+}
+.dk-bar .t{font-family:var(--mono);font-size:.7rem;letter-spacing:.19em;text-transform:uppercase;
+  color:var(--text)}
+.dk-bar .dot{width:7px;height:7px;border-radius:50%;background:var(--cyan);flex:none;
+  box-shadow:0 0 10px var(--cyan-glow);animation:dkPulse 2.8s ease-in-out infinite}
+.dk-bar .s{margin-left:auto;font-family:var(--mono);font-size:.66rem;color:var(--faint);
+  display:flex;align-items:center;gap:10px}
+.dk-bar .s button{font-family:var(--mono);font-size:.62rem;letter-spacing:.1em;color:var(--dim);
+  border:1px solid var(--line);border-radius:8px;padding:4px 9px;transition:all .22s}
+.dk-bar .s button:hover{color:var(--cyan);border-color:var(--cyan)}
+.dk-body{flex:1;min-height:0;overflow:auto;padding:18px}
+.dk-body.flush{padding:0}
+.dk-body::-webkit-scrollbar{width:8px;height:8px}
+.dk-body::-webkit-scrollbar-thumb{background:var(--panel-3);border-radius:8px}
+.dk-body::-webkit-scrollbar-track{background:transparent}
+
+/* ---- the two-up live row ---- */
+.dk-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+.dk-row .dk-panel{height:430px}
+@media (max-width:900px){.dk-row{grid-template-columns:1fr}}
+
+/* ---- CHART ---- */
+.dk-cq{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;padding:14px 18px;
+  border-bottom:1px solid var(--line);flex:none}
+.dk-cq .nm{font-weight:600;font-size:.96rem}
+.dk-cq .nm em{font-style:normal;color:var(--faint);font-weight:400;font-size:.72rem;margin-left:8px;
+  font-family:var(--mono)}
+.dk-cq .last{font-family:var(--mono);font-size:1.28rem;font-weight:600;letter-spacing:-.03em}
+.dk-cq .chg{font-family:var(--mono);font-size:.8rem}
+.dk-cq .oh{margin-left:auto;display:flex;gap:14px;font-family:var(--mono);font-size:.62rem;
+  color:var(--faint)}
+.dk-cq .oh b{color:var(--text);font-weight:500}
+.dk-tf{display:flex;align-items:center;gap:0;flex:none;border-bottom:1px solid var(--line);
+  overflow-x:auto;scrollbar-width:none}
+.dk-tf::-webkit-scrollbar{display:none}
+.dk-tf button{padding:8px 12px;font-family:var(--mono);font-size:.66rem;color:var(--dim);
+  white-space:nowrap;transition:all .2s;border-right:1px solid var(--line-2)}
+.dk-tf button:hover{color:var(--text);background:rgba(255,255,255,.03)}
+.dk-tf button.on{color:var(--cyan);background:rgba(34,211,238,.09);
+  box-shadow:inset 0 -2px 0 var(--cyan)}
+.dk-tf .sp{flex:1;border:none}
+.dk-cv{flex:1;min-height:0;position:relative}
+.dk-msg{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;
+  justify-content:center;gap:10px;text-align:center;padding:26px;z-index:3;background:var(--panel)}
+.dk-msg.on{display:flex}
+.dk-msg .t{font-family:var(--mono);font-size:.7rem;letter-spacing:.18em;color:var(--gold)}
+.dk-msg .d{font-size:.82rem;color:var(--dim);max-width:400px;line-height:1.6}
+/* symbol box */
+.dk-sym{position:relative;display:flex;align-items:center;gap:9px;flex:none;
+  border:1px solid var(--line);border-radius:9px;padding:5px 10px;background:var(--panel)}
+.dk-sym span{font-family:var(--mono);font-size:.58rem;letter-spacing:.14em;color:var(--cyan)}
+.dk-sym input{width:112px;font-family:var(--mono);font-size:.76rem;font-weight:600;
+  text-transform:uppercase;background:none;border:none;color:var(--text);outline:none}
+.dk-sym input::placeholder{text-transform:none;font-weight:400;color:var(--faint)}
+.dk-sug{position:absolute;top:calc(100% + 6px);right:0;width:320px;z-index:60;
+  background:var(--panel-2);border:1px solid var(--line);border-radius:12px;overflow:hidden;
+  max-height:300px;overflow-y:auto;display:none;box-shadow:0 18px 44px -20px #000}
+.dk-sug.on{display:block;animation:dkRise .22s var(--ease-out) both}
+.dk-sug button{display:flex;width:100%;align-items:baseline;gap:10px;padding:9px 13px;
+  text-align:left;border-bottom:1px solid var(--line-2)}
+.dk-sug button:hover,.dk-sug button.hot{background:rgba(34,211,238,.1)}
+.dk-sug .sy{font-family:var(--mono);font-size:.74rem;font-weight:600;min-width:66px;flex:none}
+.dk-sug .nm{font-size:.72rem;color:var(--dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* ---- ECONOMIC CALENDAR ---- */
+.dk-day{position:sticky;top:0;z-index:2;padding:8px 18px;background:var(--panel-3);
+  border-top:1px solid var(--line);border-bottom:1px solid var(--line);
+  font-family:var(--mono);font-size:.64rem;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--dim)}
+.dk-day.today{color:var(--cyan)}
+.dk-ev{display:grid;grid-template-columns:56px 1fr;gap:11px;padding:11px 18px;
+  border-bottom:1px solid var(--line-2);transition:background .2s}
+.dk-ev:hover{background:rgba(255,255,255,.02)}
+.dk-ev .tm{font-family:var(--mono);font-size:.64rem;color:var(--faint);padding-top:2px}
+.dk-ev .nm{font-size:.84rem;line-height:1.45;display:flex;gap:9px;align-items:baseline}
+.dk-ev .nm::before{content:'';width:6px;height:6px;border-radius:50%;flex:none;
+  background:var(--faint);transform:translateY(-1px)}
+.dk-ev.i2 .nm::before{background:var(--gold)}
+.dk-ev.i3 .nm::before{background:var(--red);box-shadow:0 0 9px rgba(248,113,113,.6)}
+.dk-ev.i3 .nm{font-weight:600}
+.dk-ev .fig{grid-column:2;display:flex;gap:16px;margin-top:7px;font-family:var(--mono);
+  font-size:.62rem;flex-wrap:wrap}
+.dk-ev .fig span{color:var(--faint)}
+.dk-ev .fig b{color:var(--text);font-weight:500}
+.dk-ev .fig .act b{color:var(--cyan)}
+
+/* ---- THE COMPASS (relative strength) ---- */
+.dk-cmp{padding:0}
+.dk-crow{display:grid;grid-template-columns:64px 1fr 74px 58px;align-items:center;gap:12px;
+  padding:9px 18px;border-bottom:1px solid var(--line-2);cursor:pointer;
+  transition:background .2s;position:relative}
+.dk-crow:hover{background:rgba(255,255,255,.03)}
+.dk-crow .sy{font-family:var(--mono);font-size:.76rem;font-weight:600}
+.dk-crow .sy small{display:block;font-size:.56rem;color:var(--faint);font-weight:400;
+  letter-spacing:.06em}
+/* the bar is centred on zero: right of centre is leading SPY,
+   left of centre is lagging it */
+.dk-bar2{position:relative;height:9px;background:var(--panel-3);border-radius:5px;overflow:hidden}
+.dk-bar2::before{content:'';position:absolute;left:50%;top:0;bottom:0;width:1px;
+  background:rgba(255,255,255,.25)}
+.dk-bar2 i{position:absolute;top:0;bottom:0;border-radius:3px;
+  transition:width .8s var(--ease),left .8s var(--ease)}
+.dk-crow .rs{font-family:var(--mono);font-size:.74rem;text-align:right;font-weight:600}
+.dk-crow .rk{font-family:var(--mono);font-size:.62rem;color:var(--faint);text-align:right}
+.dk-chead{display:grid;grid-template-columns:64px 1fr 74px 58px;gap:12px;padding:9px 18px;
+  border-bottom:1px solid var(--line);font-family:var(--mono);font-size:.58rem;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--faint);position:sticky;top:0;
+  background:var(--panel-2);z-index:2}
+.dk-chead span:nth-child(3),.dk-chead span:nth-child(4){text-align:right}
+.dk-cnote{padding:13px 18px;font-size:.74rem;color:var(--faint);line-height:1.6;
+  border-top:1px solid var(--line)}
+
+/* ============================================================
+   4. CROSS REFERENCE
+   A term inside an entry becomes a link to that entry, and the
+   modal keeps a trail so you can walk back out the way you came.
+   ============================================================ */
+.xr{
+  display:inline;color:var(--cyan);cursor:pointer;font:inherit;
+  border-bottom:1px dashed rgba(34,211,238,.45);padding:0;
+  transition:color .2s,border-color .2s,background .2s;
+}
+.xr:hover{color:var(--gold);border-bottom-color:var(--gold);background:rgba(245,185,66,.1)}
+.xr::after{content:'\2197';font-size:.66em;margin-left:2px;opacity:.65;vertical-align:super}
+
+/* the trail: where you came from, and the way back */
+.xr-trail{
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:16px;padding:9px 13px;
+  background:var(--panel-3);border:1px solid var(--line);border-radius:10px;
+  animation:dkFadeIn .3s var(--ease) both;
+}
+.xr-back{
+  display:inline-flex;align-items:center;gap:7px;font-family:var(--mono);font-size:.68rem;
+  letter-spacing:.06em;color:var(--cyan);border:1px solid var(--cyan);border-radius:8px;
+  padding:5px 11px;transition:all .22s;flex:none;
+}
+.xr-back:hover{background:var(--cyan);color:var(--void)}
+.xr-crumbs{font-family:var(--mono);font-size:.64rem;color:var(--faint);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.xr-crumbs b{color:var(--dim);font-weight:400}
+
+/* see also rail */
+.xr-also{margin-top:22px;padding-top:18px;border-top:1px solid var(--line)}
+.xr-also .h{display:flex;align-items:center;gap:10px;margin-bottom:13px;
+  font-family:var(--mono);font-size:.64rem;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--dim)}
+.xr-also .h::before{content:'';width:16px;height:2px;background:var(--gold);flex:none}
+.xr-also .g{display:flex;flex-wrap:wrap;gap:8px}
+.xr-also button{
+  display:inline-flex;align-items:center;gap:8px;padding:7px 12px;border-radius:9px;
+  border:1px solid var(--line);background:var(--panel);font-size:.78rem;color:var(--text);
+  transition:all .24s var(--ease);
+}
+.xr-also button:hover{border-color:var(--cyan);color:var(--cyan);transform:translateY(-2px)}
+.xr-also button i{font-style:normal;font-family:var(--mono);font-size:.56rem;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--faint)}
+.xr-also button:hover i{color:var(--cyan)}
+
+/* ============================================================
+   5. STATES
+   ============================================================ */
+.dk-state{padding:26px 18px;text-align:center}
+.dk-state .t{font-family:var(--mono);font-size:.68rem;letter-spacing:.16em;color:var(--gold);
+  margin-bottom:9px}
+.dk-state .d{font-size:.8rem;color:var(--dim);line-height:1.6;max-width:44ch;margin:0 auto}
+.dk-skel{height:11px;margin:11px 18px;border-radius:6px;
+  background:linear-gradient(90deg,var(--panel-2),var(--panel-3),var(--panel-2));
+  background-size:200% 100%;animation:dkSk 1.5s linear infinite}
+@keyframes dkSk{to{background-position:-200% 0}}
+.dk-spin{width:15px;height:15px;border:2px solid var(--line);border-top-color:var(--cyan);
+  border-radius:50%;animation:dkSpin .8s linear infinite;display:inline-block}
+
+/* ============================================================
+   6. QUALITY FLOOR
+   ============================================================ */
+@media (max-width:640px){
+  .dk-crow,.dk-chead{grid-template-columns:56px 1fr 62px;gap:9px}
+  .dk-crow .rk,.dk-chead span:nth-child(4){display:none}
+  .dk-sym input{width:84px}
+  .dk-sug{width:min(300px,78vw)}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+  .reveal{opacity:1!important;transform:none!important}
+  .sec-head h2::after,.hub-h h2::after{transform:scaleX(1)!important}
+  .modal:not(.open) .mwin{opacity:1;transform:none}
+}
+
+/* ============================================================
+   THE WIRE
+   ============================================================ */
+.dk-wire .wi{display:block;padding:12px 18px;border-bottom:1px solid var(--line-2);transition:background .2s}
+.dk-wire .wi:hover{background:rgba(255,255,255,.025)}
+.dk-wire .wi-h{font-size:.86rem;line-height:1.45;margin-bottom:6px;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.dk-wire .wi:hover .wi-h{color:var(--cyan)}
+.dk-wire .wi-m{display:flex;gap:10px;align-items:center;font-family:var(--mono);font-size:.6rem;
+  color:var(--faint);flex-wrap:wrap}
+.dk-wire .wi-m .src{color:var(--dim)}
+.dk-wire .wi-m em{font-style:normal;padding:2px 7px;border-radius:100px;border:1px solid var(--line);
+  color:var(--cyan);cursor:pointer;transition:all .2s}
+.dk-wire .wi-m em:hover{background:var(--cyan);color:var(--void);border-color:var(--cyan)}
+
+/* ============================================================
+   THE READ
+   ============================================================ */
+.rd-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line)}
+@media(max-width:980px){.rd-grid{grid-template-columns:1fr}}
+.rd-card{background:var(--panel-2);padding:18px}
+.rd-h{display:flex;align-items:baseline;gap:12px;margin-bottom:14px}
+.rd-t{font-family:var(--mono);font-size:.66rem;letter-spacing:.18em;text-transform:uppercase;color:var(--dim)}
+.rd-v{margin-left:auto;font-family:var(--mono);font-size:1.5rem;font-weight:600;letter-spacing:-.03em}
+.rd-v em{font-style:normal;font-size:.8rem;color:var(--faint)}
+.rd-tag{margin-left:auto;font-family:var(--mono);font-size:.56rem;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--faint);border:1px solid var(--line);border-radius:100px;padding:3px 9px}
+.rd-scale{position:relative;height:5px;border-radius:4px;margin:0 0 22px;
+  background:linear-gradient(90deg,var(--green),var(--gold) 45%,var(--red))}
+.rd-scale i{position:absolute;top:-4px;width:3px;height:13px;background:var(--text);border-radius:2px;
+  box-shadow:0 0 8px rgba(255,255,255,.5);transition:left .8s var(--ease)}
+.rd-scale span{position:absolute;top:11px;font-family:var(--mono);font-size:.54rem;color:var(--faint)}
+.rd-scale span:nth-of-type(1){left:20%}.rd-scale span:nth-of-type(2){left:44%}
+.rd-scale span:nth-of-type(3){left:66%}.rd-scale span:nth-of-type(4){right:0}
+.rd-bar{height:7px;border-radius:5px;background:var(--panel-3);overflow:hidden;margin-bottom:16px}
+.rd-bar i{display:block;height:100%;background:var(--cyan);transition:width .9s var(--ease)}
+.rd-row{margin-bottom:14px}
+.rd-row b{display:block;font-size:.88rem;margin-bottom:5px}
+.rd-row p{font-size:.78rem;line-height:1.6;color:var(--dim)}
+.rd-sub{display:block;margin-top:7px;font-family:var(--mono);font-size:.6rem;color:var(--faint)}
+.rd-sym{padding:13px 0;border-top:1px solid var(--line-2)}
+.rd-sym:first-of-type{border-top:none;padding-top:0}
+.rd-sh{display:flex;align-items:center;gap:9px;margin-bottom:7px;flex-wrap:wrap}
+.rd-sh b{font-family:var(--mono);font-size:.86rem;font-weight:600}
+.rd-pill{font-family:var(--mono);font-size:.55rem;letter-spacing:.12em;padding:3px 8px;
+  border-radius:100px;border:1px solid currentColor}
+.rd-pill.short{color:var(--red)} .rd-pill.long{color:var(--green)}
+.rd-days{font-family:var(--mono);font-size:.58rem;color:var(--faint)}
+.rd-sym p{font-size:.78rem;line-height:1.6;color:var(--dim)}
+.rd-mini{display:flex;flex-direction:column;gap:7px;margin-top:10px}
+.rd-mini span{font-size:.72rem;line-height:1.5;color:var(--faint);padding-left:11px;
+  border-left:2px solid var(--line)}
+.rd-mini b{display:block;color:var(--text);font-size:.74rem;margin-bottom:2px}
+.rd-note{margin-top:14px;padding-top:12px;border-top:1px solid var(--line-2);
+  font-size:.68rem;color:var(--faint);line-height:1.5}
+
+/* ============================================================
+   THE ROTATION
+   ============================================================ */
+.rot-ctl{display:flex;align-items:center;gap:8px;margin-left:auto;flex-wrap:wrap}
+.mtog{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.mtog button{padding:5px 10px;font-family:var(--mono);font-size:.6rem;color:var(--dim);
+  border-right:1px solid var(--line);transition:all .2s}
+.mtog button:last-child{border-right:none}
+.mtog button:hover{color:var(--text);background:rgba(255,255,255,.04)}
+.mtog button.on{background:rgba(34,211,238,.13);color:var(--cyan)}
+.rot-back{font-family:var(--mono);font-size:.6rem;color:var(--gold);border:1px solid var(--gold);
+  border-radius:8px;padding:5px 10px;transition:all .2s}
+.rot-back:hover{background:var(--gold);color:var(--void)}
+.rot-wrap{display:grid;grid-template-columns:1fr 262px;gap:16px;padding:18px}
+@media(max-width:1080px){.rot-wrap{grid-template-columns:1fr}}
+.rot-svg{width:100%;height:auto;display:block;overflow:visible}
+.rot-q{font-family:var(--mono);font-size:9.5px;letter-spacing:.17em;opacity:.9}
+.rot-ax{font-family:var(--mono);font-size:8.5px;letter-spacing:.14em;fill:var(--faint)}
+.rot-b{cursor:pointer;outline:none}
+.rot-b text{font-family:var(--mono);font-size:10px;font-weight:600;fill:#e6edf3;
+  pointer-events:none;transition:fill .2s}
+.rot-b .core{transition:r .25s var(--ease)}
+.rot-b .halo{transition:opacity .25s}
+.rot-b .tail{opacity:.75;transition:opacity .25s,stroke-width .25s}
+.rot-b:hover .core,.rot-b:focus-visible .core{r:9}
+.rot-b:hover .tail,.rot-b:focus-visible .tail{opacity:1;stroke-width:2.4}
+.rot-b:hover text,.rot-b:focus-visible text{fill:var(--c)}
+.rot-b:hover .halo,.rot-b:focus-visible .halo{opacity:.34;animation:rotPing 1.5s ease-out infinite}
+@keyframes rotPing{0%{opacity:.38}70%{opacity:.06}100%{opacity:.38}}
+.reveal.in .rot-b{animation:rotIn .55s var(--ease-out) both;animation-delay:var(--d)}
+@keyframes rotIn{from{opacity:0;transform:scale(.55)}to{opacity:1;transform:scale(1)}}
+.rot-side{display:flex;flex-direction:column;gap:12px;min-width:0}
+.rot-read{border:1px solid var(--line);border-radius:12px;padding:14px;background:var(--panel-2)}
+.rot-read .k{display:block;font-family:var(--mono);font-size:.58rem;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--cyan);margin-bottom:6px}
+.rot-read .v{display:block;font-weight:600;font-size:.94rem;margin-bottom:8px}
+.rot-read .v em{font-style:normal;font-weight:400;color:var(--faint);font-size:.74rem}
+.rot-read p{font-size:.76rem;line-height:1.6;color:var(--dim);margin:0}
+.rot-read small{display:block;margin-top:10px;padding-top:9px;border-top:1px solid var(--line-2);
+  font-size:.68rem;color:var(--faint);line-height:1.5}
+.rot-nums{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:11px}
+.rot-nums span{font-family:var(--mono);font-size:.62rem;color:var(--faint);
+  display:flex;justify-content:space-between;gap:6px}
+.rot-nums b{font-weight:600;color:var(--text)}
+.rot-list{display:flex;flex-direction:column;gap:1px;border:1px solid var(--line);
+  border-radius:12px;overflow:hidden;max-height:230px;overflow-y:auto}
+.rot-li{display:grid;grid-template-columns:9px 1fr auto;align-items:center;gap:9px;
+  padding:7px 11px;background:var(--panel-2);text-align:left;transition:background .2s}
+.rot-li:hover{background:rgba(34,211,238,.09)}
+.rot-li .d{width:8px;height:8px;border-radius:50%;background:var(--c)}
+.rot-li .s{font-family:var(--mono);font-size:.7rem;font-weight:600}
+.rot-li .p{font-family:var(--mono);font-size:.58rem;color:var(--faint)}
+@media(max-width:640px){.rot-wrap{padding:12px}.rot-ctl{width:100%;margin-left:0;margin-top:8px}}
+
 </style>
-<link rel="stylesheet" href="desk.css">
+
 <script src="https://unpkg.com/lightweight-charts@5/dist/lightweight-charts.standalone.production.js" defer></script>
 </head>
 <body>
@@ -1508,16 +1956,30 @@ body.paged .section{padding-top:40px}
     <div class="sec-head reveal">
       <div class="eyebrow">01 // THE TERMINAL</div>
       <h2 class="disp">The market, <span class="c">live</span> and in one glance.</h2>
-      <p>Real quotes and real structure, never a simulation dressed up as a feed. The Compass maps which corners of the market are being bought harder than the index they belong to. Below it, the chart, a company snapshot and the week ahead in macro releases share one panel: click any collapsed header to bring it forward.</p>
+      <p>Real quotes and real structure, never a simulation dressed up as a feed. Headlines first, then the conditions the market is operating under, then any ticker you want in depth, then where money is actually rotating. Every reading carries what it means, not just what it is.</p>
     </div>
     <!-- The Compass, then the Stage. Chart, calendar and snapshot
          share one area: click any collapsed header to promote it. -->
-    <section class="dk-panel reveal" style="height:390px;margin-bottom:16px">
-      <div class="dk-bar"><span class="dot"></span><span class="t">The Compass</span>
+    <!-- THE WIRE. Headlines first, because that is what actually
+         changes what you should be looking at today. -->
+    <section class="dk-panel reveal" style="height:330px;margin-bottom:20px">
+      <div class="dk-bar"><span class="dot"></span><span class="t">The Wire</span>
         <span class="s">loading</span></div>
-      <div class="dk-body flush" id="dkCompass"><div class="dk-skel"></div><div class="dk-skel"></div><div class="dk-skel"></div></div>
+      <div class="dk-body flush dk-wire" id="dkWire"><div class="dk-skel"></div><div class="dk-skel"></div><div class="dk-skel"></div></div>
     </section>
 
+    <!-- THE READ. Not what the market did, what conditions it is
+         operating under. -->
+    <h3 class="tsec">The Read &middot; conditions</h3>
+    <section class="dk-panel reveal" style="margin-bottom:20px">
+      <div class="dk-bar"><span class="dot"></span><span class="t">The Read</span>
+        <span class="s">loading</span></div>
+      <div class="dk-body flush" id="dkRead"><div class="dk-skel"></div><div class="dk-skel"></div><div class="dk-skel"></div></div>
+    </section>
+
+    <!-- ONE TICKER. Chart, snapshot and calendar share a stage:
+         click any collapsed header to bring it forward. -->
+    <h3 class="tsec">One ticker &middot; chart, fundamentals, the week ahead</h3>
     <div class="dk-stage reveal" id="dkStage">
 
       <section class="dk-panel" data-stage="chart" aria-expanded="true">
@@ -1537,8 +1999,8 @@ body.paged .section{padding-top:40px}
         </div>
         <div class="dk-tf" id="dkTf">
           <button data-tf="1D">1D</button><button data-tf="5D">5D</button>
-          <button data-tf="1M">1M</button><button data-tf="3M" class="on">3M</button>
-          <button data-tf="6M">6M</button><button data-tf="YTD">YTD</button>
+          <button data-tf="1M">1M</button><button data-tf="3M">3M</button>
+          <button data-tf="6M" class="on">6M</button><button data-tf="YTD">YTD</button>
           <button data-tf="1Y">1Y</button><button data-tf="5Y">5Y</button>
           <span class="sp"></span>
           <button data-type="area" class="on">Area</button>
@@ -1564,6 +2026,29 @@ body.paged .section{padding-top:40px}
       </section>
 
     </div>
+
+    <!-- THE ROTATION. Where money is actually moving between
+         corners of the market, with six sessions of trail. -->
+    <h3 class="tsec">The Rotation &middot; where money is moving</h3>
+    <section class="dk-panel reveal" style="margin-bottom:8px">
+      <div class="dk-bar"><span class="dot"></span><span class="t">The Rotation</span>
+        <span class="s">loading</span>
+        <span class="rot-ctl">
+          <span class="mtog" id="rotScope">
+            <button data-scope="all" class="on">All</button>
+            <button data-scope="sector">Sectors</button>
+            <button data-scope="theme">Themes</button>
+          </span>
+          <span class="mtog" id="rotTf">
+            <button data-rtf="fast">Fast</button>
+            <button data-rtf="normal" class="on">Normal</button>
+            <button data-rtf="slow">Slow</button>
+          </span>
+          <button class="rot-back" id="rotBack" style="display:none">&larr; All groups</button>
+        </span>
+      </div>
+      <div class="dk-body flush" id="rotPlot"><div class="dk-skel"></div><div class="dk-skel"></div><div class="dk-skel"></div></div>
+    </section>
     <div class="flagship reveal" style="margin-bottom:16px">
       <button class="flag wide" style="text-align:left;--accent:var(--gold);--accent-fade:rgba(245,185,66,.14)" onclick="openModal('m-earn')" aria-label="Open the full earnings calendar">
         <div class="ftop" style="margin-bottom:6px">
@@ -2423,7 +2908,6 @@ body.paged .section{padding-top:40px}
 <script src="riskdesk.js"></script>
 <script src="ledger.js"></script>
 <script src="options.js"></script>
-<script src="optionplays.js"></script>
 <script>
 'use strict';
 const $=(s,el=document)=>el.querySelector(s);
@@ -5197,6 +5681,6 @@ pollWhenVisible(()=>loadWireStrip(true),300000);
 pollWhenVisible(loadIdx,60000);
 pollWhenVisible(loadHeatmap,60000);
 </script>
-<script src="desk.js"></script>
+<script src="terminal.js"></script>
 </body>
 </html>
