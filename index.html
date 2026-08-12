@@ -5,11 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>The Trading Desk — The All-In-One Trading Terminal</title>
 <meta name="description" content="A free, all-in-one terminal for traders.">
-<meta name="theme-color" content="#05090B">
+<meta name="theme-color" content="#070a0f">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=Michroma&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<script src="https://unpkg.com/lightweight-charts@5/dist/lightweight-charts.standalone.production.js" defer></script>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cline x1='5' y1='2' x2='5' y2='18' stroke='%23f87171' stroke-width='1.6'/%3E%3Crect x='2.5' y='6' width='5' height='6' fill='%23f87171'/%3E%3Cline x1='14' y1='2' x2='14' y2='18' stroke='%2334d399' stroke-width='1.6'/%3E%3Crect x='11.5' y='7' width='5' height='7' fill='%2334d399'/%3E%3C/svg%3E">
 <style>
 :root{
@@ -1430,7 +1429,8 @@ body.paged .section{padding-top:40px}
   *{animation-duration:.001s!important;transition-duration:.001s!important}
 }
 </style>
-<link rel="stylesheet" href="cockpit.css">
+<link rel="stylesheet" href="desk.css">
+<script src="https://unpkg.com/lightweight-charts@5/dist/lightweight-charts.standalone.production.js" defer></script>
 </head>
 <body>
 
@@ -1471,12 +1471,11 @@ body.paged .section{padding-top:40px}
   <div class="wrap hero-grid">
     <div class="hero reveal">
       <div class="badge"><b>◆</b> FREE · EDUCATIONAL ONLY · NO SIGNALS, EVER</div>
-      <h1 class="disp">Learn the market the way a <span class="c">desk</span> actually reads it.</h1>
-      <p class="sub">A full curriculum and a live terminal in the same window. Run the preflight below and it routes you, in order, through everything worth knowing. <b>No login, no signals, nothing fake.</b></p>
+      <h1 class="disp">One <span class="c">terminal</span> for the whole trader’s desk.</h1>
+      <p class="sub">Trading simplified. Data and education all in one place. <b>No login, no signals, nothing fake.</b></p>
       <div class="cta-row">
-        <a class="btn btn-primary" href="#sessions" onclick="showPage('sessions');return false;">Start the path</a>
-        <a class="btn btn-ghost" href="#terminal">Open the live board</a>
-        <a class="btn btn-ghost" href="#ledger" onclick="showPage('ledger');return false;">Research stocks</a>
+        <a class="btn btn-primary" href="#terminal">Open the terminal</a>
+        <a class="btn btn-ghost" href="#ledger" onclick="showPage('ledger');return false;">Research Stocks</a>
         <a class="btn btn-ghost" href="#patterns" onclick="showPage('patterns');return false;">Learn candlesticks</a>
         <a class="btn btn-ghost" href="#encyclopedia" onclick="showPage('encyclopedia');return false;">Open the encyclopedia</a>
       </div>
@@ -1508,10 +1507,57 @@ body.paged .section{padding-top:40px}
   <div class="wrap">
     <div class="sec-head reveal">
       <div class="eyebrow">01 // THE TERMINAL</div>
-      <h2 class="disp">The board, <span class="c">live.</span></h2>
-      <p>Real quotes and real structure, never a simulation dressed up as a feed. Market state, the wire, the macro calendar and a chart, all weighted the same, because no single one of them tells you what is happening. Click any symbol anywhere on the page to pull it into the chart.</p>
+      <h2 class="disp">The market, <span class="c">live</span> and in one glance.</h2>
+      <p>Real quotes and real structure, never a simulation dressed up as a feed. The Compass ranks what is being bought harder than the index it belongs to. The chart takes any listed symbol. Below that: the week ahead in macro releases, this week’s earnings, and three live boards that frame the tape before you read any single chart.</p>
     </div>
-    <div id="ckBoard" class="reveal" style="margin-bottom:16px"></div>
+    <!-- The Compass and the live chart. Both run on the public Yahoo
+         feed through the Worker, so neither needs a key in the page. -->
+    <div class="dk-row reveal">
+      <section class="dk-panel">
+        <div class="dk-bar"><span class="dot"></span><span class="t">The Compass</span>
+          <span class="s">loading</span></div>
+        <div class="dk-body flush dk-cmp" id="dkCompass"><div class="dk-skel"></div><div class="dk-skel"></div><div class="dk-skel"></div><div class="dk-skel"></div></div>
+      </section>
+
+      <section class="dk-panel" id="dkChartPanel">
+        <div class="dk-bar"><span class="dot"></span><span class="t">Chart</span>
+          <span class="s">
+            <span class="dk-sym"><span>SYM</span>
+              <input id="dkSym" placeholder="Search any symbol" autocomplete="off" spellcheck="false" aria-label="Chart symbol">
+              <div class="dk-sug" id="dkSug" role="listbox"></div>
+            </span>
+          </span>
+        </div>
+        <div class="dk-cq">
+          <span class="nm" id="dkQName">Loading</span>
+          <span class="last" id="dkQLast">&mdash;</span>
+          <span class="chg" id="dkQChg"></span>
+          <span class="oh" id="dkOhlc"></span>
+        </div>
+        <div class="dk-tf" id="dkTf">
+          <button data-tf="1D">1D</button><button data-tf="5D">5D</button>
+          <button data-tf="1M">1M</button><button data-tf="3M" class="on">3M</button>
+          <button data-tf="6M">6M</button><button data-tf="YTD">YTD</button>
+          <button data-tf="1Y">1Y</button><button data-tf="5Y">5Y</button>
+          <span class="sp"></span>
+          <button data-type="area" class="on">Area</button>
+          <button data-type="candles">Candles</button>
+          <button data-tog="vol">Vol</button>
+          <button data-tog="ma">MA</button>
+        </div>
+        <div class="dk-cv" id="dkCanvas">
+          <div class="dk-msg on" id="dkMsg"><span class="t">LOADING</span><span class="d"></span></div>
+        </div>
+      </section>
+    </div>
+
+    <div class="dk-row reveal" style="grid-template-columns:1fr">
+      <section class="dk-panel" style="height:400px">
+        <div class="dk-bar"><span class="dot"></span><span class="t">Economic Calendar</span>
+          <span class="s">loading</span></div>
+        <div class="dk-body flush" id="dkEcon"><div class="dk-skel"></div><div class="dk-skel"></div><div class="dk-skel"></div><div class="dk-skel"></div></div>
+      </section>
+    </div>
     <div class="flagship reveal" style="margin-bottom:16px">
       <button class="flag wide" style="text-align:left;--accent:var(--gold);--accent-fade:rgba(245,185,66,.14)" onclick="openModal('m-earn')" aria-label="Open the full earnings calendar">
         <div class="ftop" style="margin-bottom:6px">
@@ -4725,8 +4771,10 @@ function pickTier(t){ const sel=$('#bk-tier'); [...sel.options].forEach(o=>{if(o
 const cmdk=$('#cmdk'), cmdkInput=$('#cmdkInput'), cmdkList=$('#cmdkList');
 const CMDS=[
   ...TOOLS.map(t=>({label:t.name,kind:'tool',run:()=>openModal(t.id)})),
-  {label:'Preflight · the learning path',kind:'learn',run:()=>{location.hash='';setTimeout(()=>{const p=document.querySelector('.ck-pre');if(p)p.scrollIntoView({behavior:'smooth',block:'center'});},80);}},
-  {label:'Live board · chart, wire, macro',kind:'live',run:()=>{location.hash='#terminal';}},
+  {label:'The Compass · relative strength',kind:'live',run:()=>{location.hash='#terminal';}},
+  {label:'Chart · any symbol',kind:'live',run:()=>{location.hash='#terminal';setTimeout(()=>{const i=document.getElementById('dkSym');if(i)i.focus();},400);}},
+  {label:'Economic calendar',kind:'live',run:()=>{location.hash='#terminal';}},
+  {label:'Delphi · prediction scanner (bonus)',kind:'launch',run:()=>location.href='/delphi'},
   {label:'Earnings this week',kind:'live',run:()=>openModal('m-earn')},
   {label:'Market Pulse — indices + volatility',kind:'live',run:()=>openModal('m-market')},
   {label:'Cross-Asset — bonds, dollar, metals, crypto',kind:'live',run:()=>openModal('m-cross')},
@@ -4990,7 +5038,7 @@ function gexBriefHTML(){
     <div class="gexb-wt">Running it efficiently \u00b7 the operating procedure</div>
     <ol class="gexb-wf">${B.workflow.map(w=>`<li><b>${esc(w[0])}</b><span>${esc(w[1])}</span></li>`).join('')}</ol>
     <div class="gexb-cav"><b>What GEX is not</b><ul>${B.caveats.map(c=>`<li>${esc(c)}</li>`).join('')}</ul></div>
-    <a class="gexb-go" href="#encyclopedia" onclick="XR.open('enc','Gamma Exposure');return false;">Open gamma exposure in the encyclopedia \u2192</a>
+    <a class="gexb-go" href="#encyclopedia" onclick="showPage('encyclopedia');return false;">Gamma exposure, explained \u2192</a>
   </div>`;
 }
 function stratCard(x){
@@ -5142,6 +5190,6 @@ pollWhenVisible(()=>loadWireStrip(true),300000);
 pollWhenVisible(loadIdx,60000);
 pollWhenVisible(loadHeatmap,60000);
 </script>
-<script src="cockpit.js"></script>
+<script src="desk.js"></script>
 </body>
 </html>
