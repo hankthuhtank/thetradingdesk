@@ -321,20 +321,21 @@ function rotDraw(){
   /* A rotation map is read by POSITION, so a marker only has to be findable,
      not big: past a certain size it hides the very neighbours you are
      comparing it against. */
+  /* Markers are kept small so position (not size) carries the information.
+     Intermediate tail dots were removed: they were only written on full redraw
+     and never updated in rotStep, which left orphan circles behind during replay. */
   const dense=Math.min(1,14/Math.max(8,keys.length));
-  const R=3.6+dense*1.2, HALO=R*1.8, FS=(8+dense*1.6).toFixed(1);
+  const R=2.4+dense*0.9, HALO=R*1.7, FS=(6.5+dense*1.2).toFixed(1);
 
   const bodies=pts.map((p,i)=>{
     const col=PHASE_COL[p.phase];
     const dim=ROT.focus&&ROT.focus!==p.k;
     const showTail=ROT.trail==='all'||!ROT.focus||ROT.focus===p.k;
     const path=p.tail.map((t,j)=>`${j?'L':'M'}${sx(t.x)} ${sy(t.y)}`).join(' ');
-    const dots=p.tail.slice(0,-1).map(t=>
-      `<circle cx="${sx(t.x)}" cy="${sy(t.y)}" r="${(R*.32).toFixed(2)}" fill="rgba(${col},.5)"/>`).join('');
     return `<g class="rot-b${dim?' dim':''}" data-k="${esc(p.k)}" data-i="${i}" tabindex="0" role="button"
         aria-label="${esc(rotName(p.k))}, ${p.phase}" style="--c:rgb(${col});--d:${i*32}ms">
       ${showTail?`<path class="tail" d="${path}" stroke="rgba(${col},.5)" fill="none"
-        stroke-width="1.2" vector-effect="non-scaling-stroke"/>${dots}`:''}
+        stroke-width="1.15" vector-effect="non-scaling-stroke"/>`:''}
       <circle class="halo" cx="${sx(p.x)}" cy="${sy(p.y)}" r="${HALO.toFixed(1)}" fill="rgba(${col},.14)"/>
       <circle class="core" cx="${sx(p.x)}" cy="${sy(p.y)}" r="${R.toFixed(1)}" fill="rgb(${col})"/>
       <text x="${sx(p.x)}" y="${(+sy(p.y)-HALO-2).toFixed(1)}" text-anchor="middle"
@@ -496,13 +497,15 @@ function rotStop(){
 function rotStep(){
   const set=ROT.set; if(!set||!set.scale)return;
   const L=set.len;
-  /* ease the axes toward the frame's own extent. A hard rescale per frame
-     makes stationary bodies appear to drift; no rescale at all leaves the
-     field crushed into the centre. Eighteen percent a frame is the middle. */
-  const tgt=rotBounds(set,ROT.head);
-  set.rx+=(tgt.rx-set.rx)*0.18;
-  set.ry+=(tgt.ry-set.ry)*0.18;
-  rotMakeScale(set);
+  /* While playing, keep the scale fixed so historical tail points do not
+     drift in screen space. When scrubbing manually, ease gently toward the
+     frame's own extent so the view still breathes without looking loose. */
+  if(!ROT.playing){
+    const tgt=rotBounds(set,ROT.head);
+    set.rx+=(tgt.rx-set.rx)*0.10;
+    set.ry+=(tgt.ry-set.ry)*0.10;
+    rotMakeScale(set);
+  }
   const {sx,sy}=set.scale;
   Object.keys(set.bodies).forEach(k=>{
     const g=document.querySelector('.rot-b[data-k="'+CSS.escape(k)+'"]'); if(!g)return;
