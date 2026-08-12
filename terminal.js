@@ -257,14 +257,34 @@ function rotBuild(){
     });
   }
   ROT.set=rotSet(map,ROT.closes[ROT_BENCH],ROT.tf);
+  if(ROT.set){ ROT.set.rx=null; ROT.set.ry=null; }  /* force fresh scale lock */
   ROT.head=null;   /* a new set means a new timeline, so snap back to live */
 }
 function rotName(k){
   const g=ROT_GROUPS.find(x=>x.sym===k||x.etf===k);
   return g?g.name:k;
 }
-/* the extent of what is actually drawn at this playhead, with a floor so a
-   very quiet field still fills the plot rather than magnifying noise */
+/* Extent of every point that will ever be drawn for this set (full timeline
+   + tails). Used once so the axes stay fixed while the playhead moves.
+   A quiet field still gets a floor so noise is not magnified. */
+function rotBoundsAll(set){
+  let mx=2.2, my=2.2;
+  const L=set.len, tail=ROT.tail;
+  Object.keys(set.bodies).forEach(k=>{
+    const body=set.bodies[k];
+    /* sample every session the playhead can reach */
+    for(let h=set.minIdx; h<L; h++){
+      const a=rotAt(body, tail, h);
+      a.tail.concat([{x:a.x,y:a.y}]).forEach(p=>{
+        const dx=Math.abs(p.x-100), dy=Math.abs(p.y-100);
+        if(dx>mx) mx=dx; if(dy>my) my=dy;
+      });
+    }
+  });
+  /* extra pad so tails never kiss the edge of the box */
+  return {rx:mx*1.22, ry:my*1.22};
+}
+/* kept for any one-frame peek; prefer rotBoundsAll for the locked scale */
 function rotBounds(set,head){
   let mx=2.2,my=2.2;
   Object.keys(set.bodies).forEach(k=>{
@@ -301,16 +321,16 @@ function rotDraw(){
   const pts=keys.map(k=>{ const a=rotAt(set.bodies[k],ROT.tail,ROT.head);
     return {k,x:a.x,y:a.y,tail:a.tail,ret:a.ret,phase:rotPhase(a.x,a.y),q:rotQuality(a.tail)}; });
 
-  /* Scale to the data with a symmetric pad so the centre cross stays at
-     100/100 and the quadrants keep their meaning. */
-  /* Scale to what is on screen, not to the whole year. Bounding a year of
-     extremes squeezed every current position into the middle of the plot,
-     which is the opposite of readable. The scale is eased between frames
-     instead, so replay breathes rather than snapping. */
-  const W=620,H=460,P=34;
+  /* Fixed scale for the whole set. Computing bounds only at the current
+     playhead made the axes expand when scrubbing into older, more extreme
+     sessions — tails appeared to slide and sometimes left the box. Locking
+     once to the full timeline keeps the coordinate system still. */
+  const W=620,H=460,P=40;
   set.dims={W,H,P};
-  const tgt=rotBounds(set,ROT.head);
-  set.rx=tgt.rx; set.ry=tgt.ry;
+  if(set.rx==null || set.ry==null){
+    const tgt=rotBoundsAll(set);
+    set.rx=tgt.rx; set.ry=tgt.ry;
+  }
   rotMakeScale(set);
   const sx=set.scale.sx, sy=set.scale.sy;
 
@@ -497,15 +517,8 @@ function rotStop(){
 function rotStep(){
   const set=ROT.set; if(!set||!set.scale)return;
   const L=set.len;
-  /* While playing, keep the scale fixed so historical tail points do not
-     drift in screen space. When scrubbing manually, ease gently toward the
-     frame's own extent so the view still breathes without looking loose. */
-  if(!ROT.playing){
-    const tgt=rotBounds(set,ROT.head);
-    set.rx+=(tgt.rx-set.rx)*0.10;
-    set.ry+=(tgt.ry-set.ry)*0.10;
-    rotMakeScale(set);
-  }
+  /* Scale is locked for the life of the set (see rotDraw). Moving the
+     playhead only updates body positions and tail paths. */
   const {sx,sy}=set.scale;
   Object.keys(set.bodies).forEach(k=>{
     const g=document.querySelector('.rot-b[data-k="'+CSS.escape(k)+'"]'); if(!g)return;
