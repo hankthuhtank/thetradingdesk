@@ -562,7 +562,7 @@ async function loadRead(){
      channel made the panel depend on a cron that has nothing to do with it. */
   let vix=null, gamma=null, breadth=null, tnx=null, tape=null, risk=null;
   try{
-    const q=(await get('/v1/yquote?symbols=^VIX,^VIX9D,^VIX3M,^TNX,SPY,QQQ,IWM,DIA,GLD,TLT,HYG,UUP')).quotes||{};
+    const q=(await get('/v1/yquote?symbols=^VIX,^VIX9D,^VIX3M,^TNX,^FVX,SPY,QQQ,IWM,DIA,GLD,TLT,HYG,UUP,XLP,XLY,^GSPC')).quotes||{};
     const g=s=>q[s]&&q[s].c!=null?q[s].c:null;
     const d=s=>q[s]&&q[s].dp!=null?q[s].dp:null;
     const spot=g('^VIX');
@@ -734,6 +734,54 @@ async function loadRead(){
     </div>`);
   }
 
+  /* ---- rates: the number every other asset is discounted against ---- */
+  try{
+    const q2=(await get('/v1/yquote?symbols=^TNX,^FVX')).quotes||{};
+    const ten=q2['^TNX'], five=q2['^FVX'];
+    if(ten&&ten.c!=null){
+      const y=ten.c, dp=ten.dp;
+      const band=y<3.5?['Low','Cheap money. Long-duration growth and unprofitable stories get the most benefit from a low discount rate.']
+        :y<4.5?['Normal','A discount rate the market is used to. Nothing here is forcing a rotation on its own.']
+        :y<5?['Elevated','Every future dollar of earnings is worth less today. Growth multiples compress first.']
+        :['High','Bonds compete directly with equities for the same money, and they win more often at these levels.'];
+      const slope=(five&&five.c!=null)?y-five.c:null;
+      cards.push(`<div class="rd-card">
+        <div class="rd-h"><span class="rd-t">Rates</span>
+          <span class="rd-v ${dirC(dp)}">${fmt(y,2)}<em>%</em></span></div>
+        <div class="rd-row"><b>${band[0]}</b><p>${band[1]}</p>
+          <span class="rd-sub">US 10-year${dp!=null?', '+pctf(dp)+' today':''}.</span></div>
+        ${slope!=null?`<div class="rd-row"><b>${slope>=0?'Curve upward sloping':'Curve inverted'}</b>
+          <p>${slope>=0?'Ten-year yields more than five-year, the normal shape. The market is not pricing an imminent slowdown.'
+                       :'Five-year yields more than ten-year. Historically this shape has preceded slowdowns, though the lag has been long and unreliable.'}</p>
+          <span class="rd-sub">Ten minus five: ${(slope>=0?'+':'')+slope.toFixed(2)}.</span></div>`:''}
+      </div>`);
+    }
+  }catch(e){}
+
+  /* ---- defensives against cyclicals: what the tape is actually buying ---- */
+  try{
+    const q3=(await get('/v1/yquote?symbols=XLP,XLY')).quotes||{};
+    const p=q3['XLP'], y=q3['XLY'];
+    if(p&&y&&p.dp!=null&&y.dp!=null){
+      const gap=y.dp-p.dp;
+      const say=gap>0.4?['Cyclicals leading','Discretionary is outrunning staples. That is what participation looks like when the market believes in the economy.']
+        :gap<-0.4?['Defensives leading','Staples are outrunning discretionary. Money is paying for safety, which is a different tape from a selloff and often precedes one.']
+        :['Neither leading','Staples and discretionary are moving together, so today is not a statement about the economy.'];
+      cards.push(`<div class="rd-card">
+        <div class="rd-h"><span class="rd-t">Positioning</span>
+          <span class="rd-v ${dirC(gap)}">${(gap>=0?'+':'')+gap.toFixed(2)}<em>%</em></span></div>
+        <div class="rd-row"><b>${say[0]}</b><p>${say[1]}</p></div>
+        <div class="rd-legs">
+          <div class="rd-leg ${y.dp>=0?'on':'off'}"><span class="k">Discretionary</span>
+            <span class="v">XLY</span><span class="n">${pctf(y.dp)}</span></div>
+          <div class="rd-leg ${p.dp>=0?'on':'off'}"><span class="k">Staples</span>
+            <span class="v">XLP</span><span class="n">${pctf(p.dp)}</span></div>
+        </div>
+        <p class="rd-note">What people buy says more than what they say. Discretionary against staples is the cleanest read on that available for free.</p>
+      </div>`);
+    }
+  }catch(e){}
+
   host.innerHTML=(headline?`<p class="rd-lede">${esc(headline)}</p>`:'')
     +band+`<div class="rd-grid">${cards.join('')}</div>`;
   $$('.rd-tk',host).forEach(b=>b.addEventListener('click',()=>toChart(b.dataset.sym)));
@@ -893,7 +941,7 @@ async function loadChart(sym,tf){
     if(my!==seq)return;
     C.bars=d.bars; C.meta=d;
     chartMsg(false); paintChart(); writeQuote(); drawWatch();
-    loadSnapshot(C.sym); loadRegime(C.sym); loadGex(C.sym);
+    loadSnapshot(C.sym); loadRegime(C.sym); loadGex(C.sym); loadLevels(C.sym);
   }catch(e){
     if(my!==seq)return;
     chartMsg(true,'NO DATA',e.message);
@@ -1210,6 +1258,104 @@ async function loadEcon(){
   }
 }
 
+
+
+/* ============================================================
+   LEVELS
+   The prices that actually matter for this symbol, derived rather
+   than drawn by eye. Every level here is a number the market has
+   already reacted to, or a number a large number of participants
+   are watching for the same reason.
+
+     PIVOTS      yesterday's range folded into support and
+                 resistance the whole futures world uses
+     SWINGS      the most recent high and low that price turned at
+     AVERAGES    the 20, 50 and 200 day, which is where systematic
+                 money changes behaviour
+     RANGE       the yearly high and low, and the midpoint
+
+   Each is scored by distance from spot, so what is close sorts to
+   the top: a level ten percent away is trivia today.
+   ============================================================ */
+function swings(bars,look){
+  /* a swing point is a bar whose high is the highest, or low the lowest, of
+     the window either side of it. Anything less strict finds noise. */
+  const hi=[],lo=[];
+  for(let i=look;i<bars.length-look;i++){
+    let isH=true,isL=true;
+    for(let j=i-look;j<=i+look;j++){
+      if(j===i)continue;
+      if(bars[j].h>=bars[i].h)isH=false;
+      if(bars[j].l<=bars[i].l)isL=false;
+      if(!isH&&!isL)break;
+    }
+    if(isH)hi.push({p:bars[i].h,i});
+    if(isL)lo.push({p:bars[i].l,i});
+  }
+  return {hi:hi.slice(-4).reverse(),lo:lo.slice(-4).reverse()};
+}
+async function loadLevels(sym){
+  const host=$('#dkLevels'); if(!host||!sym) return;
+  host.innerHTML='<div class="dk-skel"></div><div class="dk-skel"></div>';
+  setBar('#dkLevels','reading');
+  try{
+    const d=await get(`/v1/candles?symbol=${encodeURIComponent(sym)}&range=1y&interval=1d`);
+    const bars=d.bars||[];
+    if(bars.length<60) throw new Error('Not enough daily history to derive levels.');
+    const last=d.price!=null?d.price:bars[bars.length-1].c;
+    const prev=bars[bars.length-2]||bars[bars.length-1];
+
+    const L=[];
+    /* classic floor-trader pivots off the prior session */
+    const P=(prev.h+prev.l+prev.c)/3;
+    L.push({p:P,       k:'Pivot',      w:'The session pivot. Above it the day is being bought, below it sold. It is watched because everyone computes it the same way.'});
+    L.push({p:2*P-prev.l, k:'R1',      w:'First resistance from the prior range. Ordinary sessions stall near here.'});
+    L.push({p:2*P-prev.h, k:'S1',      w:'First support from the prior range.'});
+    L.push({p:prev.h,  k:'Prior high', w:'Yesterday\\u2019s high. Taking it out is the simplest definition of a trend day.'});
+    L.push({p:prev.l,  k:'Prior low',  w:'Yesterday\\u2019s low. Losing it flips the short-term read.'});
+
+    /* moving averages: where systematic money changes behaviour */
+    const c=bars.map(b=>b.c);
+    [[20,'20-day'],[50,'50-day'],[200,'200-day']].forEach(([n,lab])=>{
+      const v=sma(c,n); if(v==null)return;
+      L.push({p:v,k:lab+' average',
+        w:'Where a large amount of systematic money changes behaviour. It matters because it is crowded, not because the maths is special.'});
+    });
+
+    /* swings: prices this symbol actually turned at */
+    const sw=swings(bars,5);
+    sw.hi.slice(0,2).forEach(x=>L.push({p:x.p,k:'Swing high',
+      w:'A price this symbol reversed at. Sellers were waiting there once, which is the only reason to expect them again.'}));
+    sw.lo.slice(0,2).forEach(x=>L.push({p:x.p,k:'Swing low',
+      w:'A price this symbol turned up from. Buyers stepped in there once.'}));
+
+    /* the year */
+    const hi=Math.max(...bars.map(b=>b.h)), lo=Math.min(...bars.map(b=>b.l));
+    L.push({p:hi,k:'52-week high',w:'No overhead supply above it, which is why breaks of it can run.'});
+    L.push({p:lo,k:'52-week low', w:'The lowest price anyone has paid this year.'});
+    L.push({p:(hi+lo)/2,k:'Yearly midpoint',w:'Splits the year in half. Useful as a bias line, not as a trade.'});
+
+    /* nearest first: a level ten percent away is trivia today */
+    L.forEach(x=>{ x.d=(x.p-last)/last*100; x.ad=Math.abs(x.d); });
+    const near=L.filter(x=>isFinite(x.p)&&x.ad<25).sort((a,b)=>a.ad-b.ad).slice(0,9);
+    const above=near.filter(x=>x.d>0).length, below=near.length-above;
+
+    host.innerHTML=`<div class="lv-now">
+        <span class="k">Trading at</span><b>${fmt(last,2)}</b>
+        <span class="lv-split">${below} below \u00b7 ${above} above</span></div>
+      <div class="lv-list">${near.map(x=>`
+        <div class="lv-row ${x.d>0?'up':'dn'}" title="${esc(x.w)}">
+          <span class="lv-p">${fmt(x.p,2)}</span>
+          <span class="lv-k">${esc(x.k)}</span>
+          <span class="lv-d">${x.d>0?'+':''}${x.d.toFixed(2)}%</span>
+        </div>`).join('')}</div>
+      <p class="lv-note">Derived from this symbol\u2019s own daily bars. A level is somewhere to plan a decision, never a reason to take one.</p>`;
+    setBar('#dkLevels',esc(sym));
+  }catch(e){
+    host.innerHTML=stateBox('NO LEVELS',e.message);
+    setBar('#dkLevels','offline');
+  }
+}
 
 /* ============================================================
    THE WEEK

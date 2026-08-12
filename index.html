@@ -2336,6 +2336,41 @@ body::before{
 }
 @media(max-width:480px){.wk-week{grid-template-columns:1fr}.wk-col:nth-child(5){grid-column:span 1}}
 
+/* the desk gains a fifth pane, so the lower row runs three across */
+.dk-work{grid-template-areas:'a b' 'c d' 'e e'}
+.dk-work .dk-e{grid-area:e;height:300px;border-top:1px solid var(--line)}
+@media(min-width:1200px){
+  .dk-work{grid-template-columns:minmax(0,1.5fr) minmax(0,1fr) minmax(0,1fr);
+    grid-template-areas:'a a b' 'c d e'}
+  .dk-work .dk-a{height:452px} .dk-work .dk-b{height:452px}
+  .dk-work .dk-c,.dk-work .dk-d,.dk-work .dk-e{height:352px;border-top:none}
+}
+@media(max-width:1000px){
+  .dk-work{grid-template-areas:'a' 'b' 'c' 'd' 'e'}
+  .dk-work .dk-e{height:auto;min-height:280px}
+}
+
+/* ---------- LEVELS ---------- */
+.lv-now{display:flex;align-items:baseline;gap:10px;padding:13px 16px;
+  border-bottom:1px solid var(--line)}
+.lv-now .k{font-family:var(--mono);font-size:.55rem;letter-spacing:.13em;text-transform:uppercase;
+  color:var(--faint)}
+.lv-now b{font-family:var(--mono);font-size:1rem;font-weight:600}
+.lv-split{margin-left:auto;font-family:var(--mono);font-size:.6rem;color:var(--faint)}
+.lv-list{display:flex;flex-direction:column}
+.lv-row{display:grid;grid-template-columns:74px 1fr auto;gap:10px;align-items:baseline;
+  padding:8px 16px;border-bottom:1px solid var(--line-2);position:relative;transition:background .2s}
+.lv-row:hover{background:rgba(255,255,255,.025)}
+.lv-row::before{content:'';position:absolute;left:0;top:0;bottom:0;width:2px}
+.lv-row.up::before{background:rgba(52,211,153,.55)}
+.lv-row.dn::before{background:rgba(248,113,113,.55)}
+.lv-p{font-family:var(--mono);font-size:.78rem;font-weight:600}
+.lv-k{font-size:.72rem;color:var(--dim)}
+.lv-d{font-family:var(--mono);font-size:.64rem}
+.lv-row.up .lv-d{color:var(--green)} .lv-row.dn .lv-d{color:var(--red)}
+.lv-note{padding:12px 16px;border-top:1px solid var(--line);font-size:.66rem;
+  color:var(--faint);line-height:1.5}
+
 </style>
 
 <script src="https://unpkg.com/lightweight-charts@5/dist/lightweight-charts.standalone.production.js" defer></script>
@@ -2432,7 +2467,7 @@ body::before{
     <!-- ONE TICKER. A single command box: the symbol control and every panel
          that follows it live inside the same frame, so it reads as one
          instrument rather than five things that happen to be near each other. -->
-    <h3 class="tsec">One ticker &middot; everything at once</h3>
+    <h3 class="tsec">The Ticker Desk &middot; one symbol, every angle</h3>
     <section class="cmdbox reveal">
       <div class="tk-bar">
         <div class="tk-box">
@@ -2490,6 +2525,12 @@ body::before{
         </section>
 
         <section class="dk-pane dk-d">
+          <div class="dk-bar"><span class="dot"></span><span class="t">Levels</span>
+            <span class="s">reading</span></div>
+          <div class="dk-body flush" id="dkLevels"><div class="dk-skel"></div><div class="dk-skel"></div></div>
+        </section>
+
+        <section class="dk-pane dk-e">
           <div class="dk-bar"><span class="dot"></span><span class="t">Dealer Flow</span>
             <span class="s">reading</span></div>
           <div class="dk-body flush" id="dkGex"><div class="dk-skel"></div><div class="dk-skel"></div></div>
