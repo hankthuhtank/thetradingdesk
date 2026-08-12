@@ -2371,6 +2371,21 @@ body::before{
 .lv-note{padding:12px 16px;border-top:1px solid var(--line);font-size:.66rem;
   color:var(--faint);line-height:1.5}
 
+/* ---------- ROTATION: canvas renderer ---------- */
+#rotCanvas{width:100%;height:480px;display:block;touch-action:manipulation}
+@media(max-width:1000px){#rotCanvas{height:400px}}
+@media(max-width:600px){#rotCanvas{height:340px}}
+.rot-main{display:flex;flex-direction:column;gap:10px;min-width:0}
+.rot-wrap{display:grid;grid-template-columns:minmax(0,1fr) 236px;gap:16px;padding:16px}
+@media(max-width:1000px){.rot-wrap{grid-template-columns:1fr;padding:12px}}
+.rot-scrub{display:flex;align-items:center;gap:11px}
+#rotScrub{flex:1;-webkit-appearance:none;appearance:none;height:4px;border-radius:3px;
+  background:var(--panel-3);outline:none;cursor:pointer}
+#rotScrub::-webkit-slider-thumb{-webkit-appearance:none;width:15px;height:15px;border-radius:50%;
+  background:var(--cyan);cursor:pointer;box-shadow:0 0 10px var(--cyan-glow);transition:transform .16s}
+#rotScrub::-webkit-slider-thumb:hover{transform:scale(1.25)}
+#rotScrub::-moz-range-thumb{width:15px;height:15px;border:none;border-radius:50%;background:var(--cyan)}
+
 </style>
 
 <script src="https://unpkg.com/lightweight-charts@5/dist/lightweight-charts.standalone.production.js" defer></script>

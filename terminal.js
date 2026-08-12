@@ -210,7 +210,7 @@ function rotQuality(tail){
 
 /* ---- data: one batched pull of daily closes ---- */
 let ROT={set:null,closes:{},scope:'all',drill:null,tf:5,tail:ROT_TAIL,
-         trail:'one',focus:null,head:null,playing:false};
+         trail:'one',head:null,playing:false,speed:1};
 const ROT_TF={fast:3,normal:5,slow:10};
 
 async function rotLoad(){
@@ -236,7 +236,8 @@ async function rotLoad(){
     const res=await get('/v1/closes?symbols='+encodeURIComponent(syms.join(',')));
     ROT.closes=res.closes||{};
     if(!ROT.closes[ROT_BENCH]) throw new Error('No history came back for the benchmark, '+ROT_BENCH+'.');
-    rotBuild(); rotDraw();
+    rotBuild(); rotPaint();
+    setBar('#rotPlot',(ROT.drill?rotName(ROT.drill)+' \u00b7 ':'')+rotPts.length+' bodies');
   }catch(e){
     host.innerHTML=stateBox('ROTATION UNAVAILABLE',e.message);
     setBar('#rotPlot','offline');
@@ -257,6 +258,7 @@ function rotBuild(){
     });
   }
   ROT.set=rotSet(map,ROT.closes[ROT_BENCH],ROT.tf);
+  ROT.head=null; rotDisp={};
   ROT.head=null;   /* a new set means a new timeline, so snap back to live */
 }
 function rotName(k){
@@ -282,162 +284,275 @@ function rotWarp(d){
   if(!isFinite(d)) return 0;
   return Math.tanh(d/ROT_K)*ROT_FILL;
 }
-function rotMakeScale(set){
-  const {W,H,P}=set.dims;
-  const halfW=(W-2*P)/2, halfH=(H-2*P)/2;
-  const cxp=P+halfW, cyp=P+halfH;
-  /* Bodies inset 3% so markers+labels clear the frame; tails use full width. */
-  set.scale={
-    W,H,
-    sx:v=>(cxp+rotWarp(v-100)*halfW*0.97).toFixed(1),
-    sy:v=>(cyp-rotWarp(v-100)*halfH*0.97).toFixed(1),
-    tx:v=>(cxp+rotWarp(v-100)*halfW).toFixed(1),
-    ty:v=>(cyp-rotWarp(v-100)*halfH).toFixed(1)
+/* ============================================================
+   THE ROTATION · renderer
+   Ported from Mythos rather than approximated. The two things
+   that make it feel the way it does, neither of which survives
+   in an SVG implementation:
+
+   1. EASED DISPLAY POSITIONS. Every body keeps its own drawn
+      position and glides toward its target each frame. Setting
+      coordinates directly, however often, is a slideshow: the
+      body is always exactly where the data says, so nothing ever
+      appears to travel. Scrubbing works for the same reason.
+
+   2. ONE PROJECTION, SHARED WITH THE HIT TEST. A second copy of
+      the maths is how tap targets end up somewhere other than
+      what you can see.
+
+   Canvas rather than SVG because sixty frames a second across
+   twenty bodies with glows and trails is a repaint problem, not
+   a DOM problem.
+   ============================================================ */
+const ROT_BPS=3;                 /* bars per second at 1x */
+let rotDisp={}, rotPhaseT=0, rotRaf=0, rotLastT=0, rotAcc=0;
+let rotPts=[], rotFocus=null, rotPin=null;
+const rotTouch=matchMedia('(pointer:coarse)').matches;
+
+function rotCv(){ return $('#rotCanvas'); }
+function rotPad(W){ return Math.round(Math.max(20,Math.min(42,W*0.078))); }
+function rotProject(W,H,PAD){
+  const halfW=(W-2*PAD)/2, halfH=(H-2*PAD)/2;
+  const cxp=PAD+halfW, cyp=PAD+halfH;
+  /* bodies inset 3% so a marker and its label always clear the frame; tails
+     run the full width because they fit by construction */
+  return {
+    X:v=>cxp+rotWarp(v-100)*halfW*0.97, Y:v=>cyp-rotWarp(v-100)*halfH*0.97,
+    TX:v=>cxp+rotWarp(v-100)*halfW,     TY:v=>cyp-rotWarp(v-100)*halfH
   };
 }
-/* kept only so any leftover callers do not throw; no longer drives the axes */
-function rotBounds(set,head){
-  return {rx:8, ry:8};
+function rotHeadIdx(){
+  if(!ROT.set)return 0;
+  return ROT.head==null?ROT.set.len-1:Math.max(ROT.set.minIdx,Math.min(ROT.set.len-1,Math.round(ROT.head)));
 }
-function rotDraw(){
-  const host=$('#rotPlot'); if(!host) return;
-  const set=ROT.set;
-  if(!set||!set.bodies||!Object.keys(set.bodies).length){
-    host.innerHTML=stateBox('NOT ENOUGH HISTORY',
-      'At least two bodies need a full quarter of daily bars before the plot means anything.');
+/* recompute the point list at the current playhead */
+function rotApplyHead(){
+  const set=ROT.set; if(!set){rotPts=[];return;}
+  const i=rotHeadIdx();
+  rotPts=Object.keys(set.bodies).map(k=>{
+    const a=rotAt(set.bodies[k],ROT.tail,i);
+    const g=ROT_GROUPS.find(x=>x.sym===k||x.etf===k);
+    return {sym:k, name:g?g.name:k, synth:!!(g&&g.synth), x:a.x, y:a.y,
+            tail:a.tail, ret:a.ret, phase:rotPhase(a.x,a.y), q:rotQuality(a.tail)};
+  });
+}
+function rotDraw(dt){
+  const cv=rotCv(); if(!cv)return;
+  const ctx=cv.getContext('2d');
+  const dpr=Math.min(devicePixelRatio||1,2);
+  const W=cv.clientWidth||700, H=cv.clientHeight||480;
+  if(cv.width!==Math.round(W*dpr)||cv.height!==Math.round(H*dpr)){
+    cv.width=Math.round(W*dpr); cv.height=Math.round(H*dpr);
+  }
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.clearRect(0,0,W,H);
+  if(!rotPts.length)return;
+  rotPhaseT+=dt;
+
+  /* furniture scales with the canvas. At a fixed padding a 360px phone loses a
+     quarter of its width to margin and then draws 10px labels into each other. */
+  const NARROW=W<520, SC=NARROW?Math.max(.72,W/520):1, PAD=rotPad(W);
+  const FS=(px,wt)=>(wt||700)+' '+(px*SC).toFixed(1)+'px "IBM Plex Mono",monospace';
+  const pr=rotProject(W,H,PAD);
+  const X=pr.X,Y=pr.Y,TX=pr.TX,TY=pr.TY;
+  const cx=X(100),cy=Y(100);
+
+  const quad=(x0,y0,x1,y1,c)=>{ctx.fillStyle='rgba('+c+',.05)';ctx.fillRect(x0,y0,x1-x0,y1-y0);};
+  quad(cx,PAD,W-PAD,cy,PHASE_COL.Leading);
+  quad(cx,cy,W-PAD,H-PAD,PHASE_COL.Weakening);
+  quad(PAD,cy,cx,H-PAD,PHASE_COL.Lagging);
+  quad(PAD,PAD,cx,cy,PHASE_COL.Improving);
+
+  ctx.strokeStyle='rgba(126,166,214,.28)';ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(cx,PAD);ctx.lineTo(cx,H-PAD);ctx.moveTo(PAD,cy);ctx.lineTo(W-PAD,cy);ctx.stroke();
+  ctx.strokeStyle='rgba(126,166,214,.14)';ctx.strokeRect(PAD,PAD,W-2*PAD,H-2*PAD);
+
+  const ql=(t,x,y,c,al)=>{ctx.font=FS(10);ctx.fillStyle='rgba('+c+',.5)';ctx.textAlign=al;ctx.fillText(t,x,y);ctx.textAlign='left';};
+  const qn=NARROW?['LEAD','WEAK','LAG','IMPR']:['LEADING','WEAKENING','LAGGING','IMPROVING'];
+  ql(qn[0],W-PAD-4,PAD+12*SC,PHASE_COL.Leading,'right');
+  ql(qn[1],W-PAD-4,H-PAD-5,PHASE_COL.Weakening,'right');
+  ql(qn[2],PAD+4,H-PAD-5,PHASE_COL.Lagging,'left');
+  ql(qn[3],PAD+4,PAD+12*SC,PHASE_COL.Improving,'left');
+  ctx.font=FS(8.5,600);ctx.fillStyle='rgba(126,166,214,.5)';ctx.textAlign='center';
+  ctx.fillText(NARROW?'RS \u2192':'RS-RATIO \u2192',W/2,H-PAD+Math.min(16,PAD-6));
+  ctx.save();ctx.translate(Math.max(9,PAD-14),H/2);ctx.rotate(-Math.PI/2);
+  ctx.fillText(NARROW?'MOMENTUM \u2192':'RS-MOMENTUM \u2192',0,0);ctx.restore();
+  ctx.textAlign='left';
+
+  const focus=rotFocus||rotPin, anyFocus=!!focus;
+  if(!anyFocus&&PAD>=24&&ROT.trail!=='all'){
+    ctx.font=FS(8.5,600);ctx.fillStyle='rgba(126,166,214,.4)';ctx.textAlign='center';
+    ctx.fillText(rotTouch?'tap a body for its trail \u00b7 tap again to open'
+                        :'hover a body for its rotation trail',W/2,PAD-11);
+    ctx.textAlign='left';
+  }
+
+  /* eased display positions: bodies glide rather than snap */
+  for(const p of rotPts){
+    const tx=X(p.x),ty=Y(p.y);
+    const d=rotDisp[p.sym]||(rotDisp[p.sym]={x:tx,y:ty});
+    const k=SLOW?1:Math.min(1,dt*8);
+    d.x+=(tx-d.x)*k; d.y+=(ty-d.y)*k;
+  }
+
+  /* tails under the bodies, clipped to the frame */
+  ctx.save();ctx.beginPath();ctx.rect(PAD,PAD,W-2*PAD,H-2*PAD);ctx.clip();
+  if(ROT.trail!=='off') for(const p of rotPts){
+    if(p.tail.length<2)continue;
+    const isF=focus===p.sym;
+    if(ROT.trail==='one'&&(!anyFocus||!isF))continue;
+    const col=PHASE_COL[p.phase];
+    for(let i=1;i<p.tail.length;i++){
+      const a=(i/p.tail.length)*(isF?.85:(ROT.trail==='all'?.26:.85));
+      ctx.strokeStyle='rgba('+col+','+a.toFixed(2)+')';ctx.lineWidth=2;
+      ctx.beginPath();ctx.moveTo(TX(p.tail[i-1].x),TY(p.tail[i-1].y));
+      ctx.lineTo(TX(p.tail[i].x),TY(p.tail[i].y));ctx.stroke();
+    }
+    if(isF||ROT.trail!=='all') for(let i=0;i<p.tail.length-1;i++){
+      ctx.fillStyle='rgba('+col+',.5)';ctx.beginPath();
+      ctx.arc(TX(p.tail[i].x),TY(p.tail[i].y),2*SC,0,7);ctx.fill();
+    }
+  }
+  /* scrubbed into the past: a wash and a stamp, so a screenshot can never be
+     mistaken for the current field */
+  if(ROT.head!=null&&rotHeadIdx()<ROT.set.len-1){
+    ctx.fillStyle='rgba(245,185,66,.055)';ctx.fillRect(0,0,W,H);
+    ctx.font='700 '+Math.round(11*SC)+'px "IBM Plex Mono",monospace';
+    ctx.fillStyle='rgba(245,185,66,.9)';
+    ctx.fillText('\u25c0 REPLAY \u00b7 '+(ROT.set.len-1-rotHeadIdx())+' sessions back',PAD+4,PAD+13*SC);
+  }
+  ctx.restore();
+
+  for(const p of rotPts){
+    const col=PHASE_COL[p.phase], d=rotDisp[p.sym], px=d.x, py=d.y;
+    const isF=focus===p.sym, dim=anyFocus&&!isF, baseA=dim?.3:1;
+    const pulse=isF?1:.7+.15*Math.sin(rotPhaseT*1.8+p.sym.length);
+    const gr=(isF?22:14)*SC;
+    const rg=ctx.createRadialGradient(px,py,0,px,py,gr);
+    rg.addColorStop(0,'rgba('+col+','+(.85*pulse*baseA).toFixed(2)+')');
+    rg.addColorStop(1,'rgba('+col+',0)');
+    ctx.fillStyle=rg;ctx.beginPath();ctx.arc(px,py,gr,0,7);ctx.fill();
+    ctx.lineWidth=2;
+    if(p.synth){
+      /* a hollow diamond marks a synthetic basket, so it is never mistaken
+         for something you can actually buy */
+      ctx.strokeStyle='rgba('+col+','+baseA+')';ctx.beginPath();
+      const r=(isF?6:4.5)*SC;
+      ctx.moveTo(px,py-r);ctx.lineTo(px+r,py);ctx.lineTo(px,py+r);ctx.lineTo(px-r,py);
+      ctx.closePath();ctx.stroke();
+      ctx.fillStyle='rgba('+col+','+(.22*baseA).toFixed(2)+')';ctx.fill();
+    }else{
+      ctx.fillStyle='rgba('+col+','+baseA+')';
+      ctx.beginPath();ctx.arc(px,py,(isF?5.5:4)*SC,0,7);ctx.fill();
+    }
+    const showLab=!NARROW||isF||p.phase==='Leading'||p.phase==='Improving';
+    if(showLab){
+      ctx.font=FS(isF?12:10.5);
+      ctx.fillStyle='rgba(233,237,245,'+(dim?.4:isF?1:.9)+')';
+      const lx=px+9*SC;
+      if(lx+30*SC>W-4){ctx.textAlign='right';ctx.fillText(p.sym,px-8*SC,py+3.5*SC);ctx.textAlign='left';}
+      else ctx.fillText(p.sym,lx,py+3.5*SC);
+    }
+    if(isF){
+      ctx.font=FS(9,600);ctx.fillStyle='rgba('+col+',.95)';
+      const meta=NARROW?p.phase.toUpperCase()+' \u00b7 '+(p.ret>=0?'+':'')+(p.ret*100).toFixed(1)+'%'
+        :p.name+' \u00b7 '+p.phase.toUpperCase()+' \u00b7 '+(p.ret>=0?'+':'')+(p.ret*100).toFixed(1)+'% 5d'+(p.synth?' \u00b7 basket':'');
+      const mw=ctx.measureText(meta).width;
+      ctx.fillText(meta,Math.min(px+9*SC,Math.max(4,W-mw-6)),py+16*SC);
+    }
+  }
+}
+/* the loop runs continuously: the pulse and the easing both need it, and an
+   idle canvas costs nothing measurable */
+function rotFrame(ts){
+  const dt=rotLastT?Math.min(.05,(ts-rotLastT)/1000):.016;
+  rotLastT=ts;
+  rotAdvance(dt); rotDraw(dt);
+  rotRaf=requestAnimationFrame(rotFrame);
+}
+function rotLoop(){
+  if(rotRaf)return;
+  rotLastT=0;
+  if(SLOW){ rotDraw(0); return; }
+  rotRaf=requestAnimationFrame(rotFrame);
+}
+/* advance on real elapsed seconds, so playback is wall-clock consistent
+   whatever the frame rate */
+function rotAdvance(dt){
+  if(!ROT.playing||!ROT.set)return;
+  rotAcc+=dt*ROT_BPS*(ROT.speed||1);
+  if(rotAcc<1)return;
+  const step=Math.floor(rotAcc); rotAcc-=step;
+  const h=rotHeadIdx()+step;
+  if(h>=ROT.set.len-1){
+    ROT.playing=false; ROT.head=null;      /* stop at the edge, never loop */
+    rotApplyHead(); rotRail(); rotBar();
     return;
   }
-  const keys=Object.keys(set.bodies);
-  const L=set.len;
-  if(ROT.head==null) ROT.head=L-1;
-  ROT.head=Math.max(set.minIdx,Math.min(L-1,ROT.head));
-
-  const pts=keys.map(k=>{ const a=rotAt(set.bodies[k],ROT.tail,ROT.head);
-    return {k,x:a.x,y:a.y,tail:a.tail,ret:a.ret,phase:rotPhase(a.x,a.y),q:rotQuality(a.tail)}; });
-
-  /* Fixed Mythos projection — same mapping at every playhead. */
-  const W=620,H=460,P=36;
-  set.dims={W,H,P};
-  rotMakeScale(set);
-  const sx=set.scale.sx, sy=set.scale.sy;
-  const tx=set.scale.tx, ty=set.scale.ty;
-
-  /* Markers are sized in viewBox units, and the SVG stretches to its
-     container, so a fixed radius looked like a beach ball on a wide screen.
-     Everything below scales down as the field gets crowded and is drawn with
-     vector-effect so strokes stay hairline at any width. */
-  /* A rotation map is read by POSITION, so a marker only has to be findable,
-     not big: past a certain size it hides the very neighbours you are
-     comparing it against. */
-  /* Markers are kept small so position (not size) carries the information.
-     Intermediate tail dots were removed: they were only written on full redraw
-     and never updated in rotStep, which left orphan circles behind during replay. */
-  const dense=Math.min(1,14/Math.max(8,keys.length));
-  const R=2.4+dense*0.9, HALO=R*1.7, FS=(6.5+dense*1.2).toFixed(1);
-
-  const bodies=pts.map((p,i)=>{
-    const col=PHASE_COL[p.phase];
-    const dim=ROT.focus&&ROT.focus!==p.k;
-    const showTail=ROT.trail==='all'||!ROT.focus||ROT.focus===p.k;
-    const path=p.tail.map((t,j)=>`${j?'L':'M'}${tx(t.x)} ${ty(t.y)}`).join(' ');
-    return `<g class="rot-b${dim?' dim':''}" data-k="${esc(p.k)}" data-i="${i}" tabindex="0" role="button"
-        aria-label="${esc(rotName(p.k))}, ${p.phase}" style="--c:rgb(${col});--d:${i*32}ms">
-      ${showTail?`<path class="tail" d="${path}" stroke="rgba(${col},.5)" fill="none"
-        stroke-width="1.15" vector-effect="non-scaling-stroke"/>`:''}
-      <circle class="halo" cx="${sx(p.x)}" cy="${sy(p.y)}" r="${HALO.toFixed(1)}" fill="rgba(${col},.14)"/>
-      <circle class="core" cx="${sx(p.x)}" cy="${sy(p.y)}" r="${R.toFixed(1)}" fill="rgb(${col})"/>
-      <text x="${sx(p.x)}" y="${(+sy(p.y)-HALO-2).toFixed(1)}" text-anchor="middle"
-        font-size="${FS}">${esc(p.k)}</text>
-    </g>`;
-  }).join('');
-
-  const dateLab = ROT.head>=L-1 ? 'Latest close' : (L-1-ROT.head)+' sessions back';
-
-  host.innerHTML=`<div class="rot-wrap">
-    <div class="rot-main">
-      <svg class="rot-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet"
-           role="img" aria-label="Relative rotation map">
-        <rect x="${W/2}" y="${P}" width="${W/2-P}" height="${H/2-P}" fill="rgb(52,211,153)" opacity=".05"/>
-        <rect x="${W/2}" y="${H/2}" width="${W/2-P}" height="${H/2-P}" fill="rgb(242,193,78)" opacity=".05"/>
-        <rect x="${P}" y="${H/2}" width="${W/2-P}" height="${H/2-P}" fill="rgb(232,121,249)" opacity=".05"/>
-        <rect x="${P}" y="${P}" width="${W/2-P}" height="${H/2-P}" fill="rgb(34,211,238)" opacity=".05"/>
-        <line x1="${P}" y1="${H/2}" x2="${W-P}" y2="${H/2}" stroke="rgba(126,166,214,.28)" vector-effect="non-scaling-stroke"/>
-        <line x1="${W/2}" y1="${P}" x2="${W/2}" y2="${H-P}" stroke="rgba(126,166,214,.28)" vector-effect="non-scaling-stroke"/>
-        <text class="rot-q" x="${W-P-6}" y="${P+13}" text-anchor="end" fill="rgb(52,211,153)">LEADING</text>
-        <text class="rot-q" x="${W-P-6}" y="${H-P-6}" text-anchor="end" fill="rgb(242,193,78)">WEAKENING</text>
-        <text class="rot-q" x="${P+6}" y="${H-P-6}" fill="rgb(232,121,249)">LAGGING</text>
-        <text class="rot-q" x="${P+6}" y="${P+13}" fill="rgb(34,211,238)">IMPROVING</text>
-        <text class="rot-ax" x="${W-P}" y="${H/2+14}" text-anchor="end">RS-RATIO \u2192</text>
-        <text class="rot-ax" x="${W/2+8}" y="${P-8}">\u2191 RS-MOMENTUM</text>
-        <g class="rot-bodies">${bodies}</g>
-      </svg>
-      <div class="rot-scrub">
-        <button class="rot-play" id="rotPlay" aria-label="Play the rotation">${ROT.playing?'\u25a0':'\u25b6'}</button>
-        <input type="range" id="rotHead" min="${set.minIdx}" max="${L-1}" step="0.1" value="${ROT.head}"
-               aria-label="Replay position">
-        <span class="rot-date" id="rotDate">${dateLab}</span>
-        <button class="rot-now" id="rotNow">Now</button>
-      </div>
-    </div>
-    <div class="rot-side">
-      <div class="rot-read" id="rotRead"></div>
-      <div class="rot-list" id="rotList"></div>
-    </div>
-  </div>`;
-
-  rotSay(ROT.focus?pts.find(p=>p.k===ROT.focus):null);
-  $('#rotList').innerHTML=pts.slice().sort((a,b)=>(b.x-100)-(a.x-100))
-    .map(p=>`<button class="rot-li${ROT.focus===p.k?' on':''}" data-k="${esc(p.k)}"
-      style="--c:rgb(${PHASE_COL[p.phase]})">
-      <span class="d"></span><span class="s">${esc(p.k)}</span>
+  ROT.head=h; rotApplyHead(); rotRail(); rotBar();
+}
+function rotToggle(){
+  if(!ROT.set)return;
+  if(!ROT.playing&&(ROT.head==null||rotHeadIdx()>=ROT.set.len-1)) ROT.head=ROT.set.minIdx;
+  ROT.playing=!ROT.playing; rotAcc=0; rotApplyHead(); rotBar(); rotLoop();
+  if(SLOW&&!ROT.playing)rotDraw(0);
+}
+function rotStop(){ ROT.playing=false; rotBar(); }
+function rotNow(){ ROT.playing=false; ROT.head=null; rotAcc=0; rotApplyHead(); rotRail(); rotBar(); if(SLOW)rotDraw(0); }
+function rotBar(){
+  const b=$('#rotPlay'); if(b)b.textContent=ROT.playing?'\u275a\u275a':'\u25b6';
+  const s=$('#rotScrub');
+  if(s&&ROT.set){ s.min=String(ROT.set.minIdx); s.max=String(ROT.set.len-1); s.value=String(rotHeadIdx()); }
+  const d=$('#rotDate');
+  if(d&&ROT.set){
+    const back=ROT.set.len-1-rotHeadIdx();
+    d.textContent=back<=0?'Latest close':back+' sessions back';
+  }
+}
+/* hit test against the EASED positions, so what you click is what you see */
+function rotHit(mx,my){
+  const cv=rotCv(); if(!cv||!rotPts.length)return null;
+  const W=cv.clientWidth,H=cv.clientHeight,PAD=rotPad(W);
+  const pr=rotProject(W,H,PAD);
+  let best=null,bd=1e9;
+  for(const p of rotPts){
+    const d=rotDisp[p.sym]||{x:pr.X(p.x),y:pr.Y(p.y)};
+    const dist=Math.hypot(d.x-mx,d.y-my);
+    if(dist<bd){bd=dist;best=p;}
+  }
+  return bd<=22?best:null;
+}
+function rotRail(){
+  const host=$('#rotList'); if(!host)return;
+  const order={Leading:0,Weakening:1,Improving:2,Lagging:3};
+  const rows=rotPts.slice().sort((a,b)=>(order[a.phase]-order[b.phase])||(b.x-a.x));
+  host.innerHTML=rows.map(p=>`<button class="rot-li${(rotFocus||rotPin)===p.sym?' on':''}"
+      data-k="${esc(p.sym)}" style="--c:rgb(${PHASE_COL[p.phase]})">
+      <span class="d"></span><span class="s">${esc(p.sym)}${p.synth?' \u25c7':''}</span>
       <span class="p">${p.phase}</span></button>`).join('');
-
-  const byK={}; pts.forEach(p=>byK[p.k]=p);
-  const hook=el=>{
-    const k=el.dataset.k;
-    el.addEventListener('mouseenter',()=>{ROT.focus=k;rotSay(byK[k]);rotDim();});
-    el.addEventListener('mouseleave',()=>{ROT.focus=null;rotSay(null);rotDim();});
-    el.addEventListener('focus',()=>{ROT.focus=k;rotSay(byK[k]);rotDim();});
-    el.addEventListener('click',()=>rotClick(k));
-    el.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();rotClick(k);}});
-  };
-  $$('.rot-b',host).forEach(hook);
-  $$('.rot-li',host).forEach(hook);
-
-  /* replay */
-  const head=$('#rotHead');
-  /* Dragging moves the existing nodes rather than rebuilding the plot, so the
-     field animates under the cursor instead of redrawing once per notch. */
-  head.addEventListener('input',()=>{ ROT.head=+head.value; rotStop(); rotStep(); });
-  $('#rotNow').addEventListener('click',()=>{ ROT.head=L-1; rotStop(); rotStep(); });
-  $('#rotPlay').addEventListener('click',rotToggle);
-
-  setBar('#rotPlot',(ROT.drill?rotName(ROT.drill)+' \u00b7 ':'')+keys.length+' bodies');
-  const back=$('#rotBack'); if(back) back.style.display=ROT.drill?'':'none';
+  $$('.rot-li',host).forEach(b=>{
+    b.onmouseenter=()=>{rotFocus=b.dataset.k;rotSay(rotPts.find(p=>p.sym===rotFocus));};
+    b.onmouseleave=()=>{rotFocus=null;rotSay(null);};
+    b.onclick=()=>rotClick(b.dataset.k);
+  });
 }
-/* dim everything except the focused body, without a full redraw */
-function rotDim(){
-  $$('.rot-b').forEach(g=>g.classList.toggle('dim',!!ROT.focus&&g.dataset.k!==ROT.focus));
-  $$('.rot-li').forEach(b=>b.classList.toggle('on',ROT.focus===b.dataset.k));
-}
-/* the side panel: what the hovered body actually means */
 function rotSay(p){
   const el=$('#rotRead'); if(!el)return;
   if(!p){
     el.innerHTML=`<span class="k">The map</span><span class="v">Relative rotation</span>
-      <p>Each body is measured against SPY, then scored across the sector field so a utility and a semiconductor basket are comparable. Right of centre is outperforming, above centre is accelerating. The trail is the last six sessions, and money tends to travel clockwise.</p>
-      <small>Hover a body to read it. Click a sector to open its constituents.</small>`;
+      <p>Each body is measured against SPY, then scored across the sector field so a utility and a semiconductor basket are comparable. Right of centre is outperforming, above centre is accelerating. Money tends to travel clockwise.</p>
+      <small>A hollow diamond is a synthetic basket rather than a fund you can buy.</small>`;
     return;
   }
   const q=p.q;
   const spin=q?(q.dir==='cw'?'Rotating clockwise, the normal direction.'
-    :q.dir==='ccw'?'Rotating counter-clockwise, which is unusual and often marks a failed move.'
-    :'Barely rotating. This is drift rather than a real move.'):'';
-  const clean=q?(q.quality>0.55?'The path is a clean arc, so the rotation is real.'
-    :q.quality>0.28?'The path is uneven. Treat it as a lean, not a signal.'
-    :'The path is a scribble. That is jitter across a boundary, not rotation.'):'';
+    :q.dir==='ccw'?'Rotating counter-clockwise, which usually marks a failed move.'
+    :'Barely rotating. Drift rather than a real move.'):'';
+  const clean=q?(q.quality>.55?'The path is a clean arc, so the rotation is real.'
+    :q.quality>.28?'The path is uneven. Treat it as a lean, not a signal.'
+    :'The path is a scribble: jitter across a boundary, not rotation.'):'';
   el.innerHTML=`<span class="k" style="color:rgb(${PHASE_COL[p.phase]})">${p.phase}</span>
-    <span class="v">${esc(p.k)} <em>${esc(rotName(p.k))}</em></span>
+    <span class="v">${esc(p.sym)} <em>${esc(p.name)}</em></span>
     <p>${PHASE_SAY[p.phase]}</p>
     <div class="rot-nums">
       <span>RS-Ratio <b>${p.x.toFixed(1)}</b></span>
@@ -447,84 +562,69 @@ function rotSay(p){
     </div>
     <small>${spin} ${clean}</small>`;
 }
-/* dim everything except the focused body, without a full redraw */
-function rotDim(){
-  $$('.rot-b').forEach(g=>g.classList.toggle('dim',!!ROT.focus&&g.dataset.k!==ROT.focus));
-  $$('.rot-li').forEach(b=>b.classList.toggle('on',ROT.focus===b.dataset.k));
-}
-/* click a group to open its constituents; click anything else to chart it */
 function rotClick(k){
   const g=ROT_GROUPS.find(x=>x.sym===k);
-  if(!ROT.drill && g && g.members && g.members.length>2){
-    rotStop(); ROT.drill=k; ROT.head=null;
-    const host=$('#rotPlot');
-    if(host) host.innerHTML='<div class="dk-skel"></div><div class="dk-skel"></div><div class="dk-skel"></div>';
+  if(!ROT.drill&&g&&g.members&&g.members.length>2){
+    rotStop(); ROT.drill=k; ROT.head=null; rotDisp={};
+    setBar('#rotPlot','loading '+(g.name||k));
     rotLoad(); return;
   }
-  /* a group charts its ETF where one exists, since a synthetic basket has no
-     ticker of its own */
-  toChart(g && g.etf ? g.etf : k);
+  toChart(g&&g.etf?g.etf:k);
 }
+function rotBackOut(){ rotStop(); ROT.drill=null; ROT.head=null; rotDisp={}; rotLoad(); }
 
-/* leave a drill-down and return to the full field */
-function rotBackOut(){ rotStop(); ROT.drill=null; ROT.head=null; rotLoad(); }
-
-/* ---- replay ----------------------------------------------------------
-   A setInterval that redrew a whole frame every 110ms is a slideshow. This runs
-   on requestAnimationFrame and advances a FRACTIONAL playhead by elapsed
-   time, so bodies travel between sessions instead of teleporting. It also
-   moves the existing SVG nodes rather than rebuilding them, which is what
-   keeps sixty frames a second affordable. */
-let rotRaf=null, rotLast=0;
-const ROT_SPEED=3.2;              /* sessions per second */
-function rotToggle(){ ROT.playing?rotStop():rotStart(); }
-function rotStart(){
-  if(!ROT.set)return;
-  const L=ROT.set.len;
-  if(ROT.head>=L-1) ROT.head=ROT.set.minIdx;
-  ROT.playing=true;
-  const btn=$('#rotPlay'); if(btn) btn.textContent='\u25a0';
-  rotLast=performance.now();
-  const frame=now=>{
-    if(!ROT.playing)return;
-    const dt=Math.min(.1,(now-rotLast)/1000); rotLast=now;
-    ROT.head+=dt*ROT_SPEED;
-    if(ROT.head>=L-1){ ROT.head=L-1; rotStep(); rotStop(); return; }
-    rotStep();
-    rotRaf=requestAnimationFrame(frame);
-  };
-  rotRaf=requestAnimationFrame(frame);
+/* build the shell once, then let the loop own the pixels */
+/* the single repaint entry point: build the shell if needed, recompute the
+   points at the playhead, refresh the rail and let the loop draw */
+function rotPaint(){
+  rotShell(); rotApplyHead(); rotRail(); rotBar(); rotLoop();
+  if(SLOW) rotDraw(0);
 }
-function rotStop(){
-  ROT.playing=false;
-  if(rotRaf){cancelAnimationFrame(rotRaf);rotRaf=null;}
-  const btn=$('#rotPlay'); if(btn) btn.textContent='\u25b6';
-}
-/* One frame. The axis scale is computed once per SET, not per frame, because
-   a rescaling axis makes every body drift even when it has not moved. */
-function rotStep(){
-  const set=ROT.set; if(!set||!set.scale)return;
-  const L=set.len;
-  /* Scale is the fixed Mythos warp — never changes with the playhead. */
-  const {sx,sy,tx,ty}=set.scale;
-  Object.keys(set.bodies).forEach(k=>{
-    const g=document.querySelector('.rot-b[data-k="'+CSS.escape(k)+'"]'); if(!g)return;
-    const a=rotAt(set.bodies[k],ROT.tail,ROT.head);
-    const ph=rotPhase(a.x,a.y), col=PHASE_COL[ph];
-    const cx=sx(a.x), cy=sy(a.y);
-    const core=g.querySelector('.core'), halo=g.querySelector('.halo'),
-          txt=g.querySelector('text'), tl=g.querySelector('.tail');
-    if(core){core.setAttribute('cx',cx);core.setAttribute('cy',cy);core.setAttribute('fill','rgb('+col+')');}
-    if(halo){halo.setAttribute('cx',cx);halo.setAttribute('cy',cy);halo.setAttribute('fill','rgba('+col+',.14)');}
-    if(txt){txt.setAttribute('x',cx);txt.setAttribute('y',(+cy-(+halo.getAttribute('r'))-2).toFixed(1));
-            txt.setAttribute('fill','rgb('+col+')');}
-    if(tl){tl.setAttribute('d',a.tail.map((p,j)=>(j?'L':'M')+(tx?tx(p.x):sx(p.x))+' '+(ty?ty(p.y):sy(p.y))).join(' '));
-           tl.setAttribute('stroke','rgba('+col+',.5)');}
-    g.style.setProperty('--c','rgb('+col+')');
+function rotShell(){
+  const host=$('#rotPlot'); if(!host)return;
+  if($('#rotCanvas'))return;
+  host.innerHTML=`<div class="rot-wrap">
+    <div class="rot-main">
+      <canvas id="rotCanvas" role="img" aria-label="Relative rotation map"></canvas>
+      <div class="rot-scrub" id="rotReplay">
+        <button class="rot-play" id="rotPlay" aria-label="Play the rotation">\u25b6</button>
+        <input type="range" id="rotScrub" min="0" max="1" value="1" aria-label="Replay position">
+        <span class="rot-date" id="rotDate">Latest close</span>
+        <button class="rot-now" id="rotNowB">Now</button>
+      </div>
+    </div>
+    <div class="rot-side">
+      <div class="rot-read" id="rotRead"></div>
+      <div class="rot-list" id="rotList"></div>
+    </div>
+  </div>`;
+  const cv=$('#rotCanvas');
+  cv.addEventListener('mousemove',e=>{
+    const r=cv.getBoundingClientRect();
+    const h=rotHit(e.clientX-r.left,e.clientY-r.top);
+    const k=h?h.sym:null;
+    if(k!==rotFocus){ rotFocus=k; rotSay(h); rotRail(); }
+    cv.style.cursor=h?'pointer':'default';
   });
-  const hd=$('#rotHead'); if(hd) hd.value=ROT.head;
-  const dt=$('#rotDate');
-  if(dt) dt.textContent = ROT.head>=L-1?'Latest close':Math.round(L-1-ROT.head)+' sessions back';
+  cv.addEventListener('mouseleave',()=>{ rotFocus=null; rotSay(null); rotRail(); });
+  cv.addEventListener('click',e=>{
+    const r=cv.getBoundingClientRect();
+    const h=rotHit(e.clientX-r.left,e.clientY-r.top);
+    if(!h)return;
+    /* touch: first tap pins and shows the trail, second opens it */
+    if(rotTouch&&rotPin!==h.sym){ rotPin=h.sym; rotSay(h); rotRail(); return; }
+    rotClick(h.sym);
+  });
+  $('#rotPlay').addEventListener('click',rotToggle);
+  $('#rotNowB').addEventListener('click',rotNow);
+  const sc=$('#rotScrub');
+  sc.addEventListener('input',()=>{
+    ROT.playing=false; ROT.head=+sc.value; rotAcc=0;
+    rotApplyHead(); rotRail(); rotBar();
+    if(SLOW)rotDraw(0);
+  });
+  rotSay(null);
+  rotLoop();
 }
 
 /* ============================================================
@@ -1739,12 +1839,12 @@ function init(){
   $$('#rotScope button').forEach(b=>b.addEventListener('click',e=>{
     e.stopPropagation();
     $$('#rotScope button').forEach(x=>x.classList.toggle('on',x===b));
-    rotStop(); ROT.scope=b.dataset.scope; ROT.drill=null; rotBuild(); rotDraw();
+    rotStop(); ROT.scope=b.dataset.scope; ROT.drill=null; rotDisp={}; rotBuild(); rotPaint();
   }));
   $$('#rotTf button').forEach(b=>b.addEventListener('click',e=>{
     e.stopPropagation();
     $$('#rotTf button').forEach(x=>x.classList.toggle('on',x===b));
-    rotStop(); ROT.tf=ROT_TF[b.dataset.rtf]||5; rotBuild(); rotDraw();
+    rotStop(); ROT.tf=ROT_TF[b.dataset.rtf]||5; rotBuild(); rotPaint();
   }));
   const back=$('#rotBack'); if(back)back.addEventListener('click',rotBackOut);
   });
@@ -1772,7 +1872,9 @@ function init(){
   everyVisible(loadWeek,900000);
   everyVisible(()=>loadChart(),120000);
   addEventListener('hashchange',()=>setTimeout(reveals,60));
-  let rz; addEventListener('resize',()=>{clearTimeout(rz);rz=setTimeout(()=>{if(ROT.set)rotDraw();},240);});
+  /* the canvas resizes itself inside the draw loop, so resize only needs to
+     nudge a repaint when motion is disabled */
+  let rz; addEventListener('resize',()=>{clearTimeout(rz);rz=setTimeout(()=>{if(ROT.set&&SLOW)rotDraw(0);},240);});
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);
 else init();
