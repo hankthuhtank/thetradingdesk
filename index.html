@@ -1154,9 +1154,18 @@ body.locked{overflow:hidden}
 .ew-legend i{width:6px;height:6px;border-radius:50%;display:inline-block}
 .ew-legend i.bmo{background:var(--gold)} .ew-legend i.amc{background:var(--violet)}
 @media(max-width:760px){
-  .ew-grid{grid-auto-flow:column;grid-auto-columns:minmax(146px,1fr);grid-template-columns:none;overflow-x:auto;scroll-snap-type:x proximity;padding-bottom:8px;-webkit-overflow-scrolling:touch;scrollbar-width:thin}
-  .ew-day{scroll-snap-align:start}
-  .ew-range{margin-left:0}
+  .ew-grid{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+    overflow:visible;
+    grid-template-columns:none;
+    grid-auto-flow:unset;
+  }
+  .ew-day{
+    min-height:0;
+    width:100%;
+  }
 }
 
 /* ===== three live boards row ===== */
@@ -2171,6 +2180,23 @@ body::before{
 .rot-b:hover .core{r:4.6}
 .rot-wrap{grid-template-columns:1fr 236px}
 .rot-list{max-height:266px}
+@media(max-width:1080px){
+  .rot-wrap{grid-template-columns:1fr}
+}
+@media(max-width:640px){
+  .rot-wrap{
+    grid-template-columns:1fr;
+    padding:12px 10px;
+    gap:14px;
+  }
+  .rot-main{order:1}
+  .rot-side{order:2}
+  .rot-svg{max-height:52vh; width:100%}
+  .rot-list{max-height:180px}
+  .rot-b text{font-size:7px}
+  .rot-q,.rot-ax{font-size:7.5px}
+  .rot-ctl{width:100%; margin-left:0; margin-top:6px; flex-wrap:wrap}
+}
 
 
 /* ============================================================
@@ -2204,7 +2230,12 @@ body::before{
 .wk-grid .dk-pane{height:392px}
 .wk-b{background:var(--panel);padding:0;overflow:auto}
 .wk-b .flag.wide{width:100%;border:none;border-radius:0;background:transparent;height:100%}
-@media(max-width:1000px){.wk-grid{grid-template-columns:1fr}.wk-grid .dk-pane{height:auto;min-height:330px}}
+@media(max-width:640px){
+  .wk-grid .dk-pane{min-height:0}
+  .dk-ev{grid-template-columns:48px 1fr; padding:10px 14px; gap:8px}
+  .dk-day{padding:8px 14px}
+}
+  
 
 /* the watch strip: the list is the user's to edit */
 .tk-quick{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-left:auto}
