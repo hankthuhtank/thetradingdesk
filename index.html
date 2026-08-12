@@ -1626,12 +1626,6 @@ body.paged .section{padding-top:40px}
 .dk-msg .t{font-family:var(--mono);font-size:.7rem;letter-spacing:.18em;color:var(--gold)}
 .dk-msg .d{font-size:.82rem;color:var(--dim);max-width:400px;line-height:1.6}
 /* symbol box */
-.dk-sym{position:relative;display:flex;align-items:center;gap:9px;flex:none;
-  border:1px solid var(--line);border-radius:9px;padding:5px 10px;background:var(--panel)}
-.dk-sym span{font-family:var(--mono);font-size:.58rem;letter-spacing:.14em;color:var(--cyan)}
-.dk-sym input{width:112px;font-family:var(--mono);font-size:.76rem;font-weight:600;
-  text-transform:uppercase;background:none;border:none;color:var(--text);outline:none}
-.dk-sym input::placeholder{text-transform:none;font-weight:400;color:var(--faint)}
 .dk-sug{position:absolute;top:calc(100% + 6px);right:0;width:320px;z-index:60;
   background:var(--panel-2);border:1px solid var(--line);border-radius:12px;overflow:hidden;
   max-height:300px;overflow-y:auto;display:none;box-shadow:0 18px 44px -20px #000}
@@ -1756,7 +1750,6 @@ body.paged .section{padding-top:40px}
 @media (max-width:640px){
   .dk-crow,.dk-chead{grid-template-columns:56px 1fr 62px;gap:9px}
   .dk-crow .rk,.dk-chead span:nth-child(4){display:none}
-  .dk-sym input{width:84px}
   .dk-sug{width:min(300px,78vw)}
 }
 @media (prefers-reduced-motion:reduce){
@@ -2043,13 +2036,12 @@ body.paged .section{padding-top:40px}
    ============================================================ */
 .bg-glow{opacity:.5}
 body::before{
-  content:'';position:fixed;inset:-30% -10% auto -10%;height:80vh;z-index:0;pointer-events:none;
+  content:'';position:fixed;inset:-24% -8% auto -8%;height:62vh;z-index:0;pointer-events:none;
   background:
-    radial-gradient(46% 38% at 18% 26%,rgba(34,211,238,.10),transparent 68%),
-    radial-gradient(42% 34% at 82% 18%,rgba(245,185,66,.07),transparent 66%),
-    radial-gradient(38% 30% at 52% 62%,rgba(167,139,250,.06),transparent 70%);
-  filter:blur(28px);
-  animation:aurora 34s ease-in-out infinite alternate;
+    radial-gradient(40% 32% at 22% 18%,rgba(34,211,238,.07),transparent 70%),
+    radial-gradient(36% 26% at 76% 12%,rgba(34,211,238,.04),transparent 72%);
+  filter:blur(34px);
+  animation:aurora 46s ease-in-out infinite alternate;
 }
 @keyframes aurora{
   0%{transform:translate3d(0,0,0) scale(1)}
@@ -2083,6 +2075,98 @@ body::before{
   #nav::after{transition:none}
   .tsec{opacity:1;transform:none}
 }
+
+/* ============================================================
+   THE TICKER BAR
+   Out of the chart header and into the open, because the control
+   that drives four panels should not be hiding inside one of them.
+   ============================================================ */
+.tk-bar{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:16px;
+  padding:14px 18px;border:1px solid var(--line);border-radius:14px;
+  background:linear-gradient(160deg,var(--panel-2),var(--panel))}
+.tk-box{position:relative;display:flex;align-items:center;gap:11px;flex:1;min-width:260px;
+  border:1px solid var(--line);border-radius:10px;padding:9px 14px;background:var(--void);
+  transition:border-color .25s,box-shadow .25s}
+.tk-box:focus-within{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(34,211,238,.12)}
+.tk-cue{font-family:var(--mono);font-size:.58rem;letter-spacing:.18em;color:var(--cyan);flex:none}
+.tk-box input{flex:1;background:none;border:none;outline:none;color:var(--text);
+  font-family:var(--mono);font-size:.94rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase}
+.tk-box input::placeholder{text-transform:none;font-weight:400;letter-spacing:0;color:var(--faint)}
+.tk-sug{top:calc(100% + 8px);left:0;right:auto;width:100%}
+.tk-now{font-family:var(--mono);font-size:1.28rem;font-weight:600;letter-spacing:-.02em;
+  color:var(--cyan);flex:none}
+.tk-hint{font-size:.74rem;color:var(--faint);flex:1;min-width:190px;line-height:1.45}
+.tk-quick{display:flex;gap:6px;flex:none}
+.tk-quick button{font-family:var(--mono);font-size:.64rem;padding:6px 11px;border-radius:8px;
+  border:1px solid var(--line);color:var(--dim);transition:all .2s}
+.tk-quick button:hover{border-color:var(--cyan);color:var(--cyan);transform:translateY(-1px)}
+@media(max-width:760px){.tk-hint{display:none}}
+
+/* the four panels crossfade together when the symbol changes */
+.dk-work{transition:opacity .2s var(--ease)}
+.dk-work.swap{opacity:.35}
+
+/* timeframe groups, so intraday reads as separate from swing */
+.dk-tf .grp{display:flex;border-right:1px solid var(--line)}
+.dk-tf .grp:first-child button{color:var(--gold)}
+.dk-tf .grp:first-child button.on{color:var(--gold);background:rgba(245,185,66,.1);
+  box-shadow:inset 0 -2px 0 var(--gold)}
+
+/* ============================================================
+   THE READ, expanded
+   ============================================================ */
+.rd-lede{padding:16px 18px;font-size:.95rem;line-height:1.62;color:var(--text);
+  border-bottom:1px solid var(--line);background:rgba(34,211,238,.035)}
+.vx-curve{width:100%;height:auto;margin:4px 0 14px;display:block}
+.vx-lab{font-family:var(--mono);font-size:7px;fill:var(--faint);letter-spacing:.1em}
+.vx-val{font-family:var(--mono);font-size:8px;fill:var(--text);font-weight:600}
+.rd-lead{display:grid;grid-template-columns:auto 1fr;gap:7px 11px;align-items:center;
+  margin-top:14px;padding-top:13px;border-top:1px solid var(--line-2)}
+.rd-lead .k{font-family:var(--mono);font-size:.56rem;letter-spacing:.13em;text-transform:uppercase;
+  color:var(--faint)}
+.rd-lead .g{display:flex;gap:6px;flex-wrap:wrap}
+.rd-lead em{font-style:normal;font-family:var(--mono);font-size:.64rem;padding:3px 8px;
+  border-radius:100px;border:1px solid var(--line);cursor:pointer;transition:all .2s}
+.rd-lead em:hover{border-color:currentColor;transform:translateY(-1px)}
+
+/* ============================================================
+   DEALER FLOW
+   ============================================================ */
+.gx-head{display:flex;align-items:baseline;gap:11px;flex-wrap:wrap;padding:16px 18px 12px}
+.gx-head .gx-k{font-family:var(--mono);font-size:.56rem;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--faint);width:100%}
+.gx-head b{font-size:1.3rem;font-weight:700;letter-spacing:-.025em}
+.gx-head.up b{color:var(--green)} .gx-head.dn b{color:var(--red)}
+.gx-pill{font-family:var(--mono);font-size:.55rem;letter-spacing:.12em;padding:3px 9px;
+  border-radius:100px;border:1px solid currentColor}
+.gx-pill.short{color:var(--red)} .gx-pill.long{color:var(--green)}
+.gx-days{font-family:var(--mono);font-size:.6rem;color:var(--faint)}
+.gx-say{padding:0 18px 14px;font-size:.8rem;line-height:1.6;color:var(--dim)}
+.gx-rows{display:flex;flex-direction:column}
+.gx-r{padding:12px 18px;border-top:1px solid var(--line-2)}
+.gx-r .k{display:block;font-family:var(--mono);font-size:.56rem;letter-spacing:.13em;
+  text-transform:uppercase;color:var(--faint);margin-bottom:5px}
+.gx-r .v{display:block;font-size:.92rem;font-weight:600;margin-bottom:5px}
+.gx-r p{font-size:.75rem;line-height:1.55;color:var(--dim)}
+.gx-note{padding:13px 18px;border-top:1px solid var(--line);font-size:.68rem;
+  color:var(--faint);line-height:1.5}
+.gx-none{padding:18px}
+.gx-none b{display:block;font-size:.92rem;margin-bottom:9px}
+.gx-none p{font-size:.78rem;line-height:1.6;color:var(--dim);margin-bottom:10px}
+.gx-jump{display:flex;gap:7px;margin-top:12px}
+.gx-jump button{font-family:var(--mono);font-size:.64rem;padding:6px 12px;border-radius:8px;
+  border:1px solid var(--cyan);color:var(--cyan);transition:all .2s}
+.gx-jump button:hover{background:var(--cyan);color:var(--void)}
+
+/* ============================================================
+   ROTATION, tightened
+   ============================================================ */
+.rot-b text{font-weight:600;letter-spacing:.02em}
+.rot-b .core,.rot-b .halo,.rot-b text{transition:none}   /* rAF drives these */
+.rot-b:hover .core{r:4.6}
+.rot-wrap{grid-template-columns:1fr 236px}
+.rot-list{max-height:266px}
+.rot-svg{max-height:440px}
 
 </style>
 
@@ -2177,21 +2261,28 @@ body::before{
       <div class="dk-body flush" id="dkRead"><div class="dk-skel"></div><div class="dk-skel"></div><div class="dk-skel"></div></div>
     </section>
 
-    <!-- ONE TICKER. Everything about a symbol at once: the chart, what
-         the company is worth, and what kind of market it is in. No
-         collapsing, no scrolling between related things. -->
-    <h3 class="tsec">One ticker &middot; everything at once</h3>
-    <div class="dk-work" id="dkWork">
+    <!-- ONE TICKER. The symbol box sits above the panels rather than
+         buried in the chart header, so it is obvious where you change it. -->
+    <div class="tk-bar reveal">
+      <div class="tk-box">
+        <span class="tk-cue">TICKER</span>
+        <input id="tkSym" placeholder="Type any symbol, then Enter" autocomplete="off"
+               spellcheck="false" aria-label="Change the ticker" aria-autocomplete="list">
+        <div class="dk-sug tk-sug" id="tkSug" role="listbox"></div>
+      </div>
+      <span class="tk-now" id="tkNow">NVDA</span>
+      <span class="tk-hint">Chart, fundamentals, regime and dealer flow all follow this symbol.</span>
+      <span class="tk-quick">
+        <button data-sym="SPY">SPY</button><button data-sym="QQQ">QQQ</button>
+        <button data-sym="NVDA">NVDA</button><button data-sym="AAPL">AAPL</button>
+        <button data-sym="TSLA">TSLA</button>
+      </span>
+    </div>
 
+    <div class="dk-work" id="dkWork">
       <section class="dk-panel dk-a">
         <div class="dk-bar"><span class="dot"></span><span class="t">Chart</span>
-          <span class="s">
-            <span class="dk-sym"><span>SYM</span>
-              <input id="dkSym" placeholder="Search any symbol" autocomplete="off" spellcheck="false" aria-label="Chart symbol">
-              <div class="dk-sug" id="dkSug" role="listbox"></div>
-            </span>
-          </span>
-        </div>
+          <span class="s" id="dkChartSrc"></span></div>
         <div class="dk-cq">
           <span class="nm" id="dkQName">Loading</span>
           <span class="last" id="dkQLast">&mdash;</span>
@@ -2199,14 +2290,20 @@ body::before{
           <span class="oh" id="dkOhlc"></span>
         </div>
         <div class="dk-tf" id="dkTf">
-          <button data-tf="1D">1D</button><button data-tf="5D">5D</button>
-          <button data-tf="1M">1M</button><button data-tf="3M">3M</button>
-          <button data-tf="6M" class="on">6M</button><button data-tf="YTD">YTD</button>
-          <button data-tf="1Y">1Y</button><button data-tf="5Y">5Y</button>
+          <span class="grp">
+            <button data-tf="1m">1m</button><button data-tf="5m">5m</button>
+            <button data-tf="15m">15m</button><button data-tf="1h">1h</button>
+          </span>
+          <span class="grp">
+            <button data-tf="1D">1D</button><button data-tf="5D">5D</button>
+            <button data-tf="1M">1M</button><button data-tf="3M">3M</button>
+            <button data-tf="6M" class="on">6M</button><button data-tf="1Y">1Y</button>
+            <button data-tf="5Y">5Y</button>
+          </span>
           <span class="sp"></span>
-          <button data-type="area" class="on">Area</button>
-          <button data-type="candles">Candles</button>
-          <button data-tog="vol">Vol</button>
+          <button data-type="candles" class="on">Candles</button>
+          <button data-type="area">Area</button>
+          <button data-tog="vol" class="on">Vol</button>
           <button data-tog="ma">MA</button>
         </div>
         <div class="dk-cv" id="dkCanvas">
@@ -2227,11 +2324,10 @@ body::before{
       </section>
 
       <section class="dk-panel dk-d">
-        <div class="dk-bar"><span class="dot"></span><span class="t">Economic Calendar</span>
-          <span class="s">loading</span></div>
-        <div class="dk-body flush" id="dkEcon"><div class="dk-skel"></div><div class="dk-skel"></div></div>
+        <div class="dk-bar"><span class="dot"></span><span class="t">Dealer Flow</span>
+          <span class="s">reading</span></div>
+        <div class="dk-body flush" id="dkGex"><div class="dk-skel"></div><div class="dk-skel"></div></div>
       </section>
-
     </div>
 
     <!-- THE ROTATION. Where money is actually moving between
@@ -2255,6 +2351,13 @@ body::before{
         </span>
       </div>
       <div class="dk-body flush" id="rotPlot"><div class="dk-skel"></div><div class="dk-skel"></div><div class="dk-skel"></div></div>
+    </section>
+
+    <h3 class="tsec">The week ahead &middot; scheduled releases</h3>
+    <section class="dk-panel reveal" style="height:360px;margin-bottom:8px">
+      <div class="dk-bar"><span class="dot"></span><span class="t">Economic Calendar</span>
+        <span class="s">loading</span></div>
+      <div class="dk-body flush" id="dkEcon"><div class="dk-skel"></div><div class="dk-skel"></div></div>
     </section>
     <div class="flagship reveal" style="margin-bottom:16px">
       <button class="flag wide" style="text-align:left;--accent:var(--gold);--accent-fade:rgba(245,185,66,.14)" onclick="openModal('m-earn')" aria-label="Open the full earnings calendar">
@@ -5470,7 +5573,7 @@ const cmdk=$('#cmdk'), cmdkInput=$('#cmdkInput'), cmdkList=$('#cmdkList');
 const CMDS=[
   ...TOOLS.map(t=>({label:t.name,kind:'tool',run:()=>openModal(t.id)})),
   {label:'The Compass · relative strength',kind:'live',run:()=>{location.hash='#terminal';}},
-  {label:'Chart · any symbol',kind:'live',run:()=>{location.hash='#terminal';setTimeout(()=>{const i=document.getElementById('dkSym');if(i)i.focus();},400);}},
+  {label:'Chart · any symbol',kind:'live',run:()=>{location.hash='#terminal';setTimeout(()=>{const i=document.getElementById('tkSym');if(i)i.focus();},400);}},
   {label:'Economic calendar',kind:'live',run:()=>{location.hash='#terminal';}},
   {label:'Delphi · prediction scanner (bonus)',kind:'launch',run:()=>location.href='/delphi'},
   {label:'Earnings this week',kind:'live',run:()=>openModal('m-earn')},

@@ -167,13 +167,20 @@ function rotSet(map,bench,tf){
   keys.forEach((k,i)=>{ bodies[k]={ratio:ratio[i],mom:mom[i],closes:al.series[k]}; });
   return {bodies,len:ratio[0].length,minIdx:ROT_TREND_W+tf,refCount:refIdx.length};
 }
+/* Read one body at a playhead position. The playhead is a FLOAT, so replay
+   interpolates between two sessions rather than snapping from one to the
+   next. That single change is the difference between a slideshow and motion. */
 function rotAt(s,tailLen,head){
   const L=s.ratio.length;
-  const i=head==null?L-1:Math.max(0,Math.min(L-1,head));
+  const h=head==null?L-1:Math.max(0,Math.min(L-1,head));
+  const i=Math.floor(h), f=h-i, j=Math.min(L-1,i+1);
+  const lerp=(a,b)=>a+(b-a)*f;
   const tail=[];
-  for(let j=Math.max(0,i-tailLen+1);j<=i;j++) tail.push({x:s.ratio[j],y:s.mom[j]});
+  for(let k=Math.max(0,i-tailLen+1);k<=i;k++) tail.push({x:s.ratio[k],y:s.mom[k]});
+  tail.push({x:lerp(s.ratio[i],s.ratio[j]), y:lerp(s.mom[i],s.mom[j])});
   const c=s.closes, back=Math.max(0,i-5);
-  return {x:s.ratio[i], y:s.mom[i], tail, ret:c[back]>0?(c[i]/c[back]-1):0};
+  return {x:lerp(s.ratio[i],s.ratio[j]), y:lerp(s.mom[i],s.mom[j]), tail,
+          ret:c[back]>0?(c[i]/c[back]-1):0};
 }
 function rotPhase(x,y){
   if(x>=100&&y>=100)return 'Leading';
@@ -274,35 +281,47 @@ function rotDraw(){
 
   /* Scale to the data with a symmetric pad so the centre cross stays at
      100/100 and the quadrants keep their meaning. */
-  const allX=pts.flatMap(p=>p.tail.map(t=>t.x)).concat(pts.map(p=>p.x));
-  const allY=pts.flatMap(p=>p.tail.map(t=>t.y)).concat(pts.map(p=>p.y));
-  const rx=Math.max(3,...allX.map(v=>Math.abs(v-100)))*1.18;
-  const ry=Math.max(3,...allY.map(v=>Math.abs(v-100)))*1.18;
+  /* Scale over the WHOLE series, not just the visible frame, so the axes
+     hold still during replay. A rescaling axis makes every body appear to
+     drift even when it has not moved, which is the single thing that made
+     the old replay unreadable. */
+  let mx=3,my=3;
+  keys.forEach(k=>{
+    const s=set.bodies[k];
+    for(let i=set.minIdx;i<L;i++){
+      const dx=Math.abs(s.ratio[i]-100), dy=Math.abs(s.mom[i]-100);
+      if(dx>mx)mx=dx; if(dy>my)my=dy;
+    }
+  });
+  const rx=mx*1.1, ry=my*1.1;
   const W=620,H=460,P=38;
-  const sx=v=>P+((v-100+rx)/(2*rx))*(W-P*2);
-  const sy=v=>H-P-((v-100+ry)/(2*ry))*(H-P*2);
+  const sx=v=>(P+((v-100+rx)/(2*rx))*(W-P*2)).toFixed(1);
+  const sy=v=>(H-P-((v-100+ry)/(2*ry))*(H-P*2)).toFixed(1);
+  set.scale={sx,sy,W,H};
 
   /* Markers are sized in viewBox units, and the SVG stretches to its
      container, so a fixed radius looked like a beach ball on a wide screen.
      Everything below scales down as the field gets crowded and is drawn with
      vector-effect so strokes stay hairline at any width. */
-  const dense=Math.min(1,18/Math.max(6,keys.length));
-  const R=3.4+dense*1.6, HALO=R*2.5, FS=(7.5+dense*2).toFixed(1);
+  /* Small. A rotation map is read by POSITION, so a large marker is just
+     occlusion: it hides the very neighbours you are comparing against. */
+  const dense=Math.min(1,14/Math.max(8,keys.length));
+  const R=2.2+dense*1.1, HALO=R*1.9, FS=(6.6+dense*1.4).toFixed(1);
 
   const bodies=pts.map((p,i)=>{
     const col=PHASE_COL[p.phase];
     const dim=ROT.focus&&ROT.focus!==p.k;
     const showTail=ROT.trail==='all'||!ROT.focus||ROT.focus===p.k;
-    const path=p.tail.map((t,j)=>`${j?'L':'M'}${sx(t.x).toFixed(1)} ${sy(t.y).toFixed(1)}`).join(' ');
+    const path=p.tail.map((t,j)=>`${j?'L':'M'}${sx(t.x)} ${sy(t.y)}`).join(' ');
     const dots=p.tail.slice(0,-1).map(t=>
-      `<circle cx="${sx(t.x).toFixed(1)}" cy="${sy(t.y).toFixed(1)}" r="${(R*.32).toFixed(2)}" fill="rgba(${col},.5)"/>`).join('');
+      `<circle cx="${sx(t.x)}" cy="${sy(t.y)}" r="${(R*.32).toFixed(2)}" fill="rgba(${col},.5)"/>`).join('');
     return `<g class="rot-b${dim?' dim':''}" data-k="${esc(p.k)}" data-i="${i}" tabindex="0" role="button"
         aria-label="${esc(rotName(p.k))}, ${p.phase}" style="--c:rgb(${col});--d:${i*32}ms">
       ${showTail?`<path class="tail" d="${path}" stroke="rgba(${col},.5)" fill="none"
         stroke-width="1.2" vector-effect="non-scaling-stroke"/>${dots}`:''}
-      <circle class="halo" cx="${sx(p.x).toFixed(1)}" cy="${sy(p.y).toFixed(1)}" r="${HALO.toFixed(1)}" fill="rgba(${col},.14)"/>
-      <circle class="core" cx="${sx(p.x).toFixed(1)}" cy="${sy(p.y).toFixed(1)}" r="${R.toFixed(1)}" fill="rgb(${col})"/>
-      <text x="${sx(p.x).toFixed(1)}" y="${(sy(p.y)-HALO-2).toFixed(1)}" text-anchor="middle"
+      <circle class="halo" cx="${sx(p.x)}" cy="${sy(p.y)}" r="${HALO.toFixed(1)}" fill="rgba(${col},.14)"/>
+      <circle class="core" cx="${sx(p.x)}" cy="${sy(p.y)}" r="${R.toFixed(1)}" fill="rgb(${col})"/>
+      <text x="${sx(p.x)}" y="${(+sy(p.y)-HALO-2).toFixed(1)}" text-anchor="middle"
         font-size="${FS}">${esc(p.k)}</text>
     </g>`;
   }).join('');
@@ -374,9 +393,14 @@ function rotDim(){
   $$('.rot-b').forEach(g=>g.classList.toggle('dim',!!ROT.focus&&g.dataset.k!==ROT.focus));
   $$('.rot-li').forEach(b=>b.classList.toggle('on',ROT.focus===b.dataset.k));
 }
-/* replay: walk the playhead forward one session at a time, then stop at the
-   live bar rather than looping, because looping makes it read as decoration */
-let rotTimer=null;
+/* ---- replay ----------------------------------------------------------
+   A setInterval that redrew a whole frame every 110ms is a slideshow. This runs
+   on requestAnimationFrame and advances a FRACTIONAL playhead by elapsed
+   time, so bodies travel between sessions instead of teleporting. It also
+   moves the existing SVG nodes rather than rebuilding them, which is what
+   keeps sixty frames a second affordable. */
+let rotRaf=null, rotLast=0;
+const ROT_SPEED=3.2;              /* sessions per second */
 function rotToggle(){ ROT.playing?rotStop():rotStart(); }
 function rotStart(){
   if(!ROT.set)return;
@@ -384,216 +408,76 @@ function rotStart(){
   if(ROT.head>=L-1) ROT.head=ROT.set.minIdx;
   ROT.playing=true;
   const btn=$('#rotPlay'); if(btn) btn.textContent='\u25a0';
-  rotTimer=setInterval(()=>{
-    ROT.head++;
-    if(ROT.head>=L-1){ ROT.head=L-1; rotStop(); rotDraw(); return; }
+  rotLast=performance.now();
+  const frame=now=>{
+    if(!ROT.playing)return;
+    const dt=Math.min(.1,(now-rotLast)/1000); rotLast=now;
+    ROT.head+=dt*ROT_SPEED;
+    if(ROT.head>=L-1){ ROT.head=L-1; rotStep(); rotStop(); return; }
     rotStep();
-  },110);
+    rotRaf=requestAnimationFrame(frame);
+  };
+  rotRaf=requestAnimationFrame(frame);
 }
 function rotStop(){
   ROT.playing=false;
-  if(rotTimer){clearInterval(rotTimer);rotTimer=null;}
+  if(rotRaf){cancelAnimationFrame(rotRaf);rotRaf=null;}
   const btn=$('#rotPlay'); if(btn) btn.textContent='\u25b6';
 }
-/* one frame of replay. A full rotDraw per frame rebuilt the DOM ten times a
-   second, which fought the browser; this moves the existing nodes instead. */
+/* One frame. The axis scale is computed once per SET, not per frame, because
+   a rescaling axis makes every body drift even when it has not moved. */
 function rotStep(){
-  const set=ROT.set; if(!set)return;
-  const L=set.len;
-  const keys=Object.keys(set.bodies);
-  const pts=keys.map(k=>{const a=rotAt(set.bodies[k],ROT.tail,ROT.head);
-    return {k,x:a.x,y:a.y,tail:a.tail,phase:rotPhase(a.x,a.y)};});
-  const allX=pts.flatMap(p=>p.tail.map(t=>t.x)).concat(pts.map(p=>p.x));
-  const allY=pts.flatMap(p=>p.tail.map(t=>t.y)).concat(pts.map(p=>p.y));
-  const rx=Math.max(3,...allX.map(v=>Math.abs(v-100)))*1.18;
-  const ry=Math.max(3,...allY.map(v=>Math.abs(v-100)))*1.18;
-  const W=620,H=460,P=38;
-  const sx=v=>P+((v-100+rx)/(2*rx))*(W-P*2);
-  const sy=v=>H-P-((v-100+ry)/(2*ry))*(H-P*2);
-  pts.forEach(p=>{
-    const g=document.querySelector('.rot-b[data-k="'+p.k+'"]'); if(!g)return;
-    const col=PHASE_COL[p.phase];
-    const cx=sx(p.x).toFixed(1),cy=sy(p.y).toFixed(1);
-    const core=g.querySelector('.core'),halo=g.querySelector('.halo'),
-          txt=g.querySelector('text'),tl=g.querySelector('.tail');
+  const set=ROT.set; if(!set||!set.scale)return;
+  const {sx,sy,W,H}=set.scale, L=set.len;
+  Object.keys(set.bodies).forEach(k=>{
+    const g=document.querySelector('.rot-b[data-k="'+CSS.escape(k)+'"]'); if(!g)return;
+    const a=rotAt(set.bodies[k],ROT.tail,ROT.head);
+    const ph=rotPhase(a.x,a.y), col=PHASE_COL[ph];
+    const cx=sx(a.x), cy=sy(a.y);
+    const core=g.querySelector('.core'), halo=g.querySelector('.halo'),
+          txt=g.querySelector('text'), tl=g.querySelector('.tail');
     if(core){core.setAttribute('cx',cx);core.setAttribute('cy',cy);core.setAttribute('fill','rgb('+col+')');}
     if(halo){halo.setAttribute('cx',cx);halo.setAttribute('cy',cy);halo.setAttribute('fill','rgba('+col+',.14)');}
-    if(txt){txt.setAttribute('x',cx);txt.setAttribute('y',(+cy-12).toFixed(1));}
-    if(tl){tl.setAttribute('d',p.tail.map((t,j)=>(j?'L':'M')+sx(t.x).toFixed(1)+' '+sy(t.y).toFixed(1)).join(' '));
-      tl.setAttribute('stroke','rgba('+col+',.5)');}
+    if(txt){txt.setAttribute('x',cx);txt.setAttribute('y',(+cy-(+halo.getAttribute('r'))-2).toFixed(1));
+            txt.setAttribute('fill','rgb('+col+')');}
+    if(tl){tl.setAttribute('d',a.tail.map((p,j)=>(j?'L':'M')+sx(p.x)+' '+sy(p.y)).join(' '));
+           tl.setAttribute('stroke','rgba('+col+',.5)');}
     g.style.setProperty('--c','rgb('+col+')');
   });
   const hd=$('#rotHead'); if(hd) hd.value=ROT.head;
-  const dt=$('#rotDate'); if(dt) dt.textContent = ROT.head>=L-1?'Latest close':(L-1-ROT.head)+' sessions back';
-}
-function rotSay(p){
-  const el=$('#rotRead'); if(!el)return;
-  if(!p){
-    el.innerHTML=`<span class="k">The map</span><span class="v">Relative rotation</span>
-      <p>Each body is measured against SPY, then scored across the sector field so a utility and a semiconductor basket are comparable. Right of centre is outperforming, above centre is accelerating. The trail is the last six sessions, and money tends to travel clockwise.</p>
-      <small>Hover a body to read it. Click a sector to open its constituents.</small>`;
-    return;
-  }
-  const q=p.q;
-  const spin=q ? (q.dir==='cw'?'Rotating clockwise, the normal direction.'
-              : q.dir==='ccw'?'Rotating counter-clockwise, which is unusual and often means a failed move.'
-              : 'Barely rotating. This is drift rather than a real move.') : '';
-  const clean=q ? (q.quality>0.55?'The path is a clean arc, so the rotation is real.'
-              : q.quality>0.28?'The path is uneven. Treat it as a lean, not a signal.'
-              : 'The path is a scribble. This is jitter across a boundary, not rotation.') : '';
-  el.innerHTML=`<span class="k" style="color:rgb(${PHASE_COL[p.phase]})">${p.phase}</span>
-    <span class="v">${esc(p.k)} <em>${esc(rotName(p.k))}</em></span>
-    <p>${PHASE_SAY[p.phase]}</p>
-    <div class="rot-nums">
-      <span>RS-Ratio <b>${p.x.toFixed(1)}</b></span>
-      <span>RS-Mom <b>${p.y.toFixed(1)}</b></span>
-      <span>5-day <b class="${dirC(p.ret)}">${pctf(p.ret*100)}</b></span>
-      <span>Quality <b>${q?(q.quality*100).toFixed(0)+'%':'\u2014'}</b></span>
-    </div>
-    <small>${spin} ${clean}</small>`;
-}
-function rotClick(k){
-  const g=ROT_GROUPS.find(x=>x.sym===k);
-  if(!ROT.drill && g && g.members && g.members.length>2){
-    ROT.drill=k;
-    const host=$('#rotPlot');
-    if(host) host.innerHTML='<div class="dk-skel"></div><div class="dk-skel"></div><div class="dk-skel"></div>';
-    rotLoad();
-    return;
-  }
-  /* nothing to open, or already drilled in: chart it. A group charts its
-     ETF where one exists, since a synthetic basket has no ticker. */
-  toChart(g && g.etf ? g.etf : k);
-}
-function rotBackOut(){ ROT.drill=null; rotLoad(); }
-
-/* ============================================================
-   THE READ
-   Market conditions, not market prices. Three questions: how
-   nervous is the options market, are dealers amplifying moves
-   or damping them, and is the move broad or narrow.
-
-   The gamma half comes from Kairos through a deliberately coarse
-   channel: prior close, three buckets, never a level. That is
-   enough to teach what dealer positioning does to a tape, and
-   not enough to trade off, which is the point.
-   ============================================================ */
-const GAMMA_SAY={
-  short:['Dealers are short gamma','They hedge in the direction of the move, which amplifies it. Trends extend, dips get sold harder, and ranges break more often than they hold.'],
-  long: ['Dealers are long gamma','They hedge against the move, which damps it. Rallies get sold and dips get bought mechanically, so price tends to compress and revert toward the middle.']
-};
-const FLIP_SAY={
-  near:['Close to the flip','Small moves could change the regime, so today can behave one way in the morning and the other by the afternoon.'],
-  mid: ['Some room to the flip','A normal session could reach it, but the current regime is the base case.'],
-  far: ['Far from the flip','Today is very likely to behave the way it is behaving now, all session.']
-};
-const CONC_SAY={
-  tight: ['Tight','A few strikes hold most of the positioning, so price tends to get pinned and pushed around by them.'],
-  normal:['Normal','Positioning is spread out enough that no single level dominates.'],
-  loose: ['Loose','Nothing much is holding price in place, so it can travel without meeting resistance from hedging.']
-};
-async function loadRead(){
-  const host=$('#dkRead'); if(!host) return;
-  let read=null;
-  try{ read=await get('/v1/read'); }catch(e){ read=null; }
-
-  let breadth=null;
-  try{
-    const d=await get('/v1/strength');
-    const rows=d.rows||[];
-    const adv=rows.filter(r=>r.m1>0).length;
-    breadth={adv,tot:rows.length};
-  }catch(e){}
-
-  if(!read && !breadth){
-    host.innerHTML=stateBox('THE READ IS OFFLINE','Neither the volatility feed nor the rotation feed is reachable right now.');
-    setBar('#dkRead','offline'); return;
-  }
-
-  const cards=[];
-
-  /* --- VIX --- */
-  if(read && read.vix){
-    const v=read.vix;
-    const band = v.spot<14?['Calm','The options market is pricing small daily moves. Complacency is cheap and protection is cheap with it.']
-      : v.spot<20?['Normal','Ordinary two-way risk. Nothing in the volatility surface is shouting.']
-      : v.spot<28?['Elevated','The market is paying up for protection. Position sizes should come down before conviction does.']
-      : ['Stressed','Fear is being paid for aggressively. Historically these readings mark the middle of a move, not the end.'];
-    const term = v.termState==='backwardation'
-      ? ['Backwardation','Near-term volatility costs more than far-term, which happens when something is wrong right now. This is the shape that marks stress.']
-      : ['Contango','Far-term volatility costs more than near-term, the normal shape. The market expects today to be calmer than next quarter.'];
-    cards.push(`<div class="rd-card">
-      <div class="rd-h"><span class="rd-t">Volatility</span>
-        <span class="rd-v">${fmt(v.spot,2)}</span></div>
-      <div class="rd-scale"><i style="left:${Math.max(0,Math.min(100,(v.spot/45)*100)).toFixed(1)}%"></i>
-        <span>10</span><span>20</span><span>30</span><span>45</span></div>
-      <div class="rd-row"><b>${band[0]}</b><p>${band[1]}</p></div>
-      <div class="rd-row"><b>${term[0]}</b><p>${term[1]}</p>
-        <span class="rd-sub">VIX ${fmt(v.spot,2)} against 3-month ${v.vix3m?fmt(v.vix3m,2):'\u2014'}</span></div>
-    </div>`);
-  }
-
-  /* --- dealer gamma --- */
-  if(read && read.symbols && Object.keys(read.symbols).length){
-    const syms=Object.keys(read.symbols);
-    cards.push(`<div class="rd-card">
-      <div class="rd-h"><span class="rd-t">Dealer positioning</span>
-        <span class="rd-tag">prior close</span></div>
-      ${syms.map(s=>{
-        const x=read.symbols[s];
-        const g=GAMMA_SAY[x.gammaSign]||['Unknown',''];
-        const f=x.flipBucket?FLIP_SAY[x.flipBucket]:null;
-        const c=x.concentration?CONC_SAY[x.concentration]:null;
-        return `<div class="rd-sym">
-          <div class="rd-sh"><b>${esc(s)}</b>
-            <span class="rd-pill ${x.gammaSign}">${x.gammaSign==='short'?'SHORT GAMMA':'LONG GAMMA'}</span>
-            ${x.dayCount>1?`<span class="rd-days">${x.dayCount} sessions</span>`:''}</div>
-          <p>${g[1]}</p>
-          <div class="rd-mini">
-            ${f?`<span><b>${f[0]}</b>${f[1]}</span>`:''}
-            ${c?`<span><b>${c[0]} book</b>${c[1]}</span>`:''}
-          </div>
-        </div>`;
-      }).join('')}
-      <p class="rd-note">Deliberately coarse and one session behind. The point is the mechanism, not a level to trade against.</p>
-    </div>`);
-  }
-
-  /* --- breadth --- */
-  if(breadth && breadth.tot){
-    const pct=breadth.adv/breadth.tot*100;
-    const say = pct>=70?['Broad','Most of the market is participating. Moves built on this tend to hold.']
-      : pct>=45?['Mixed','Roughly half the market is working. No strong message either way.']
-      : pct>=25?['Narrow','A minority is carrying the index. That is fragile, because it depends on a handful of names.']
-      : ['Very narrow','Almost nothing is participating. An index holding up on this is being held up by a few names.'];
-    cards.push(`<div class="rd-card">
-      <div class="rd-h"><span class="rd-t">Breadth</span>
-        <span class="rd-v">${breadth.adv}<em>/${breadth.tot}</em></span></div>
-      <div class="rd-bar"><i style="width:${pct.toFixed(0)}%"></i></div>
-      <div class="rd-row"><b>${say[0]}</b><p>${say[1]}</p>
-        <span class="rd-sub">Groups outperforming SPY over the last month.</span></div>
-    </div>`);
-  }
-
-  host.innerHTML=`<div class="rd-grid">${cards.join('')}</div>`;
-  setBar('#dkRead', read&&read.session?read.session:'live');
+  const dt=$('#rotDate');
+  if(dt) dt.textContent = ROT.head>=L-1?'Latest close':Math.round(L-1-ROT.head)+' sessions back';
 }
 
 /* ============================================================
    THE TERMINAL: chart, snapshot, calendar
    ============================================================ */
-const TF={'1D':{range:'1d',interval:'5m'},'5D':{range:'5d',interval:'30m'},
-  '1M':{range:'1mo',interval:'1h'},'3M':{range:'3mo',interval:'1d'},
-  '6M':{range:'6mo',interval:'1d'},'YTD':{range:'ytd',interval:'1d'},
-  '1Y':{range:'1y',interval:'1d'},'5Y':{range:'5y',interval:'1wk'}};
+/* Intraday ranges are capped by the provider: one-minute bars only go back a
+   week, five-minute a month. Asking for more silently returns less, so each
+   timeframe pairs an interval with the longest range that actually honours it. */
+const TF={
+  '1m':{range:'1d', interval:'1m'},  '5m':{range:'5d', interval:'5m'},
+  '15m':{range:'1mo',interval:'15m'},'1h':{range:'3mo',interval:'60m'},
+  '1D':{range:'1d', interval:'5m'},  '5D':{range:'5d', interval:'30m'},
+  '1M':{range:'1mo',interval:'1h'},  '3M':{range:'3mo',interval:'1d'},
+  '6M':{range:'6mo',interval:'1d'},  'YTD':{range:'ytd',interval:'1d'},
+  '1Y':{range:'1y', interval:'1d'},  '5Y':{range:'5y', interval:'1wk'}};
 let chart,sMain,sVol,sMa20,sMa50;
-const C={sym:'NVDA',tf:'6M',type:'area',vol:false,ma:false,bars:[],meta:null};
+const C={sym:'NVDA',tf:'6M',type:'candles',vol:true,ma:false,bars:[],meta:null};
 
 /* Everything in the workspace is visible at once now, so charting a symbol
    just reloads the panels and scrolls the workspace into view. */
 function toChart(sym){
-  loadChart(sym);
-  const s=$('#dkWork'); if(s) s.scrollIntoView({behavior:SLOW?'auto':'smooth',block:'start'});
+  const s=String(sym||'').toUpperCase();
+  const lab=$('#tkNow'); if(lab) lab.textContent=s;
+  /* the panels fade out together and back in as the new symbol lands, so a
+     ticker change reads as one movement rather than four separate flickers */
+  const work=$('#dkWork');
+  if(work&&!SLOW){ work.classList.add('swap'); setTimeout(()=>work.classList.remove('swap'),420); }
+  loadChart(s);
+  const anchor=$('#dkWork');
+  if(anchor&&Math.abs(anchor.getBoundingClientRect().top)>window.innerHeight*.6)
+    anchor.scrollIntoView({behavior:SLOW?'auto':'smooth',block:'start'});
 }
 window.deskChart=toChart;
 
@@ -683,14 +567,14 @@ async function loadChart(sym,tf){
     const d=await get(`/v1/candles?symbol=${encodeURIComponent(C.sym)}&range=${cfg.range}&interval=${cfg.interval}`);
     if(my!==seq)return;
     C.bars=d.bars; C.meta=d;
-    chartMsg(false); paintChart(); writeQuote(); loadSnapshot(C.sym); loadRegime(C.sym);
+    chartMsg(false); paintChart(); writeQuote(); loadSnapshot(C.sym); loadRegime(C.sym); loadGex(C.sym);
   }catch(e){
     if(my!==seq)return;
     chartMsg(true,'NO DATA',e.message);
   }
 }
 function wireSymbol(){
-  const inp=$('#dkSym'),box=$('#dkSug'); if(!inp)return;
+  const inp=$('#tkSym'),box=$('#tkSug'); if(!inp)return;
   let rows=[],at=-1,timer;
   const close=()=>{box.classList.remove('on');box.innerHTML='';rows=[];at=-1;};
   const pick=i=>{const r=rows[i];if(!r)return;inp.value='';inp.blur();close();toChart(r.symbol);};
@@ -720,7 +604,7 @@ function wireSymbol(){
       const h=$('.hot',box); if(h)h.scrollIntoView({block:'nearest'});}
     else if(e.key==='Escape'){close();inp.blur();}
   });
-  document.addEventListener('click',e=>{if(!e.target.closest('.dk-sym'))close();});
+  document.addEventListener('click',e=>{if(!e.target.closest('.tk-box'))close();});
 }
 
 /* ---- the snapshot ---- */
@@ -885,6 +769,69 @@ async function loadRegime(sym){
   }catch(e){
     host.innerHTML=stateBox('NO REGIME',e.message);
     setBar('#dkRegime','offline');
+  }
+}
+
+
+/* ============================================================
+   DEALER FLOW
+   What dealer hedging is doing to THIS symbol.
+
+   A note on what is deliberately absent. Call and put walls are
+   strike-level numbers, and a strike level is a tradeable
+   artifact rather than an explanation: publishing it hands over
+   the instrument instead of teaching the mechanism. So this shows
+   the direction of hedging, how far the regime is from flipping,
+   and how clustered the book is, all in buckets and one session
+   behind. That is enough to understand why a tape behaves the way
+   it does, and not enough to trade off, which is the point.
+
+   Coverage is SPY and QQQ. Everything else gets the explainer,
+   because inventing a reading for a symbol we do not compute
+   would be worse than saying so.
+   ============================================================ */
+let GEXCACHE=null;
+async function loadGex(sym){
+  const host=$('#dkGex'); if(!host||!sym) return;
+  setBar('#dkGex','reading');
+  try{
+    if(!GEXCACHE) GEXCACHE=await get('/v1/read');
+    const d=GEXCACHE, x=d&&d.symbols?d.symbols[sym]:null;
+    if(!x){
+      const covered=d&&d.symbols?Object.keys(d.symbols):[];
+      host.innerHTML=`<div class="gx-none">
+        <b>No dealer read for ${esc(sym)}</b>
+        <p>Dealers hedge the options they sell, and that hedging is mechanical rather than discretionary. When they are short gamma they buy strength and sell weakness, which amplifies whatever the tape is already doing. When they are long gamma they do the opposite and moves get damped.</p>
+        <p>This desk computes that read for the index products only.${covered.length?' Currently '+covered.map(esc).join(' and ')+'.':''}</p>
+        ${covered.length?`<div class="gx-jump">${covered.map(s=>`<button data-sym="${esc(s)}">Read ${esc(s)}</button>`).join('')}</div>`:''}
+      </div>`;
+      $$('.gx-jump button',host).forEach(b=>b.addEventListener('click',()=>toChart(b.dataset.sym)));
+      setBar('#dkGex','not covered'); return;
+    }
+    const g=GAMMA_SAY[x.gammaSign]||['',''];
+    const f=x.flipBucket?FLIP_SAY[x.flipBucket]:null;
+    const c=x.concentration?CONC_SAY[x.concentration]:null;
+    const dial=x.gammaSign==='short'?'dn':'up';
+    host.innerHTML=`
+      <div class="gx-head ${dial}">
+        <span class="gx-k">Hedging direction</span>
+        <b>${x.gammaSign==='short'?'Amplifying':'Damping'}</b>
+        <span class="gx-pill ${x.gammaSign}">${x.gammaSign==='short'?'SHORT GAMMA':'LONG GAMMA'}</span>
+        ${x.dayCount>1?`<span class="gx-days">${x.dayCount} sessions running</span>`:''}
+      </div>
+      <p class="gx-say">${g[1]}</p>
+      <div class="gx-rows">
+        ${f?`<div class="gx-r"><span class="k">Distance to the flip</span>
+          <span class="v">${f[0]}</span><p>${f[1]}</p></div>`:''}
+        ${c?`<div class="gx-r"><span class="k">Book concentration</span>
+          <span class="v">${c[0]}</span><p>${c[1]}</p></div>`:''}
+      </div>
+      <p class="gx-note">Published one session behind and in buckets rather than levels. Strike-level detail is deliberately withheld: this is here to explain why a tape behaves as it does, not to hand over a level to trade against.</p>`;
+    setBar('#dkGex',(d.session||'')+' close');
+  }catch(e){
+    host.innerHTML=`<div class="gx-none"><b>Dealer read unavailable</b>
+      <p>${esc(e.message)}</p></div>`;
+    setBar('#dkGex','offline');
   }
 }
 
@@ -1211,6 +1158,7 @@ function init(){
   }));
   const back=$('#rotBack'); if(back)back.addEventListener('click',rotBackOut);
 
+  const lab=$('#tkNow'); if(lab) lab.textContent='NVDA';
   loadChart('NVDA','6M');
   loadRead(); loadEcon();
 
