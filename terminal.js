@@ -263,26 +263,41 @@ function rotName(k){
   const g=ROT_GROUPS.find(x=>x.sym===k||x.etf===k);
   return g?g.name:k;
 }
-/* Extent of what is on screen at this playhead, with a floor so a quiet
-   field still fills the plot. Extra pad keeps tails inside the box. */
-function rotBounds(set,head){
-  let mx=2.4, my=2.4;
-  Object.keys(set.bodies).forEach(k=>{
-    const a=rotAt(set.bodies[k],ROT.tail,head);
-    a.tail.concat([{x:a.x,y:a.y}]).forEach(p=>{
-      const dx=Math.abs(p.x-100), dy=Math.abs(p.y-100);
-      if(dx>mx) mx=dx; if(dy>my) my=dy;
-    });
-  });
-  return {rx:mx*1.18, ry:my*1.18};
+/* ── Mythos static axis (tanh warp) ─────────────────────────────
+   Ported from kairos-mythos.js. The ruler is a constant — it does not
+   depend on the current frame's data. That is why trails hold still and
+   why nothing can ever leave the plot.
+
+   tanh maps the whole real line into (-1, 1):
+     • extreme values compress instead of rescaling the middle
+     • a given RS-Ratio always maps to the same fraction of the axis
+     • identical on every device, every playhead
+
+   ROT_K controls the bend (raise → pull toward centre, lower → push out).
+   ROT_FILL leaves a permanent gutter so saturated bodies never sit on the edge.
+*/
+const ROT_K=4.0;
+const ROT_FILL=0.82;
+function rotWarp(d){
+  if(!isFinite(d)) return 0;
+  return Math.tanh(d/ROT_K)*ROT_FILL;
 }
 function rotMakeScale(set){
-  const {W,H,P}=set.dims, rx=set.rx, ry=set.ry;
+  const {W,H,P}=set.dims;
+  const halfW=(W-2*P)/2, halfH=(H-2*P)/2;
+  const cxp=P+halfW, cyp=P+halfH;
+  /* Bodies inset 3% so markers+labels clear the frame; tails use full width. */
   set.scale={
     W,H,
-    sx:v=>(P+((v-100+rx)/(2*rx))*(W-P*2)).toFixed(1),
-    sy:v=>(H-P-((v-100+ry)/(2*ry))*(H-P*2)).toFixed(1)
+    sx:v=>(cxp+rotWarp(v-100)*halfW*0.97).toFixed(1),
+    sy:v=>(cyp-rotWarp(v-100)*halfH*0.97).toFixed(1),
+    tx:v=>(cxp+rotWarp(v-100)*halfW).toFixed(1),
+    ty:v=>(cyp-rotWarp(v-100)*halfH).toFixed(1)
   };
+}
+/* kept only so any leftover callers do not throw; no longer drives the axes */
+function rotBounds(set,head){
+  return {rx:8, ry:8};
 }
 function rotDraw(){
   const host=$('#rotPlot'); if(!host) return;
@@ -300,14 +315,12 @@ function rotDraw(){
   const pts=keys.map(k=>{ const a=rotAt(set.bodies[k],ROT.tail,ROT.head);
     return {k,x:a.x,y:a.y,tail:a.tail,ret:a.ret,phase:rotPhase(a.x,a.y),q:rotQuality(a.tail)}; });
 
-  /* Scale to the current playhead so the field stays readable. Scale is
-     snapped (not eased) in rotStep so tails do not visually slide. */
+  /* Fixed Mythos projection — same mapping at every playhead. */
   const W=620,H=460,P=36;
   set.dims={W,H,P};
-  const tgt=rotBounds(set,ROT.head);
-  set.rx=tgt.rx; set.ry=tgt.ry;
   rotMakeScale(set);
   const sx=set.scale.sx, sy=set.scale.sy;
+  const tx=set.scale.tx, ty=set.scale.ty;
 
   /* Markers are sized in viewBox units, and the SVG stretches to its
      container, so a fixed radius looked like a beach ball on a wide screen.
@@ -326,7 +339,7 @@ function rotDraw(){
     const col=PHASE_COL[p.phase];
     const dim=ROT.focus&&ROT.focus!==p.k;
     const showTail=ROT.trail==='all'||!ROT.focus||ROT.focus===p.k;
-    const path=p.tail.map((t,j)=>`${j?'L':'M'}${sx(t.x)} ${sy(t.y)}`).join(' ');
+    const path=p.tail.map((t,j)=>`${j?'L':'M'}${tx(t.x)} ${ty(t.y)}`).join(' ');
     return `<g class="rot-b${dim?' dim':''}" data-k="${esc(p.k)}" data-i="${i}" tabindex="0" role="button"
         aria-label="${esc(rotName(p.k))}, ${p.phase}" style="--c:rgb(${col});--d:${i*32}ms">
       ${showTail?`<path class="tail" d="${path}" stroke="rgba(${col},.5)" fill="none"
@@ -492,13 +505,8 @@ function rotStop(){
 function rotStep(){
   const set=ROT.set; if(!set||!set.scale)return;
   const L=set.len;
-  /* Snap scale to the current playhead (no easing). Easing made tails
-     appear to drift; locking to full history crushed everything into the
-     centre. Snapping keeps the field readable and the paths stable. */
-  const tgt=rotBounds(set,ROT.head);
-  set.rx=tgt.rx; set.ry=tgt.ry;
-  rotMakeScale(set);
-  const {sx,sy}=set.scale;
+  /* Scale is the fixed Mythos warp — never changes with the playhead. */
+  const {sx,sy,tx,ty}=set.scale;
   Object.keys(set.bodies).forEach(k=>{
     const g=document.querySelector('.rot-b[data-k="'+CSS.escape(k)+'"]'); if(!g)return;
     const a=rotAt(set.bodies[k],ROT.tail,ROT.head);
@@ -510,7 +518,7 @@ function rotStep(){
     if(halo){halo.setAttribute('cx',cx);halo.setAttribute('cy',cy);halo.setAttribute('fill','rgba('+col+',.14)');}
     if(txt){txt.setAttribute('x',cx);txt.setAttribute('y',(+cy-(+halo.getAttribute('r'))-2).toFixed(1));
             txt.setAttribute('fill','rgb('+col+')');}
-    if(tl){tl.setAttribute('d',a.tail.map((p,j)=>(j?'L':'M')+sx(p.x)+' '+sy(p.y)).join(' '));
+    if(tl){tl.setAttribute('d',a.tail.map((p,j)=>(j?'L':'M')+(tx?tx(p.x):sx(p.x))+' '+(ty?ty(p.y):sy(p.y))).join(' '));
            tl.setAttribute('stroke','rgba('+col+',.5)');}
     g.style.setProperty('--c','rgb('+col+')');
   });
