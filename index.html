@@ -2816,6 +2816,113 @@ body::before{
   .anat-body{padding:12px 13px 4px}
 }
 
+/* ============================================================
+   THE BOARD
+   Asymmetric on purpose: an even grid of equal cards is what makes
+   a page read as a template. Candlesticks is the widest tile
+   because it is where most people should start.
+   ============================================================ */
+.board{display:grid;gap:14px;grid-template-columns:repeat(6,1fr);margin-bottom:20px}
+.sh-lg{grid-column:span 3}
+.sh-md{grid-column:span 3}
+.sh-sm{grid-column:span 2}
+.sh{border:1px solid var(--line);border-radius:16px;overflow:hidden;background:var(--panel);
+  transition:border-color .3s var(--ease),transform .3s var(--ease),box-shadow .3s var(--ease)}
+.sh:hover{border-color:color-mix(in srgb,var(--ac) 46%,transparent);transform:translateY(-3px);
+  box-shadow:0 22px 50px -30px rgba(0,0,0,.95)}
+.sh.on{grid-column:1/-1;transform:none;border-color:var(--ac)}
+.sh-face{display:grid;width:100%;text-align:left;padding:18px;gap:14px;align-items:start}
+.sh-lg .sh-face{gap:16px}
+.sh-fig{display:block;min-height:64px;opacity:.9;transition:opacity .3s}
+.sh-lg .sh-fig{min-height:92px}
+.sh:hover .sh-fig{opacity:1}
+.sh.on .sh-fig{display:none}
+.sh-top{display:flex;align-items:baseline;gap:11px;flex-wrap:wrap;margin-bottom:6px}
+.sh-top b{font-size:1.22rem;font-weight:700;letter-spacing:-.02em}
+.sh.on .sh-top b{color:var(--ac)}
+.sh-top em{font-style:normal;font-family:var(--mono);font-size:.64rem;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--faint);border:1px solid var(--line);border-radius:100px;
+  padding:3px 9px}
+.sh-line{display:block;font-size:.92rem;line-height:1.55;color:var(--dim)}
+.sh-cue{display:inline-flex;align-items:center;gap:8px;margin-top:12px;font-family:var(--mono);
+  font-size:.66rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ac)}
+.sh-cue i{font-style:normal;width:18px;height:18px;border:1px solid currentColor;border-radius:5px;
+  display:grid;place-items:center;font-size:.8rem;line-height:1;transition:transform .3s var(--ease)}
+.sh.on .sh-cue i{transform:rotate(45deg)}
+.sh.on .sh-cue{color:var(--ac)}
+
+.sh-open{border-top:1px solid var(--line);animation:shIn .3s var(--ease) both}
+@keyframes shIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+.sh-items{display:grid;grid-template-columns:repeat(auto-fill,minmax(268px,1fr));gap:1px;
+  background:var(--line)}
+.sh-item{background:var(--panel-2);padding:14px 16px;text-align:left;display:grid;gap:5px;
+  transition:background .2s}
+.sh-item:hover{background:rgba(255,255,255,.035)}
+.si-t{font-weight:600;font-size:.98rem}
+.sh-item:hover .si-t{color:var(--ac)}
+.si-d{font-size:.83rem;color:var(--faint);line-height:1.5;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.si-d.mono{font-family:var(--mono);font-size:.74rem;color:var(--dim)}
+.si-g{font-family:var(--mono);font-size:.6rem;letter-spacing:.11em;text-transform:uppercase;
+  color:var(--ac);opacity:.85}
+.sh-all{display:block;width:100%;padding:15px;font-family:var(--mono);font-size:.7rem;
+  letter-spacing:.12em;text-transform:uppercase;color:var(--ac);
+  border-top:1px solid var(--line);background:color-mix(in srgb,var(--ac) 7%,transparent);
+  transition:background .22s}
+.sh-all:hover{background:var(--ac);color:var(--void)}
+
+/* the path entry: one strip, not a second list */
+.board-alt{display:flex;align-items:center;gap:20px;flex-wrap:wrap;padding:20px 24px;
+  border:1px solid var(--line);border-radius:16px;background:var(--panel-2)}
+.ba-k{display:block;font-family:var(--mono);font-size:.66rem;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--cyan);margin-bottom:6px}
+.ba-l p{font-size:.94rem;color:var(--dim);line-height:1.55;max-width:56ch}
+.ba-go{margin-left:auto;padding:13px 22px;border-radius:10px;font-family:var(--mono);
+  font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;
+  background:var(--cyan);color:var(--void);font-weight:600;transition:all .24s var(--ease)}
+.ba-go:hover{transform:translateY(-2px);box-shadow:0 12px 30px -14px var(--cyan)}
+
+/* ---------- the path, as a panel ---------- */
+.pathwrap{position:fixed;inset:0;z-index:250;display:none;background:rgba(6,9,12,.82);
+  backdrop-filter:blur(6px);padding:24px;overflow-y:auto}
+.pathwrap.on{display:block;animation:shIn .24s var(--ease)}
+.pathwin{max-width:860px;margin:0 auto;background:var(--panel);border:1px solid var(--line);
+  border-radius:16px;overflow:hidden}
+.pathbar{display:flex;align-items:center;gap:14px;padding:14px 20px;border-bottom:1px solid var(--line);
+  background:var(--panel-2);font-family:var(--mono);font-size:.66rem;letter-spacing:.13em;
+  color:var(--faint);position:sticky;top:0;z-index:2}
+.pb-prog{color:var(--cyan)}
+.pb-x{margin-left:auto;font-size:1.1rem;color:var(--faint);padding:2px 8px}
+.pb-x:hover{color:var(--red)}
+.pathbody{max-height:66vh;overflow-y:auto}
+.pathfoot{display:flex;gap:10px;padding:16px 20px;border-top:1px solid var(--line);flex-wrap:wrap}
+.pathfoot .btn-primary{margin-left:auto}
+.track{border:none;border-radius:0;background:transparent}
+
+/* a click should not leave a ring behind. Keyboard focus still shows. */
+button:focus:not(:focus-visible),a:focus:not(:focus-visible){outline:none}
+button:focus-visible,a:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+
+@media(max-width:1000px){
+  .board{grid-template-columns:repeat(4,1fr)}
+  .sh-lg,.sh-md{grid-column:span 4}
+  .sh-sm{grid-column:span 2}
+}
+@media(max-width:640px){
+  .board{grid-template-columns:1fr;gap:11px}
+  .sh-lg,.sh-md,.sh-sm,.sh.on{grid-column:span 1}
+  .sh-face{padding:15px}
+  .sh-top b{font-size:1.08rem}
+  .sh-items{grid-template-columns:1fr}
+  .board-alt{padding:16px;gap:14px}
+  .ba-go{margin-left:0;width:100%;text-align:center}
+  .pathwrap{padding:0}
+  .pathwin{border-radius:0;min-height:100vh}
+  .pathbody{max-height:none}
+  .pathfoot .btn{width:100%}
+  .pathfoot .btn-primary{margin-left:0}
+}
+
 </style>
 
 <script src="https://unpkg.com/lightweight-charts@5/dist/lightweight-charts.standalone.production.js" defer></script>
@@ -2855,48 +2962,12 @@ body::before{
 </nav>
 
 <header id="top">
-  <div class="wrap hero-grid">
+  <div class="wrap">
     <div class="hero reveal">
-      <div class="badge"><b>◆</b> FREE FOREVER · NO ACCOUNT · NO SIGNALS, EVER</div>
-      <h1 class="disp">Learn to read a market, <span class="c">one plate at a time.</span></h1>
-      <p class="sub">Every candlestick, indicator, options structure and risk rule, drawn and
-        explained in plain English. <b>Pick where you are and the desk arranges itself around you.</b></p>
-
-      <!-- The one question a newcomer actually has is not "what is here" but
-           "what is here for me". So that is the first control on the page. -->
-      <div class="lvpick" role="group" aria-label="Choose your level">
-        <button class="lvb" data-lv="lvl1">
-          <span class="lv-n">Beginner</span>
-          <span class="lv-d">Never placed a trade</span>
-        </button>
-        <button class="lvb" data-lv="lvl2">
-          <span class="lv-n">Intermediate</span>
-          <span class="lv-d">Trading, still leaking</span>
-        </button>
-        <button class="lvb" data-lv="lvl3">
-          <span class="lv-n">Advanced</span>
-          <span class="lv-d">Structure and flow</span>
-        </button>
-      </div>
-      <p class="lv-say" id="lvSay">Not sure? Beginner is the honest answer more often than people think.</p>
+      <div class="badge"><b>◆</b> FREE · NO ACCOUNT · NO SIGNALS</div>
+      <h1 class="disp">What do you want <span class="c">to learn?</span></h1>
+      <p class="sub">Pick a shelf. Every one opens into the real thing, not a summary.</p>
     </div>
-
-    <!-- The signature. Everything else on the site assumes you can read this
-         one mark, so the front page teaches it before anything else. -->
-    <figure class="anat reveal" aria-label="Anatomy of a candlestick">
-      <div class="anat-bar">
-        <span class="dots"><s></s><s></s><s></s></span>
-        ANATOMY OF A CANDLE
-        <span class="anat-hint">tap a part</span>
-      </div>
-      <div class="anat-body">
-        <svg id="anatSvg" viewBox="0 0 360 250" role="img"
-             aria-label="A candlestick with its open, high, low and close labelled"></svg>
-        <div class="anat-read" id="anatRead"></div>
-      </div>
-      <button class="anat-go" onclick="showPage('patterns');return false;">
-        All 48 candlestick patterns →</button>
-    </figure>
   </div>
 </header>
 
@@ -2909,57 +2980,41 @@ body::before{
      offers the reference shelves for people who already know what
      they came for.
      ============================================================ -->
+<!-- ============================================================
+     THE BOARD
+     One organising device, not two. Every shelf is a tile, and a
+     tile opens in place to show what is actually inside it rather
+     than a description of it. Nothing on this page is listed twice.
+     ============================================================ -->
 <section class="section" id="terminal">
   <div class="wrap">
+    <div class="board" id="board"></div>
 
-    <div class="sec-head reveal">
-      <div class="eyebrow">START HERE</div>
-      <h2 class="disp">New to this? <span class="c">Start at the top.</span></h2>
-      <p>Eight steps, in the order that assumes the least at each stage. Nothing is locked, so you can jump anywhere, but if you have never traded before this is the path that will make the rest of the site make sense. Your place is remembered on this device.</p>
-    </div>
-
-    <div class="track reveal" id="trackList"></div>
-
-    <div class="track-foot reveal">
-      <div class="tf-prog">
-        <svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true">
-          <circle class="tfp-bg" cx="17" cy="17" r="14"></circle>
-          <circle class="tfp-fg" cx="17" cy="17" r="14"></circle>
-        </svg>
-        <span><b id="trackDone">0 of 8</b><small>steps marked complete</small></span>
+    <div class="board-alt reveal">
+      <div class="ba-l">
+        <span class="ba-k">Never traded before?</span>
+        <p>Eight steps in the order that assumes the least. Open it and your place is kept.</p>
       </div>
-      <button class="btn btn-primary" id="trackGo">Start step 1</button>
-      <button class="btn btn-ghost" id="trackReset">Reset my progress</button>
+      <button class="ba-go" id="openPath">Follow the path &rarr;</button>
     </div>
-
-    <div class="sec-head reveal" style="margin:78px 0 0">
-      <div class="eyebrow">OR JUMP STRAIGHT IN</div>
-      <h2 class="disp">Look something up <span class="g">right now.</span></h2>
-      <p>Every term, candle, indicator, strategy and options structure on the site is searchable from one box. Type what you heard and did not understand.</p>
-    </div>
-
-    <div class="quickfind reveal">
-      <div class="qf-box">
-        <svg width="17" height="17" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-          <circle cx="7" cy="7" r="5" stroke="currentColor" stroke-width="1.6"/>
-          <path d="M11 11L14.5 14.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
-        </svg>
-        <input id="qfIn" placeholder="Try: doji, theta, stop loss, iron condor" autocomplete="off" spellcheck="false" aria-label="Search everything">
-        <kbd>/</kbd>
-      </div>
-      <div class="qf-res" id="qfRes"></div>
-      <div class="qf-seed" id="qfSeed"></div>
-    </div>
-
-
-    <div class="sec-head reveal" style="margin:78px 0 0">
-      <div class="eyebrow">02 // THE REST OF THE DESK</div>
-      <h2 class="disp">Everything else lives <span class="g">one click away.</span></h2>
-      <p>Six shelves, each built to be read once and returned to often. Open one here, or reach any of them from the rail on the left.</p>
-    </div>
-    <div class="portals reveal" id="portalGrid"></div>
   </div>
 </section>
+
+<!-- the path, opened from the board rather than listed beside it -->
+<div class="pathwrap" id="pathWrap" role="dialog" aria-modal="true" aria-label="The learning path">
+  <div class="pathwin">
+    <div class="pathbar">
+      <span>THE PATH · 8 STEPS</span>
+      <span class="pb-prog" id="pathProg">0 of 8</span>
+      <button class="pb-x" id="pathX" aria-label="Close">✕</button>
+    </div>
+    <div class="pathbody" id="trackList"></div>
+    <div class="pathfoot">
+      <button class="btn btn-ghost" id="trackReset">Reset progress</button>
+      <button class="btn btn-primary" id="trackGo">Start</button>
+    </div>
+  </div>
+</div>
 
 <!-- TOOLS -->
 <section class="section band page-view hidden" id="tools" data-page="tools">
@@ -6087,7 +6142,6 @@ const CMDS=[
   {label:'Encyclopedia',kind:'page',run:()=>location.hash='encyclopedia'},
   {label:'Candlestick Analysis',kind:'page',run:()=>location.hash='patterns'},
   {label:'Options \u2014 the assembly bench',kind:'page',run:()=>location.hash='options'},
-  {label:'Fundamentals \u2014 look up a company',kind:'page',run:()=>location.hash='ledger'},
   {label:'Indicators & the Instrument Panel',kind:'page',run:()=>location.hash='indicators'},
   {label:'Fibonacci Lab',kind:'tool',run:()=>{location.hash='indicators';setTimeout(()=>{const el=document.getElementById('fibLab');if(el)el.scrollIntoView({behavior:'smooth'});},140);}},
   {label:'Risk & Mind \u2014 the risk desk',kind:'page',run:()=>location.hash='riskdesk'},
@@ -6127,11 +6181,6 @@ const SECTIONS=[
    ic:'M4 20h16M6 16l4-6 3 3 5-8',
    desc:'Position size, expectancy, options payoff, expected move, futures specs, and the discipline tools that keep an account alive.',
    count:()=>TOOLS.length+' tools'},
-  {id:'ledger', name:'Fundamentals', crumb:'THE LEDGER', kind:'live company financials',
-   accent:'var(--ledger)', fade:'rgba(224,213,189,.12)',
-   ic:'M4 4h16v16H4zM4 9h16M4 14h16M9 4v16',
-   desc:'Enter a ticker and pull the whole file: where every dollar of revenue goes, what you are paying, whether it survives a bad year, and what news is moving it now.',
-   count:()=>LEDGER_METRICS.length+' metrics, explained'},
   {id:'encyclopedia', name:'Encyclopedia', crumb:'THE ENCYCLOPEDIA', kind:'reference',
    accent:'var(--gold)', fade:'rgba(245,185,66,.13)',
    ic:'M4 4h11a3 3 0 0 1 3 3v13a2 2 0 0 0-2-2H4zM4 4v14M18 7h2v13H8',
@@ -6182,19 +6231,6 @@ $('#railNav').innerHTML=SECTIONS.filter(x=>!x.hub).map((x,i)=>
 ).join('');
 
 /* ---- front-page portals ---- */
-$('#portalGrid').innerHTML=SECTIONS.filter(x=>!x.hub).map(x=>x.wide
-  ? `<a class="portal wide" href="#${x.id}" style="--accent:${x.accent};--accent-fade:${x.fade}">
-       <span class="pic">${icon(x.ic,19)}</span>
-       <span class="pwt">
-         <span class="pwh"><h4>${x.name}</h4><span class="pcount">${x.count()}</span></span>
-         <p>${x.desc}</p>
-       </span>
-       <span class="pgo">Open \u2192</span>
-     </a>`
-  : `<a class="portal" href="#${x.id}" style="--accent:${x.accent};--accent-fade:${x.fade}">
-       <span class="ptop"><span class="pic">${icon(x.ic,19)}</span><span class="pcount">${x.count()}</span></span>
-       <h4>${x.name}</h4><p>${x.desc}</p><span class="pgo">Open \u2192</span>
-     </a>`).join('');
 
 /* ---- page headers (injected once, so every view has a way home) ---- */
 $$('.page-view').forEach(sec=>{
