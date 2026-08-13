@@ -2734,6 +2734,88 @@ body::before{
   border-radius:100px;color:var(--dim);transition:all .22s var(--ease)}
 .qf-seed button:hover{border-color:var(--cyan);color:var(--cyan);transform:translateY(-1px)}
 
+/* ============================================================
+   THE FRONT DESK
+   ============================================================ */
+/* the background was blooming orange and violet into the lower right and
+   reading as a smear. Cool, tight, and anchored to the top where the
+   content actually is. */
+.bg-glow.g-violet{display:none}
+.bg-glow{opacity:.11}
+.g-cyan{top:-18vmax;left:-14vmax}
+.g-gold{top:-10vmax;right:-20vmax;opacity:.06}
+body::before{
+  content:'';position:fixed;inset:0 0 auto 0;height:70vh;z-index:0;pointer-events:none;
+  background:radial-gradient(58% 46% at 20% 0%,rgba(34,211,238,.10),transparent 72%),
+             radial-gradient(46% 38% at 84% 4%,rgba(167,139,250,.05),transparent 74%);
+  animation:none;filter:none;
+}
+.hero-grid{align-items:center}
+
+/* ---------- level picker ---------- */
+.lvpick{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:26px 0 14px;max-width:520px}
+.lvb{padding:14px 15px;border:1px solid var(--line);border-radius:12px;background:var(--panel);
+  text-align:left;transition:all .25s var(--ease);position:relative;overflow:hidden}
+.lvb::after{content:'';position:absolute;left:0;right:0;bottom:0;height:2px;background:var(--cyan);
+  transform:scaleX(0);transform-origin:left;transition:transform .3s var(--ease)}
+.lvb:hover{border-color:rgba(34,211,238,.42);transform:translateY(-2px)}
+.lvb:hover::after{transform:scaleX(1)}
+.lvb.on{border-color:var(--cyan);background:rgba(34,211,238,.08)}
+.lvb.on::after{transform:scaleX(1)}
+.lv-n{display:block;font-weight:700;font-size:.98rem;letter-spacing:-.01em}
+.lvb.on .lv-n{color:var(--cyan)}
+.lv-d{display:block;font-family:var(--mono);font-size:.64rem;color:var(--faint);margin-top:4px;
+  letter-spacing:.02em}
+.lv-say{font-size:.9rem;color:var(--dim);line-height:1.6;max-width:60ch;min-height:2.8em}
+.lv-go{font-family:var(--mono);font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--cyan);border:1px solid rgba(34,211,238,.34);border-radius:7px;padding:5px 11px;
+  margin-left:6px;white-space:nowrap;transition:all .22s}
+.lv-go:hover{background:var(--cyan);color:var(--void)}
+.tstep.off-level{opacity:.42;transition:opacity .35s var(--ease)}
+.tstep.off-level:hover{opacity:1}
+
+/* ---------- the anatomy plate ---------- */
+.anat{border:1px solid var(--line);border-radius:16px;overflow:hidden;
+  background:linear-gradient(180deg,var(--panel),var(--bg-2));
+  box-shadow:0 30px 70px rgba(0,0,0,.5)}
+.anat-bar{display:flex;align-items:center;gap:10px;padding:11px 15px;
+  border-bottom:1px solid var(--line);background:var(--panel-2);font-family:var(--mono);
+  font-size:.62rem;letter-spacing:.12em;color:var(--faint);text-transform:uppercase}
+.anat-bar .dots{display:flex;gap:6px}
+.anat-bar .dots s{width:9px;height:9px;border-radius:50%;display:block;background:var(--line)}
+.anat-bar .dots s:first-child{background:rgba(248,113,113,.7)}
+.anat-bar .dots s:nth-child(2){background:rgba(245,185,66,.7)}
+.anat-bar .dots s:last-child{background:rgba(52,211,153,.7)}
+.anat-hint{margin-left:auto;color:var(--cyan)}
+.anat-body{padding:16px 18px 6px}
+#anatSvg{width:100%;height:auto;display:block;overflow:visible}
+.ahl{font-family:var(--mono);font-size:10px;fill:var(--faint);letter-spacing:.12em;
+  transition:fill .2s}
+.ah{cursor:pointer;outline:none}
+.ah:hover .ahl,.ah.on .ahl,.ah:focus-visible .ahl{fill:var(--cyan)}
+.anat-read{margin-top:6px;padding:14px 0 16px;border-top:1px solid var(--line);min-height:96px}
+.anat-read b{display:block;font-size:1.02rem;font-weight:700;color:var(--cyan);margin-bottom:6px}
+.anat-read p{font-size:.9rem;color:var(--dim);line-height:1.6}
+.anat-go{display:block;width:100%;padding:13px;border-top:1px solid var(--line);
+  font-family:var(--mono);font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--cyan);background:rgba(34,211,238,.05);transition:all .22s}
+.anat-go:hover{background:var(--cyan);color:var(--void)}
+
+/* ---------- section card previews ---------- */
+.portal{position:relative;overflow:hidden}
+.pfig{position:absolute;right:14px;bottom:12px;opacity:.5;pointer-events:none;
+  transition:opacity .32s var(--ease),transform .32s var(--ease)}
+.portal:hover .pfig{opacity:1;transform:translateY(-2px)}
+.portal.wide .pfig{right:20px;bottom:16px}
+@media(max-width:900px){.pfig{display:none}}
+
+@media(max-width:900px){
+  .lvpick{grid-template-columns:1fr;gap:7px;max-width:none}
+  .lvb{padding:11px 13px}
+  .lv-say{min-height:0}
+  .anat-body{padding:12px 13px 4px}
+}
+
 </style>
 
 <script src="https://unpkg.com/lightweight-charts@5/dist/lightweight-charts.standalone.production.js" defer></script>
@@ -2775,34 +2857,46 @@ body::before{
 <header id="top">
   <div class="wrap hero-grid">
     <div class="hero reveal">
-      <div class="badge"><b>◆</b> FREE · EDUCATIONAL ONLY · NO SIGNALS, EVER</div>
-      <h1 class="disp">One <span class="c">terminal</span> for the whole trader’s desk.</h1>
-      <p class="sub">Trading simplified. Data and education all in one place. <b>No login, no signals, nothing fake.</b></p>
-      <div class="cta-row">
-        <a class="btn btn-primary" href="#terminal">Open the terminal</a>
-        <a class="btn btn-ghost" href="#ledger" onclick="showPage('ledger');return false;">Research Stocks</a>
-        <a class="btn btn-ghost" href="#patterns" onclick="showPage('patterns');return false;">Learn candlesticks</a>
-        <a class="btn btn-ghost" href="#encyclopedia" onclick="showPage('encyclopedia');return false;">Open the encyclopedia</a>
-      </div>
-    </div>
-    <div class="command reveal" aria-label="Market command center">
-      <div class="cbar"><span class="dots"><s></s><s></s><s></s></span> COMMAND CENTER <span class="feedok"><span class="d"></span>ACTIVE</span></div>
-      <div class="cbody">
-        <button class="tlight" id="tLight" onclick="openModal('m-market')" title="Reading current conditions…">
-          <span class="tl-dot" aria-hidden="true"></span>
-          <span class="tl-tx" id="tlText" aria-live="polite">—</span>
-          <span class="tl-go" aria-hidden="true">→</span>
+      <div class="badge"><b>◆</b> FREE FOREVER · NO ACCOUNT · NO SIGNALS, EVER</div>
+      <h1 class="disp">Learn to read a market, <span class="c">one plate at a time.</span></h1>
+      <p class="sub">Every candlestick, indicator, options structure and risk rule, drawn and
+        explained in plain English. <b>Pick where you are and the desk arranges itself around you.</b></p>
+
+      <!-- The one question a newcomer actually has is not "what is here" but
+           "what is here for me". So that is the first control on the page. -->
+      <div class="lvpick" role="group" aria-label="Choose your level">
+        <button class="lvb" data-lv="lvl1">
+          <span class="lv-n">Beginner</span>
+          <span class="lv-d">Never placed a trade</span>
         </button>
-        <div class="idx-row" id="idxRow"></div>
-        <div class="hm-title"><span>SECTOR HEATMAP · % DAY</span><span id="hmStamp">—</span></div>
-        <div class="heatmap" id="heatmap"></div>
-        <!-- The Wire, in the command center. News that lives four screens down
-             is news you read tomorrow. -->
-        <div class="hm-title wire-head"><span><span class="wdot"></span>THE WIRE · LATEST</span><span id="wireStamp">—</span></div>
-        <div class="wire-strip" id="wireStrip"><div class="wire-sk"></div><div class="wire-sk"></div><div class="wire-sk"></div></div>
-        <button class="wire-more" id="wireMore" onclick="toggleWireStrip()" aria-expanded="false">Show more headlines <span class="wm-c">▾</span></button>
+        <button class="lvb" data-lv="lvl2">
+          <span class="lv-n">Intermediate</span>
+          <span class="lv-d">Trading, still leaking</span>
+        </button>
+        <button class="lvb" data-lv="lvl3">
+          <span class="lv-n">Advanced</span>
+          <span class="lv-d">Structure and flow</span>
+        </button>
       </div>
+      <p class="lv-say" id="lvSay">Not sure? Beginner is the honest answer more often than people think.</p>
     </div>
+
+    <!-- The signature. Everything else on the site assumes you can read this
+         one mark, so the front page teaches it before anything else. -->
+    <figure class="anat reveal" aria-label="Anatomy of a candlestick">
+      <div class="anat-bar">
+        <span class="dots"><s></s><s></s><s></s></span>
+        ANATOMY OF A CANDLE
+        <span class="anat-hint">tap a part</span>
+      </div>
+      <div class="anat-body">
+        <svg id="anatSvg" viewBox="0 0 360 250" role="img"
+             aria-label="A candlestick with its open, high, low and close labelled"></svg>
+        <div class="anat-read" id="anatRead"></div>
+      </div>
+      <button class="anat-go" onclick="showPage('patterns');return false;">
+        All 48 candlestick patterns →</button>
+    </figure>
   </div>
 </header>
 
@@ -3737,6 +3831,8 @@ $$('.reveal').forEach(el=>io.observe(el));
 /* ===== command center: index pulse ===== */
 const IDX=[['SPY','S&P 500'],['QQQ','Nasdaq 100'],['IWM','Russell 2000']];
 async function loadIdx(){
+  if(!$('#idxRow')) return;   /* the command centre left with the live data */
+
   const row=$('#idxRow');
   if(!mktKey()){ row.innerHTML=IDX.map(([s,n])=>`<div class="idx"><div class="s">${s}</div><div class="p">—</div><div class="ch" style="color:var(--faint)">no key</div></div>`).join(''); return; }
   row.innerHTML=IDX.map(([s])=>`<div class="idx"><div class="s">${s}</div><div class="p" style="color:var(--faint)">···</div><div class="ch"></div></div>`).join('');
@@ -3754,6 +3850,7 @@ async function loadIdx(){
 /* ===== command center: live sector heatmap ===== */
 function hmColor(p){ const a=Math.min(Math.abs(p)/3,1); const base=p>=0?'52,211,153':'248,113,113'; return `rgba(${base},${(0.10+a*0.72).toFixed(2)})`; }
 async function loadHeatmap(){
+  if(!document.querySelector('#heatmap')) return;   /* left with the live data */
   const grid=$('#heatmap');
   if(!grid.dataset.init){ grid.innerHTML=SECTORS.map(()=>`<div class="hm skel"></div>`).join(''); grid.dataset.init='1'; }
   if(!mktKey()){ grid.innerHTML=SECTORS.map(s=>`<div class="hm" style="background:var(--panel-2)"><div class="hs">${s.sym}</div><div class="hc" style="color:var(--faint)">—</div></div>`).join(''); return; }
@@ -3827,6 +3924,7 @@ async function fetchEarnings(){
 function earnErr(e){ const m=e&&e.nokey?'Add a Finnhub key to load the calendar.':e&&e.auth?'This key doesn’t have earnings-calendar access.':e&&e.rate?'Rate limit — try again shortly.':'Calendar unavailable right now.'; return `<div class="ew-grid">${[0,1,2,3,4].map(()=>`<div class="ew-day"><div class="ew-quiet">${m}</div></div>`).join('')}</div>`; }
 /* inline: the 5-column weekly grid on the card */
 async function loadEarnWeek(){
+  if(!document.querySelector('#earnWeek')) return;   /* left with the live data */
   const host=$('#earnWeek'); if(!host) return;
   try{
     const {list,wk}=await fetchEarnings();
@@ -4348,6 +4446,7 @@ function calcLevels(){
 }
 /* crypto */
 async function loadCrypto(){
+  if(!document.querySelector('#cryptoLive')) return;   /* left with the live data */
   const out=$('#cryptoOut'); out.innerHTML='<p class="mnote">Loading prices…</p>';
   try{
     const r=await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana,ripple,dogecoin&vs_currencies=usd&include_24hr_change=true');
@@ -4438,6 +4537,7 @@ function renderPulsePreview(){
   el.innerHTML=parts.length?parts.join(''):`<span class="lg">Open the board</span>`;
 }
 async function loadMarket(){
+  if(!document.querySelector('#marketOut')) return;   /* left with the live data */
   const out=$('#marketOut'), keyWrap=$('#mktKeyWrap'), key=mktKey();
   if(!out) return;   /* the live boards left with the terminal */
   if(!key){ keyWrap.style.display='flex'; $('#mktKey').value=localStorage.getItem('tdesk_finnhub')||''; out.innerHTML='<p class="mnote">Add a free Finnhub key above to load the board.</p>'; return; }
@@ -4503,6 +4603,7 @@ async function loadCross(){
 
 /* ===== the wire (Finnhub general news) ===== */
 async function loadWire(){
+  if(!document.querySelector('#wireList')) return;   /* left with the live data */
   const out=$('#wireOut'), key=mktKey();
   if(!key){ out.innerHTML='<p class="mnote">Add a free Finnhub key (via Market Pulse) to load the wire.</p>'; return; }
   out.innerHTML='<p class="mnote">Loading the wire…</p>';
