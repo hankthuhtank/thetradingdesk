@@ -2564,6 +2564,83 @@ body::before{
   .rot-list{height:200px;max-height:200px}
 }
 
+/* ============================================================
+   ROTATION: give it room instead of a scrollbar
+   The panel was squeezed and then made scrollable, which solved
+   the overflow and created a worse problem. Everything below is
+   about fitting the content rather than clipping it: a taller
+   canvas, a wider rail, and text that is allowed to breathe.
+   ============================================================ */
+#rotCanvas{height:560px}
+.rot-wrap{grid-template-columns:minmax(0,1fr) 300px;gap:20px;padding:20px}
+.rot-read{height:auto;min-height:0;overflow:visible;padding:16px}
+.rot-read p{font-size:.84rem;line-height:1.62}
+.rot-read small{font-size:.76rem;line-height:1.5}
+.rot-list{height:auto;max-height:none;overflow:visible}
+.rot-li{height:32px}
+.rot-li .p{font-size:.62rem}
+.rot-nums{gap:7px}
+.rot-nums span{font-size:.68rem}
+@media(max-width:1200px){
+  #rotCanvas{height:480px}
+  .rot-wrap{grid-template-columns:minmax(0,1fr) 262px;gap:16px}
+}
+@media(max-width:1000px){
+  #rotCanvas{height:420px}
+  .rot-wrap{grid-template-columns:1fr;padding:14px}
+  .rot-list{max-height:260px;overflow-y:auto}
+}
+@media(max-width:600px){#rotCanvas{height:360px}}
+
+/* ---------- LEVELS: list with a proximity bar ---------- */
+.lv-now{display:flex;align-items:baseline;gap:11px;padding:13px 16px;border-bottom:1px solid var(--line)}
+.lv-now .k{font-family:var(--mono);letter-spacing:.13em;text-transform:uppercase;color:var(--faint)}
+.lv-now b{font-family:var(--mono);font-size:1.02rem;font-weight:600}
+.lv-split{margin-left:auto;font-family:var(--mono);font-size:.72rem;color:var(--faint)}
+.lv-split em{font-style:normal;font-weight:600}
+.lv-list{display:flex;flex-direction:column}
+.lv-row{display:grid;grid-template-columns:70px minmax(0,1fr) 54px 58px;gap:10px;align-items:center;
+  padding:9px 16px;border-bottom:1px solid var(--line-2);position:relative;transition:background .2s}
+.lv-row:last-child{border-bottom:none}
+.lv-row:hover{background:rgba(255,255,255,.028)}
+.lv-row::before{content:'';position:absolute;left:0;top:0;bottom:0;width:2px}
+.lv-row.up::before{background:rgba(52,211,153,.6)}
+.lv-row.dn::before{background:rgba(248,113,113,.6)}
+.lv-p{font-family:var(--mono);font-size:.8rem;font-weight:600}
+.lv-k{font-size:.76rem;color:var(--dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lv-prox{height:4px;border-radius:3px;background:var(--panel-3);overflow:hidden}
+.lv-prox i{display:block;height:100%;border-radius:3px;transition:width .7s var(--ease)}
+.lv-row.up .lv-prox i{background:rgba(52,211,153,.7)}
+.lv-row.dn .lv-prox i{background:rgba(248,113,113,.7)}
+.lv-d{font-family:var(--mono);font-size:.7rem;text-align:right}
+.lv-row.up .lv-d{color:var(--green)} .lv-row.dn .lv-d{color:var(--red)}
+
+/* ---------- PRESSURE ---------- */
+.pr-head{padding:16px 16px 12px}
+.pr-head .pr-k{display:block;font-family:var(--mono);font-size:.62rem;letter-spacing:.13em;
+  text-transform:uppercase;color:var(--faint);margin-bottom:5px}
+.pr-head b{font-family:var(--mono);font-size:1.5rem;font-weight:700;letter-spacing:-.03em;
+  color:var(--cyan)}
+.pr-head .pr-sub{display:block;margin-top:6px;font-family:var(--mono);font-size:.72rem;
+  color:var(--faint)}
+.pr-used{padding:0 16px 14px}
+.pr-ubar{height:7px;border-radius:4px;background:var(--panel-3);overflow:hidden}
+.pr-ubar i{display:block;height:100%;transition:width .8s var(--ease)}
+.pr-ulab{display:block;margin-top:7px;font-family:var(--mono);font-size:.72rem;color:var(--faint)}
+.pr-rows{display:flex;flex-direction:column;border-top:1px solid var(--line)}
+.pr-r{padding:11px 16px;border-bottom:1px solid var(--line-2);
+  display:grid;grid-template-columns:auto 1fr;gap:6px 11px;align-items:baseline}
+.pr-r .k{font-family:var(--mono);font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--faint)}
+.pr-r .v{font-size:.86rem;font-weight:600;text-align:right}
+.pr-r p{grid-column:1/-1;font-size:.76rem;line-height:1.52;color:var(--dim)}
+.pr-foot{padding:12px 16px;border-top:1px solid var(--line);display:flex;gap:11px;
+  align-items:center;flex-wrap:wrap;font-size:.72rem;color:var(--faint)}
+.pr-jump{display:flex;gap:6px;margin-left:auto}
+.pr-jump button{font-family:var(--mono);font-size:.68rem;padding:5px 11px;border-radius:7px;
+  border:1px solid var(--cyan);color:var(--cyan);transition:all .2s}
+.pr-jump button:hover{background:var(--cyan);color:var(--void)}
+
 </style>
 
 <script src="https://unpkg.com/lightweight-charts@5/dist/lightweight-charts.standalone.production.js" defer></script>

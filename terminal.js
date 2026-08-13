@@ -778,13 +778,19 @@ async function loadRead(){
   /* ES and NQ for the tape, then the two commodities that actually move
      equity sentiment: gold when people want out of paper, crude because it
      runs straight into the inflation print everyone is trading around. */
-  const FUT=[['ES=F','ES','S&P 500'],['NQ=F','NQ','Nasdaq 100'],
-             ['GC=F','GOLD','Gold'],['CL=F','CRUDE','WTI Crude']];
+  /* Yahoo is inconsistent about continuous futures contracts, so each slot
+     falls back to the fund that tracks the same thing rather than leaving a
+     hole in the row. */
+  const FUT=[['ES=F','ES','S&P 500','SPY'],['NQ=F','NQ','Nasdaq 100','QQQ'],
+             ['GC=F','GOLD','Gold','GLD'],['CL=F','CRUDE','WTI Crude','USO']];
   let futBand='';
   const fq=s=>{const x=(window.__rdQ||{})[s];return x&&x.dp!=null?x.dp:null;};
   if(window.__rdQ){
-    const rows=FUT.map(([s,k,n])=>({k,n,c:(window.__rdQ[s]||{}).c,dp:fq(s)}))
-                  .filter(x=>x.c!=null);
+    const rows=FUT.map(([s,k,n,alt])=>{
+      const use=(window.__rdQ[s]&&window.__rdQ[s].c!=null)?s:alt;
+      const q0=window.__rdQ[use]||{};
+      return {k,n:(use===s?n:n+' \u00b7 '+use),c:q0.c,dp:q0.dp};
+    }).filter(x=>x.c!=null);
     if(rows.length){
       /* the divergence that matters: growth against the broad tape. When NQ
          and ES disagree, the day is a rotation rather than a direction. */
@@ -960,6 +966,39 @@ async function loadRead(){
     }
   }catch(e){}
 
+
+
+  /* ---- CRYPTO, as a risk barometer ----
+     Bitcoin trades 24/7, so by the time equities open it has already sat
+     through every overnight headline. That makes it the earliest read on
+     appetite available, which is why it belongs beside the equity internals
+     rather than parked in its own section further down the page. */
+  try{
+    const q5=(await get('/v1/yquote?symbols=BTC-USD,ETH-USD')).quotes||{};
+    const b=q5['BTC-USD'], e=q5['ETH-USD'];
+    if(b&&b.c!=null){
+      const dp=b.dp;
+      const say=dp>2?['Bid hard','Crypto is being bought aggressively. Overnight risk appetite showed up before the equity open did.']
+        :dp>0.4?['Firm','Steady bid overnight. Nothing in the 24-hour tape argues against risk this morning.']
+        :dp>-0.4?['Flat','No overnight signal either way.']
+        :dp>-2?['Soft','Sold overnight. Risk appetite was leaking while equities were closed.']
+        :['Hit hard','Heavy overnight selling. When crypto is dumped through the night, equity opens have tended to be defensive.'];
+      const ratio=(e&&e.c&&b.c)?e.c/b.c:null;
+      cards.push(`<div class="rd-card">
+        <div class="rd-h"><span class="rd-t">Overnight risk</span>
+          <span class="rd-v ${dirC(dp)}">${pctf(dp)}</span></div>
+        <div class="rd-row"><b>${say[0]}</b><p>${say[1]}</p>
+          <span class="rd-sub">Bitcoin at ${'$'+big(b.c)}${e&&e.c?', Ether at '+'$'+big(e.c):''}.</span></div>
+        <div class="rd-legs">
+          <div class="rd-leg ${dirC(dp)==='up'?'on':'off'}"><span class="k">Bitcoin</span>
+            <span class="v">${'$'+big(b.c)}</span><span class="n">${pctf(dp)}</span></div>
+          ${e&&e.dp!=null?`<div class="rd-leg ${dirC(e.dp)==='up'?'on':'off'}"><span class="k">Ether</span>
+            <span class="v">${'$'+big(e.c)}</span><span class="n">${pctf(e.dp)}</span></div>`:''}
+        </div>
+        <p class="rd-note">The only market that never closes, so it prices every overnight headline before the opening bell does.</p>
+      </div>`);
+    }
+  }catch(e){}
 
   host.innerHTML=(headline?`<p class="rd-lede">${esc(headline)}</p>`:'')
     +futBand+band+`<div class="rd-grid">${cards.join('')}</div>`;
@@ -1371,17 +1410,7 @@ async function loadGex(sym){
     const d=await marketRead();
     if(d&&d.error) throw new Error(d.message||'The read is not published yet.');
     const x=d&&d.symbols?d.symbols[sym]:null;
-    if(!x){
-      const covered=d&&d.symbols?Object.keys(d.symbols):[];
-      host.innerHTML=`<div class="gx-none">
-        <b>No dealer read for ${esc(sym)}</b>
-        <p>Dealers hedge the options they sell, and that hedging is mechanical rather than discretionary. When they are short gamma they buy strength and sell weakness, which amplifies whatever the tape is already doing. When they are long gamma they do the opposite and moves get damped.</p>
-        <p>This desk computes that read for the index products only.${covered.length?' Currently '+covered.map(esc).join(' and ')+'.':''}</p>
-        ${covered.length?`<div class="gx-jump">${covered.map(s=>`<button data-sym="${esc(s)}">Read ${esc(s)}</button>`).join('')}</div>`:''}
-      </div>`;
-      $$('.gx-jump button',host).forEach(b=>b.addEventListener('click',()=>toChart(b.dataset.sym)));
-      setBar('#dkGex','not covered'); return;
-    }
+    if(!x){ return loadPressure(sym, d&&d.symbols?Object.keys(d.symbols):[]); }
     const g=GAMMA_SAY[x.gammaSign]||['',''];
     const f=x.flipBucket?FLIP_SAY[x.flipBucket]:null;
     const c=x.concentration?CONC_SAY[x.concentration]:null;
@@ -1405,6 +1434,99 @@ async function loadGex(sym){
   }catch(e){
     host.innerHTML=`<div class="gx-none"><b>Dealer read unavailable</b>
       <p>${esc(e.message)}</p></div>`;
+    setBar('#dkGex','offline');
+  }
+}
+
+
+/* ============================================================
+   PRESSURE
+   Dealer gamma is computed for the index products only, so every
+   other symbol got an apology where a panel should be. This is
+   what CAN be said about any ticker from its own tape: how big a
+   move is normal, how it behaves at the open, and whether today
+   is already outside its own envelope.
+
+   None of it needs an options chain, which is exactly why it
+   works for all 8,000 listed names rather than two.
+   ============================================================ */
+async function loadPressure(sym, covered){
+  const host=$('#dkGex'); if(!host) return;
+  try{
+    const d=await get(`/v1/candles?symbol=${encodeURIComponent(sym)}&range=1y&interval=1d`);
+    const bars=d.bars||[];
+    if(bars.length<40) throw new Error('Not enough history to measure a range.');
+    const last=d.price!=null?d.price:bars[bars.length-1].c;
+    const prevC=bars[bars.length-2]?bars[bars.length-2].c:last;
+
+    /* daily true range as a percentage of price: the honest version of "how
+       far does this thing usually travel in a day" */
+    const tr=[];
+    for(let i=1;i<bars.length;i++){
+      const b=bars[i],p=bars[i-1];
+      tr.push(Math.max(b.h-b.l,Math.abs(b.h-p.c),Math.abs(b.l-p.c))/b.c*100);
+    }
+    const atr14=tr.slice(-14).reduce((a,b)=>a+b,0)/14;
+    const atr60=tr.slice(-60).reduce((a,b)=>a+b,0)/Math.min(60,tr.length);
+    const expD=last*atr14/100;
+    const expW=expD*Math.sqrt(5);
+
+    /* how much of the daily range the market usually gives back: a symbol
+       that closes near its extremes trends, one that closes mid reverts */
+    let closePos=0,n=0;
+    bars.slice(-40).forEach(b=>{ if(b.h>b.l){ closePos+=(b.c-b.l)/(b.h-b.l); n++; } });
+    const cp=n?closePos/n:0.5;
+
+    /* gaps: how often the open is outside yesterday's range, and whether they
+       fill. This is the single most useful thing to know before an open. */
+    let gaps=0,filled=0;
+    for(let i=1;i<bars.length;i++){
+      const b=bars[i],p=bars[i-1];
+      const up=b.o>p.h, dn=b.o<p.l;
+      if(!up&&!dn) continue;
+      gaps++;
+      if((up&&b.l<=p.h)||(dn&&b.h>=p.l)) filled++;
+    }
+    const gapRate=gaps?Math.round(filled/gaps*100):null;
+    const gapFreq=Math.round(gaps/bars.length*100);
+
+    const todayMove=Math.abs((last-prevC)/prevC*100);
+    const usedPct=Math.min(200,Math.round(todayMove/atr14*100));
+    const vol=atr14>atr60*1.25?['Expanding','Ranges are widening against this symbol\u2019s own recent normal. Stops need more room and size needs to come down.']
+      :atr14<atr60*0.8?['Compressing','Ranges are tighter than normal. Compression resolves into expansion, though it never says which way.']
+      :['Steady','Ranges are about normal for this symbol.'];
+    const beh=cp>0.6?['Closes strong','It tends to finish near the high of its range, which is trend behaviour: fading it has been the losing side.']
+      :cp<0.4?['Closes weak','It tends to finish near the low of its range. Rallies inside the day have not been holding.']
+      :['Closes mid','It tends to finish in the middle of its range, which is mean-reverting behaviour rather than trending.'];
+
+    host.innerHTML=`
+      <div class="pr-head">
+        <span class="pr-k">Expected daily range</span>
+        <b>\u00b1${fmt(expD,2)}</b>
+        <span class="pr-sub">${fmt(atr14,2)}% of price \u00b7 about ${fmt(last-expD,2)} to ${fmt(last+expD,2)}</span>
+      </div>
+      <div class="pr-used">
+        <div class="pr-ubar"><i style="width:${Math.min(100,usedPct)}%;
+          background:${usedPct>100?'var(--red)':usedPct>65?'var(--gold)':'var(--green)'}"></i></div>
+        <span class="pr-ulab">${usedPct}% of a normal day used${usedPct>100?' \u00b7 already outside its envelope':''}</span>
+      </div>
+      <div class="pr-rows">
+        <div class="pr-r"><span class="k">Weekly range</span><span class="v">\u00b1${fmt(expW,2)}</span>
+          <p>Scaled from the daily by the square root of five, the standard way a one-day move is stretched across a week.</p></div>
+        <div class="pr-r"><span class="k">Volatility</span><span class="v">${vol[0]}</span><p>${vol[1]}</p></div>
+        <div class="pr-r"><span class="k">Behaviour</span><span class="v">${beh[0]}</span><p>${beh[1]}</p></div>
+        ${gapRate!=null?`<div class="pr-r"><span class="k">Gaps</span>
+          <span class="v">${gapRate}% fill</span>
+          <p>It opens outside the prior range about ${gapFreq}% of sessions, and ${gapRate}% of those trade back into it at some point that day.</p></div>`:''}
+      </div>
+      ${covered&&covered.length?`<div class="pr-foot">
+        <span>Dealer gamma is computed for the index products only.</span>
+        <span class="pr-jump">${covered.map(s=>`<button data-sym="${esc(s)}">${esc(s)}</button>`).join('')}</span>
+      </div>`:''}`;
+    $$('.pr-jump button',host).forEach(b=>b.addEventListener('click',()=>toChart(b.dataset.sym)));
+    setBar('#dkGex',esc(sym)+' \u00b7 range');
+  }catch(e){
+    host.innerHTML=stateBox('NO RANGE READ',e.message);
     setBar('#dkGex','offline');
   }
 }
@@ -1520,31 +1642,22 @@ async function loadLevels(sym){
     const near=L.filter(x=>isFinite(x.p)&&x.ad<25).sort((a,b)=>a.ad-b.ad).slice(0,9);
     const above=near.filter(x=>x.d>0).length, below=near.length-above;
 
-    /* A ladder rather than a list. Price is a vertical axis, so drawing the
-       levels on one lets you see the shape of the map at a glance: where the
-       clusters are, how far the nearest wall sits, and whether you are pinned
-       between two of them or running in open space. */
-    const span=Math.max(...near.map(x=>x.ad))*1.12;
-    const pos=v=>50-((v-last)/last*100)/span*50;
-    const clus=near.slice().sort((a,b)=>b.p-a.p);
-    host.innerHTML=`<div class="lv-wrap">
-      <div class="lv-rail">
-        ${clus.map((x,i)=>`<div class="lv-mk ${x.d>0?'up':'dn'}" style="top:${pos(x.p).toFixed(2)}%"
-            title="${esc(x.w)}">
-            <span class="lv-tick"></span>
-            <span class="lv-lab"><b>${fmt(x.p,2)}</b><em>${esc(x.k)}</em></span>
-            <span class="lv-pct">${x.d>0?'+':''}${x.d.toFixed(2)}%</span>
-          </div>`).join('')}
-        <div class="lv-spot" style="top:50%">
-          <span class="lv-spotlab">${fmt(last,2)}</span>
-        </div>
-      </div>
-      <div class="lv-foot">
-        <span><b>${below}</b> below</span>
-        <span><b>${above}</b> above</span>
-        <span class="lv-near">Nearest ${near[0]?esc(near[0].k)+' at '+fmt(near[0].p,2):'\u2014'}</span>
-      </div>
-    </div>`;
+    /* A list, sorted by distance, with a proximity bar per row. The ladder
+       was a nicer idea and a worse panel: with nine levels inside a few
+       percent the labels collided, and a level you cannot read is not a
+       level. This keeps the visual cue without fighting for space. */
+    const far=Math.max(...near.map(x=>x.ad))||1;
+    host.innerHTML=`<div class="lv-now">
+        <span class="k">Trading at</span><b>${fmt(last,2)}</b>
+        <span class="lv-split"><em class="dn">${below}</em> below \u00b7 <em class="up">${above}</em> above</span></div>
+      <div class="lv-list">${near.map(x=>`
+        <div class="lv-row ${x.d>0?'up':'dn'}" title="${esc(x.w)}">
+          <span class="lv-p">${fmt(x.p,2)}</span>
+          <span class="lv-k">${esc(x.k)}</span>
+          <span class="lv-prox"><i style="width:${(100-(x.ad/far)*100).toFixed(0)}%"></i></span>
+          <span class="lv-d">${x.d>0?'+':''}${x.d.toFixed(2)}%</span>
+        </div>`).join('')}</div>
+      <p class="lv-note">Derived from this symbol\u2019s own daily bars, nearest first. The bar shows how close each level is. A level is somewhere to plan a decision, never a reason to take one.</p>`;
     setBar('#dkLevels',esc(sym));
   }catch(e){
     host.innerHTML=stateBox('NO LEVELS',e.message);
@@ -1563,6 +1676,26 @@ async function loadLevels(sym){
    and the day you are in is marked. Nothing scrolls sideways.
    ============================================================ */
 const WK_DAY=['Mon','Tue','Wed','Thu','Fri'];
+/* The names whose prints move an index rather than just their own chart.
+   Not a universe, just a priority: everything else still ranks below them
+   on the estimate and ticker-shape heuristics underneath. */
+const BIGCAP=new Set(('NVDA AAPL MSFT AMZN GOOGL GOOG META TSLA AVGO LLY JPM V MA XOM UNH '
+ +'WMT COST HD PG JNJ ORCL AMD NFLX CRM ADBE CVX BAC KO PEP MRK ABBV TMO ACN LIN MCD '
+ +'CSCO INTC QCOM TXN AMAT MU PLTR SMCI COIN HOOD DELL SNOW UBER ABNB SHOP PANW CRWD '
+ +'NOW INTU BKNG GS MS WFC C AXP BLK SCHW CAT DE BA GE RTX HON LMT UPS FDX DIS T VZ '
+ +'TMUS NKE SBUX TGT LOW CVS MDT PFE BMY GILD AMGN ISRG VRTX REGN ADI LRCX KLAC ASML '
+ +'TSM ARM MRVL ON WDC STX DKNG RBLX SQ PYPL SOFI NU AFRM ZS DDOG NET MDB TTD ANET VST '
+ +'CEG SMR OKLO IONQ RGTI ASTS RKLB').split(' '));
+function earnRank(e){
+  const s=String(e.symbol||'').toUpperCase();
+  let r=0;
+  if(BIGCAP.has(s)) r+=100;
+  if(e.epsEstimate!=null) r+=20;          /* the street publishes one only when it covers the name */
+  if(e.revenueEstimate!=null) r+=6;
+  if(s.length<=4) r+=3;                   /* five-letter tickers skew to micro caps */
+  if(e.hour==='amc') r+=1;                /* after-close prints are the ones people trade */
+  return r;
+}
 function weekDays(){
   const now=new Date();
   const et=new Date(now.toLocaleString('en-US',{timeZone:'America/New_York'}));
@@ -1600,9 +1733,15 @@ async function loadWeek(){
 
   const cols=days.map(d=>{
     const m=byDay[d.iso].macro.sort((a,b)=>b.impact-a.impact).slice(0,4);
+    /* Alphabetical put ABSI and AADX at the top of a week that also had
+       NVDA in it. Rank by whether anyone is actually positioned around the
+       print: known large caps first, then names with a published estimate
+       (the calendar only carries one when the street covers it), then the
+       rest. */
     const er=byDay[d.iso].earn
-      .sort((a,b)=>(b.epsEstimate!=null?1:0)-(a.epsEstimate!=null?1:0))
-      .slice(0,5);
+      .map(e=>Object.assign({},e,{__r:earnRank(e)}))
+      .sort((a,b)=>b.__r-a.__r||String(a.symbol).localeCompare(String(b.symbol)))
+      .slice(0,6);
     const more=byDay[d.iso].earn.length-er.length;
     return `<div class="wk-col${d.isToday?' today':''}">
       <div class="wk-dh"><span class="dw">${d.label}</span><span class="dn">${d.dom}</span></div>
