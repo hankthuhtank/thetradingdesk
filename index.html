@@ -2386,6 +2386,105 @@ body::before{
 #rotScrub::-webkit-slider-thumb:hover{transform:scale(1.25)}
 #rotScrub::-moz-range-thumb{width:15px;height:15px;border:none;border-radius:50%;background:var(--cyan)}
 
+/* ---------- FUTURES BAND ---------- */
+.rd-fut{border-bottom:1px solid var(--line)}
+.rd-futrow{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line)}
+@media(max-width:640px){.rd-futrow{grid-template-columns:repeat(2,1fr)}}
+.rd-f{background:var(--panel);padding:12px 14px;position:relative}
+.rd-f::before{content:'';position:absolute;left:0;top:0;bottom:0;width:2px;background:var(--faint)}
+.rd-f.up::before{background:var(--green)} .rd-f.dn::before{background:var(--red)}
+.rd-f .s{display:block;font-family:var(--mono);font-size:.86rem;font-weight:700;letter-spacing:.05em}
+.rd-f .n{display:block;font-size:.56rem;color:var(--faint);margin:1px 0 6px}
+.rd-f .p{font-family:var(--mono);font-size:.84rem;margin-right:8px}
+.rd-f .d{font-family:var(--mono);font-size:.7rem}
+.rd-f.up .d{color:var(--green)} .rd-f.dn .d{color:var(--red)}
+.rd-div{padding:13px 16px;display:grid;grid-template-columns:auto auto 1fr;gap:6px 12px;
+  align-items:baseline;border-top:1px solid var(--line-2)}
+.rd-div .k{font-family:var(--mono);font-size:.56rem;letter-spacing:.13em;text-transform:uppercase;
+  color:var(--faint)}
+.rd-div b{font-family:var(--mono);font-size:.94rem}
+.rd-div .t{font-size:.84rem;font-weight:600}
+.rd-div p{grid-column:1/-1;font-size:.76rem;line-height:1.55;color:var(--dim)}
+.rd-div .rd-sub{grid-column:1/-1}
+
+/* ---------- ROTATION: trail toggle and a rail that holds still ---------- */
+.rot-trail{display:flex;align-items:center;gap:0;margin-bottom:2px}
+.rot-trail .lbl{font-family:var(--mono);font-size:.56rem;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--faint);margin-right:9px}
+.rot-trail button{font-family:var(--mono);font-size:.62rem;padding:4px 11px;color:var(--dim);
+  border:1px solid var(--line);border-right:none;transition:all .18s}
+.rot-trail button:first-of-type{border-radius:7px 0 0 7px}
+.rot-trail button:last-of-type{border-radius:0 7px 7px 0;border-right:1px solid var(--line)}
+.rot-trail button:hover{color:var(--text);background:rgba(255,255,255,.04)}
+.rot-trail button.on{background:rgba(34,211,238,.13);color:var(--cyan);border-color:rgba(34,211,238,.4)}
+.rot-date.past{color:var(--gold)}
+/* The rail used to reflow as the hovered row changed its own text, which made
+   the whole panel jump under the cursor. Fixed row height, fixed column
+   widths, and the phase label reserves its widest word. */
+.rot-list{max-height:300px;overflow-y:auto;overflow-x:hidden;
+  scrollbar-width:thin;contain:layout style}
+.rot-li{display:grid;grid-template-columns:10px minmax(0,1fr) 74px;align-items:center;gap:9px;
+  height:30px;padding:0 11px;background:var(--panel-2);text-align:left;transition:background .15s}
+.rot-li .s{font-family:var(--mono);font-size:.7rem;font-weight:600;overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap}
+.rot-li .p{font-family:var(--mono);font-size:.56rem;color:var(--faint);text-align:right;
+  white-space:nowrap}
+/* the read pane keeps a fixed height so swapping bodies cannot resize the box */
+.rot-read{min-height:238px;display:flex;flex-direction:column}
+.rot-read p{flex:1}
+@media(max-width:1000px){.rot-read{min-height:0}}
+
+/* ============================================================
+   MOBILE
+   The desk is dense by design, so on a phone it becomes a single
+   ordered column rather than a shrunken grid. Order matters more
+   than density here: conditions, then the week, then the symbol.
+   ============================================================ */
+@media(max-width:720px){
+  .cmdbox{border-radius:14px;margin-bottom:18px}
+  .tk-bar{padding:11px 12px;gap:10px}
+  .tk-box{min-width:0;width:100%;order:1}
+  .tk-now{order:2;font-size:1.1rem}
+  .tk-quick{order:3;margin-left:0;width:100%;overflow-x:auto;flex-wrap:nowrap;
+    padding-bottom:2px;-webkit-overflow-scrolling:touch}
+  .tk-quick::-webkit-scrollbar{height:0}
+  .tk-chip{flex:none}
+  .dk-work .dk-a{height:330px}
+  .dk-cq{padding:10px 12px;gap:8px}
+  .dk-cq .last{font-size:1.05rem}
+  .dk-cq .oh{width:100%;margin-left:0;gap:10px;font-size:.56rem}
+  .dk-tf{gap:0}
+  .dk-tf button{padding:7px 9px;font-size:.6rem}
+  .sec-head h2,.hub-h h2{font-size:clamp(1.5rem,7vw,2rem)}
+  .sec-head p,.hub-h p{font-size:.88rem}
+  .rd-grid{grid-template-columns:1fr}
+  .rd-card{padding:14px}
+  .rd-lede{font-size:.86rem;padding:13px 14px}
+  .rot-wrap{padding:10px;gap:12px}
+  .rot-list{max-height:220px}
+  .rot-trail{flex-wrap:wrap}
+  .rot-scrub{flex-wrap:wrap;gap:8px}
+  .rot-date{min-width:0;flex:1;text-align:left}
+  .snap-grid{grid-template-columns:repeat(2,1fr)}
+  .lv-row,.rg-row{padding:9px 12px}
+  .tsec{font-size:.6rem;margin:26px 0 12px}
+  .play-nums{grid-template-columns:1fr}
+  .ps{grid-template-columns:22px 1fr;gap:10px}
+  .ps .n{width:22px;height:22px;font-size:.6rem}
+}
+@media(max-width:420px){
+  .rd-futrow{grid-template-columns:1fr 1fr}
+  .snap-grid{grid-template-columns:1fr}
+  .dk-work .dk-a{height:280px}
+}
+/* a phone cannot hover, so the tooltips that carry the long explanations need
+   to be reachable: the short line is always visible, and tapping a row is what
+   opens the detail elsewhere */
+@media(hover:none){
+  .rg-row p,.lv-note{display:block}
+  .rot-trail .lbl{display:none}
+}
+
 </style>
 
 <script src="https://unpkg.com/lightweight-charts@5/dist/lightweight-charts.standalone.production.js" defer></script>
@@ -2482,6 +2581,13 @@ body::before{
     <!-- ONE TICKER. A single command box: the symbol control and every panel
          that follows it live inside the same frame, so it reads as one
          instrument rather than five things that happen to be near each other. -->
+    <h3 class="tsec">The week &middot; what is scheduled</h3>
+    <section class="cmdbox reveal">
+      <div class="dk-bar"><span class="dot"></span><span class="t">The Week</span>
+        <span class="s">loading</span></div>
+      <div id="dkWeek"><div class="dk-skel"></div><div class="dk-skel"></div><div class="dk-skel"></div></div>
+    </section>
+
     <h3 class="tsec">The Ticker Desk &middot; one symbol, every angle</h3>
     <section class="cmdbox reveal">
       <div class="tk-bar">
@@ -2576,12 +2682,6 @@ body::before{
       <div class="dk-body flush" id="rotPlot"><div class="dk-skel"></div><div class="dk-skel"></div><div class="dk-skel"></div></div>
     </section>
 
-    <h3 class="tsec">The week &middot; what is scheduled</h3>
-    <section class="cmdbox reveal">
-      <div class="dk-bar"><span class="dot"></span><span class="t">The Week</span>
-        <span class="s">loading</span></div>
-      <div id="dkWeek"><div class="dk-skel"></div><div class="dk-skel"></div><div class="dk-skel"></div></div>
-    </section>
     <div class="boards reveal">
       <button class="flag board" style="text-align:left;--accent:var(--violet);--accent-fade:rgba(168,85,247,.14)" onclick="openModal('m-market')">
         <div class="ftop"><span class="fic" style="border-color:var(--violet);color:var(--violet);background:rgba(168,85,247,.12)"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 17l5-6 4 3 3-5 6 5M3 21h18"/></svg></span><span class="fname">Market Pulse<small>BREADTH · RANGE · VOL</small></span></div>

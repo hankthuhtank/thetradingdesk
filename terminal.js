@@ -210,7 +210,7 @@ function rotQuality(tail){
 
 /* ---- data: one batched pull of daily closes ---- */
 let ROT={set:null,closes:{},scope:'all',drill:null,tf:5,tail:ROT_TAIL,
-         trail:'one',head:null,playing:false,speed:1};
+         trail:'one',head:null,playing:false,speed:1,dates:null};
 const ROT_TF={fast:3,normal:5,slow:10};
 
 async function rotLoad(){
@@ -234,7 +234,7 @@ async function rotLoad(){
     /* One request for the whole universe. A year of daily closes is enough
        for the 63-session trend leg, the momentum lookback and the tail. */
     const res=await get('/v1/closes?symbols='+encodeURIComponent(syms.join(',')));
-    ROT.closes=res.closes||{};
+    ROT.closes=res.closes||{}; ROT.dates=res.dates||null;
     if(!ROT.closes[ROT_BENCH]) throw new Error('No history came back for the benchmark, '+ROT_BENCH+'.');
     rotBuild(); rotPaint();
     setBar('#rotPlot',(ROT.drill?rotName(ROT.drill)+' \u00b7 ':'')+rotPts.length+' bodies');
@@ -419,7 +419,7 @@ function rotDraw(dt){
     ctx.fillStyle='rgba(245,185,66,.055)';ctx.fillRect(0,0,W,H);
     ctx.font='700 '+Math.round(11*SC)+'px "IBM Plex Mono",monospace';
     ctx.fillStyle='rgba(245,185,66,.9)';
-    ctx.fillText('\u25c0 REPLAY \u00b7 '+(ROT.set.len-1-rotHeadIdx())+' sessions back',PAD+4,PAD+13*SC);
+    ctx.fillText('\u25c0 REPLAY \u00b7 '+(rotDateAt(rotHeadIdx())||((ROT.set.len-1-rotHeadIdx())+' back')),PAD+4,PAD+13*SC);
   }
   ctx.restore();
 
@@ -499,14 +499,30 @@ function rotToggle(){
 }
 function rotStop(){ ROT.playing=false; rotBar(); }
 function rotNow(){ ROT.playing=false; ROT.head=null; rotAcc=0; rotApplyHead(); rotRail(); rotBar(); if(SLOW)rotDraw(0); }
+/* Name the session. "14 sessions back" makes you do arithmetic against a
+   calendar you do not have open; a date is the thing you were going to work
+   out anyway. The closes feed carries its own dates, so they line up exactly
+   with the bars being drawn. */
+const RDF=new Intl.DateTimeFormat('en-US',{weekday:'short',month:'short',day:'numeric',timeZone:'UTC'});
+function rotDateAt(i){
+  const ds=ROT.dates;
+  if(!ds||!ds.length||!ROT.set) return null;
+  /* the set is aligned from the right, so index from the end of the dates */
+  const off=ds.length-ROT.set.len;
+  const d=ds[Math.max(0,Math.min(ds.length-1,off+i))];
+  if(!d) return null;
+  try{ return RDF.format(new Date(d+'T12:00:00Z')); }catch(e){ return d; }
+}
 function rotBar(){
   const b=$('#rotPlay'); if(b)b.textContent=ROT.playing?'\u275a\u275a':'\u25b6';
   const s=$('#rotScrub');
   if(s&&ROT.set){ s.min=String(ROT.set.minIdx); s.max=String(ROT.set.len-1); s.value=String(rotHeadIdx()); }
   const d=$('#rotDate');
   if(d&&ROT.set){
-    const back=ROT.set.len-1-rotHeadIdx();
-    d.textContent=back<=0?'Latest close':back+' sessions back';
+    const i=rotHeadIdx(), lastBar=i>=ROT.set.len-1;
+    const nice=rotDateAt(i);
+    d.textContent=nice?(lastBar?'Latest \u00b7 '+nice:nice):(lastBar?'Latest close':(ROT.set.len-1-i)+' back');
+    d.classList.toggle('past',!lastBar);
   }
 }
 /* hit test against the EASED positions, so what you click is what you see */
@@ -586,6 +602,12 @@ function rotShell(){
   host.innerHTML=`<div class="rot-wrap">
     <div class="rot-main">
       <canvas id="rotCanvas" role="img" aria-label="Relative rotation map"></canvas>
+      <div class="rot-trail" id="rotTrail" role="group" aria-label="Trail mode">
+        <span class="lbl">Trails</span>
+        <button data-trail="off">Off</button>
+        <button data-trail="one" class="on">One</button>
+        <button data-trail="all">All</button>
+      </div>
       <div class="rot-scrub" id="rotReplay">
         <button class="rot-play" id="rotPlay" aria-label="Play the rotation">\u25b6</button>
         <input type="range" id="rotScrub" min="0" max="1" value="1" aria-label="Replay position">
@@ -598,6 +620,8 @@ function rotShell(){
       <div class="rot-list" id="rotList"></div>
     </div>
   </div>`;
+  try{ const sv=localStorage.getItem('tdesk_rot_trail'); if(sv)ROT.trail=sv; }catch(e){}
+  $$('#rotTrail button').forEach(b=>b.classList.toggle('on',b.dataset.trail===ROT.trail));
   const cv=$('#rotCanvas');
   cv.addEventListener('mousemove',e=>{
     const r=cv.getBoundingClientRect();
@@ -615,6 +639,12 @@ function rotShell(){
     if(rotTouch&&rotPin!==h.sym){ rotPin=h.sym; rotSay(h); rotRail(); return; }
     rotClick(h.sym);
   });
+  $$('#rotTrail button').forEach(b=>b.addEventListener('click',()=>{
+    ROT.trail=b.dataset.trail;
+    $$('#rotTrail button').forEach(x=>x.classList.toggle('on',x===b));
+    try{localStorage.setItem('tdesk_rot_trail',ROT.trail);}catch(e){}
+    if(SLOW)rotDraw(0);
+  }));
   $('#rotPlay').addEventListener('click',rotToggle);
   $('#rotNowB').addEventListener('click',rotNow);
   const sc=$('#rotScrub');
@@ -639,6 +669,28 @@ function rotShell(){
    teach what dealer positioning does to a tape, not enough to
    trade off, which is the point.
    ============================================================ */
+/* The read is tried through our own Worker first, then straight from Kairos.
+   The relay exists so the site has one API origin, but it is one more thing
+   that can hold a stale error, and Kairos already serves this route with open
+   CORS. A second path costs one failed request and removes the relay as a
+   single point of failure. */
+let READ_CACHE=null, READ_AT=0;
+async function marketRead(){
+  if(READ_CACHE&&Date.now()-READ_AT<12e4) return READ_CACHE;
+  try{
+    const r=await get('/v1/read');
+    if(r&&r.symbols){ READ_CACHE=r; READ_AT=Date.now(); return r; }
+  }catch(e){}
+  try{
+    const u='https://kairos-api.safihelal.workers.dev/public/state?t='+Math.floor(Date.now()/6e4);
+    const res=await fetch(u);
+    const d=await res.json().catch(()=>null);
+    if(res.ok&&d&&d.symbols){ READ_CACHE=d; READ_AT=Date.now(); return d; }
+    READ_CACHE=null;
+    return {error:true,message:(d&&d.message)||('Kairos returned '+res.status)};
+  }catch(e){ return {error:true,message:'Kairos unreachable: '+String(e.message||e)}; }
+}
+
 const GAMMA_SAY={
   short:['Dealers are short gamma','They hedge in the direction of the move, which amplifies it. Trends extend, dips get sold harder, and ranges break more often than they hold.'],
   long: ['Dealers are long gamma','They hedge against the move, which damps it. Rallies get sold and dips get bought mechanically, so price compresses and reverts toward the middle.']
@@ -662,12 +714,13 @@ async function loadRead(){
      channel made the panel depend on a cron that has nothing to do with it. */
   let vix=null, gamma=null, breadth=null, tnx=null, tape=null, risk=null;
   try{
-    const q=(await get('/v1/yquote?symbols=^VIX,^VIX9D,^VIX3M,^TNX,^FVX,SPY,QQQ,IWM,DIA,GLD,TLT,HYG,UUP,XLP,XLY,^GSPC')).quotes||{};
+    const q=(await get('/v1/yquote?symbols=^VIX,^VIX9D,^VIX3M,^TNX,^FVX,ES=F,NQ=F,RTY=F,YM=F,SPY,QQQ,IWM,DIA,GLD,TLT,HYG,UUP,XLP,XLY')).quotes||{};
     const g=s=>q[s]&&q[s].c!=null?q[s].c:null;
     const d=s=>q[s]&&q[s].dp!=null?q[s].dp:null;
     const spot=g('^VIX');
     if(spot) vix={spot, v9d:g('^VIX9D'), v3m:g('^VIX3M'), chg:d('^VIX')};
     tnx=g('^TNX');
+    window.__rdQ=q;
     tape=[['SPY','S&P 500'],['QQQ','Nasdaq 100'],['IWM','Russell 2000'],['DIA','Dow 30'],
           ['GLD','Gold'],['TLT','20Y Treasuries']]
       .map(([s,n])=>({s,n,c:g(s),dp:d(s)})).filter(x=>x.c!=null);
@@ -683,7 +736,7 @@ async function loadRead(){
       legs.push({k:'Dollar', v:-d('UUP'), on:'Dollar easing', off:'Dollar firming'});
     if(legs.length) risk={legs, score:legs.filter(l=>l.v>0).length, of:legs.length};
   }catch(e){}
-  try{ const r=await get('/v1/read'); if(r&&r.symbols) gamma=r; }catch(e){}
+  gamma=await marketRead();
   try{
     const d=await get('/v1/strength'); const rows=d.rows||[];
     if(rows.length) breadth={adv:rows.filter(r=>r.m1>0).length, tot:rows.length,
@@ -712,14 +765,52 @@ async function loadRead(){
       :p>=.25?'a minority of the market is carrying it'
       :'almost nothing is participating'));
   }
-  if(gamma&&gamma.symbols&&gamma.symbols.SPY)
+  if(gamma&&!gamma.error&&gamma.symbols&&gamma.symbols.SPY)
     clauses.push('with dealers positioned to '+(gamma.symbols.SPY.gammaSign==='short'?'amplify':'damp')+' moves');
   const headline=clauses.length?clauses.join(', ').replace(/^./,c=>c.toUpperCase())+'.':'';
 
   const cards=[];
 
-  /* The majors first. Conditions mean less without knowing what actually
-     happened, and this was the piece the panel was missing entirely. */
+  /* ---- FUTURES FIRST ----
+     Most people reading this at 8am are looking at ES and NQ, not SPY. The
+     futures print overnight and through the whole session, so they are the
+     first thing that tells you what kind of day is being set up. */
+  const FUT=[['ES=F','ES','S&P 500'],['NQ=F','NQ','Nasdaq 100'],
+             ['RTY=F','RTY','Russell 2000'],['YM=F','YM','Dow 30']];
+  let futBand='';
+  const fq=s=>{const x=(window.__rdQ||{})[s];return x&&x.dp!=null?x.dp:null;};
+  if(window.__rdQ){
+    const rows=FUT.map(([s,k,n])=>({k,n,c:(window.__rdQ[s]||{}).c,dp:fq(s)}))
+                  .filter(x=>x.c!=null);
+    if(rows.length){
+      /* the divergence that matters: growth against the broad tape. When NQ
+         and ES disagree, the day is a rotation rather than a direction. */
+      const es=fq('ES=F'), nq=fq('NQ=F'), rty=fq('RTY=F');
+      let dv='';
+      if(es!=null&&nq!=null){
+        const gap=nq-es;
+        const say=Math.abs(gap)<.15?['In line','Growth and the broad tape are moving together, so today is a direction rather than a rotation.']
+          :gap>0?['Nasdaq leading','Growth is being bought harder than the broad tape. Momentum names lead, laggards get ignored.']
+          :['Nasdaq lagging','The broad tape is holding up better than growth. That is rotation out of duration, and it usually punishes chasing.'];
+        const br=(rty!=null&&es!=null)?(rty-es):null;
+        dv=`<div class="rd-div">
+          <span class="k">NQ against ES</span>
+          <b class="${dirC(gap)}">${(gap>=0?'+':'')+gap.toFixed(2)}%</b>
+          <span class="t">${say[0]}</span>
+          <p>${say[1]}</p>
+          ${br!=null?`<span class="rd-sub">Russell against ES: ${(br>=0?'+':'')+br.toFixed(2)}%. ${br>0?'Small caps joining, which broadens the move.':'Small caps lagging, so the move is narrow.'}</span>`:''}
+        </div>`;
+      }
+      futBand=`<div class="rd-fut">
+        <div class="rd-futrow">${rows.map(x=>`
+          <div class="rd-f ${dirC(x.dp)}">
+            <span class="s">${esc(x.k)}</span><span class="n">${esc(x.n)}</span>
+            <span class="p">${fmt(x.c,2)}</span><span class="d">${pctf(x.dp)}</span>
+          </div>`).join('')}</div>
+        ${dv}</div>`;
+    }
+  }
+
   let band='';
   if(tape&&tape.length){
     band=`<div class="rd-tape">${tape.map(x=>`
@@ -768,7 +859,7 @@ async function loadRead(){
     </div>`);
   }
 
-  if(gamma&&gamma.symbols&&Object.keys(gamma.symbols).length){
+  if(gamma&&!gamma.error&&gamma.symbols&&Object.keys(gamma.symbols).length){
     cards.push(`<div class="rd-card">
       <div class="rd-h"><span class="rd-t">Dealer positioning</span>
         <span class="rd-tag">prior close</span></div>
@@ -883,7 +974,7 @@ async function loadRead(){
   }catch(e){}
 
   host.innerHTML=(headline?`<p class="rd-lede">${esc(headline)}</p>`:'')
-    +band+`<div class="rd-grid">${cards.join('')}</div>`;
+    +futBand+band+`<div class="rd-grid">${cards.join('')}</div>`;
   $$('.rd-tk',host).forEach(b=>b.addEventListener('click',()=>toChart(b.dataset.sym)));
   $$('em[data-sym]',host).forEach(em=>em.addEventListener('click',()=>toChart(em.dataset.sym)));
   setBar('#dkRead', vix?'current':'partial');
@@ -1289,8 +1380,9 @@ async function loadGex(sym){
   const host=$('#dkGex'); if(!host||!sym) return;
   setBar('#dkGex','reading');
   try{
-    if(!GEXCACHE) GEXCACHE=await get('/v1/read');
-    const d=GEXCACHE, x=d&&d.symbols?d.symbols[sym]:null;
+    const d=await marketRead();
+    if(d&&d.error) throw new Error(d.message||'The read is not published yet.');
+    const x=d&&d.symbols?d.symbols[sym]:null;
     if(!x){
       const covered=d&&d.symbols?Object.keys(d.symbols):[];
       host.innerHTML=`<div class="gx-none">
