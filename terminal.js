@@ -739,7 +739,7 @@ async function loadRead(){
   gamma=await marketRead();
   try{
     const d=await get('/v1/strength'); const rows=d.rows||[];
-    if(rows.length) breadth={adv:rows.filter(r=>r.m1>0).length, tot:rows.length,
+    if(rows.length) breadth={rows, adv:rows.filter(r=>r.m1>0).length, tot:rows.length,
       top:rows.slice(0,3).map(r=>r.symbol), bot:rows.slice(-3).map(r=>r.symbol)};
   }catch(e){}
 
@@ -775,8 +775,11 @@ async function loadRead(){
      Most people reading this at 8am are looking at ES and NQ, not SPY. The
      futures print overnight and through the whole session, so they are the
      first thing that tells you what kind of day is being set up. */
+  /* ES and NQ for the tape, then the two commodities that actually move
+     equity sentiment: gold when people want out of paper, crude because it
+     runs straight into the inflation print everyone is trading around. */
   const FUT=[['ES=F','ES','S&P 500'],['NQ=F','NQ','Nasdaq 100'],
-             ['RTY=F','RTY','Russell 2000'],['YM=F','YM','Dow 30']];
+             ['GC=F','GOLD','Gold'],['CL=F','CRUDE','WTI Crude']];
   let futBand='';
   const fq=s=>{const x=(window.__rdQ||{})[s];return x&&x.dp!=null?x.dp:null;};
   if(window.__rdQ){
@@ -884,94 +887,79 @@ async function loadRead(){
     </div>`);
   }
 
-  if(breadth){
-    const pct=breadth.adv/breadth.tot*100;
-    const say=pct>=70?['Broad','Most of the market is participating. Moves built on this tend to hold.']
-      :pct>=45?['Mixed','Roughly half the market is working. No strong message either way.']
-      :pct>=25?['Narrow','A minority is carrying the index. That is fragile, because it depends on a handful of names.']
-      :['Very narrow','Almost nothing is participating. An index holding up on this is being held up by a few names.'];
+  /* ---- BREADTH, expanded ----
+     Breadth survives every regime, so it earns the space. Three horizons
+     instead of one: what is working today, over a month, and over a quarter.
+     When they disagree the market is turning, and that disagreement is the
+     whole signal. */
+  if(breadth&&breadth.rows){
+    const R=breadth.rows;
+    const pc=f=>Math.round(R.filter(f).length/R.length*100);
+    const d1=pc(r=>r.m1>0), d3=pc(r=>r.m3>0), d6=pc(r=>r.m6>0);
+    const say=d1>=70?['Broad','Most of the market is participating. Moves built on this tend to hold.']
+      :d1>=45?['Mixed','Roughly half is working. No strong message either way.']
+      :d1>=25?['Narrow','A minority is carrying the index, which is fragile.']
+      :['Very narrow','Almost nothing is participating.'];
+    const trend=(d1-d3)>12?['Broadening','More is working now than a quarter ago. Participation is spreading, which is what durable moves look like from the inside.']
+      :(d1-d3)<-12?['Narrowing','Less is working now than a quarter ago. The index can keep rising on this, but on fewer and fewer shoulders.']
+      :['Steady','Participation is about where it was a quarter ago.'];
+    const bar=(lab,v)=>`<div class="bd-row"><span class="bd-k">${lab}</span>
+      <span class="bd-track"><i style="width:${v}%;background:${v>=60?'var(--green)':v>=35?'var(--gold)':'var(--red)'}"></i></span>
+      <span class="bd-v">${v}%</span></div>`;
     cards.push(`<div class="rd-card">
       <div class="rd-h"><span class="rd-t">Breadth</span>
         <span class="rd-v">${breadth.adv}<em>/${breadth.tot}</em></span></div>
-      <div class="rd-bar"><i style="width:${pct.toFixed(0)}%"></i></div>
-      <div class="rd-row"><b>${say[0]}</b><p>${say[1]}</p>
-        <span class="rd-sub">Groups outperforming SPY over the last month.</span></div>
+      <div class="bd-bars">${bar('Today',d1)}${bar('1 month',d3)}${bar('3 months',d6)}</div>
+      <div class="rd-row"><b>${say[0]}</b><p>${say[1]}</p></div>
+      <div class="rd-row"><b>${trend[0]}</b><p>${trend[1]}</p></div>
       <div class="rd-lead">
         <span class="k">Leading</span>
         <span class="g">${breadth.top.map(s=>`<em class="up" data-sym="${esc(s)}">${esc(s)}</em>`).join('')}</span>
         <span class="k">Lagging</span>
         <span class="g">${breadth.bot.map(s=>`<em class="dn" data-sym="${esc(s)}">${esc(s)}</em>`).join('')}</span>
       </div>
-      ${tnx?`<p class="rd-note">US 10-year at ${fmt(tnx,2)}%. Rising yields pressure long-duration growth first.</p>`:''}
     </div>`);
   }
 
-  /* risk appetite */
-  if(risk){
-    const tone=risk.score===risk.of?['Risk on','Every relationship the market watches is leaning the same way, toward risk.']
-      :risk.score===0?['Risk off','Every relationship is leaning defensive at once, which is rarer than it sounds and usually means something.']
-      :['Mixed','The relationships disagree, so the tape is being pushed by something other than a clean appetite for risk.'];
-    cards.push(`<div class="rd-card">
-      <div class="rd-h"><span class="rd-t">Risk appetite</span>
-        <span class="rd-v">${risk.score}<em>/${risk.of}</em></span></div>
-      <div class="rd-row"><b>${tone[0]}</b><p>${tone[1]}</p></div>
-      <div class="rd-legs">${risk.legs.map(l=>`
-        <div class="rd-leg ${l.v>0?'on':'off'}">
-          <span class="k">${esc(l.k)}</span>
-          <span class="v">${esc(l.v>0?l.on:l.off)}</span>
-          <span class="n">${(l.v>=0?'+':'')+l.v.toFixed(2)}%</span>
-        </div>`).join('')}</div>
-      <p class="rd-note">Each leg is one asset measured against another today. Relationships describe appetite more honestly than any single index does.</p>
-    </div>`);
-  }
-
-  /* ---- rates: the number every other asset is discounted against ---- */
+  /* ---- WHAT MONEY IS BUYING ----
+     Rates and the old risk legs were portfolio-manager framing. This asks the
+     question a trader is actually asking: which side is money going into right
+     now, and does that agree with what the index is doing. */
   try{
-    const q2=(await get('/v1/yquote?symbols=^TNX,^FVX')).quotes||{};
-    const ten=q2['^TNX'], five=q2['^FVX'];
-    if(ten&&ten.c!=null){
-      const y=ten.c, dp=ten.dp;
-      const band=y<3.5?['Low','Cheap money. Long-duration growth and unprofitable stories get the most benefit from a low discount rate.']
-        :y<4.5?['Normal','A discount rate the market is used to. Nothing here is forcing a rotation on its own.']
-        :y<5?['Elevated','Every future dollar of earnings is worth less today. Growth multiples compress first.']
-        :['High','Bonds compete directly with equities for the same money, and they win more often at these levels.'];
-      const slope=(five&&five.c!=null)?y-five.c:null;
+    const q4=(await get('/v1/yquote?symbols=XLY,XLP,IWM,SPY,TLT,SMH')).quotes||{};
+    const g=s=>q4[s]&&q4[s].dp!=null?q4[s].dp:null;
+    const pairs=[
+      {a:'SMH',b:'SPY',k:'Chips vs market',on:'Semis leading',off:'Semis lagging',
+       w:'Semiconductors are the highest-beta expression of risk here. When they lead, the tape has an engine.'},
+      {a:'XLY',b:'XLP',k:'Offense vs defense',on:'Offense',off:'Defense',
+       w:'Discretionary against staples. What people buy says more than what they say.'},
+      {a:'IWM',b:'SPY',k:'Small vs large',on:'Broadening',off:'Narrow',
+       w:'Small caps joining means the move has legs beyond a handful of megacaps.'},
+      {a:'SPY',b:'TLT',k:'Stocks vs bonds',on:'Into equities',off:'Into safety',
+       w:'Money flowing to duration is money leaving risk.'}
+    ].map(p=>Object.assign({},p,{v:(g(p.a)!=null&&g(p.b)!=null)?g(p.a)-g(p.b):null}))
+     .filter(p=>p.v!=null);
+    if(pairs.length){
+      const on=pairs.filter(p=>p.v>0).length;
+      const tone=on===pairs.length?['Fully risk on','Every pair leans the same way. Rare, and worth respecting while it lasts.']
+        :on===0?['Fully risk off','Every pair is defensive at once. That is coordinated, not noise.']
+        :on>pairs.length/2?['Leaning risk on','More pairs favour risk than not, but it is not unanimous.']
+        :['Leaning defensive','More pairs favour safety. Rallies into this tend to get sold.'];
       cards.push(`<div class="rd-card">
-        <div class="rd-h"><span class="rd-t">Rates</span>
-          <span class="rd-v ${dirC(dp)}">${fmt(y,2)}<em>%</em></span></div>
-        <div class="rd-row"><b>${band[0]}</b><p>${band[1]}</p>
-          <span class="rd-sub">US 10-year${dp!=null?', '+pctf(dp)+' today':''}.</span></div>
-        ${slope!=null?`<div class="rd-row"><b>${slope>=0?'Curve upward sloping':'Curve inverted'}</b>
-          <p>${slope>=0?'Ten-year yields more than five-year, the normal shape. The market is not pricing an imminent slowdown.'
-                       :'Five-year yields more than ten-year. Historically this shape has preceded slowdowns, though the lag has been long and unreliable.'}</p>
-          <span class="rd-sub">Ten minus five: ${(slope>=0?'+':'')+slope.toFixed(2)}.</span></div>`:''}
+        <div class="rd-h"><span class="rd-t">What money is buying</span>
+          <span class="rd-v">${on}<em>/${pairs.length}</em></span></div>
+        <div class="rd-row"><b>${tone[0]}</b><p>${tone[1]}</p></div>
+        <div class="rd-legs">${pairs.map(p=>`
+          <div class="rd-leg ${p.v>0?'on':'off'}" title="${esc(p.w)}">
+            <span class="k">${esc(p.k)}</span>
+            <span class="v">${esc(p.v>0?p.on:p.off)}</span>
+            <span class="n">${(p.v>=0?'+':'')+p.v.toFixed(2)}%</span>
+          </div>`).join('')}</div>
+        ${tnx?`<p class="rd-note">US 10-year at ${fmt(tnx,2)}%. Rising yields pressure long-duration growth first.</p>`:''}
       </div>`);
     }
   }catch(e){}
 
-  /* ---- defensives against cyclicals: what the tape is actually buying ---- */
-  try{
-    const q3=(await get('/v1/yquote?symbols=XLP,XLY')).quotes||{};
-    const p=q3['XLP'], y=q3['XLY'];
-    if(p&&y&&p.dp!=null&&y.dp!=null){
-      const gap=y.dp-p.dp;
-      const say=gap>0.4?['Cyclicals leading','Discretionary is outrunning staples. That is what participation looks like when the market believes in the economy.']
-        :gap<-0.4?['Defensives leading','Staples are outrunning discretionary. Money is paying for safety, which is a different tape from a selloff and often precedes one.']
-        :['Neither leading','Staples and discretionary are moving together, so today is not a statement about the economy.'];
-      cards.push(`<div class="rd-card">
-        <div class="rd-h"><span class="rd-t">Positioning</span>
-          <span class="rd-v ${dirC(gap)}">${(gap>=0?'+':'')+gap.toFixed(2)}<em>%</em></span></div>
-        <div class="rd-row"><b>${say[0]}</b><p>${say[1]}</p></div>
-        <div class="rd-legs">
-          <div class="rd-leg ${y.dp>=0?'on':'off'}"><span class="k">Discretionary</span>
-            <span class="v">XLY</span><span class="n">${pctf(y.dp)}</span></div>
-          <div class="rd-leg ${p.dp>=0?'on':'off'}"><span class="k">Staples</span>
-            <span class="v">XLP</span><span class="n">${pctf(p.dp)}</span></div>
-        </div>
-        <p class="rd-note">What people buy says more than what they say. Discretionary against staples is the cleanest read on that available for free.</p>
-      </div>`);
-    }
-  }catch(e){}
 
   host.innerHTML=(headline?`<p class="rd-lede">${esc(headline)}</p>`:'')
     +futBand+band+`<div class="rd-grid">${cards.join('')}</div>`;
@@ -1532,16 +1520,31 @@ async function loadLevels(sym){
     const near=L.filter(x=>isFinite(x.p)&&x.ad<25).sort((a,b)=>a.ad-b.ad).slice(0,9);
     const above=near.filter(x=>x.d>0).length, below=near.length-above;
 
-    host.innerHTML=`<div class="lv-now">
-        <span class="k">Trading at</span><b>${fmt(last,2)}</b>
-        <span class="lv-split">${below} below \u00b7 ${above} above</span></div>
-      <div class="lv-list">${near.map(x=>`
-        <div class="lv-row ${x.d>0?'up':'dn'}" title="${esc(x.w)}">
-          <span class="lv-p">${fmt(x.p,2)}</span>
-          <span class="lv-k">${esc(x.k)}</span>
-          <span class="lv-d">${x.d>0?'+':''}${x.d.toFixed(2)}%</span>
-        </div>`).join('')}</div>
-      <p class="lv-note">Derived from this symbol\u2019s own daily bars. A level is somewhere to plan a decision, never a reason to take one.</p>`;
+    /* A ladder rather than a list. Price is a vertical axis, so drawing the
+       levels on one lets you see the shape of the map at a glance: where the
+       clusters are, how far the nearest wall sits, and whether you are pinned
+       between two of them or running in open space. */
+    const span=Math.max(...near.map(x=>x.ad))*1.12;
+    const pos=v=>50-((v-last)/last*100)/span*50;
+    const clus=near.slice().sort((a,b)=>b.p-a.p);
+    host.innerHTML=`<div class="lv-wrap">
+      <div class="lv-rail">
+        ${clus.map((x,i)=>`<div class="lv-mk ${x.d>0?'up':'dn'}" style="top:${pos(x.p).toFixed(2)}%"
+            title="${esc(x.w)}">
+            <span class="lv-tick"></span>
+            <span class="lv-lab"><b>${fmt(x.p,2)}</b><em>${esc(x.k)}</em></span>
+            <span class="lv-pct">${x.d>0?'+':''}${x.d.toFixed(2)}%</span>
+          </div>`).join('')}
+        <div class="lv-spot" style="top:50%">
+          <span class="lv-spotlab">${fmt(last,2)}</span>
+        </div>
+      </div>
+      <div class="lv-foot">
+        <span><b>${below}</b> below</span>
+        <span><b>${above}</b> above</span>
+        <span class="lv-near">Nearest ${near[0]?esc(near[0].k)+' at '+fmt(near[0].p,2):'\u2014'}</span>
+      </div>
+    </div>`;
     setBar('#dkLevels',esc(sym));
   }catch(e){
     host.innerHTML=stateBox('NO LEVELS',e.message);

@@ -2485,6 +2485,85 @@ body::before{
   .rot-trail .lbl{display:none}
 }
 
+/* ============================================================
+   LEGIBILITY
+   A lot of the supporting text was 0.55rem in the faintest grey
+   available. It read as texture rather than words. Every one of
+   those was carrying real meaning, so the floor goes up and the
+   dimmest tier gets lightened.
+   ============================================================ */
+:root{ --faint:#8b98ab; --dim:#b3bdcb; }
+.rd-sub,.rd-note,.rg-note,.lv-note,.gx-note,.play-foot,.cmp-read small,.rot-read small,
+.wk-quiet,.wk-more,.dk-srcnote,.snap-m .h,.rg-row p,.lv-note,.xr-crumbs{
+  font-size:.75rem;line-height:1.55;color:var(--faint)}
+.rd-t,.rd-tag,.rd-leg .k,.rd-lead .k,.snap-m .k,.rg-row .k,.lv-now .k,.gx-r .k,
+.wk-lbl,.bd-k,.rot-trail .lbl,.tk-cue,.tk-slbl,.dk-bar .s,.dk-bar .t{
+  font-size:.64rem;letter-spacing:.13em}
+.rd-f .n,.rd-tk .n,.cmp-r .n,.rot-li .p,.wk-ev .tm,.wk-er .es,.lv-pct{font-size:.66rem}
+.dk-bar .t{font-size:.72rem;color:var(--text)}
+.rot-read p,.cmp-read p,.rd-row p,.gx-r p,.gx-none p{font-size:.82rem;line-height:1.6}
+.rd-div p,.rd-div .rd-sub{font-size:.8rem}
+.snap-m .v{font-size:1.02rem}
+.tsec{font-size:.68rem;color:var(--cyan)}
+.eyebrow{font-size:.66rem!important}
+.wk-ev .nm{font-size:.76rem} .wk-er button{font-size:.74rem}
+
+/* ---------- TICKER DESK ---------- */
+.tk-strip{display:flex;align-items:center;gap:11px;padding:0 18px 14px;flex-wrap:wrap}
+.tk-slbl{font-family:var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--faint);
+  flex:none}
+.tk-quick{margin-left:0}
+.tk-bar{padding-bottom:10px;border-bottom:none}
+.cmdbox .tk-strip{border-bottom:1px solid var(--line)}
+/* a little more room so regime and levels never scroll */
+.dk-work .dk-c,.dk-work .dk-d,.dk-work .dk-e{height:396px}
+@media(min-width:1200px){.dk-work .dk-c,.dk-work .dk-d,.dk-work .dk-e{height:404px}}
+
+/* ---------- LEVELS: a ladder, not a list ---------- */
+.lv-wrap{display:flex;flex-direction:column;height:100%}
+.lv-rail{position:relative;flex:1;margin:14px 16px 6px;
+  border-left:2px solid var(--line);min-height:230px}
+.lv-mk{position:absolute;left:0;right:0;transform:translateY(-50%);display:flex;
+  align-items:center;gap:8px;height:18px}
+.lv-tick{width:12px;height:2px;flex:none}
+.lv-mk.up .lv-tick{background:var(--green)} .lv-mk.dn .lv-tick{background:var(--red)}
+.lv-lab{display:flex;align-items:baseline;gap:8px;min-width:0}
+.lv-lab b{font-family:var(--mono);font-size:.78rem;font-weight:600}
+.lv-lab em{font-style:normal;font-size:.72rem;color:var(--dim);white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis}
+.lv-pct{margin-left:auto;font-family:var(--mono);flex:none}
+.lv-mk.up .lv-pct{color:var(--green)} .lv-mk.dn .lv-pct{color:var(--red)}
+.lv-mk::before{content:'';position:absolute;left:12px;right:0;height:1px;
+  background:linear-gradient(90deg,var(--line),transparent);z-index:-1}
+.lv-spot{position:absolute;left:-2px;right:0;height:2px;background:var(--cyan);
+  transform:translateY(-50%);box-shadow:0 0 12px var(--cyan-glow);z-index:2}
+.lv-spotlab{position:absolute;right:0;top:-9px;font-family:var(--mono);font-size:.74rem;
+  font-weight:600;color:var(--void);background:var(--cyan);padding:1px 7px;border-radius:4px}
+.lv-foot{display:flex;gap:16px;align-items:center;padding:11px 16px;
+  border-top:1px solid var(--line);font-family:var(--mono);font-size:.7rem;color:var(--faint)}
+.lv-foot b{color:var(--text)}
+.lv-near{margin-left:auto;text-align:right}
+
+/* ---------- BREADTH BARS ---------- */
+.bd-bars{display:flex;flex-direction:column;gap:7px;margin:6px 0 14px}
+.bd-row{display:grid;grid-template-columns:64px 1fr 38px;gap:9px;align-items:center}
+.bd-k{font-family:var(--mono);text-transform:uppercase;color:var(--faint)}
+.bd-track{height:7px;border-radius:4px;background:var(--panel-3);overflow:hidden}
+.bd-track i{display:block;height:100%;transition:width .8s var(--ease)}
+.bd-v{font-family:var(--mono);font-size:.7rem;text-align:right}
+
+/* ---------- ROTATION: stop the box resizing ---------- */
+/* The read pane changed height with whatever body was hovered, so the rail
+   under it moved while the cursor was still travelling. Fixed height with its
+   own scroll keeps every element exactly where it was. */
+.rot-read{height:250px;min-height:250px;overflow:auto;contain:layout style}
+.rot-side{contain:layout}
+.rot-list{max-height:none;height:236px}
+@media(max-width:1000px){
+  .rot-read{height:auto;min-height:0;overflow:visible}
+  .rot-list{height:200px;max-height:200px}
+}
+
 </style>
 
 <script src="https://unpkg.com/lightweight-charts@5/dist/lightweight-charts.standalone.production.js" defer></script>
@@ -2571,6 +2650,13 @@ body::before{
          share one area: click any collapsed header to promote it. -->
     <!-- THE READ. Not what the market did, what conditions it is
          operating under. -->
+    <h3 class="tsec">The week &middot; what is scheduled</h3>
+    <section class="cmdbox reveal">
+      <div class="dk-bar"><span class="dot"></span><span class="t">The Week</span>
+        <span class="s">loading</span></div>
+      <div id="dkWeek"><div class="dk-skel"></div><div class="dk-skel"></div><div class="dk-skel"></div></div>
+    </section>
+
     <h3 class="tsec">The Read &middot; conditions</h3>
     <section class="dk-panel reveal" style="margin-bottom:20px">
       <div class="dk-bar"><span class="dot"></span><span class="t">The Read</span>
@@ -2581,12 +2667,6 @@ body::before{
     <!-- ONE TICKER. A single command box: the symbol control and every panel
          that follows it live inside the same frame, so it reads as one
          instrument rather than five things that happen to be near each other. -->
-    <h3 class="tsec">The week &middot; what is scheduled</h3>
-    <section class="cmdbox reveal">
-      <div class="dk-bar"><span class="dot"></span><span class="t">The Week</span>
-        <span class="s">loading</span></div>
-      <div id="dkWeek"><div class="dk-skel"></div><div class="dk-skel"></div><div class="dk-skel"></div></div>
-    </section>
 
     <h3 class="tsec">The Ticker Desk &middot; one symbol, every angle</h3>
     <section class="cmdbox reveal">
@@ -2598,8 +2678,9 @@ body::before{
           <div class="dk-sug tk-sug" id="tkSug" role="listbox"></div>
         </div>
         <span class="tk-now" id="tkNow">NVDA</span>
-        <span class="tk-quick" id="tkQuick"></span>
       </div>
+      <div class="tk-strip"><span class="tk-slbl">Watching</span>
+        <span class="tk-quick" id="tkQuick"></span></div>
 
       <div class="dk-work" id="dkWork">
         <section class="dk-pane dk-a">
