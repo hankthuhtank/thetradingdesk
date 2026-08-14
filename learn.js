@@ -527,68 +527,38 @@ const ART={
 function board(){
   const rack=$('#rack'); if(!rack) return;
   rack.innerHTML='';
-  /* Display order: riskdesk last so it can span full width */
+  /* Order: Calculators before Risk & Mind; Risk spans full width last */
   const order=['patterns','encyclopedia','options','indicators','strategies','tools','riskdesk'];
   const byId=Object.fromEntries(SHELVES.map(s=>[s.id,s]));
 
-  order.forEach((id,idx)=>{
+  order.forEach(id=>{
     const s=byId[id]; if(!s) return;
-    const items=(s.items()||[]).slice(0,3);
-    const names=items.map(it=>it.t).filter(Boolean);
-    const examplesHtml=names.length
+    const names=(s.items()||[]).slice(0,3).map(it=>it && it.t).filter(Boolean);
+    const examplesHtml = names.length
       ? `<span class="panel-examples"><em>${names.map(n=>esc(n)).join(', ')}</em></span>`
       : '';
-    const wide = (id==='riskdesk') ? ' wide' : '';
     const card=document.createElement('button');
     card.type='button';
-    card.className='panel'+wide;
+    card.className = id==='riskdesk' ? 'panel wide' : 'panel';
     card.style.setProperty('--ac', s.accent);
     card.setAttribute('data-id', s.id);
     card.setAttribute('aria-label', s.name + ' — ' + s.count());
-    card.innerHTML=`
-      <span class="panel-art" aria-hidden="true">
-        <svg viewBox="0 0 24 24" fill="none">${ART[s.id]||ART.tools}</svg>
-      </span>
-      <span class="panel-body">
-        <span class="panel-kicker">${esc(s.count())}</span>
-        <span class="panel-title">${esc(s.name)}</span>
-        <span class="panel-desc">${esc(s.line)}</span>
-        ${examplesHtml}
-        <span class="panel-cta">Open ${esc(s.name)} <i>→</i></span>
-      </span>`;
+    card.innerHTML =
+      '<span class="panel-art" aria-hidden="true">' +
+        '<svg viewBox="0 0 24 24" fill="none">'+(ART[s.id]||ART.tools)+'</svg>' +
+      '</span>' +
+      '<span class="panel-body">' +
+        '<span class="panel-kicker">'+esc(s.count())+'</span>' +
+        '<span class="panel-title">'+esc(s.name)+'</span>' +
+        '<span class="panel-desc">'+esc(s.line)+'</span>' +
+        examplesHtml +
+        '<span class="panel-cta">Open '+esc(s.name)+' <i>→</i></span>' +
+      '</span>';
     card.addEventListener('click',()=>go(s.id));
     rack.appendChild(card);
   });
 }
 
-function board(){
-  const rack=$('#rack'); if(!rack) return;
-  rack.innerHTML='';
-
-  SHELVES.forEach(s=>{
-    const items=(s.items()||[]).slice(0,3);
-    const examples=items.map(it=>`<span class="pe-item">${esc(it.t)}</span>`).join('');
-    const card=document.createElement('button');
-    card.type='button';
-    card.className='panel';
-    card.style.setProperty('--ac', s.accent);
-    card.setAttribute('data-id', s.id);
-    card.setAttribute('aria-label', s.name + ' — ' + s.count());
-    card.innerHTML=`
-      <span class="panel-art" aria-hidden="true">
-        <svg viewBox="0 0 24 24" fill="none">${ART[s.id]||ART.tools}</svg>
-      </span>
-      <span class="panel-body">
-        <span class="panel-kicker">${esc(s.count())}</span>
-        <span class="panel-title">${esc(s.name)}</span>
-        <span class="panel-desc">${esc(s.line)}</span>
-        ${examples?`<span class="panel-examples"><span class="pe-label">Examples</span>${examples}</span>`:''}
-        <span class="panel-cta">Open ${esc(s.name)} <i>→</i></span>
-      </span>`;
-    card.addEventListener('click',()=>go(s.id));
-    rack.appendChild(card);
-  });
-}
 
 /* the path, opened from the board instead of listed beside it */
 function pathModal(){
@@ -604,16 +574,18 @@ function pathModal(){
 function spawnParticles(){
   const host=$('#heroParticles'); if(!host||SLOW) return;
   host.innerHTML='';
-  const n=36;
+  const n=56;
   for(let i=0;i<n;i++){
     const s=document.createElement('span');
     const x=Math.random()*100;
-    const delay=Math.random()*8;
-    const dur=6+Math.random()*10;
-    const size=1+Math.random()*2.5;
-    const gold=Math.random()>.72;
+    /* scatter vertically across the whole home block, not just the top */
+    const top=Math.random()*100;
+    const delay=Math.random()*10;
+    const dur=7+Math.random()*12;
+    const size=1+Math.random()*2.8;
+    const gold=Math.random()>.7;
     s.style.left=x+'%';
-    s.style.bottom=(-5-Math.random()*20)+'%';
+    s.style.top=top+'%';
     s.style.width=size+'px';
     s.style.height=size+'px';
     s.style.animationDuration=dur+'s';

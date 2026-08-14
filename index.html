@@ -83,36 +83,39 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,te
   .menu-btn{display:block}
 }
 
-/* hero — stage with particles */
+/* hero + home as one continuous stage */
 .hero-stage{
   position:relative;
-  padding:88px 0 56px;
-  border-bottom:1px solid var(--line);
-  overflow:hidden;
+  padding:72px 0 0;
+  border-bottom:none;
+  overflow:visible;
   background:
-    radial-gradient(ellipse 80% 60% at 50% -10%, rgba(34,211,238,.12), transparent 55%),
-    radial-gradient(ellipse 50% 40% at 80% 60%, rgba(245,185,66,.05), transparent 50%);
+    radial-gradient(ellipse 80% 50% at 50% 0%, rgba(34,211,238,.11), transparent 55%),
+    radial-gradient(ellipse 45% 35% at 85% 40%, rgba(245,185,66,.04), transparent 55%);
 }
-.hero-particles{
-  position:absolute;inset:0;
+/* particles cover the full home block (hero + cards) */
+.home-particles{
+  position:absolute;
+  inset:0;
   pointer-events:none;
   overflow:hidden;
+  z-index:0;
 }
-.hero-particles span{
+.home-particles span{
   position:absolute;
-  width:2px;height:2px;
   border-radius:50%;
   background:var(--cyan);
   opacity:0;
   animation:particleDrift linear infinite;
+  will-change:transform, opacity;
 }
 @keyframes particleDrift{
-  0%{opacity:0;transform:translateY(20px) scale(.6)}
-  15%{opacity:.7}
-  85%{opacity:.4}
-  100%{opacity:0;transform:translateY(-120px) scale(1.2)}
+  0%{opacity:0;transform:translate3d(0,30px,0) scale(.5)}
+  12%{opacity:.65}
+  80%{opacity:.3}
+  100%{opacity:0;transform:translate3d(0,-140px,0) scale(1.15)}
 }
-.hero{position:relative;z-index:2;text-align:center;max-width:820px;margin:0 auto}
+.hero{position:relative;z-index:2;text-align:center;max-width:900px;margin:0 auto;padding-bottom:48px}
 .hero-badge{
   display:inline-flex;align-items:center;gap:10px;
   font-family:var(--mono);font-size:.62rem;letter-spacing:.2em;text-transform:uppercase;
@@ -120,7 +123,7 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,te
   border:1px solid rgba(34,211,238,.28);
   border-radius:100px;
   padding:8px 16px;
-  margin-bottom:28px;
+  margin-bottom:24px;
   background:rgba(34,211,238,.06);
   box-shadow:0 0 24px rgba(34,211,238,.08);
 }
@@ -135,14 +138,13 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,te
   50%{opacity:.45;transform:scale(.85)}
 }
 .hero-title{
-  font-size:clamp(3rem,8vw,5.2rem);
-  line-height:.95;
+  font-size:clamp(2.6rem,6.5vw,4.6rem);
+  line-height:1.05;
   letter-spacing:-.03em;
-  margin-bottom:18px;
+  margin-bottom:16px;
+  white-space:nowrap;
 }
-.ht-line{display:block;color:var(--text)}
-.ht-desk{
-  display:block;
+.hero-title .ht-desk{
   color:var(--cyan);
   text-shadow:
     0 0 40px rgba(34,211,238,.45),
@@ -159,7 +161,7 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,te
   letter-spacing:.28em;
   text-transform:uppercase;
   color:var(--gold);
-  margin-bottom:16px;
+  margin-bottom:14px;
   text-shadow:0 0 20px rgba(245,185,66,.25);
 }
 .hero-sub{
@@ -170,6 +172,14 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,te
   line-height:1.55;
 }
 .cta-row{display:flex;gap:12px;flex-wrap:wrap}
+
+/* home block wraps hero + cards as one unit */
+.home-block{position:relative;overflow:hidden}
+.home-block #terminal{position:relative;z-index:2;padding-top:8px;border-top:none}
+.home-block #terminal.section{padding-top:12px}
+@media(max-width:640px){
+  .hero-title{white-space:normal;font-size:clamp(2.2rem,11vw,3.2rem)}
+}
 
 /* ---- the wire, inside the command center ---- */
 .wire-head{margin-top:14px;padding-top:12px;border-top:1px solid var(--line);align-items:center}
@@ -3045,17 +3055,27 @@ button.panel, .panel{
 }
 .panel.wide{grid-column:1 / -1}
 .panel-examples{
-  margin-top:2px;
+  display:block;
+  margin:6px 0 2px;
+  padding:0;
+  border:none;
+  background:none;
   font-size:.84rem;
-  line-height:1.45;
-  color:var(--dim);
-}
-.panel-examples em{
-  font-style:italic;
+  line-height:1.5;
   color:var(--text);
-  font-weight:400;
-  opacity:.9;
 }
+.panel-examples em,
+.panel-examples i{
+  font-style:italic;
+  font-weight:400;
+  color:var(--text);
+  opacity:.88;
+  letter-spacing:.01em;
+}
+/* kill any leftover Example label styles from older builds */
+.panel-examples .pe-label,
+.panel-sample .ps-label,
+.panel-examples b{display:none!important}
 .panel-cta{
   margin-top:4px;
   font-family:var(--mono);
@@ -3277,36 +3297,20 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--cyan);outline-offse
   </div>
 </nav>
 
-<header id="top" class="hero-stage">
-  <div class="hero-particles" aria-hidden="true" id="heroParticles"></div>
-  <div class="wrap">
-    <div class="hero reveal">
-      <div class="hero-badge"><span class="hb-dot"></span> LIVE TERMINAL · EDUCATIONAL ONLY</div>
-      <h1 class="disp hero-title">
-        <span class="ht-line">The Trading</span>
-        <span class="ht-desk">Desk</span>
-      </h1>
-      <p class="hero-tag">Structure over signals</p>
-      <p class="sub hero-sub">One terminal for the whole trader’s education — patterns, options, risk, and the path in between.</p>
+<div class="home-block hero-stage" id="top">
+  <div class="home-particles" aria-hidden="true" id="heroParticles"></div>
+  <header>
+    <div class="wrap">
+      <div class="hero reveal">
+        <div class="hero-badge"><span class="hb-dot"></span> LIVE TERMINAL · EDUCATIONAL ONLY</div>
+        <h1 class="disp hero-title">The Trading <span class="ht-desk">Desk</span></h1>
+        <p class="hero-tag">Structure over signals</p>
+        <p class="sub hero-sub">One terminal for the whole trader’s education — patterns, options, risk, and the path in between.</p>
+      </div>
     </div>
-  </div>
-</header>
+  </header>
 
 <main>
-<!-- TERMINAL / MARKET CENTER -->
-<!-- ============================================================
-     THE HOME
-     One question decides everything a beginner does next: where do I
-     start. So the page answers that first, in order, and only then
-     offers the reference shelves for people who already know what
-     they came for.
-     ============================================================ -->
-<!-- ============================================================
-     THE BOARD
-     One organising device, not two. Every shelf is a tile, and a
-     tile opens in place to show what is actually inside it rather
-     than a description of it. Nothing on this page is listed twice.
-     ============================================================ -->
 <section class="section" id="terminal">
   <div class="wrap">
     <!-- THE LANE — large illustrated section panels -->
@@ -3329,6 +3333,7 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--cyan);outline-offse
     </div>
   </div>
 </section>
+</div><!-- /.home-block -->
 
 <!-- the path, opened from the board rather than listed beside it -->
 <div class="pathwrap" id="pathWrap" role="dialog" aria-modal="true" aria-label="The learning path">
