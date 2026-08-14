@@ -463,15 +463,56 @@ const SHELVES=[
    ]}
 ];
 
-/* Custom icons — drawn to feel like desk instruments, not generic UI glyphs */
-const ICONS={
-  patterns:`<path d="M5 4v16"/><rect x="3.5" y="8" width="3" height="6" rx=".5"/><path d="M12 4v16"/><rect x="10.5" y="6" width="3" height="9" rx=".5"/><path d="M19 4v16"/><rect x="17.5" y="10" width="3" height="5" rx=".5"/>`,
-  encyclopedia:`<path d="M4 5h12a3 3 0 0 1 3 3v11a1.5 1.5 0 0 0-1.5-1.5H4z"/><path d="M4 5v14"/><path d="M19 8h1.5v12H8"/><path d="M7 10h7M7 13h5"/>`,
-  options:`<path d="M3 18l5-10 4 6 3-8 3 5 3-7"/><path d="M3 21h18"/>`,
-  indicators:`<path d="M4 20h16"/><path d="M7 20V11"/><path d="M12 20V6"/><path d="M17 20v-7"/><circle cx="7" cy="10" r="1.4"/><circle cx="12" cy="5" r="1.4"/><circle cx="17" cy="12" r="1.4"/>`,
-  strategies:`<path d="M4 20h16"/><path d="M7 20V12"/><path d="M12 20V5"/><path d="M17 20v-8"/><path d="M5 9l2-2 2 3 3-5 2 2"/>`,
-  riskdesk:`<path d="M12 3l8 4v5c0 5-3.5 8.4-8 9.2C7.5 20.4 4 17 4 12V7z"/><path d="M9 12l2.2 2.2L15.5 10"/>`,
-  tools:`<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1l2.1-2.1M17 7l2.1-2.1"/>`
+/* Detailed section art — filled shapes with depth, not thin outline glyphs */
+const ART={
+  patterns:`
+    <rect x="3" y="9" width="4" height="8" rx="1" fill="currentColor" opacity=".25"/>
+    <path d="M5 4v16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+    <rect x="3.2" y="9" width="3.6" height="7" rx=".6" fill="currentColor"/>
+    <rect x="10" y="6" width="4" height="11" rx="1" fill="currentColor" opacity=".25"/>
+    <path d="M12 3v18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+    <rect x="10.2" y="6" width="3.6" height="10" rx=".6" fill="currentColor"/>
+    <rect x="17" y="11" width="4" height="6" rx="1" fill="currentColor" opacity=".25"/>
+    <path d="M19 5v16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+    <rect x="17.2" y="11" width="3.6" height="5.5" rx=".6" fill="currentColor"/>`,
+  encyclopedia:`
+    <path d="M5 4h11a2.5 2.5 0 0 1 2.5 2.5V20a1.5 1.5 0 0 0-1.5-1.5H5z" fill="currentColor" opacity=".2"/>
+    <path d="M5 4h11a2.5 2.5 0 0 1 2.5 2.5V20a1.5 1.5 0 0 0-1.5-1.5H5V4z" stroke="currentColor" stroke-width="1.6" fill="none"/>
+    <path d="M5 4v15.5" stroke="currentColor" stroke-width="1.6"/>
+    <path d="M8 9h7M8 12.5h5.5M8 16h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity=".7"/>
+    <circle cx="18.5" cy="7.5" r="2.2" fill="currentColor" opacity=".35"/>`,
+  options:`
+    <path d="M3 17l4.5-9 3.5 5.5 3-7.5 2.5 4.5 4-8" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    <path d="M3 20.5h18" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+    <circle cx="7.5" cy="8" r="1.6" fill="currentColor"/>
+    <circle cx="14" cy="6" r="1.6" fill="currentColor"/>
+    <circle cx="20.5" cy="5.5" r="1.6" fill="currentColor"/>`,
+  indicators:`
+    <path d="M4 20h16" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+    <rect x="5.5" y="11" width="3.2" height="9" rx=".8" fill="currentColor" opacity=".35"/>
+    <rect x="10.4" y="6" width="3.2" height="14" rx=".8" fill="currentColor" opacity=".55"/>
+    <rect x="15.3" y="13" width="3.2" height="7" rx=".8" fill="currentColor" opacity=".35"/>
+    <path d="M7 10.5V20M12 5.5V20M17 12.5V20" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    <circle cx="7" cy="10" r="1.8" fill="currentColor"/>
+    <circle cx="12" cy="5" r="1.8" fill="currentColor"/>
+    <circle cx="17" cy="12" r="1.8" fill="currentColor"/>`,
+  strategies:`
+    <path d="M3 19h18" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+    <path d="M5 15l3.5-5.5 3 3.5 4-8 3.5 4" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    <circle cx="5" cy="15" r="1.7" fill="currentColor"/>
+    <circle cx="8.5" cy="9.5" r="1.7" fill="currentColor"/>
+    <circle cx="11.5" cy="13" r="1.7" fill="currentColor"/>
+    <circle cx="15.5" cy="5" r="1.7" fill="currentColor"/>
+    <circle cx="19" cy="9" r="1.7" fill="currentColor"/>`,
+  riskdesk:`
+    <path d="M12 2.8l8 3.8v5.2c0 5.2-3.6 8.8-8 9.8-4.4-1-8-4.6-8-9.8V6.6z" fill="currentColor" opacity=".18"/>
+    <path d="M12 2.8l8 3.8v5.2c0 5.2-3.6 8.8-8 9.8-4.4-1-8-4.6-8-9.8V6.6z" stroke="currentColor" stroke-width="1.7" fill="none" stroke-linejoin="round"/>
+    <path d="M8.5 12.2l2.4 2.4 4.6-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>`,
+  tools:`
+    <circle cx="12" cy="12" r="3.2" fill="currentColor" opacity=".25"/>
+    <circle cx="12" cy="12" r="3.2" stroke="currentColor" stroke-width="1.6" fill="none"/>
+    <path d="M12 2.5v3.2M12 18.3v3.2M3.8 3.8l2.3 2.3M17.9 17.9l2.3 2.3M2.5 12h3.2M18.3 12h3.2M3.8 20.2l2.3-2.3M17.9 6.1l2.3-2.3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+    <circle cx="12" cy="12" r="1.4" fill="currentColor"/>`
 };
 
 function board(){
@@ -481,23 +522,24 @@ function board(){
   SHELVES.forEach(s=>{
     const items=s.items()||[];
     const sample=items[0];
-    const exTitle=sample ? sample.t : '';
-    const exBody=sample ? (sample.d||s.line) : s.line;
+    const sampleName=sample ? sample.t : '';
     const card=document.createElement('button');
-    card.className='mon';
+    card.type='button';
+    card.className='panel';
     card.style.setProperty('--ac', s.accent);
     card.setAttribute('data-id', s.id);
     card.setAttribute('aria-label', s.name + ' — ' + s.count());
     card.innerHTML=`
-      <span class="mon-top">
-        <span class="mon-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${ICONS[s.id]||ICONS.tools}</svg></span>
-        <span class="mon-meta">
-          <span class="mon-name">${esc(s.name)}</span>
-          <span class="mon-count">${esc(s.count())}</span>
-        </span>
+      <span class="panel-art" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none">${ART[s.id]||ART.tools}</svg>
       </span>
-      <span class="mon-ex"><b>Example</b>${esc(exTitle ? exTitle + (exBody && exBody!==exTitle ? ' — ' + exBody : '') : exBody)}</span>
-      <span class="mon-go">Open ${esc(s.name)} →</span>`;
+      <span class="panel-body">
+        <span class="panel-kicker">${esc(s.count())}</span>
+        <span class="panel-title">${esc(s.name)}</span>
+        <span class="panel-desc">${esc(s.line)}</span>
+        ${sampleName?`<span class="panel-sample"><span class="ps-label">Example</span><span class="ps-val">${esc(sampleName)}</span></span>`:''}
+        <span class="panel-cta">Open ${esc(s.name)} <i>→</i></span>
+      </span>`;
     card.addEventListener('click',()=>go(s.id));
     rack.appendChild(card);
   });

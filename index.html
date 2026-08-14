@@ -2847,135 +2847,167 @@ body::before{
 }
 
 /* ============================================================
-   THE DESK — instrument rack
-   Sections sit as monitors on a trading desk. Each card is a full
-   instrument: icon, name, live count, and one real example from data.
-   No fragile radial math. Works on every viewport.
+   THE LANE — large illustrated section panels
+   Each section is a full instrument panel: big custom art on the
+   left, hierarchy and one real example on the right. No tiny
+   icons, no card grids that collapse, no radial math.
    ============================================================ */
-.desk{
-  margin:0 auto 40px;
-  max-width:1100px;
+.lane{
+  max-width:1080px;
+  margin:0 auto 48px;
+  display:flex;
+  flex-direction:column;
+  gap:12px;
 }
-.desk-q{
+.lane-head{
   text-align:center;
-  margin-bottom:36px;
+  margin-bottom:28px;
 }
-.desk-q h2{
+.lane-head h2{
   font-family:var(--disp);
   font-weight:700;
-  font-size:clamp(1.8rem,4vw,2.8rem);
-  letter-spacing:-.02em;
-  line-height:1.1;
-  margin-bottom:12px;
+  font-size:clamp(1.9rem,4.2vw,2.9rem);
+  letter-spacing:-.025em;
+  line-height:1.08;
+  margin-bottom:10px;
 }
-.desk-q h2 span{color:var(--cyan);text-shadow:0 0 28px var(--cyan-glow)}
-.desk-q p{
+.lane-head h2 em{
+  font-style:normal;
+  color:var(--cyan);
+  text-shadow:0 0 32px var(--cyan-glow);
+}
+.lane-head p{
   font-family:var(--mono);
-  font-size:.68rem;
-  letter-spacing:.16em;
+  font-size:.65rem;
+  letter-spacing:.18em;
   text-transform:uppercase;
   color:var(--faint);
 }
 
-.rack{
+button.panel, .panel{
   display:grid;
-  grid-template-columns:repeat(3,1fr);
-  gap:14px;
-}
-@media(max-width:900px){
-  .rack{grid-template-columns:repeat(2,1fr)}
-}
-@media(max-width:560px){
-  .rack{grid-template-columns:1fr;gap:11px}
-}
-
-.mon{
-  position:relative;
-  display:flex;
-  flex-direction:column;
+  grid-template-columns:160px 1fr;
   gap:0;
+  align-items:stretch;
   border:1px solid var(--line);
-  border-radius:16px;
+  border-radius:18px;
   background:var(--panel);
   overflow:hidden;
   cursor:pointer;
   text-align:left;
-  transition:border-color .28s, transform .28s cubic-bezier(.16,.8,.3,1), box-shadow .28s;
+  width:100%;
+  padding:0;
+  margin:0;
+  font:inherit;
+  color:inherit;
+  transition:border-color .3s, box-shadow .3s, transform .3s cubic-bezier(.16,.8,.3,1);
 }
-.mon:hover{
-  border-color:color-mix(in srgb, var(--ac, var(--cyan)) 50%, transparent);
-  transform:translateY(-4px);
-  box-shadow:0 20px 50px -28px rgba(0,0,0,.9), 0 0 0 1px color-mix(in srgb, var(--ac, var(--cyan)) 18%, transparent);
+.panel:hover{
+  border-color:color-mix(in srgb, var(--ac, var(--cyan)) 55%, transparent);
+  transform:translateY(-3px);
+  box-shadow:
+    0 24px 60px -32px rgba(0,0,0,.95),
+    0 0 0 1px color-mix(in srgb, var(--ac, var(--cyan)) 22%, transparent),
+    0 0 40px -12px color-mix(in srgb, var(--ac, var(--cyan)) 25%, transparent);
 }
-.mon-top{
-  display:flex;
-  align-items:flex-start;
-  gap:14px;
-  padding:18px 18px 14px;
-}
-.mon-ic{
-  flex-shrink:0;
-  width:48px;height:48px;
-  border-radius:12px;
-  display:grid;place-items:center;
-  background:color-mix(in srgb, var(--ac, var(--cyan)) 12%, transparent);
-  border:1px solid color-mix(in srgb, var(--ac, var(--cyan)) 30%, transparent);
+.panel-art{
+  display:grid;
+  place-items:center;
+  padding:28px 18px;
+  background:
+    radial-gradient(ellipse at 50% 30%, color-mix(in srgb, var(--ac, var(--cyan)) 18%, transparent), transparent 70%),
+    var(--bg-2);
+  border-right:1px solid var(--line);
   color:var(--ac, var(--cyan));
 }
-.mon-ic svg{width:24px;height:24px}
-.mon-meta{flex:1;min-width:0}
-.mon-name{
-  font-family:var(--disp);
-  font-weight:700;
-  font-size:1.15rem;
-  letter-spacing:-.015em;
-  color:var(--text);
-  line-height:1.15;
-  margin-bottom:4px;
+.panel-art svg{
+  width:88px;
+  height:88px;
+  filter:drop-shadow(0 0 18px color-mix(in srgb, var(--ac, var(--cyan)) 35%, transparent));
+  transition:transform .35s cubic-bezier(.16,.8,.3,1);
 }
-.mon:hover .mon-name{color:var(--ac, var(--cyan))}
-.mon-count{
+.panel:hover .panel-art svg{transform:scale(1.06)}
+
+.panel-body{
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  padding:22px 26px 20px;
+  gap:10px;
+  min-width:0;
+}
+.panel-kicker{
   font-family:var(--mono);
   font-size:.58rem;
-  letter-spacing:.12em;
+  letter-spacing:.16em;
   text-transform:uppercase;
   color:var(--faint);
 }
-.mon-ex{
-  margin:0 18px 16px;
-  padding:11px 13px;
-  border-radius:10px;
-  background:var(--bg-2);
-  border:1px solid var(--line-2);
-  font-size:.84rem;
-  color:var(--dim);
-  line-height:1.45;
+.panel-title{
+  font-family:var(--disp);
+  font-weight:700;
+  font-size:clamp(1.35rem,2.4vw,1.7rem);
+  letter-spacing:-.02em;
+  color:var(--text);
+  line-height:1.1;
 }
-.mon-ex b{
-  display:block;
+.panel:hover .panel-title{color:var(--ac, var(--cyan))}
+.panel-desc{
+  font-size:.95rem;
+  color:var(--dim);
+  line-height:1.55;
+  max-width:52ch;
+}
+.panel-sample{
+  display:flex;
+  align-items:baseline;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-top:4px;
+  padding:10px 14px;
+  border-radius:10px;
+  background:rgba(0,0,0,.25);
+  border:1px solid var(--line-2);
+}
+.panel-sample .ps-label{
   font-family:var(--mono);
   font-size:.55rem;
-  letter-spacing:.1em;
-  text-transform:uppercase;
-  color:var(--faint);
-  margin-bottom:4px;
-  font-weight:400;
-}
-.mon-go{
-  margin-top:auto;
-  padding:12px 18px;
-  border-top:1px solid var(--line);
-  font-family:var(--mono);
-  font-size:.62rem;
   letter-spacing:.12em;
   text-transform:uppercase;
-  color:var(--ac, var(--cyan));
-  background:color-mix(in srgb, var(--ac, var(--cyan)) 5%, transparent);
-  transition:background .22s, color .22s;
+  color:var(--faint);
+  flex-shrink:0;
 }
-.mon:hover .mon-go{
-  background:var(--ac, var(--cyan));
-  color:var(--void);
+.panel-sample .ps-val{
+  font-size:.88rem;
+  color:var(--text);
+  font-weight:500;
+}
+.panel-cta{
+  margin-top:6px;
+  font-family:var(--mono);
+  font-size:.62rem;
+  letter-spacing:.14em;
+  text-transform:uppercase;
+  color:var(--ac, var(--cyan));
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+}
+.panel-cta i{
+  font-style:normal;
+  transition:transform .25s;
+}
+.panel:hover .panel-cta i{transform:translateX(4px)}
+
+@media(max-width:720px){
+  .panel{grid-template-columns:1fr}
+  .panel-art{
+    border-right:none;
+    border-bottom:1px solid var(--line);
+    padding:22px;
+  }
+  .panel-art svg{width:64px;height:64px}
+  .panel-body{padding:18px 18px 16px}
 }
 
 /* path strip */
@@ -3192,16 +3224,14 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--cyan);outline-offse
      ============================================================ -->
 <section class="section" id="terminal">
   <div class="wrap">
-    <!-- THE DESK — instrument rack
-         Sections as monitors on a trading desk. Each card shows icon,
-         name, live count, and one real example from the data. -->
-    <div class="desk" id="board" aria-label="What do you want to learn">
-      <div class="desk-q reveal">
-        <h2>What do you want to <span>learn?</span></h2>
-        <p>Every instrument on the desk · open any one</p>
+    <!-- THE LANE — large illustrated section panels -->
+    <div class="lane" id="board" aria-label="What do you want to learn">
+      <div class="lane-head reveal">
+        <h2>What do you want to <em>learn?</em></h2>
+        <p>Seven instruments · open any one</p>
       </div>
-      <div class="rack" id="rack">
-        <!-- cards injected by board() in learn.js -->
+      <div id="rack">
+        <!-- panels injected by board() in learn.js -->
       </div>
     </div>
 
