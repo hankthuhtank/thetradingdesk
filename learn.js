@@ -574,16 +574,16 @@ function pathModal(){
 function spawnParticles(){
   const host=$('#heroParticles'); if(!host||SLOW) return;
   host.innerHTML='';
-  const n=56;
+  const n=140;
   for(let i=0;i<n;i++){
     const s=document.createElement('span');
     const x=Math.random()*100;
     /* scatter vertically across the whole home block, not just the top */
     const top=Math.random()*100;
-    const delay=Math.random()*10;
-    const dur=7+Math.random()*12;
-    const size=1+Math.random()*2.8;
-    const gold=Math.random()>.7;
+    const delay=Math.random()*12;
+    const dur=6+Math.random()*14;
+    const size=1+Math.random()*3.2;
+    const gold=Math.random()>.68;
     s.style.left=x+'%';
     s.style.top=top+'%';
     s.style.width=size+'px';
