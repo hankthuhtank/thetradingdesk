@@ -2923,11 +2923,117 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--cyan);outline-offse
   .pathfoot .btn-primary{margin-left:0}
 }
 
+/* ============================================================
+   MOTION
+   The board earns a little life. Figures draw themselves in when
+   a tile first arrives, and the ambient field behind the page
+   drifts slowly enough that you notice it only if you look.
+   ============================================================ */
+@keyframes ckPop{0%{opacity:0;transform:translateY(8px) scaleY(.6)}
+  60%{transform:translateY(0) scaleY(1.04)}100%{opacity:1;transform:none}}
+@keyframes drawIn{from{stroke-dashoffset:var(--len,400)}to{stroke-dashoffset:0}}
+@keyframes lineIn{from{opacity:0;transform:translateX(-10px)}to{opacity:1;transform:none}}
+@keyframes barUp{from{opacity:0;transform:scaleY(.2)}to{opacity:1;transform:none}}
+@keyframes keyIn{from{opacity:0;transform:scale(.72)}to{opacity:1;transform:none}}
+@keyframes floaty{0%,100%{transform:translate3d(0,0,0)}50%{transform:translate3d(0,-14px,0)}}
+
+.sh-fig .ck{animation:ckPop .55s var(--ease) both;animation-delay:var(--d);transform-origin:center bottom}
+.sh-fig .en-l{animation:lineIn .5s var(--ease) both;animation-delay:var(--d)}
+.sh-fig .rk-b{animation:barUp .55s var(--ease) both;animation-delay:var(--d);transform-origin:center bottom}
+.sh-fig .tl-k{animation:keyIn .4s var(--ease) both;animation-delay:var(--d)}
+.sh-fig .op-p,.sh-fig .in-p,.sh-fig .st-p{
+  stroke-dasharray:420;--len:420;animation:drawIn 1.5s var(--ease) both}
+.sh:hover .sh-fig .op-p,.sh:hover .sh-fig .in-p,.sh:hover .sh-fig .st-p{
+  animation:drawIn 1s var(--ease) both}
+
+/* the ambient field: two slow drifting washes behind everything */
+.field{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.field i{position:absolute;display:block;border-radius:50%;filter:blur(90px);opacity:.5}
+.field i:nth-child(1){width:46vmax;height:46vmax;top:-16vmax;left:-12vmax;
+  background:radial-gradient(circle,rgba(34,211,238,.16),transparent 68%);
+  animation:floaty 26s ease-in-out infinite}
+.field i:nth-child(2){width:38vmax;height:38vmax;top:-6vmax;right:-14vmax;
+  background:radial-gradient(circle,rgba(167,139,250,.11),transparent 70%);
+  animation:floaty 34s ease-in-out infinite reverse}
+.field i:nth-child(3){width:30vmax;height:30vmax;top:52vh;left:38vw;
+  background:radial-gradient(circle,rgba(245,185,66,.07),transparent 70%);
+  animation:floaty 44s ease-in-out infinite}
+
+/* ============================================================
+   HOW TO PUT IT ON  (options page)
+   ============================================================ */
+.op-play{margin-top:26px;padding-top:24px;border-top:2px solid var(--line)}
+.play-head{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:8px}
+.play-head h3{font-size:1.3rem;font-weight:700;letter-spacing:-.02em}
+.play-tier{font-family:var(--mono);font-size:.62rem;letter-spacing:.13em;text-transform:uppercase;
+  padding:4px 11px;border-radius:100px;border:1px solid currentColor}
+.play-tier.t1{color:var(--green)} .play-tier.t2{color:var(--cyan)} .play-tier.t3{color:var(--gold)}
+.play-who{font-size:.86rem;color:var(--faint);margin-bottom:20px;line-height:1.55}
+.play-legs{list-style:none;counter-reset:lg;display:flex;flex-direction:column;gap:1px;
+  border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-bottom:20px}
+.play-legs li{counter-increment:lg;position:relative;padding:13px 16px 13px 50px;
+  background:var(--panel-2);display:flex;flex-direction:column;gap:3px}
+.play-legs li::before{content:counter(lg);position:absolute;left:0;top:0;bottom:0;width:38px;
+  display:grid;place-items:center;font-family:var(--mono);font-size:.7rem;font-weight:600;
+  border-right:1px solid var(--line)}
+.play-legs .pl-buy::before{color:var(--green);background:rgba(52,211,153,.09)}
+.play-legs .pl-sell::before{color:var(--red);background:rgba(248,113,113,.09)}
+.play-legs .pl-own::before,.play-legs .pl-note::before{color:var(--faint)}
+.pl-a{font-family:var(--mono);font-size:.86rem;font-weight:600}
+.pl-b{font-family:var(--mono);font-size:.76rem;color:var(--faint)}
+.play-nums{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);
+  border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-bottom:24px}
+.play-nums>div{background:var(--panel-2);padding:14px 16px}
+.play-nums .k{display:block;font-family:var(--mono);font-size:.6rem;letter-spacing:.13em;
+  text-transform:uppercase;color:var(--faint);margin-bottom:6px}
+.play-nums .v{display:block;font-size:.86rem;line-height:1.5}
+.play-steps{display:flex;flex-direction:column;gap:16px}
+.play-steps .ps{display:grid;grid-template-columns:30px 1fr;gap:14px;align-items:start}
+.play-steps .n{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;
+  border:1px solid var(--cyan);color:var(--cyan);font-family:var(--mono);font-size:.72rem;
+  font-weight:600}
+.play-steps b{display:block;font-size:.92rem;margin-bottom:5px}
+.play-steps p{font-size:.88rem;line-height:1.68;color:var(--dim);max-width:74ch}
+.play-foot{margin-top:22px;padding-top:15px;border-top:1px solid var(--line);
+  font-size:.78rem;color:var(--faint);line-height:1.55}
+@media(max-width:700px){
+  .play-nums{grid-template-columns:1fr}
+  .play-steps .ps{grid-template-columns:24px 1fr;gap:11px}
+  .play-steps .n{width:24px;height:24px;font-size:.64rem}
+}
+
+/* ============================================================
+   ENCYCLOPEDIA CROSS REFERENCE
+   ============================================================ */
+.xlink{color:var(--cyan);border-bottom:1px dotted rgba(34,211,238,.5);cursor:pointer;
+  font:inherit;padding:0;background:none;transition:all .2s}
+.xlink:hover{color:var(--gold);border-bottom-color:var(--gold)}
+.xtrail{display:flex;align-items:center;gap:11px;flex-wrap:wrap;margin-bottom:18px;
+  padding:10px 14px;border:1px solid var(--line);border-radius:10px;background:var(--panel-2)}
+.xback{font-family:var(--mono);font-size:.7rem;letter-spacing:.08em;color:var(--cyan);
+  border:1px solid rgba(34,211,238,.4);border-radius:8px;padding:6px 12px;transition:all .2s}
+.xback:hover{background:var(--cyan);color:var(--void)}
+.xcrumb{font-family:var(--mono);font-size:.66rem;color:var(--faint);overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap}
+.xalso{margin-top:24px;padding-top:20px;border-top:1px solid var(--line)}
+.xalso .h{font-family:var(--mono);font-size:.64rem;letter-spacing:.15em;text-transform:uppercase;
+  color:var(--faint);margin-bottom:12px}
+.xalso .g{display:flex;gap:8px;flex-wrap:wrap}
+.xalso button{padding:8px 14px;border:1px solid var(--line);border-radius:9px;font-size:.88rem;
+  transition:all .22s var(--ease)}
+.xalso button:hover{border-color:var(--cyan);color:var(--cyan);transform:translateY(-2px)}
+
+@media(prefers-reduced-motion:reduce){
+  .field i{animation:none}
+  .sh-fig *{animation:none!important}
+}
+
 </style>
 
 <script src="https://unpkg.com/lightweight-charts@5/dist/lightweight-charts.standalone.production.js" defer></script>
 </head>
 <body>
+<div class="field" aria-hidden="true"><i></i><i></i><i></i></div>
 
 <div class="bg-fx" aria-hidden="true">
   <div class="bg-grid"></div><div class="bg-glow g-cyan"></div><div class="bg-glow g-gold"></div><div class="bg-glow g-violet"></div>
@@ -2964,9 +3070,8 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--cyan);outline-offse
 <header id="top">
   <div class="wrap">
     <div class="hero reveal">
-      <div class="badge"><b>◆</b> FREE · NO ACCOUNT · NO SIGNALS</div>
       <h1 class="disp">What do you want <span class="c">to learn?</span></h1>
-      <p class="sub">Pick a shelf. Every one opens into the real thing, not a summary.</p>
+      <p class="sub">Open any shelf. Each one drops straight into the material.</p>
     </div>
   </div>
 </header>
@@ -3425,6 +3530,7 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--cyan);outline-offse
 
         <div class="ob-side">
           <div class="op-nums" id="optNums"></div>
+          <div class="op-play" id="optPlay"></div>
           <div class="op-greeks" id="optGreeks"></div>
           <p class="ob-fine">Zero rates, no dividend, European pricing. The shape and the direction of every number are right; the last cent is not the point. Strikes snap to a realistic increment for the spot you set.</p>
         </div>
@@ -5024,6 +5130,7 @@ function paintOptRead(c){
     ['Vega',oUsd2(g.ve),'per 1 point of IV']
   ].map(([k,v,s])=>`<div class="op-g"><b>${k}</b><span>${v}</span><em>${s}</em></div>`).join('');
   const decay=nowPL-(c.expy[Math.round((OPT.spot-c.lo)/(c.hi-c.lo)*(c.xs.length-1))]);
+  renderPlay(st);
   $('#optNote').innerHTML=st
     ? `<b>${st.n}</b> \u00b7 ${st.dir} \u00b7 ${st.risk} risk \u00b7 needs level ${st.lvl}. <span class="op-want">${st.want}</span>`
       +(OPT.elapsed>0||OPT.ivShift!==0
@@ -5031,6 +5138,42 @@ function paintOptRead(c){
         : ' Move the two sliders below and watch the curved line fall onto the kinked one. That collapse is time decay, and it is the whole game for a buyer.')
     : '';
 }
+
+/* ---- how to actually put it on ----------------------------------------
+   The payoff curve shows the shape. This shows the ticket: the exact
+   contracts in entry order, what it costs, and the rule that closes it. */
+function renderPlay(st){
+  const host=$('#optPlay'); if(!host) return;
+  const P=(T.OPT_PLAYS||{})[st&&st.id];
+  if(!P){ host.innerHTML=''; return; }
+  const tier=(T.OPT_TIERS||{})[P.tier]||['',''];
+  const legRow=l=>{
+    const k=/^BUY/.test(l)?'buy':/^SELL/.test(l)?'sell':/^OWN|^HOLD/.test(l)?'own':'note';
+    const [head,...rest]=l.split(' · ');
+    return `<li class="pl-${k}"><span class="pl-a">${head}</span>`
+      +(rest.length?`<span class="pl-b">${rest.join(' · ')}</span>`:'')+`</li>`;
+  };
+  host.innerHTML=`
+    <div class="play-head">
+      <h3>How to put it on</h3>
+      <span class="play-tier t${P.tier}">${tier[0]}</span>
+    </div>
+    <p class="play-who">${tier[1]}</p>
+    <ol class="play-legs">${P.legs.map(legRow).join('')}</ol>
+    <div class="play-nums">
+      <div><span class="k">Ticket</span><span class="v">${P.cost}</span></div>
+      <div><span class="k">Best and worst</span><span class="v">${P.max}</span></div>
+      <div><span class="k">Breakeven</span><span class="v">${P.be}</span></div>
+    </div>
+    <div class="play-steps">
+      <div class="ps"><span class="n">1</span><div><b>Before you click</b><p>${P.enter}</p></div></div>
+      <div class="ps"><span class="n">2</span><div><b>While it is open</b><p>${P.manage}</p></div></div>
+      <div class="ps"><span class="n">3</span><div><b>How you close it</b><p>${P.exit}</p></div></div>
+      <div class="ps"><span class="n">4</span><div><b>How much to risk</b><p>${P.size}</p></div></div>
+    </div>
+    <p class="play-foot">Every figure is priced on the same imaginary $100 stock so the structures compare side by side. Real premiums move with implied volatility, so read the dollars as proportions.</p>`;
+}
+
 function pickOpt(id){
   OPT.id=id; OPT.elapsed=0; OPT.ivShift=0;
   $('#optElapsed').value=0; $('#optIvShift').value=0;

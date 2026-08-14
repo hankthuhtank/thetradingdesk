@@ -243,13 +243,46 @@ const C={cy:'#22d3ee',gd:'#f5b942',gr:'#34d399',rd:'#f87171',vi:'#a78bfa',ln:'rg
 const go=p=>{ if(typeof window.showPage==='function'){try{window.showPage(p);return;}catch(e){}} location.hash='#'+p; };
 const open=(p,fn)=>{ go(p); setTimeout(()=>{try{fn&&fn();}catch(e){}},260); };
 
+
+/* ---------------------------------------------------------------------------
+   TILE ART
+   Flat two-colour line drawings read as clip art. Each figure below gets a
+   gradient wash, a soft glow on the element that carries the meaning, and a
+   baseline so it sits in a space rather than floating in one.
+   --------------------------------------------------------------------------- */
+let UID=0;
+function defs(id,col){
+  return `<defs>
+    <linearGradient id="g${id}" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="${col}" stop-opacity=".34"/>
+      <stop offset="100%" stop-color="${col}" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="f${id}" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="3.4" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>`;
+}
+function grid(w,h){
+  return `<g opacity=".5">${[0,1,2,3].map(i=>
+    `<line x1="0" y1="${(h/4)*(i+1)}" x2="${w}" y2="${(h/4)*(i+1)}"
+      stroke="rgba(126,166,214,.09)" stroke-width="1"/>`).join('')}</g>`;
+}
+
 /* one candle from [open, close, high, low] */
-function cnd(o,c,h,l,x,w,H,pad){
+function cnd(o,c,h,l,x,w,H,pad,i){
   const y=v=>pad+(100-v)/100*(H-pad*2);
   const up=c>=o, col=up?C.gr:C.rd, t=Math.max(o,c), b=Math.min(o,c);
-  return `<line x1="${x+w/2}" y1="${y(h)}" x2="${x+w/2}" y2="${y(l)}" stroke="${col}" stroke-width="1.5"/>
-    <rect x="${x}" y="${y(t)}" width="${w}" height="${Math.max(2,y(b)-y(t))}"
-      fill="${up?'rgba(52,211,153,.22)':col}" stroke="${col}" stroke-width="1.5"/>`;
+  const bh=Math.max(3,y(b)-y(t));
+  return `<g class="ck" style="--d:${(i||0)*90}ms">
+    <line x1="${x+w/2}" y1="${y(h)}" x2="${x+w/2}" y2="${y(l)}"
+      stroke="${col}" stroke-width="1.6" stroke-linecap="round" opacity=".85"/>
+    <rect x="${x}" y="${y(t)}" width="${w}" height="${bh}" rx="1.5"
+      fill="${up?'rgba(52,211,153,.28)':'rgba(248,113,113,.85)'}"
+      stroke="${col}" stroke-width="1.6"/>
+    <rect x="${x}" y="${y(t)}" width="${w}" height="${bh}" rx="1.5"
+      fill="none" stroke="${col}" stroke-width="1.6" opacity=".5" filter="url(#fCK)"/>
+  </g>`;
 }
 function svg(w,h,inner){ return `<svg viewBox="0 0 ${w} ${h}" width="100%" height="${h}"
   preserveAspectRatio="xMidYMid meet" aria-hidden="true">${inner}</svg>`; }
@@ -263,9 +296,20 @@ const SHELVES=[
   {id:'patterns', name:'Candlesticks', accent:C.gr, size:'lg',
    line:'What one candle is telling you, and when it is telling you nothing.',
    count:()=>(T.PATTERNS||[]).length+' patterns',
-   fig:(w,h)=>{const set=[[42,72,80,32],[64,50,74,42],[50,86,92,44],[70,58,78,50]];
-     const cw=Math.min(20,(w-30)/4), gap=(w-cw*4-16)/3;
-     return svg(w,h,set.map((k,i)=>cnd(k[0],k[1],k[2],k[3],8+i*(cw+gap),cw,h,10)).join(''));},
+   fig:(w,h)=>{const set=[[40,70,78,30],[66,48,76,40],[48,84,92,42],[72,60,80,52],[58,88,94,50]];
+     const n=set.length, cw=Math.min(19,(w-28)/n), gap=(w-cw*n-16)/(n-1);
+     return svg(w,h,
+       `<defs>
+          <filter id="fCK" x="-60%" y="-60%" width="220%" height="220%">
+            <feGaussianBlur stdDeviation="3"/></filter>
+          <linearGradient id="gCK" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="${C.gr}" stop-opacity=".13"/>
+            <stop offset="100%" stop-color="${C.gr}" stop-opacity="0"/></linearGradient>
+        </defs>
+        <rect x="0" y="0" width="${w}" height="${h}" fill="url(#gCK)"/>
+        ${grid(w,h)}
+        ${set.map((k,i)=>cnd(k[0],k[1],k[2],k[3],8+i*(cw+gap),cw,h,10,i)).join('')}
+        <line x1="0" y1="${h-3}" x2="${w}" y2="${h-3}" stroke="${C.ln}" stroke-width="1"/>`);},
    items:()=>(T.PATTERNS||[]).slice(0,8).map((p,i)=>({
      t:p.n, d:p.read, tag:p.side==='bull'?'Bullish':p.side==='bear'?'Bearish':'Neutral',
      run:()=>open('patterns',()=>window.openPattern&&window.openPattern(i))}))},
@@ -273,9 +317,20 @@ const SHELVES=[
   {id:'encyclopedia', name:'Encyclopedia', accent:C.gd, size:'md',
    line:'Every term you will hear, in plain English.',
    count:()=>(T.ENCYCLOPEDIA||[]).length+' entries',
-   fig:(w,h)=>svg(w,h,[0,1,2,3].map(i=>`<line x1="10" y1="${13+i*13}"
-     x2="${i===1?w*0.5:w-10}" y2="${13+i*13}" stroke="${i===1?C.gd:C.ln}"
-     stroke-width="2.6" stroke-linecap="round"/>`).join('')),
+   fig:(w,h)=>svg(w,h,
+     `<defs><linearGradient id="gEN" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0%" stop-color="${C.gd}" stop-opacity=".5"/>
+        <stop offset="100%" stop-color="${C.gd}" stop-opacity="0"/></linearGradient>
+        <filter id="fEN"><feGaussianBlur stdDeviation="2.6"/></filter></defs>
+      <rect x="8" y="7" width="${w-16}" height="${h-14}" rx="4" fill="rgba(245,185,66,.05)"
+        stroke="rgba(245,185,66,.2)"/>
+      ${[0,1,2,3].map(i=>{
+        const y=18+i*((h-30)/3), lit=i===1;
+        return `<line class="en-l" style="--d:${i*130}ms" x1="16" y1="${y}"
+          x2="${lit?w*0.52:w-16}" y2="${y}" stroke="${lit?'url(#gEN)':C.ln}"
+          stroke-width="${lit?3.4:2.4}" stroke-linecap="round"/>`
+          +(lit?`<circle cx="${w*0.52+7}" cy="${y}" r="2.8" fill="${C.gd}" filter="url(#fEN)"/>`:'');
+      }).join('')}`),
    items:()=>{
      const want=['Support & Resistance','Liquidity','Implied Volatility','Position Sizing',
                  'Risk-to-Reward (R)','Slippage','Theta','Gamma Exposure (GEX)'];
@@ -288,37 +343,74 @@ const SHELVES=[
   {id:'options', name:'Options', accent:C.cy, size:'md',
    line:'Nineteen structures, and the exact contracts each one buys and sells.',
    count:()=>(T.OPT_STRUCTURES||[]).length+' structures',
-   fig:(w,h)=>{const z=h-16;
-     return svg(w,h,`<line x1="10" y1="${z}" x2="${w-10}" y2="${z}" stroke="${C.ln}"/>
-       <path d="M${w*0.42} ${z} L${w-10} 12 L${w-10} ${z} Z" fill="${C.gr}" opacity=".15"/>
-       <path d="M10 ${z+8} L${w*0.42} ${z+8} L${w-10} 12" fill="none" stroke="${C.cy}"
-         stroke-width="2.2" stroke-linejoin="round"/>`);},
-   items:()=>{
-     const P=T.OPT_PLAYS||{};
-     return (T.OPT_STRUCTURES||[]).slice(0,8).map(o=>({
-       t:o.n, d:(P[o.id]&&P[o.id].legs)?P[o.id].legs.join(' · '):(o.want||o.when),
-       tag:o.dir||'Structure', mono:!!(P[o.id]&&P[o.id].legs),
-       run:()=>go('options')}));
-   }},
+   fig:(w,h)=>{const z=h-20, kx=w*0.44;
+     return svg(w,h,
+       `<defs><linearGradient id="gOP" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="${C.gr}" stop-opacity=".42"/>
+          <stop offset="100%" stop-color="${C.gr}" stop-opacity="0"/></linearGradient>
+          <linearGradient id="gOL" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="${C.rd}" stop-opacity="0"/>
+            <stop offset="100%" stop-color="${C.rd}" stop-opacity=".28"/></linearGradient>
+          <filter id="fOP"><feGaussianBlur stdDeviation="3.2"/></filter></defs>
+        ${grid(w,h)}
+        <path d="M10 ${z+9} L${kx} ${z+9} L${w-10} ${z} Z" fill="url(#gOL)"/>
+        <path d="M${kx} ${z} L${w-10} 11 L${w-10} ${z} Z" fill="url(#gOP)"/>
+        <line x1="6" y1="${z}" x2="${w-6}" y2="${z}" stroke="${C.ln}" stroke-dasharray="4 4"/>
+        <path class="op-p" d="M10 ${z+9} L${kx} ${z+9} L${w-10} 11" fill="none" stroke="${C.cy}"
+          stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"/>
+        <path d="M10 ${z+9} L${kx} ${z+9} L${w-10} 11" fill="none" stroke="${C.cy}"
+          stroke-width="2.6" opacity=".55" filter="url(#fOP)"/>
+        <circle cx="${kx}" cy="${z+9}" r="3.4" fill="${C.cy}"/>`);},
+   items:()=>(T.OPT_STRUCTURES||[]).slice(0,8).map(o=>({
+     t:o.n, d:o.want||o.when, tag:o.dir||'Structure', run:()=>go('options')}))},
 
   {id:'indicators', name:'Indicators', accent:C.cy, size:'sm',
    line:'What each one measures, and what it lags.',
    count:()=>(T.INDICATORS||[]).length+' instruments',
-   fig:(w,h)=>{const S=[46,54,48,62,56,70,64,76,70,82];
-     const pt=(v,i)=>`${10+i/(S.length-1)*(w-20)},${h-10-((v-42)/44)*(h-20)}`;
+   fig:(w,h)=>{
+     const S=[44,58,40,66,52,74,60,82,66,78,88,72];
+     const pt=(v,i)=>`${9+i/(S.length-1)*(w-18)},${h-9-((v-34)/58)*(h-18)}`;
      const sm=S.map((_,i)=>S.slice(Math.max(0,i-3),i+1).reduce((a,b)=>a+b,0)/Math.min(4,i+1));
-     return svg(w,h,`<polyline points="${S.map(pt).join(' ')}" fill="none" stroke="${C.fa}" stroke-width="1.3"/>
-       <polyline points="${sm.map(pt).join(' ')}" fill="none" stroke="${C.cy}" stroke-width="2.2"/>`);},
+     const band=(a,b,col)=>`<rect x="0" y="${h-9-((b-34)/58)*(h-18)}" width="${w}"
+       height="${((b-a)/58)*(h-18)}" fill="${col}" opacity=".07"/>`;
+     return svg(w,h,
+       `<defs><filter id="fIN"><feGaussianBlur stdDeviation="3"/></filter></defs>
+        ${band(78,92,C.rd)}${band(34,48,C.gr)}
+        <line x1="0" y1="${h-9-((78-34)/58)*(h-18)}" x2="${w}" y2="${h-9-((78-34)/58)*(h-18)}"
+          stroke="${C.rd}" stroke-width="1" stroke-dasharray="3 3" opacity=".5"/>
+        <line x1="0" y1="${h-9-((48-34)/58)*(h-18)}" x2="${w}" y2="${h-9-((48-34)/58)*(h-18)}"
+          stroke="${C.gr}" stroke-width="1" stroke-dasharray="3 3" opacity=".5"/>
+        <polyline points="${S.map(pt).join(' ')}" fill="none" stroke="${C.fa}" stroke-width="1.2" opacity=".6"/>
+        <polyline class="in-p" points="${sm.map(pt).join(' ')}" fill="none" stroke="${C.cy}"
+          stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>
+        <polyline points="${sm.map(pt).join(' ')}" fill="none" stroke="${C.cy}" stroke-width="2.4"
+          opacity=".5" filter="url(#fIN)"/>
+        <circle cx="${pt(sm[sm.length-1],sm.length-1).split(',')[0]}"
+          cy="${pt(sm[sm.length-1],sm.length-1).split(',')[1]}" r="3.4" fill="${C.cy}"/>`);},
    items:()=>(T.INDICATORS||[]).slice(0,8).map(x=>({
      t:x.n, d:x.meas, tag:x.badge||'Tool', run:()=>go('indicators')}))},
 
   {id:'strategies', name:'Strategies', accent:C.vi, size:'sm',
    line:'Setups with the evidence, and the way each one fails.',
    count:()=>(T.STRATEGIES||[]).length+' playbooks',
-   fig:(w,h)=>svg(w,h,`<path d="M10 ${h-14} L${w*0.3} ${h*0.54} L${w*0.5} ${h*0.66} L${w*0.72} ${h*0.24} L${w-10} 12"
-     fill="none" stroke="${C.vi}" stroke-width="2.2" stroke-linejoin="round"/>
-     <circle cx="${w*0.3}" cy="${h*0.54}" r="3.6" fill="${C.gd}"/>
-     <circle cx="${w*0.72}" cy="${h*0.24}" r="3.6" fill="${C.gr}"/>`),
+   fig:(w,h)=>{
+     const d=`M9 ${h-13} L${w*0.26} ${h*0.6} L${w*0.44} ${h*0.72} L${w*0.68} ${h*0.26} L${w-9} 12`;
+     return svg(w,h,
+       `<defs><linearGradient id="gST" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="${C.vi}" stop-opacity=".3"/>
+          <stop offset="100%" stop-color="${C.vi}" stop-opacity="0"/></linearGradient>
+          <filter id="fST"><feGaussianBlur stdDeviation="3"/></filter></defs>
+        ${grid(w,h)}
+        <path d="${d} L${w-9} ${h} L9 ${h} Z" fill="url(#gST)"/>
+        <line x1="0" y1="${h*0.72}" x2="${w}" y2="${h*0.72}" stroke="${C.rd}" stroke-width="1"
+          stroke-dasharray="3 3" opacity=".55"/>
+        <line x1="0" y1="${h*0.26}" x2="${w}" y2="${h*0.26}" stroke="${C.gr}" stroke-width="1"
+          stroke-dasharray="3 3" opacity=".55"/>
+        <path class="st-p" d="${d}" fill="none" stroke="${C.vi}" stroke-width="2.4"
+          stroke-linejoin="round" stroke-linecap="round"/>
+        <path d="${d}" fill="none" stroke="${C.vi}" stroke-width="2.4" opacity=".5" filter="url(#fST)"/>
+        <circle cx="${w*0.26}" cy="${h*0.6}" r="3.6" fill="${C.gd}"/>
+        <circle cx="${w*0.68}" cy="${h*0.26}" r="3.8" fill="${C.gr}"/>`);},
    items:()=>(T.STRATEGIES||[]).slice(0,8).map((s,i)=>({
      t:s.n, d:s.alias||s.thesis, tag:'Grade '+(s.grade||'—'),
      run:()=>open('strategies',()=>window.openStrat&&window.openStrat(i))}))},
@@ -326,9 +418,20 @@ const SHELVES=[
   {id:'riskdesk', name:'Risk & Mind', accent:C.gd, size:'sm',
    line:'Sizing, hedging, and the ten ways a working brain breaks a working plan.',
    count:()=>((T.MISTAKES||[]).length+(T.HEDGES||[]).length)+' entries',
-   fig:(w,h)=>svg(w,h,[0,1,2,3,4].map(i=>`<rect x="${10+i*((w-20)/5)}"
-     y="${h-10-(i+1)*((h-22)/5)}" width="${(w-20)/5-7}" height="${(i+1)*((h-22)/5)}"
-     rx="2" fill="${i>2?C.gd:C.ln}"/>`).join('')),
+   fig:(w,h)=>svg(w,h,
+     `<defs><linearGradient id="gRK" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="${C.gd}" stop-opacity=".9"/>
+        <stop offset="100%" stop-color="${C.gd}" stop-opacity=".28"/></linearGradient>
+        <filter id="fRK"><feGaussianBlur stdDeviation="3"/></filter></defs>
+      ${[0,1,2,3,4].map(i=>{
+        const bw=(w-20)/5-7, bh=(i+1)*((h-22)/5), x=10+i*((w-20)/5), y=h-10-bh;
+        const hot=i>2;
+        return `<rect class="rk-b" style="--d:${i*90}ms" x="${x}" y="${y}" width="${bw}"
+          height="${bh}" rx="2.5" fill="${hot?'url(#gRK)':'rgba(126,166,214,.22)'}"/>`
+          +(i===4?`<rect x="${x}" y="${y}" width="${bw}" height="${bh}" rx="2.5"
+             fill="${C.gd}" opacity=".5" filter="url(#fRK)"/>`:'');
+      }).join('')}
+      <line x1="6" y1="${h-9}" x2="${w-6}" y2="${h-9}" stroke="${C.ln}"/>`),
    items:()=>{
      const out=[];
      (T.TIERS||[]).slice(0,3).forEach(t=>out.push({t:t.name,d:t.gist,tag:t.band,run:()=>go('riskdesk')}));
@@ -339,9 +442,19 @@ const SHELVES=[
   {id:'tools', name:'Calculators', accent:C.gr, size:'sm',
    line:'Position size, expectancy, payoff and expected move, worked on the page.',
    count:()=>'13 tools',
-   fig:(w,h)=>svg(w,h,[0,1,2].map(r=>[0,1,2].map(c=>`<rect x="${12+c*((w-24)/3)}"
-     y="${10+r*((h-20)/3)}" width="${(w-24)/3-7}" height="${(h-20)/3-7}" rx="2"
-     fill="${r===1&&c===1?C.gr:C.ln}" opacity="${r===1&&c===1?'.9':'.5'}"/>`).join('')).join('')),
+   fig:(w,h)=>svg(w,h,
+     `<defs><filter id="fTL"><feGaussianBlur stdDeviation="3"/></filter></defs>
+      <rect x="8" y="6" width="${w-16}" height="${h-12}" rx="5" fill="rgba(52,211,153,.04)"
+        stroke="rgba(52,211,153,.18)"/>
+      ${[0,1,2].map(r=>[0,1,2].map(c=>{
+        const bw=(w-34)/3, bh=(h-30)/3, x=15+c*(bw+3), y=13+r*(bh+3);
+        const lit=(r===1&&c===1)||(r===2&&c===2);
+        return `<rect class="tl-k" style="--d:${(r*3+c)*55}ms" x="${x}" y="${y}"
+          width="${bw}" height="${bh}" rx="2.5"
+          fill="${lit?C.gr:'rgba(126,166,214,.16)'}" opacity="${lit?'.95':'1'}"/>`
+          +(lit?`<rect x="${x}" y="${y}" width="${bw}" height="${bh}" rx="2.5" fill="${C.gr}"
+             opacity=".55" filter="url(#fTL)"/>`:'');
+      }).join('')).join('')}`),
    items:()=>[
      {t:'Position size',d:'Account, risk percent, entry and stop become a share count.',tag:'Calc',run:()=>go('tools')},
      {t:'Expectancy',d:'Win rate and average R become a number that says whether to keep going.',tag:'Calc',run:()=>go('tools')},
@@ -434,4 +547,211 @@ function boot(){
 }
 if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',()=>setTimeout(boot,40));
 else setTimeout(boot,40);
+})();
+
+/* ============================================================================
+   ENCYCLOPEDIA CROSS REFERENCE
+   ----------------------------------------------------------------------------
+   Seventy-nine entries that constantly refer to each other, with no way to
+   follow the reference. Reading "theta" inside the definition of a calendar
+   spread and having to close the panel, scroll, and search is where a
+   reference stops being usable.
+
+   So: any term with its own entry becomes a link, and the panel keeps a trail
+   so you can walk back out the way you came in. openEnc is wrapped rather
+   than replaced, which leaves the reading path, the level filter and the
+   next-on-path button exactly as they were.
+   ============================================================================ */
+(function(){
+'use strict';
+const T=window.TDESK||{};
+const $=(s,r)=>(r||document).querySelector(s);
+const $$=(s,r)=>[...(r||document).querySelectorAll(s)];
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const norm=s=>String(s||'').toLowerCase().replace(/[^a-z0-9 ]+/g,' ').replace(/\s+/g,' ').trim();
+const ENC=T.ENCYCLOPEDIA||[];
+if(!ENC.length) return;
+
+const byTitle={}; ENC.forEach((e,i)=>{ byTitle[norm(e.t)]=i; });
+
+/* The text says "IV" where the entry is "Implied Volatility", and "the
+   greeks" where the entry is "Greeks". Without aliases the link rate is about
+   a third of what it should be. */
+const ALIAS={'iv':'implied volatility','implied vol':'implied volatility',
+  'dte':'days to expiration','gex':'gamma exposure','oi':'open interest',
+  'the greeks':'greeks','atr':'average true range','rsi':'relative strength index',
+  'ema':'exponential moving average','sma':'simple moving average',
+  'expected move':'expected move','pdt':'pattern day trader'};
+
+/* longest first, so "bull call spread" wins over "call" */
+/* Titles carry their own abbreviation: "Implied Volatility (IV)",
+   "Risk-to-Reward (R)". Prose never contains that literal string, so the
+   match is built on the title WITHOUT the parenthetical, and the abbreviation
+   inside it is registered as its own alias. */
+const strip=t=>String(t).replace(/\s*\([^)]*\)\s*/g,' ').replace(/\s+/g,' ').trim();
+const TERMS=ENC.flatMap((e,i)=>{
+    const out=[{i,t:strip(e.t),k:norm(strip(e.t))}];
+    const ab=(String(e.t).match(/\(([^)]{2,6})\)/)||[])[1];
+    if(ab&&/^[A-Za-z0-9/\- ]+$/.test(ab)) out.push({i,t:ab.trim(),k:norm(ab)});
+    return out;
+  })
+  .concat(Object.keys(ALIAS).map(a=>{
+    const i=byTitle[norm(ALIAS[a])];
+    return i==null?null:{i,t:a,k:norm(a)};
+  }).filter(Boolean))
+  .filter(x=>x.k.length>=2)
+  .sort((a,b)=>b.k.length-a.k.length);
+
+let TRAIL=[], routing=false;
+
+/* Walk the rendered panel and wrap the first mention of each term. Working on
+   text nodes rather than innerHTML means an existing link, heading or button
+   can never be rewritten from underneath. */
+function linkify(root,selfTitle){
+  const used=new Set([norm(selfTitle)]);
+  const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,{
+    acceptNode(n){
+      if(!n.nodeValue||n.nodeValue.trim().length<4) return NodeFilter.FILTER_REJECT;
+      const p=n.parentElement;
+      if(!p||p.closest('a,button,code,.xlink,.xtrail,.xalso,.enc-next,h1,h2,h3,h4'))
+        return NodeFilter.FILTER_REJECT;
+      return NodeFilter.FILTER_ACCEPT;
+    }});
+  const nodes=[]; let n;
+  while((n=walker.nextNode())) nodes.push(n);
+
+  nodes.forEach(node=>{
+    if(used.size>9) return;
+    let text=node.nodeValue, hit=false;
+    for(const term of TERMS){
+      if(used.has(term.k)) continue;
+      const re=new RegExp('\\b('+term.t.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')\\b','i');
+      if(!re.test(text)) continue;
+      used.add(term.k);
+      text=text.replace(re,'\u0001'+term.i+'\u0002$1\u0003');
+      hit=true;
+      if(used.size>9) break;
+    }
+    if(!hit) return;
+    const span=document.createElement('span');
+    span.innerHTML=esc(text)
+      .replace(/\u0001(\d+)\u0002/g,'<button type="button" class="xlink" data-e="$1">')
+      .replace(/\u0003/g,'</button>');
+    node.parentNode.replaceChild(span,node);
+  });
+
+  $$('.xlink',root).forEach(b=>{
+    const i=+b.dataset.e;
+    b.title='Open '+(ENC[i]?ENC[i].t:'entry');
+    b.addEventListener('click',ev=>{
+      ev.preventDefault(); ev.stopPropagation();
+      jump(i,selfTitle);
+    });
+  });
+}
+function jump(i,from){
+  if(from) TRAIL.push(from);
+  routing=true; window.openEnc(i); routing=false;
+}
+function back(){
+  const prev=TRAIL.pop();
+  if(prev==null) return;
+  const i=byTitle[norm(prev)];
+  if(i==null) return;
+  const keep=TRAIL.slice();
+  routing=true; window.openEnc(i); TRAIL=keep; routing=false;
+  trail();
+}
+function trail(){
+  const body=$('#encBody'); if(!body) return;
+  const old=$('.xtrail',body); if(old) old.remove();
+  if(!TRAIL.length) return;
+  const bar=document.createElement('div');
+  bar.className='xtrail';
+  const from=TRAIL[TRAIL.length-1];
+  bar.innerHTML=`<button type="button" class="xback">&larr; Back to ${esc(from)}</button>`
+    +(TRAIL.length>1?`<span class="xcrumb">${TRAIL.slice(-3).map(esc).join(' › ')}</span>`:'');
+  body.insertBefore(bar,body.firstChild);
+  $('.xback',bar).addEventListener('click',back);
+}
+
+/* related entries, so a dead end still offers somewhere to go */
+const STOP=new Set(['the','a','an','of','and','or','to','in','on','for','with','by','is','it',
+  'this','that','at','as','from','your','you','be','are','how','what','when','not','than']);
+function also(i){
+  const e=ENC[i]; if(!e) return [];
+  const words=norm(e.t).split(' ').filter(w=>w.length>3&&!STOP.has(w));
+  const out=[];
+  ENC.forEach((o,j)=>{
+    if(j===i) return;
+    let sc=0;
+    words.forEach(w=>{
+      if(norm(o.t).includes(w)) sc+=3;
+      else if(norm([o.def,o.why,o.tag].join(' ')).includes(w)) sc+=1;
+    });
+    if(o.cat===e.cat) sc+=1;
+    if(sc>=3) out.push({j,sc});
+  });
+  if(out.length<3) ENC.forEach((o,j)=>{
+    if(j!==i&&o.cat===e.cat&&out.length<6) out.push({j,sc:1});
+  });
+  const seen=new Set();
+  return out.sort((a,b)=>b.sc-a.sc)
+    .filter(x=>{ if(seen.has(x.j)) return false; seen.add(x.j); return true; })
+    .slice(0,6).map(x=>x.j);
+}
+function attachAlso(body,i){
+  if($('.xalso',body)) return;
+  const rel=also(i); if(!rel.length) return;
+  const box=document.createElement('div');
+  box.className='xalso';
+  box.innerHTML=`<div class="h">Related terms</div><div class="g">${
+    rel.map(j=>`<button type="button" data-e="${j}">${esc(ENC[j].t)}</button>`).join('')}</div>`;
+  body.appendChild(box);
+  $$('button',box).forEach(b=>b.addEventListener('click',()=>jump(+b.dataset.e,ENC[i].t)));
+}
+
+/* Two ways in, because relying on one is how this silently does nothing.
+   Wrapping openEnc is the clean path. If the page exposes it differently,
+   the observer below catches the panel being written and enhances it anyway. */
+function enhance(i,title){
+  const body=$('#encBody'); if(!body) return;
+  if(body.dataset.xref===String(i)) return;
+  body.dataset.xref=String(i);
+  try{ trail(); linkify(body,title); attachAlso(body,i); }
+  catch(err){ console.error('[xref]',err); }
+}
+function observe(){
+  const body=$('#encBody'); if(!body) return;
+  new MutationObserver(()=>{
+    if($('.xlink',body)||$('.xalso',body)) return;      /* already enhanced */
+    const bar=$('#enc-bar');
+    const t=bar?bar.textContent.replace(/^ENCYCLOPEDIA\s*\/\/\s*/i,'').trim():'';
+    if(!t) return;
+    const i=byTitle[norm(t)];
+    if(i==null) return;
+    body.dataset.xref='';
+    enhance(i,ENC[i].t);
+  }).observe(body,{childList:true});
+}
+function install(){
+  observe();
+  const orig=window.openEnc;
+  if(typeof orig!=='function') return;
+  window.openEnc=function(i){
+    if(!routing) TRAIL=[];          /* a fresh open from the grid starts a new walk */
+    orig.apply(this,arguments);
+    const e=ENC[i]; if(!e) return;
+    const b=$('#encBody'); if(b) b.dataset.xref='';
+    enhance(i,e.t);
+  };
+  /* Escape steps back through the trail before it closes the panel */
+  document.addEventListener('keydown',ev=>{
+    if(ev.key!=='Escape') return;
+    const m=$('#m-enc');
+    if(m&&m.classList.contains('open')&&TRAIL.length){ ev.stopPropagation(); back(); }
+  },true);
+}
+if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',()=>setTimeout(install,80));
+else setTimeout(install,80);
 })();
