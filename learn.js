@@ -520,9 +520,8 @@ function board(){
   rack.innerHTML='';
 
   SHELVES.forEach(s=>{
-    const items=s.items()||[];
-    const sample=items[0];
-    const sampleName=sample ? sample.t : '';
+    const items=(s.items()||[]).slice(0,3);
+    const examples=items.map(it=>`<span class="pe-item">${esc(it.t)}</span>`).join('');
     const card=document.createElement('button');
     card.type='button';
     card.className='panel';
@@ -537,7 +536,7 @@ function board(){
         <span class="panel-kicker">${esc(s.count())}</span>
         <span class="panel-title">${esc(s.name)}</span>
         <span class="panel-desc">${esc(s.line)}</span>
-        ${sampleName?`<span class="panel-sample"><span class="ps-label">Example</span><span class="ps-val">${esc(sampleName)}</span></span>`:''}
+        ${examples?`<span class="panel-examples"><span class="pe-label">Examples</span>${examples}</span>`:''}
         <span class="panel-cta">Open ${esc(s.name)} <i>→</i></span>
       </span>`;
     card.addEventListener('click',()=>go(s.id));
