@@ -476,17 +476,19 @@ const ART={
     <path d="M19 5v16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
     <rect x="17.2" y="11" width="3.6" height="5.5" rx=".6" fill="currentColor"/>`,
   encyclopedia:`
-    <path d="M5 4h11a2.5 2.5 0 0 1 2.5 2.5V20a1.5 1.5 0 0 0-1.5-1.5H5z" fill="currentColor" opacity=".2"/>
-    <path d="M5 4h11a2.5 2.5 0 0 1 2.5 2.5V20a1.5 1.5 0 0 0-1.5-1.5H5V4z" stroke="currentColor" stroke-width="1.6" fill="none"/>
-    <path d="M5 4v15.5" stroke="currentColor" stroke-width="1.6"/>
-    <path d="M8 9h7M8 12.5h5.5M8 16h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity=".7"/>
-    <circle cx="18.5" cy="7.5" r="2.2" fill="currentColor" opacity=".35"/>`,
+    <path d="M4 5.5c0-.8.7-1.5 1.5-1.5H12v15.5H5.5A1.5 1.5 0 0 1 4 18V5.5z" fill="currentColor" opacity=".15"/>
+    <path d="M20 5.5c0-.8-.7-1.5-1.5-1.5H12v15.5h6.5a1.5 1.5 0 0 0 1.5-1.5V5.5z" fill="currentColor" opacity=".28"/>
+    <path d="M4 5.5c0-.8.7-1.5 1.5-1.5H12v15.5H5.5A1.5 1.5 0 0 1 4 18V5.5z" stroke="currentColor" stroke-width="1.5" fill="none"/>
+    <path d="M20 5.5c0-.8-.7-1.5-1.5-1.5H12v15.5h6.5a1.5 1.5 0 0 0 1.5-1.5V5.5z" stroke="currentColor" stroke-width="1.5" fill="none"/>
+    <path d="M12 4v15.5" stroke="currentColor" stroke-width="1.5"/>
+    <path d="M6.5 9h3.5M6.5 12h3M6.5 15h2.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" opacity=".65"/>
+    <path d="M14 9h3.5M14 12h3M14 15h2.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" opacity=".65"/>`,
   options:`
-    <path d="M3 17l4.5-9 3.5 5.5 3-7.5 2.5 4.5 4-8" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-    <path d="M3 20.5h18" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
-    <circle cx="7.5" cy="8" r="1.6" fill="currentColor"/>
-    <circle cx="14" cy="6" r="1.6" fill="currentColor"/>
-    <circle cx="20.5" cy="5.5" r="1.6" fill="currentColor"/>`,
+    <path d="M3 16c2-6 4-9 5.5-9s2.5 5 4 5 2.5-7 4.5-7 4 5 4 5" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M3 20h18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity=".5"/>
+    <circle cx="8.5" cy="7" r="2" fill="currentColor"/>
+    <circle cx="16.5" cy="5" r="2" fill="currentColor" opacity=".7"/>
+    <path d="M8.5 9.2v10.5M16.5 7.2v12.5" stroke="currentColor" stroke-width="1.3" stroke-dasharray="2 2" opacity=".4"/>`,
   indicators:`
     <path d="M4 20h16" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
     <rect x="5.5" y="11" width="3.2" height="9" rx=".8" fill="currentColor" opacity=".35"/>
@@ -497,23 +499,67 @@ const ART={
     <circle cx="12" cy="5" r="1.8" fill="currentColor"/>
     <circle cx="17" cy="12" r="1.8" fill="currentColor"/>`,
   strategies:`
-    <path d="M3 19h18" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
-    <path d="M5 15l3.5-5.5 3 3.5 4-8 3.5 4" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-    <circle cx="5" cy="15" r="1.7" fill="currentColor"/>
-    <circle cx="8.5" cy="9.5" r="1.7" fill="currentColor"/>
-    <circle cx="11.5" cy="13" r="1.7" fill="currentColor"/>
-    <circle cx="15.5" cy="5" r="1.7" fill="currentColor"/>
-    <circle cx="19" cy="9" r="1.7" fill="currentColor"/>`,
+    <path d="M3 18h18" stroke="currentColor" stroke-width="1.5" opacity=".4"/>
+    <path d="M4 15l4-7 3 4 4-9 5 6" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M4 15l4-7 3 4 4-9 5 6" stroke="currentColor" stroke-width="5" fill="none" opacity=".12" stroke-linecap="round"/>
+    <circle cx="4" cy="15" r="2" fill="currentColor"/>
+    <circle cx="8" cy="8" r="2" fill="currentColor"/>
+    <circle cx="11" cy="12" r="2" fill="currentColor"/>
+    <circle cx="15" cy="3" r="2.2" fill="currentColor"/>
+    <circle cx="20" cy="9" r="2" fill="currentColor"/>`,
   riskdesk:`
     <path d="M12 2.8l8 3.8v5.2c0 5.2-3.6 8.8-8 9.8-4.4-1-8-4.6-8-9.8V6.6z" fill="currentColor" opacity=".18"/>
     <path d="M12 2.8l8 3.8v5.2c0 5.2-3.6 8.8-8 9.8-4.4-1-8-4.6-8-9.8V6.6z" stroke="currentColor" stroke-width="1.7" fill="none" stroke-linejoin="round"/>
     <path d="M8.5 12.2l2.4 2.4 4.6-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>`,
   tools:`
-    <circle cx="12" cy="12" r="3.2" fill="currentColor" opacity=".25"/>
-    <circle cx="12" cy="12" r="3.2" stroke="currentColor" stroke-width="1.6" fill="none"/>
-    <path d="M12 2.5v3.2M12 18.3v3.2M3.8 3.8l2.3 2.3M17.9 17.9l2.3 2.3M2.5 12h3.2M18.3 12h3.2M3.8 20.2l2.3-2.3M17.9 6.1l2.3-2.3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
-    <circle cx="12" cy="12" r="1.4" fill="currentColor"/>`
+    <rect x="4" y="3" width="16" height="18" rx="2.5" fill="currentColor" opacity=".12"/>
+    <rect x="4" y="3" width="16" height="18" rx="2.5" stroke="currentColor" stroke-width="1.6" fill="none"/>
+    <rect x="6.5" y="5.5" width="11" height="4" rx="1" fill="currentColor" opacity=".25"/>
+    <rect x="6.5" y="5.5" width="11" height="4" rx="1" stroke="currentColor" stroke-width="1.2" fill="none"/>
+    <circle cx="8.2" cy="13.2" r="1.35" fill="currentColor"/>
+    <circle cx="12" cy="13.2" r="1.35" fill="currentColor"/>
+    <circle cx="15.8" cy="13.2" r="1.35" fill="currentColor"/>
+    <circle cx="8.2" cy="17.2" r="1.35" fill="currentColor"/>
+    <circle cx="12" cy="17.2" r="1.35" fill="currentColor"/>
+    <circle cx="15.8" cy="17.2" r="1.35" fill="currentColor"/>`
 };
+
+function board(){
+  const rack=$('#rack'); if(!rack) return;
+  rack.innerHTML='';
+  /* Display order: riskdesk last so it can span full width */
+  const order=['patterns','encyclopedia','options','indicators','strategies','tools','riskdesk'];
+  const byId=Object.fromEntries(SHELVES.map(s=>[s.id,s]));
+
+  order.forEach((id,idx)=>{
+    const s=byId[id]; if(!s) return;
+    const items=(s.items()||[]).slice(0,3);
+    const names=items.map(it=>it.t).filter(Boolean);
+    const examplesHtml=names.length
+      ? `<span class="panel-examples"><em>${names.map(n=>esc(n)).join(', ')}</em></span>`
+      : '';
+    const wide = (id==='riskdesk') ? ' wide' : '';
+    const card=document.createElement('button');
+    card.type='button';
+    card.className='panel'+wide;
+    card.style.setProperty('--ac', s.accent);
+    card.setAttribute('data-id', s.id);
+    card.setAttribute('aria-label', s.name + ' — ' + s.count());
+    card.innerHTML=`
+      <span class="panel-art" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none">${ART[s.id]||ART.tools}</svg>
+      </span>
+      <span class="panel-body">
+        <span class="panel-kicker">${esc(s.count())}</span>
+        <span class="panel-title">${esc(s.name)}</span>
+        <span class="panel-desc">${esc(s.line)}</span>
+        ${examplesHtml}
+        <span class="panel-cta">Open ${esc(s.name)} <i>→</i></span>
+      </span>`;
+    card.addEventListener('click',()=>go(s.id));
+    rack.appendChild(card);
+  });
+}
 
 function board(){
   const rack=$('#rack'); if(!rack) return;
@@ -555,9 +601,33 @@ function pathModal(){
   document.addEventListener('keydown',e=>{ if(e.key==='Escape') show(false); });
 }
 
+function spawnParticles(){
+  const host=$('#heroParticles'); if(!host||SLOW) return;
+  host.innerHTML='';
+  const n=36;
+  for(let i=0;i<n;i++){
+    const s=document.createElement('span');
+    const x=Math.random()*100;
+    const delay=Math.random()*8;
+    const dur=6+Math.random()*10;
+    const size=1+Math.random()*2.5;
+    const gold=Math.random()>.72;
+    s.style.left=x+'%';
+    s.style.bottom=(-5-Math.random()*20)+'%';
+    s.style.width=size+'px';
+    s.style.height=size+'px';
+    s.style.animationDuration=dur+'s';
+    s.style.animationDelay=delay+'s';
+    if(gold){ s.style.background='var(--gold)'; s.style.boxShadow='0 0 6px var(--gold)'; }
+    else { s.style.boxShadow='0 0 6px var(--cyan)'; }
+    host.appendChild(s);
+  }
+}
+
 function boot(){
   try{ board(); }catch(e){ console.error('[board]',e); }
   try{ pathModal(); }catch(e){ console.error('[path]',e); }
+  try{ spawnParticles(); }catch(e){ console.error('[particles]',e); }
 }
 if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',()=>setTimeout(boot,40));
 else setTimeout(boot,40);
