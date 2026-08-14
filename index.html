@@ -1020,11 +1020,17 @@ i.lgd.r-h{background:rgba(126,166,214,.45)} i.lgd.r-s{background:rgba(248,113,11
 .ob-picker button{font-family:var(--mono);font-size:.57rem;letter-spacing:.05em;color:var(--faint);border:1px solid var(--line);border-radius:7px;padding:6px 9px;transition:.15s}
 .ob-picker button:hover{color:var(--text);border-color:var(--dim)}
 .ob-picker button.on{border-color:var(--cyan);color:var(--cyan);background:rgba(34,211,238,.1)}
-.ob-body{display:grid;grid-template-columns:1fr 320px}
+.ob-body{display:grid;grid-template-columns:1fr 280px}
+.ob-body.compact .ob-side{padding:14px}
 .ob-stage{padding:14px 16px;border-right:1px solid var(--line);background:var(--bg-2);min-width:0}
 #optSVG{width:100%;height:auto;display:block}
 .ob-ctl{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:14px;padding-top:13px;border-top:1px solid var(--line-2)}
-.ob-ctl.live{grid-template-columns:1fr 1fr;border-top:1px dashed rgba(245,185,66,.3)}
+.ob-ctl.live{grid-template-columns:1fr 1fr;border-top:none;padding-top:0;margin-top:8px}
+.ob-live{margin-top:12px;border:1px solid var(--line);border-radius:10px;padding:0;background:rgba(0,0,0,.15)}
+.ob-live summary{font-family:var(--mono);font-size:.58rem;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);padding:10px 14px;cursor:pointer;list-style:none}
+.ob-live summary::-webkit-details-marker{display:none}
+.ob-live[open] summary{color:var(--gold);border-bottom:1px solid var(--line)}
+.ob-live .ob-ctl{padding:12px 14px}
 .oc{display:flex;flex-direction:column;gap:6px}
 .oc span{font-family:var(--mono);font-size:.55rem;letter-spacing:.13em;text-transform:uppercase;color:var(--faint);display:flex;justify-content:space-between;gap:8px}
 .oc span b{color:var(--text)}
@@ -1033,6 +1039,30 @@ i.lgd.r-h{background:rgba(126,166,214,.45)} i.lgd.r-s{background:rgba(248,113,11
 .ob-note{font-size:.79rem;color:var(--dim);line-height:1.6;margin-top:13px;padding-left:12px;border-left:2px solid rgba(34,211,238,.4)}
 .ob-note b{color:var(--text)} .op-want{color:var(--faint)}
 .ob-side{padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
+/* play content now lives inside each structure panel */
+.os-play{margin-top:16px;padding-top:16px;border-top:1px solid var(--line)}
+.os-play .play-head{display:flex;align-items:center;gap:12px;margin-bottom:6px}
+.os-play .play-head h4{font-family:var(--disp);font-size:1rem;text-transform:uppercase;color:var(--cyan)}
+.os-play .play-who{font-size:.82rem;color:var(--faint);margin-bottom:10px;line-height:1.5}
+.os-play .play-legs{list-style:none;margin:0 0 12px;padding:0;display:flex;flex-direction:column;gap:4px}
+.os-play .play-legs li{font-size:.84rem;padding:8px 12px;border-radius:8px;background:var(--panel-2);display:flex;flex-wrap:wrap;gap:6px 10px}
+.os-play .pl-buy .pl-a{color:var(--green);font-weight:600}
+.os-play .pl-sell .pl-a{color:var(--red);font-weight:600}
+.os-play .pl-a{font-family:var(--mono);font-size:.78rem}
+.os-play .pl-b{color:var(--dim);font-size:.78rem}
+.os-play .play-nums{display:grid;grid-template-columns:1fr;gap:6px;margin-bottom:12px}
+.os-play .play-nums > div{display:flex;gap:10px;font-size:.82rem}
+.os-play .play-nums .k{font-family:var(--mono);font-size:.55rem;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);min-width:90px;padding-top:3px}
+.os-play .play-nums .v{color:var(--dim);line-height:1.45}
+.os-play .play-steps{display:flex;flex-direction:column;gap:10px}
+.os-play .ps{display:grid;grid-template-columns:28px 1fr;gap:10px}
+.os-play .ps .n{font-family:var(--mono);font-size:.7rem;color:var(--cyan);padding-top:2px}
+.os-play .ps b{display:block;font-size:.88rem;margin-bottom:3px}
+.os-play .ps p{font-size:.82rem;color:var(--dim);line-height:1.55}
+.play-tier{font-family:var(--mono);font-size:.55rem;letter-spacing:.1em;text-transform:uppercase;border:1px solid var(--line);border-radius:5px;padding:3px 7px;color:var(--faint)}
+.play-tier.t1{color:var(--green);border-color:rgba(52,211,153,.35)}
+.play-tier.t2{color:var(--gold);border-color:rgba(245,185,66,.35)}
+.play-tier.t3{color:var(--red);border-color:rgba(248,113,113,.35)}
 .op-nums{display:grid;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:11px;overflow:hidden}
 .op-n{background:var(--panel);padding:10px 13px}
 .on-k{display:block;font-family:var(--mono);font-size:.53rem;letter-spacing:.13em;text-transform:uppercase;color:var(--faint)}
@@ -2817,59 +2847,154 @@ body::before{
 }
 
 /* ============================================================
-   THE BOARD
-   Asymmetric on purpose: an even grid of equal cards is what makes
-   a page read as a template. Candlesticks is the widest tile
-   because it is where most people should start.
+   THE RING — radial command surface
+   One central question. Sections sit on the orbit as satellites.
+   Each satellite carries a live count and a one-line example from
+   the real data, then links straight into that section.
    ============================================================ */
-.board{display:grid;gap:14px;grid-template-columns:repeat(6,1fr);margin-bottom:20px}
-.sh-lg{grid-column:span 3}
-.sh-md{grid-column:span 3}
-.sh-sm{grid-column:span 2}
-.sh{border:1px solid var(--line);border-radius:16px;overflow:hidden;background:var(--panel);
-  transition:border-color .3s var(--ease),transform .3s var(--ease),box-shadow .3s var(--ease)}
-.sh:hover{border-color:color-mix(in srgb,var(--ac) 46%,transparent);transform:translateY(-3px);
-  box-shadow:0 22px 50px -30px rgba(0,0,0,.95)}
-.sh.on{grid-column:1/-1;transform:none;border-color:var(--ac)}
-.sh-face{display:grid;width:100%;text-align:left;padding:18px;gap:14px;align-items:start}
-.sh-lg .sh-face{gap:16px}
-.sh-fig{display:block;min-height:64px;opacity:.9;transition:opacity .3s}
-.sh-lg .sh-fig{min-height:92px}
-.sh:hover .sh-fig{opacity:1}
-.sh.on .sh-fig{display:none}
-.sh-top{display:flex;align-items:baseline;gap:11px;flex-wrap:wrap;margin-bottom:6px}
-.sh-top b{font-size:1.22rem;font-weight:700;letter-spacing:-.02em}
-.sh.on .sh-top b{color:var(--ac)}
-.sh-top em{font-style:normal;font-family:var(--mono);font-size:.64rem;letter-spacing:.1em;
-  text-transform:uppercase;color:var(--faint);border:1px solid var(--line);border-radius:100px;
-  padding:3px 9px}
-.sh-line{display:block;font-size:.92rem;line-height:1.55;color:var(--dim)}
-.sh-cue{display:inline-flex;align-items:center;gap:8px;margin-top:12px;font-family:var(--mono);
-  font-size:.66rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ac)}
-.sh-cue i{font-style:normal;width:18px;height:18px;border:1px solid currentColor;border-radius:5px;
-  display:grid;place-items:center;font-size:.8rem;line-height:1;transition:transform .3s var(--ease)}
-.sh.on .sh-cue i{transform:rotate(45deg)}
-.sh.on .sh-cue{color:var(--ac)}
+.ring{
+  --ring-size:min(720px,92vw);
+  position:relative;
+  width:var(--ring-size);
+  height:var(--ring-size);
+  margin:0 auto 36px;
+  display:grid;
+  place-items:center;
+}
+.ring::before{
+  content:"";
+  position:absolute;inset:8%;
+  border-radius:50%;
+  border:1px solid rgba(126,166,214,.12);
+  background:
+    radial-gradient(circle at 50% 50%, transparent 42%, rgba(34,211,238,.03) 43%, transparent 44%),
+    radial-gradient(circle at 50% 50%, transparent 58%, rgba(126,166,214,.04) 59%, transparent 60%),
+    radial-gradient(circle at 50% 50%, transparent 74%, rgba(126,166,214,.03) 75%, transparent 76%);
+  pointer-events:none;
+}
+.ring::after{
+  content:"";
+  position:absolute;inset:0;
+  border-radius:50%;
+  border:1px dashed rgba(126,166,214,.08);
+  animation:ringSpin 120s linear infinite;
+  pointer-events:none;
+}
+@keyframes ringSpin{to{transform:rotate(360deg)}}
 
-.sh-open{border-top:1px solid var(--line);animation:shIn .3s var(--ease) both}
-@keyframes shIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
-.sh-items{display:grid;grid-template-columns:repeat(auto-fill,minmax(268px,1fr));gap:1px;
-  background:var(--line)}
-.sh-item{background:var(--panel-2);padding:14px 16px;text-align:left;display:grid;gap:5px;
-  transition:background .2s}
-.sh-item:hover{background:rgba(255,255,255,.035)}
-.si-t{font-weight:600;font-size:.98rem}
-.sh-item:hover .si-t{color:var(--ac)}
-.si-d{font-size:.83rem;color:var(--faint);line-height:1.5;
-  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.si-d.mono{font-family:var(--mono);font-size:.74rem;color:var(--dim)}
-.si-g{font-family:var(--mono);font-size:.6rem;letter-spacing:.11em;text-transform:uppercase;
-  color:var(--ac);opacity:.85}
-.sh-all{display:block;width:100%;padding:15px;font-family:var(--mono);font-size:.7rem;
-  letter-spacing:.12em;text-transform:uppercase;color:var(--ac);
-  border-top:1px solid var(--line);background:color-mix(in srgb,var(--ac) 7%,transparent);
-  transition:background .22s}
-.sh-all:hover{background:var(--ac);color:var(--void)}
+.ring-core{
+  position:relative;z-index:2;
+  width:42%;height:42%;
+  border-radius:50%;
+  display:grid;place-items:center;
+  background:
+    radial-gradient(circle at 40% 35%, rgba(34,211,238,.14), transparent 55%),
+    linear-gradient(160deg, #0e1520 0%, #0a0e16 100%);
+  border:1px solid rgba(34,211,238,.35);
+  box-shadow:
+    0 0 0 1px rgba(34,211,238,.08),
+    0 0 60px -10px rgba(34,211,238,.35),
+    inset 0 0 40px rgba(34,211,238,.06);
+}
+.ring-core-inner{
+  text-align:center;
+  padding:12% 10%;
+  display:flex;flex-direction:column;gap:10px;align-items:center;
+}
+.ring-q{
+  font-family:var(--disp);
+  font-weight:700;
+  font-size:clamp(1.05rem,2.4vw,1.55rem);
+  letter-spacing:-.02em;
+  line-height:1.15;
+  color:var(--text);
+}
+.ring-sub{
+  font-family:var(--mono);
+  font-size:.58rem;
+  letter-spacing:.14em;
+  text-transform:uppercase;
+  color:var(--faint);
+  max-width:18ch;
+  line-height:1.5;
+}
+
+/* satellites */
+.sat{
+  --r:42%;
+  position:absolute;
+  top:50%;left:50%;
+  width:min(168px,22vw);
+  transform:
+    translate(-50%,-50%)
+    rotate(var(--a))
+    translateY(calc(var(--r) * -1))
+    rotate(calc(var(--a) * -1));
+  z-index:3;
+  text-align:center;
+  cursor:pointer;
+  transition:transform .35s cubic-bezier(.16,.8,.3,1), filter .3s;
+}
+.sat:hover{
+  transform:
+    translate(-50%,-50%)
+    rotate(var(--a))
+    translateY(calc(var(--r) * -1.06))
+    rotate(calc(var(--a) * -1))
+    scale(1.06);
+  z-index:4;
+  filter:drop-shadow(0 12px 24px rgba(0,0,0,.55));
+}
+.sat-face{
+  display:flex;flex-direction:column;align-items:center;gap:7px;
+  padding:14px 10px 12px;
+  border-radius:14px;
+  background:rgba(13,17,23,.92);
+  border:1px solid rgba(126,166,214,.16);
+  backdrop-filter:blur(10px);
+  transition:border-color .25s, background .25s, box-shadow .25s;
+}
+.sat:hover .sat-face{
+  border-color:color-mix(in srgb, var(--ac, var(--cyan)) 55%, transparent);
+  background:rgba(13,17,23,.98);
+  box-shadow:0 0 0 1px color-mix(in srgb, var(--ac, var(--cyan)) 20%, transparent);
+}
+.sat-ic{
+  width:36px;height:36px;
+  border-radius:10px;
+  display:grid;place-items:center;
+  background:color-mix(in srgb, var(--ac, var(--cyan)) 12%, transparent);
+  border:1px solid color-mix(in srgb, var(--ac, var(--cyan)) 28%, transparent);
+  color:var(--ac, var(--cyan));
+}
+.sat-ic svg{width:18px;height:18px}
+.sat-name{
+  font-family:var(--disp);
+  font-weight:700;
+  font-size:.92rem;
+  letter-spacing:-.01em;
+  color:var(--text);
+  line-height:1.1;
+}
+.sat-count{
+  font-family:var(--mono);
+  font-size:.55rem;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+  color:var(--faint);
+}
+.sat-ex{
+  font-size:.72rem;
+  color:var(--dim);
+  line-height:1.35;
+  max-width:15ch;
+  display:-webkit-box;
+  -webkit-line-clamp:2;
+  -webkit-box-orient:vertical;
+  overflow:hidden;
+  margin-top:2px;
+}
+.sat:hover .sat-name{color:var(--ac, var(--cyan))}
 
 /* the path entry: one strip, not a second list */
 .board-alt{display:flex;align-items:center;gap:20px;flex-wrap:wrap;padding:20px 24px;
@@ -2886,6 +3011,7 @@ body::before{
 .pathwrap{position:fixed;inset:0;z-index:250;display:none;background:rgba(6,9,12,.82);
   backdrop-filter:blur(6px);padding:24px;overflow-y:auto}
 .pathwrap.on{display:block;animation:shIn .24s var(--ease)}
+@keyframes shIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
 .pathwin{max-width:860px;margin:0 auto;background:var(--panel);border:1px solid var(--line);
   border-radius:16px;overflow:hidden}
 .pathbar{display:flex;align-items:center;gap:14px;padding:14px 20px;border-bottom:1px solid var(--line);
@@ -2903,17 +3029,44 @@ body::before{
 button:focus:not(:focus-visible),a:focus:not(:focus-visible){outline:none}
 button:focus-visible,a:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
 
-@media(max-width:1000px){
-  .board{grid-template-columns:repeat(4,1fr)}
-  .sh-lg,.sh-md{grid-column:span 4}
-  .sh-sm{grid-column:span 2}
+/* responsive ring */
+@media(max-width:900px){
+  .ring{--ring-size:min(560px,94vw)}
+  .sat{width:min(140px,26vw)}
+  .sat-ex{display:none}
+  .ring-q{font-size:1.05rem}
 }
 @media(max-width:640px){
-  .board{grid-template-columns:1fr;gap:11px}
-  .sh-lg,.sh-md,.sh-sm,.sh.on{grid-column:span 1}
-  .sh-face{padding:15px}
-  .sh-top b{font-size:1.08rem}
-  .sh-items{grid-template-columns:1fr}
+  .ring{
+    --ring-size:auto;
+    width:100%;
+    height:auto;
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+    margin-bottom:24px;
+  }
+  .ring::before,.ring::after{display:none}
+  .ring-core{
+    width:100%;height:auto;
+    border-radius:16px;
+    padding:28px 20px;
+  }
+  .ring-core-inner{padding:0}
+  .sat{
+    position:static;
+    width:100%;
+    transform:none !important;
+  }
+  .sat:hover{transform:none !important;filter:none}
+  .sat-face{
+    flex-direction:row;
+    text-align:left;
+    gap:14px;
+    padding:14px 16px;
+  }
+  .sat-ic{flex-shrink:0}
+  .sat-ex{display:block;max-width:none;-webkit-line-clamp:1}
   .board-alt{padding:16px;gap:14px}
   .ba-go{margin-left:0;width:100%;text-align:center}
   .pathwrap{padding:0}
@@ -3073,8 +3226,8 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--cyan);outline-offse
 <header id="top">
   <div class="wrap">
     <div class="hero reveal">
-      <h1 class="disp">What do you want <span class="c">to learn?</span></h1>
-      <p class="sub">Open any shelf. Each one drops straight into the material.</p>
+      <h1 class="disp">The Trading <span class="c">Desk</span></h1>
+      <p class="sub">Structure over signals. One terminal for the whole trader’s education.</p>
     </div>
   </div>
 </header>
@@ -3096,7 +3249,19 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--cyan);outline-offse
      ============================================================ -->
 <section class="section" id="terminal">
   <div class="wrap">
-    <div class="board" id="board"></div>
+    <!-- RADIAL COMMAND RING
+         One central question, sections orbiting it.
+         Each satellite carries a live count + a one-line example
+         drawn from the real data, then links straight into the section. -->
+    <div class="ring" id="board" aria-label="What do you want to learn">
+      <div class="ring-core">
+        <div class="ring-core-inner">
+          <span class="ring-q">What do you want to learn?</span>
+          <span class="ring-sub">Pick a ring. Each one opens the real material.</span>
+        </div>
+      </div>
+      <!-- satellites injected by board() in learn.js -->
+    </div>
 
     <div class="board-alt reveal">
       <div class="ba-l">
@@ -3500,42 +3665,45 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--cyan);outline-offse
       <p>Most losing option trades were correct about direction. They died on the wrong expiry, the wrong strike, or a volatility crush nobody accounted for. Build any structure on the bench below and watch what time and volatility do to it before price moves at all.</p>
     </div>
 
-    <!-- THE ASSEMBLY BENCH — the signature piece. The Toolkit's payoff
-         tool draws the shape at expiration; this draws the road there. -->
+    <!-- THE ASSEMBLY BENCH — simplified.
+         Shows the payoff shape. Full playbooks (legs, cost, rules) now live
+         inside each structure in the library below so everything is in one place. -->
     <div class="obench reveal" id="optBench">
       <div class="ob-head">
         <div>
-          <h3>The Assembly Bench</h3>
-          <p>Nineteen structures, priced with Black-Scholes. The <b class="ob-k1">solid line</b> is expiration. The <b class="ob-k2">curved line</b> is today.</p>
+          <h3>Payoff shape</h3>
+          <p><b class="ob-k1">Solid</b> = expiration · <b class="ob-k2">Curved</b> = today. Change the structure from the picker or from any library card below.</p>
         </div>
         <div class="ob-picker" id="optPicker"></div>
       </div>
 
-      <div class="ob-body">
+      <div class="ob-body compact">
         <div class="ob-stage">
-          <svg id="optSVG" viewBox="0 0 760 340" role="img" aria-label="Option payoff, today versus expiration"></svg>
+          <svg id="optSVG" viewBox="0 0 760 300" role="img" aria-label="Option payoff, today versus expiration"></svg>
           <div class="ob-ctl">
             <label class="oc"><span>Spot <b id="optSpotL">100</b></span>
               <input id="optSpot" type="range" min="20" max="600" step="1" value="100"></label>
-            <label class="oc"><span>Days to expiry <b id="optDteL">45d</b></span>
+            <label class="oc"><span>Days <b id="optDteL">45d</b></span>
               <input id="optDte" type="range" min="7" max="120" step="1" value="45"></label>
-            <label class="oc"><span>Implied volatility <b id="optIvL">30%</b></span>
+            <label class="oc"><span>IV <b id="optIvL">30%</b></span>
               <input id="optIv" type="range" min="10" max="120" step="1" value="30"></label>
           </div>
-          <div class="ob-ctl live">
-            <label class="oc hot"><span>Time passing <b id="optElapsedL">entry day</b></span>
-              <input id="optElapsed" type="range" min="0" max="45" step="1" value="0"></label>
-            <label class="oc hot"><span>Volatility shift <b id="optIvShiftL">0%</b></span>
-              <input id="optIvShift" type="range" min="-60" max="60" step="1" value="0"></label>
-          </div>
+          <details class="ob-live">
+            <summary>Time &amp; volatility stress</summary>
+            <div class="ob-ctl live">
+              <label class="oc hot"><span>Time passing <b id="optElapsedL">entry day</b></span>
+                <input id="optElapsed" type="range" min="0" max="45" step="1" value="0"></label>
+              <label class="oc hot"><span>Vol shift <b id="optIvShiftL">0%</b></span>
+                <input id="optIvShift" type="range" min="-60" max="60" step="1" value="0"></label>
+            </div>
+          </details>
           <p class="ob-note" id="optNote"></p>
         </div>
 
         <div class="ob-side">
           <div class="op-nums" id="optNums"></div>
-          <div class="op-play" id="optPlay"></div>
           <div class="op-greeks" id="optGreeks"></div>
-          <p class="ob-fine">Zero rates, no dividend, European pricing. The shape and the direction of every number are right; the last cent is not the point. Strikes snap to a realistic increment for the spot you set.</p>
+          <p class="ob-fine">European pricing, zero rates. Shape and direction are right; last-cent precision is not the point. Full entry rules live in the structure cards below.</p>
         </div>
       </div>
     </div>
@@ -5196,6 +5364,33 @@ function renderOptPicker(){
     `<button data-o="${s.id}" class="${s.id===OPT.id?'on':''}" onclick="pickOpt('${s.id}')">${s.n}</button>`).join('');
 }
 function renderOptLibrary(){
+  const playBlock=s=>{
+    const P=(T.OPT_PLAYS||{})[s.id];
+    if(!P) return '';
+    const tier=(T.OPT_TIERS||{})[P.tier]||['',''];
+    const legRow=l=>{
+      const k=/^BUY/.test(l)?'buy':/^SELL/.test(l)?'sell':/^OWN|^HOLD/.test(l)?'own':'note';
+      const [head,...rest]=l.split(' · ');
+      return `<li class="pl-${k}"><span class="pl-a">${head}</span>`
+        +(rest.length?`<span class="pl-b">${rest.join(' · ')}</span>`:'')+`</li>`;
+    };
+    return `<div class="os-play">
+      <div class="play-head"><h4>How to put it on</h4><span class="play-tier t${P.tier}">${tier[0]||''}</span></div>
+      <p class="play-who">${tier[1]||''}</p>
+      <ol class="play-legs">${P.legs.map(legRow).join('')}</ol>
+      <div class="play-nums">
+        <div><span class="k">Ticket</span><span class="v">${P.cost}</span></div>
+        <div><span class="k">Best / worst</span><span class="v">${P.max}</span></div>
+        <div><span class="k">Breakeven</span><span class="v">${P.be}</span></div>
+      </div>
+      <div class="play-steps">
+        <div class="ps"><span class="n">1</span><div><b>Before you click</b><p>${P.enter}</p></div></div>
+        <div class="ps"><span class="n">2</span><div><b>While it is open</b><p>${P.manage}</p></div></div>
+        <div class="ps"><span class="n">3</span><div><b>How you close it</b><p>${P.exit}</p></div></div>
+        <div class="ps"><span class="n">4</span><div><b>How much to risk</b><p>${P.size}</p></div></div>
+      </div>
+    </div>`;
+  };
   $('#optLib').innerHTML=OPT_CATS.map(([k,label,blurb])=>{
     const rows=OPT_STRUCTURES.filter(s=>s.cat===k);
     return `<div class="ogrp"><div class="og-h"><h4>${label}</h4><p>${blurb}</p></div>
@@ -5207,6 +5402,7 @@ function renderOptLibrary(){
           <div class="os-r"><span class="k">When to use it</span><span class="v">${s.when}</span></div>
           <div class="os-r"><span class="k">Where it fails</span><span class="v">${s.fails}</span></div>
           <div class="os-r trap"><span class="k">The trap</span><span class="v">${s.trap}</span></div>
+          ${playBlock(s)}
           <button class="os-load" onclick="loadOpt('${s.id}')">Build it on the bench \u2192</button>
         </div></details>`).join('')}</div>`;}).join('');
 }

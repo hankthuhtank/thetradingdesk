@@ -239,7 +239,7 @@ const $=(s,r)=>(r||document).querySelector(s);
 const $$=(s,r)=>[...(r||document).querySelectorAll(s)];
 const SLOW=matchMedia('(prefers-reduced-motion: reduce)').matches;
 const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const C={cy:'#22d3ee',gd:'#f5b942',gr:'#34d399',rd:'#f87171',vi:'#a78bfa',ln:'rgba(126,166,214,.2)',fa:'#8a94a6'};
+const C={cy:'#22d3ee',gd:'#f5b942',gr:'#34d399',rd:'#f87171',vi:'#0ea5e9',ln:'rgba(126,166,214,.2)',fa:'#8a94a6'};
 const go=p=>{ if(typeof window.showPage==='function'){try{window.showPage(p);return;}catch(e){}} location.hash='#'+p; };
 const open=(p,fn)=>{ go(p); setTimeout(()=>{try{fn&&fn();}catch(e){}},260); };
 
@@ -463,61 +463,44 @@ const SHELVES=[
    ]}
 ];
 
-let OPEN=null;
+/* Icons for the radial satellites (simple path data matching SECTIONS) */
+const ICONS={
+  patterns:'M6 3v18M6 7h0M4 7h4v7H4zM16 3v18M14 9h4v8h-4z',
+  encyclopedia:'M4 4h11a3 3 0 0 1 3 3v13a2 2 0 0 0-2-2H4zM4 4v14M18 7h2v13H8',
+  options:'M3 17l4-8 4 5 3-7 3 4 4-9M3 21h18',
+  indicators:'M4 20h16M4 20V9M9 20v-5M14 20V4M19 20v-8',
+  strategies:'M3 20h18M6 20V10M12 20V4M18 20v-7',
+  riskdesk:'M12 3l8 4v5c0 5-3.4 8.3-8 9-4.6-.7-8-4-8-9V7zM9 12l2 2 4-4',
+  tools:'M4 20h16M6 16l4-6 3 3 5-8'
+};
+
 function board(){
   const host=$('#board'); if(!host) return;
-  host.innerHTML=SHELVES.map(s=>`
-    <article class="sh sh-${s.size}" data-id="${s.id}" style="--ac:${s.accent}">
-      <button class="sh-face" aria-expanded="false">
-        <span class="sh-fig"></span>
-        <span class="sh-txt">
-          <span class="sh-top"><b>${esc(s.name)}</b><em>${esc(s.count())}</em></span>
-          <span class="sh-line">${esc(s.line)}</span>
-        </span>
-        <span class="sh-cue">Browse<i>+</i></span>
-      </button>
-      <div class="sh-open" hidden></div>
-    </article>`).join('');
+  /* Keep the core; inject satellites around it */
+  const core=host.querySelector('.ring-core');
+  /* Remove any previous satellites */
+  $$('.sat',host).forEach(el=>el.remove());
 
-  /* figures are drawn after layout so each one fits its own tile */
-  SHELVES.forEach(s=>{
-    const el=$(`.sh[data-id="${s.id}"] .sh-fig`,host); if(!el) return;
-    const w=Math.max(120,el.clientWidth||180), h=s.size==='lg'?92:64;
-    el.innerHTML=s.fig(w,h);
-  });
-
-  $$('.sh',host).forEach(card=>{
-    const s=SHELVES.find(x=>x.id===card.dataset.id);
-    const face=$('.sh-face',card), pane=$('.sh-open',card);
-    face.addEventListener('click',()=>{
-      const isOpen=card.classList.contains('on');
-      $$('.sh',host).forEach(o=>{
-        o.classList.remove('on');
-        const f=$('.sh-face',o), p=$('.sh-open',o);
-        f.setAttribute('aria-expanded','false'); p.hidden=true;
-      });
-      if(isOpen){ OPEN=null; return; }
-      OPEN=s.id;
-      card.classList.add('on');
-      face.setAttribute('aria-expanded','true');
-      pane.hidden=false;
-      if(!pane.dataset.built){
-        const items=s.items()||[];
-        pane.innerHTML=`<div class="sh-items">${items.map((it,i)=>`
-            <button class="sh-item" data-i="${i}">
-              <span class="si-t">${esc(it.t)}</span>
-              <span class="si-d${it.mono?' mono':''}">${esc(it.d||'')}</span>
-              <span class="si-g">${esc(it.tag||'')}</span>
-            </button>`).join('')}</div>
-          <button class="sh-all">Open all ${esc(s.count())} &rarr;</button>`;
-        $$('.sh-item',pane).forEach(b=>b.addEventListener('click',()=>{
-          const it=items[+b.dataset.i]; if(it&&it.run) it.run();
-        }));
-        $('.sh-all',pane).addEventListener('click',()=>go(s.id));
-        pane.dataset.built='1';
-      }
-      if(!SLOW&&card.scrollIntoView) card.scrollIntoView({behavior:'smooth',block:'nearest'});
-    });
+  const n=SHELVES.length;
+  SHELVES.forEach((s,i)=>{
+    const angle=-90 + (360/n)*i; /* start at top, go clockwise */
+    const items=s.items()||[];
+    const example=items[0] ? items[0].t : s.line;
+    const sat=document.createElement('button');
+    sat.className='sat';
+    sat.style.setProperty('--a', angle+'deg');
+    sat.style.setProperty('--ac', s.accent);
+    sat.setAttribute('data-id', s.id);
+    sat.setAttribute('aria-label', s.name + ' — ' + s.count());
+    sat.innerHTML=`
+      <span class="sat-face">
+        <span class="sat-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="${ICONS[s.id]||ICONS.tools}"/></svg></span>
+        <span class="sat-name">${esc(s.name)}</span>
+        <span class="sat-count">${esc(s.count())}</span>
+        <span class="sat-ex">${esc(example)}</span>
+      </span>`;
+    sat.addEventListener('click',()=>go(s.id));
+    host.appendChild(sat);
   });
 }
 
@@ -531,15 +514,6 @@ function pathModal(){
   wrap.addEventListener('click',e=>{ if(e.target===wrap) show(false); });
   document.addEventListener('keydown',e=>{ if(e.key==='Escape') show(false); });
 }
-
-let rz;
-addEventListener('resize',()=>{ clearTimeout(rz); rz=setTimeout(()=>{
-  SHELVES.forEach(s=>{
-    const el=$(`.sh[data-id="${s.id}"] .sh-fig`); if(!el) return;
-    const w=Math.max(120,el.clientWidth||180), h=s.size==='lg'?92:64;
-    el.innerHTML=s.fig(w,h);
-  });
-},220); });
 
 function boot(){
   try{ board(); }catch(e){ console.error('[board]',e); }
