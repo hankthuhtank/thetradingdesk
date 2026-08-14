@@ -2004,12 +2004,12 @@ body.paged .section{padding-top:40px}
 /* dealer flow gets its own band: it is the one group whose
    mechanism is structural rather than behavioural */
 .sgroup-gex{position:relative;margin-top:64px;padding:30px 26px 26px;
-  border:1px solid rgba(167,139,250,.28);border-radius:20px;
-  background:linear-gradient(165deg,rgba(167,139,250,.06),transparent 60%)}
+  border:1px solid rgba(14,165,233,.28);border-radius:20px;
+  background:linear-gradient(165deg,rgba(14,165,233,.06),transparent 60%)}
 .sgroup-gex::before{content:'STRUCTURAL';position:absolute;top:-9px;left:26px;
   font-family:var(--mono);font-size:.58rem;letter-spacing:.2em;color:var(--violet);
   background:var(--void);padding:0 10px}
-.sgroup-gex .sgh{border-bottom-color:rgba(167,139,250,.3)}
+.sgroup-gex .sgh{border-bottom-color:rgba(14,165,233,.3)}
 .sgroup-gex .sgh::after{background:var(--violet)}
 .sgroup-gex .sgh-i{color:var(--violet)}
 @media(max-width:640px){.sgroup-gex{padding:24px 14px 16px}}
@@ -2777,7 +2777,7 @@ body::before{
 body::before{
   content:'';position:fixed;inset:0 0 auto 0;height:70vh;z-index:0;pointer-events:none;
   background:radial-gradient(58% 46% at 20% 0%,rgba(34,211,238,.10),transparent 72%),
-             radial-gradient(46% 38% at 84% 4%,rgba(167,139,250,.05),transparent 74%);
+             radial-gradient(46% 38% at 84% 4%,rgba(14,165,233,.05),transparent 74%);
   animation:none;filter:none;
 }
 .hero-grid{align-items:center}
@@ -2847,156 +2847,138 @@ body::before{
 }
 
 /* ============================================================
-   THE RING — radial command surface
-   One central question. Sections sit on the orbit as satellites.
-   Each satellite carries a live count and a one-line example from
-   the real data, then links straight into that section.
+   THE DESK — instrument rack
+   Sections sit as monitors on a trading desk. Each card is a full
+   instrument: icon, name, live count, and one real example from data.
+   No fragile radial math. Works on every viewport.
    ============================================================ */
-.ring{
-  --ring-size:min(720px,92vw);
-  position:relative;
-  width:var(--ring-size);
-  height:var(--ring-size);
-  margin:0 auto 36px;
-  display:grid;
-  place-items:center;
+.desk{
+  margin:0 auto 40px;
+  max-width:1100px;
 }
-.ring::before{
-  content:"";
-  position:absolute;inset:8%;
-  border-radius:50%;
-  border:1px solid rgba(126,166,214,.12);
-  background:
-    radial-gradient(circle at 50% 50%, transparent 42%, rgba(34,211,238,.03) 43%, transparent 44%),
-    radial-gradient(circle at 50% 50%, transparent 58%, rgba(126,166,214,.04) 59%, transparent 60%),
-    radial-gradient(circle at 50% 50%, transparent 74%, rgba(126,166,214,.03) 75%, transparent 76%);
-  pointer-events:none;
-}
-.ring::after{
-  content:"";
-  position:absolute;inset:0;
-  border-radius:50%;
-  border:1px dashed rgba(126,166,214,.08);
-  animation:ringSpin 120s linear infinite;
-  pointer-events:none;
-}
-@keyframes ringSpin{to{transform:rotate(360deg)}}
-
-.ring-core{
-  position:relative;z-index:2;
-  width:42%;height:42%;
-  border-radius:50%;
-  display:grid;place-items:center;
-  background:
-    radial-gradient(circle at 40% 35%, rgba(34,211,238,.14), transparent 55%),
-    linear-gradient(160deg, #0e1520 0%, #0a0e16 100%);
-  border:1px solid rgba(34,211,238,.35);
-  box-shadow:
-    0 0 0 1px rgba(34,211,238,.08),
-    0 0 60px -10px rgba(34,211,238,.35),
-    inset 0 0 40px rgba(34,211,238,.06);
-}
-.ring-core-inner{
+.desk-q{
   text-align:center;
-  padding:12% 10%;
-  display:flex;flex-direction:column;gap:10px;align-items:center;
+  margin-bottom:36px;
 }
-.ring-q{
+.desk-q h2{
   font-family:var(--disp);
   font-weight:700;
-  font-size:clamp(1.05rem,2.4vw,1.55rem);
+  font-size:clamp(1.8rem,4vw,2.8rem);
   letter-spacing:-.02em;
-  line-height:1.15;
-  color:var(--text);
+  line-height:1.1;
+  margin-bottom:12px;
 }
-.ring-sub{
+.desk-q h2 span{color:var(--cyan);text-shadow:0 0 28px var(--cyan-glow)}
+.desk-q p{
   font-family:var(--mono);
-  font-size:.58rem;
-  letter-spacing:.14em;
+  font-size:.68rem;
+  letter-spacing:.16em;
   text-transform:uppercase;
   color:var(--faint);
-  max-width:18ch;
-  line-height:1.5;
 }
 
-/* satellites */
-.sat{
-  --r:42%;
-  position:absolute;
-  top:50%;left:50%;
-  width:min(168px,22vw);
-  transform:
-    translate(-50%,-50%)
-    rotate(var(--a))
-    translateY(calc(var(--r) * -1))
-    rotate(calc(var(--a) * -1));
-  z-index:3;
-  text-align:center;
+.rack{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:14px;
+}
+@media(max-width:900px){
+  .rack{grid-template-columns:repeat(2,1fr)}
+}
+@media(max-width:560px){
+  .rack{grid-template-columns:1fr;gap:11px}
+}
+
+.mon{
+  position:relative;
+  display:flex;
+  flex-direction:column;
+  gap:0;
+  border:1px solid var(--line);
+  border-radius:16px;
+  background:var(--panel);
+  overflow:hidden;
   cursor:pointer;
-  transition:transform .35s cubic-bezier(.16,.8,.3,1), filter .3s;
+  text-align:left;
+  transition:border-color .28s, transform .28s cubic-bezier(.16,.8,.3,1), box-shadow .28s;
 }
-.sat:hover{
-  transform:
-    translate(-50%,-50%)
-    rotate(var(--a))
-    translateY(calc(var(--r) * -1.06))
-    rotate(calc(var(--a) * -1))
-    scale(1.06);
-  z-index:4;
-  filter:drop-shadow(0 12px 24px rgba(0,0,0,.55));
+.mon:hover{
+  border-color:color-mix(in srgb, var(--ac, var(--cyan)) 50%, transparent);
+  transform:translateY(-4px);
+  box-shadow:0 20px 50px -28px rgba(0,0,0,.9), 0 0 0 1px color-mix(in srgb, var(--ac, var(--cyan)) 18%, transparent);
 }
-.sat-face{
-  display:flex;flex-direction:column;align-items:center;gap:7px;
-  padding:14px 10px 12px;
-  border-radius:14px;
-  background:rgba(13,17,23,.92);
-  border:1px solid rgba(126,166,214,.16);
-  backdrop-filter:blur(10px);
-  transition:border-color .25s, background .25s, box-shadow .25s;
+.mon-top{
+  display:flex;
+  align-items:flex-start;
+  gap:14px;
+  padding:18px 18px 14px;
 }
-.sat:hover .sat-face{
-  border-color:color-mix(in srgb, var(--ac, var(--cyan)) 55%, transparent);
-  background:rgba(13,17,23,.98);
-  box-shadow:0 0 0 1px color-mix(in srgb, var(--ac, var(--cyan)) 20%, transparent);
-}
-.sat-ic{
-  width:36px;height:36px;
-  border-radius:10px;
+.mon-ic{
+  flex-shrink:0;
+  width:48px;height:48px;
+  border-radius:12px;
   display:grid;place-items:center;
   background:color-mix(in srgb, var(--ac, var(--cyan)) 12%, transparent);
-  border:1px solid color-mix(in srgb, var(--ac, var(--cyan)) 28%, transparent);
+  border:1px solid color-mix(in srgb, var(--ac, var(--cyan)) 30%, transparent);
   color:var(--ac, var(--cyan));
 }
-.sat-ic svg{width:18px;height:18px}
-.sat-name{
+.mon-ic svg{width:24px;height:24px}
+.mon-meta{flex:1;min-width:0}
+.mon-name{
   font-family:var(--disp);
   font-weight:700;
-  font-size:.92rem;
-  letter-spacing:-.01em;
+  font-size:1.15rem;
+  letter-spacing:-.015em;
   color:var(--text);
-  line-height:1.1;
+  line-height:1.15;
+  margin-bottom:4px;
 }
-.sat-count{
+.mon:hover .mon-name{color:var(--ac, var(--cyan))}
+.mon-count{
   font-family:var(--mono);
-  font-size:.55rem;
+  font-size:.58rem;
   letter-spacing:.12em;
   text-transform:uppercase;
   color:var(--faint);
 }
-.sat-ex{
-  font-size:.72rem;
+.mon-ex{
+  margin:0 18px 16px;
+  padding:11px 13px;
+  border-radius:10px;
+  background:var(--bg-2);
+  border:1px solid var(--line-2);
+  font-size:.84rem;
   color:var(--dim);
-  line-height:1.35;
-  max-width:15ch;
-  display:-webkit-box;
-  -webkit-line-clamp:2;
-  -webkit-box-orient:vertical;
-  overflow:hidden;
-  margin-top:2px;
+  line-height:1.45;
 }
-.sat:hover .sat-name{color:var(--ac, var(--cyan))}
+.mon-ex b{
+  display:block;
+  font-family:var(--mono);
+  font-size:.55rem;
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  color:var(--faint);
+  margin-bottom:4px;
+  font-weight:400;
+}
+.mon-go{
+  margin-top:auto;
+  padding:12px 18px;
+  border-top:1px solid var(--line);
+  font-family:var(--mono);
+  font-size:.62rem;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+  color:var(--ac, var(--cyan));
+  background:color-mix(in srgb, var(--ac, var(--cyan)) 5%, transparent);
+  transition:background .22s, color .22s;
+}
+.mon:hover .mon-go{
+  background:var(--ac, var(--cyan));
+  color:var(--void);
+}
 
-/* the path entry: one strip, not a second list */
+/* path strip */
 .board-alt{display:flex;align-items:center;gap:20px;flex-wrap:wrap;padding:20px 24px;
   border:1px solid var(--line);border-radius:16px;background:var(--panel-2)}
 .ba-k{display:block;font-family:var(--mono);font-size:.66rem;letter-spacing:.14em;
@@ -3007,7 +2989,6 @@ body::before{
   background:var(--cyan);color:var(--void);font-weight:600;transition:all .24s var(--ease)}
 .ba-go:hover{transform:translateY(-2px);box-shadow:0 12px 30px -14px var(--cyan)}
 
-/* ---------- the path, as a panel ---------- */
 .pathwrap{position:fixed;inset:0;z-index:250;display:none;background:rgba(6,9,12,.82);
   backdrop-filter:blur(6px);padding:24px;overflow-y:auto}
 .pathwrap.on{display:block;animation:shIn .24s var(--ease)}
@@ -3025,48 +3006,10 @@ body::before{
 .pathfoot .btn-primary{margin-left:auto}
 .track{border:none;border-radius:0;background:transparent}
 
-/* a click should not leave a ring behind. Keyboard focus still shows. */
 button:focus:not(:focus-visible),a:focus:not(:focus-visible){outline:none}
 button:focus-visible,a:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
 
-/* responsive ring */
-@media(max-width:900px){
-  .ring{--ring-size:min(560px,94vw)}
-  .sat{width:min(140px,26vw)}
-  .sat-ex{display:none}
-  .ring-q{font-size:1.05rem}
-}
 @media(max-width:640px){
-  .ring{
-    --ring-size:auto;
-    width:100%;
-    height:auto;
-    display:flex;
-    flex-direction:column;
-    gap:14px;
-    margin-bottom:24px;
-  }
-  .ring::before,.ring::after{display:none}
-  .ring-core{
-    width:100%;height:auto;
-    border-radius:16px;
-    padding:28px 20px;
-  }
-  .ring-core-inner{padding:0}
-  .sat{
-    position:static;
-    width:100%;
-    transform:none !important;
-  }
-  .sat:hover{transform:none !important;filter:none}
-  .sat-face{
-    flex-direction:row;
-    text-align:left;
-    gap:14px;
-    padding:14px 16px;
-  }
-  .sat-ic{flex-shrink:0}
-  .sat-ex{display:block;max-width:none;-webkit-line-clamp:1}
   .board-alt{padding:16px;gap:14px}
   .ba-go{margin-left:0;width:100%;text-align:center}
   .pathwrap{padding:0}
@@ -3106,7 +3049,7 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--cyan);outline-offse
   background:radial-gradient(circle,rgba(34,211,238,.16),transparent 68%);
   animation:floaty 26s ease-in-out infinite}
 .field i:nth-child(2){width:38vmax;height:38vmax;top:-6vmax;right:-14vmax;
-  background:radial-gradient(circle,rgba(167,139,250,.11),transparent 70%);
+  background:radial-gradient(circle,rgba(14,165,233,.10),transparent 70%);
   animation:floaty 34s ease-in-out infinite reverse}
 .field i:nth-child(3){width:30vmax;height:30vmax;top:52vh;left:38vw;
   background:radial-gradient(circle,rgba(245,185,66,.07),transparent 70%);
@@ -3249,18 +3192,17 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--cyan);outline-offse
      ============================================================ -->
 <section class="section" id="terminal">
   <div class="wrap">
-    <!-- RADIAL COMMAND RING
-         One central question, sections orbiting it.
-         Each satellite carries a live count + a one-line example
-         drawn from the real data, then links straight into the section. -->
-    <div class="ring" id="board" aria-label="What do you want to learn">
-      <div class="ring-core">
-        <div class="ring-core-inner">
-          <span class="ring-q">What do you want to learn?</span>
-          <span class="ring-sub">Pick a ring. Each one opens the real material.</span>
-        </div>
+    <!-- THE DESK — instrument rack
+         Sections as monitors on a trading desk. Each card shows icon,
+         name, live count, and one real example from the data. -->
+    <div class="desk" id="board" aria-label="What do you want to learn">
+      <div class="desk-q reveal">
+        <h2>What do you want to <span>learn?</span></h2>
+        <p>Every instrument on the desk · open any one</p>
       </div>
-      <!-- satellites injected by board() in learn.js -->
+      <div class="rack" id="rack">
+        <!-- cards injected by board() in learn.js -->
+      </div>
     </div>
 
     <div class="board-alt reveal">

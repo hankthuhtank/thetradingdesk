@@ -463,44 +463,43 @@ const SHELVES=[
    ]}
 ];
 
-/* Icons for the radial satellites (simple path data matching SECTIONS) */
+/* Custom icons — drawn to feel like desk instruments, not generic UI glyphs */
 const ICONS={
-  patterns:'M6 3v18M6 7h0M4 7h4v7H4zM16 3v18M14 9h4v8h-4z',
-  encyclopedia:'M4 4h11a3 3 0 0 1 3 3v13a2 2 0 0 0-2-2H4zM4 4v14M18 7h2v13H8',
-  options:'M3 17l4-8 4 5 3-7 3 4 4-9M3 21h18',
-  indicators:'M4 20h16M4 20V9M9 20v-5M14 20V4M19 20v-8',
-  strategies:'M3 20h18M6 20V10M12 20V4M18 20v-7',
-  riskdesk:'M12 3l8 4v5c0 5-3.4 8.3-8 9-4.6-.7-8-4-8-9V7zM9 12l2 2 4-4',
-  tools:'M4 20h16M6 16l4-6 3 3 5-8'
+  patterns:`<path d="M5 4v16"/><rect x="3.5" y="8" width="3" height="6" rx=".5"/><path d="M12 4v16"/><rect x="10.5" y="6" width="3" height="9" rx=".5"/><path d="M19 4v16"/><rect x="17.5" y="10" width="3" height="5" rx=".5"/>`,
+  encyclopedia:`<path d="M4 5h12a3 3 0 0 1 3 3v11a1.5 1.5 0 0 0-1.5-1.5H4z"/><path d="M4 5v14"/><path d="M19 8h1.5v12H8"/><path d="M7 10h7M7 13h5"/>`,
+  options:`<path d="M3 18l5-10 4 6 3-8 3 5 3-7"/><path d="M3 21h18"/>`,
+  indicators:`<path d="M4 20h16"/><path d="M7 20V11"/><path d="M12 20V6"/><path d="M17 20v-7"/><circle cx="7" cy="10" r="1.4"/><circle cx="12" cy="5" r="1.4"/><circle cx="17" cy="12" r="1.4"/>`,
+  strategies:`<path d="M4 20h16"/><path d="M7 20V12"/><path d="M12 20V5"/><path d="M17 20v-8"/><path d="M5 9l2-2 2 3 3-5 2 2"/>`,
+  riskdesk:`<path d="M12 3l8 4v5c0 5-3.5 8.4-8 9.2C7.5 20.4 4 17 4 12V7z"/><path d="M9 12l2.2 2.2L15.5 10"/>`,
+  tools:`<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1l2.1-2.1M17 7l2.1-2.1"/>`
 };
 
 function board(){
-  const host=$('#board'); if(!host) return;
-  /* Keep the core; inject satellites around it */
-  const core=host.querySelector('.ring-core');
-  /* Remove any previous satellites */
-  $$('.sat',host).forEach(el=>el.remove());
+  const rack=$('#rack'); if(!rack) return;
+  rack.innerHTML='';
 
-  const n=SHELVES.length;
-  SHELVES.forEach((s,i)=>{
-    const angle=-90 + (360/n)*i; /* start at top, go clockwise */
+  SHELVES.forEach(s=>{
     const items=s.items()||[];
-    const example=items[0] ? items[0].t : s.line;
-    const sat=document.createElement('button');
-    sat.className='sat';
-    sat.style.setProperty('--a', angle+'deg');
-    sat.style.setProperty('--ac', s.accent);
-    sat.setAttribute('data-id', s.id);
-    sat.setAttribute('aria-label', s.name + ' — ' + s.count());
-    sat.innerHTML=`
-      <span class="sat-face">
-        <span class="sat-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="${ICONS[s.id]||ICONS.tools}"/></svg></span>
-        <span class="sat-name">${esc(s.name)}</span>
-        <span class="sat-count">${esc(s.count())}</span>
-        <span class="sat-ex">${esc(example)}</span>
-      </span>`;
-    sat.addEventListener('click',()=>go(s.id));
-    host.appendChild(sat);
+    const sample=items[0];
+    const exTitle=sample ? sample.t : '';
+    const exBody=sample ? (sample.d||s.line) : s.line;
+    const card=document.createElement('button');
+    card.className='mon';
+    card.style.setProperty('--ac', s.accent);
+    card.setAttribute('data-id', s.id);
+    card.setAttribute('aria-label', s.name + ' — ' + s.count());
+    card.innerHTML=`
+      <span class="mon-top">
+        <span class="mon-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${ICONS[s.id]||ICONS.tools}</svg></span>
+        <span class="mon-meta">
+          <span class="mon-name">${esc(s.name)}</span>
+          <span class="mon-count">${esc(s.count())}</span>
+        </span>
+      </span>
+      <span class="mon-ex"><b>Example</b>${esc(exTitle ? exTitle + (exBody && exBody!==exTitle ? ' — ' + exBody : '') : exBody)}</span>
+      <span class="mon-go">Open ${esc(s.name)} →</span>`;
+    card.addEventListener('click',()=>go(s.id));
+    rack.appendChild(card);
   });
 }
 
