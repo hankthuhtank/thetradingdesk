@@ -34,6 +34,8 @@ button{font-family:inherit;color:inherit;background:none;border:none;cursor:poin
 ::selection{background:var(--cyan);color:var(--void)}
 a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,summary:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
 .wrap{width:min(1280px,92%);margin:0 auto}
+.section{padding:96px 0;position:relative}
+
 .mono{font-family:var(--mono)}
 .disp{font-family:var(--disp);font-weight:700;letter-spacing:-.01em;line-height:.98}
 .up{color:var(--green)} .dn{color:var(--red)}
@@ -1331,28 +1333,59 @@ body.locked{overflow:hidden}
    headline gains a rule that draws itself, and the paragraph
    steps down in size so the gap between them is obvious.
    ============================================================ */
-.sec-head{max-width:860px}
+.sec-head{margin-bottom:44px;max-width:860px}
 .sec-head .eyebrow,.hub-h .eyebrow{
   display:inline-flex;align-items:center;gap:10px;
   padding:6px 13px 6px 11px;border:1px solid var(--line);border-radius:100px;
   background:var(--panel);font-size:.62rem;letter-spacing:.22em;
+  color:var(--cyan);margin-bottom:4px;
 }
 .sec-head .eyebrow::before,.hub-h .eyebrow::before{
-  width:6px;height:6px;border-radius:50%;background:var(--cyan);
-  box-shadow:0 0 10px var(--cyan-glow);animation:dkPulse 2.8s ease-in-out infinite;
+  content:"";width:6px;height:6px;border-radius:50%;background:var(--cyan);
+  box-shadow:0 0 10px var(--cyan-glow,rgba(34,211,238,.45));
+  flex-shrink:0;
 }
 .sec-head h2,.hub-h h2{
-  position:relative;padding-bottom:20px;letter-spacing:-.028em;line-height:1.02;
+  font-size:clamp(2rem,4.8vw,3.4rem);
+  margin-top:14px;margin-bottom:0;
+  position:relative;padding-bottom:20px;
+  letter-spacing:-.028em;line-height:1.05;
+  color:var(--text);
 }
+.sec-head h2 .c,.hub-h h2 .c{color:var(--cyan)}
+.sec-head h2 .g,.hub-h h2 .g{color:var(--gold)}
 .sec-head h2::after,.hub-h h2::after{
-  content:'';position:absolute;left:0;bottom:0;height:2px;width:100%;
-  background:linear-gradient(90deg,var(--cyan) 0,rgba(34,211,238,.28) 18%,var(--line) 42%,transparent 100%);
-  transform:scaleX(0);transform-origin:left;
-  transition:transform 1.15s var(--ease) .1s;
+  content:'';position:absolute;left:0;bottom:0;height:2px;width:min(280px,60%);
+  background:linear-gradient(90deg,var(--cyan) 0,rgba(34,211,238,.35) 40%,transparent 100%);
+  transform-origin:left;
 }
-.reveal.in .sec-head h2::after,.sec-head.in h2::after,
-.reveal.in.sec-head h2::after,.hub-h.in h2::after,.reveal.in .hub-h h2::after{transform:scaleX(1)}
-.sec-head p,.hub-h p{font-size:.98rem;line-height:1.66;max-width:66ch}
+/* underline always visible on page views (reveal animation is optional polish) */
+.sec-head h2::after,.hub-h h2::after{transform:scaleX(1)}
+.sec-head p,.hub-h p{
+  color:var(--dim);
+  font-size:1.02rem;
+  line-height:1.66;
+  max-width:66ch;
+  margin-top:16px;
+}
+.sec-head p b,.hub-h p b{color:var(--text);font-weight:600}
+
+/* page chrome */
+.page-head{display:flex;align-items:center;gap:14px;margin-bottom:28px;flex-wrap:wrap}
+.back-desk{
+  display:inline-flex;align-items:center;gap:8px;
+  font-family:var(--mono);font-size:.63rem;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--text);border:1px solid var(--line);border-radius:10px;
+  padding:9px 14px 9px 12px;background:var(--panel-2,var(--panel));
+  transition:border-color .2s,color .2s,background .2s;text-decoration:none;
+}
+.back-desk svg{flex-shrink:0;opacity:.7}
+.back-desk:hover{border-color:var(--cyan);color:var(--cyan);background:rgba(34,211,238,.06)}
+.back-desk:hover svg{opacity:1}
+.page-crumb{
+  font-family:var(--mono);font-size:.58rem;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--faint);
+}
 
 /* Sub-headings inside a section were the worst offenders: an h3
    in a panel looked exactly like the bold text beside it. Now it
@@ -5383,7 +5416,7 @@ $$('.page-view').forEach(sec=>{
   const meta=SEC_BY_ID[sec.dataset.page]; if(!meta) return;
   const head=document.createElement('div');
   head.className='page-head';
-  head.innerHTML=`<a class="back-desk" href="#top"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>The Desk</a><span class="page-crumb">${meta.crumb}</span>`;
+  head.innerHTML=`<a class="back-desk" href="#top"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 18l-6-6 6-6"/></svg><span>The Desk</span></a><span class="page-crumb">${meta.crumb}</span>`;
   const wrap=sec.querySelector('.wrap');
   if(wrap) wrap.insertBefore(head,wrap.firstChild);
 });
