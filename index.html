@@ -2346,6 +2346,27 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--cyan);outline-offse
   .sh-fig *{animation:none!important}
 }
 
+
+/* Main hero brand lockup */
+.hero-logo-stage{
+  width:100%;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  margin:0 auto 22px;
+}
+.hero-logo-massive{
+  display:block;
+  width:min(1080px,96vw);
+  max-width:none;
+  height:auto;
+  filter:drop-shadow(0 0 28px rgba(34,211,238,.16));
+}
+@media(max-width:640px){
+  .hero-logo-stage{margin-bottom:16px;}
+  .hero-logo-massive{width:min(760px,98vw);}
+}
+
 </style>
 
 <script src="https://unpkg.com/lightweight-charts@5/dist/lightweight-charts.standalone.production.js" defer></script>
@@ -2392,9 +2413,9 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--cyan);outline-offse
   <header>
     <div class="wrap">
       <div class="hero reveal">
-        <div class="hero-badge"><span class="hb-dot"></span> LIVE TERMINAL · EDUCATIONAL ONLY</div>
-        <h1 class="disp hero-title">The Trading <span class="ht-desk">Desk</span></h1>
-        <p class="hero-tag">Structure over signals</p>
+        <div class="hero-logo-stage">
+          <img class="hero-logo-massive" src="tradingdesk.svg" alt="The Trading Desk — Structure Over Signals">
+        </div>
         <p class="sub hero-sub">One terminal for the whole trader’s education — patterns, options, risk, and the path in between.</p>
       </div>
     </div>
