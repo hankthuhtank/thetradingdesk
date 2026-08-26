@@ -2370,8 +2370,41 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--cyan);outline-offse
 </style>
 
 <script src="https://unpkg.com/lightweight-charts@5/dist/lightweight-charts.standalone.production.js" defer></script>
+
+<style id="ss-loader-style">
+#ss-themed-loader{position:fixed;inset:0;z-index:2147483000;display:grid;place-items:center;background:#070a0f;color:#e8eef7;overflow:hidden;transition:opacity .46s ease,visibility .46s ease}
+#ss-themed-loader.is-leaving{opacity:0;visibility:hidden;pointer-events:none}
+#ss-themed-loader::before{content:"";position:absolute;inset:-20%;background-image:linear-gradient(rgba(126,166,214,.055) 1px,transparent 1px),linear-gradient(90deg,rgba(126,166,214,.055) 1px,transparent 1px);background-size:54px 54px;transform:translate3d(-18px,-18px,0);opacity:.72}
+#ss-themed-loader::after{content:"";position:absolute;width:70vmax;height:70vmax;border-radius:50%;background:radial-gradient(circle,rgba(34,211,238,.08),transparent 68%);filter:blur(36px)}
+.ss-td-loader{position:relative;width:min(560px,88vw);font-family:"IBM Plex Mono",monospace}
+.ss-td-top{display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(126,166,214,.14);padding-bottom:11px;font-size:8px;letter-spacing:.15em;text-transform:uppercase;color:#586173}.ss-td-top b{font-weight:500;color:#34d399}.ss-td-live{display:inline-flex;align-items:center;gap:7px}.ss-td-live i{width:6px;height:6px;border-radius:50%;background:#34d399;box-shadow:0 0 12px rgba(52,211,153,.7);animation:ss-td-blink 1s ease-in-out infinite}
+.ss-td-name{font-family:"Chakra Petch",sans-serif;font-size:clamp(42px,11vw,68px);font-weight:700;text-transform:uppercase;letter-spacing:-.04em;line-height:.88;margin:30px 0 23px}.ss-td-name span{display:block;color:#22d3ee;font-size:.36em;letter-spacing:.22em;margin-top:12px}
+.ss-td-chart{height:104px;border:1px solid rgba(126,166,214,.13);background:#0b0f16;display:flex;align-items:center;gap:7px;padding:17px 18px;position:relative;overflow:hidden}
+.ss-td-chart::before{content:"";position:absolute;inset:0;background-image:linear-gradient(rgba(126,166,214,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(126,166,214,.045) 1px,transparent 1px);background-size:26px 26px}
+.ss-candle{position:relative;z-index:1;width:18px;height:62px}.ss-candle::before{content:"";position:absolute;left:50%;top:4px;bottom:4px;width:1px;background:currentColor;transform:translateX(-50%)}.ss-candle i{position:absolute;left:4px;right:4px;top:var(--t);height:var(--h);background:currentColor;border-radius:1px;animation:ss-td-candle 1s ease-in-out infinite alternate}.ss-candle.up{color:#34d399}.ss-candle.dn{color:#f87171}.ss-candle:nth-child(2) i{animation-delay:.08s}.ss-candle:nth-child(3) i{animation-delay:.16s}.ss-candle:nth-child(4) i{animation-delay:.24s}.ss-candle:nth-child(5) i{animation-delay:.32s}.ss-candle:nth-child(6) i{animation-delay:.4s}.ss-candle:nth-child(7) i{animation-delay:.48s}.ss-candle:nth-child(8) i{animation-delay:.56s}.ss-candle:nth-child(9) i{animation-delay:.64s}.ss-candle:nth-child(10) i{animation-delay:.72s}.ss-candle:nth-child(11) i{animation-delay:.8s}.ss-candle:nth-child(12) i{animation-delay:.88s}
+.ss-td-scan{height:1px;margin:17px 0 11px;background:rgba(126,166,214,.12);overflow:hidden;position:relative}.ss-td-scan::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,#22d3ee,transparent);box-shadow:0 0 14px rgba(34,211,238,.4);animation:ss-td-sweep 1s linear infinite}
+.ss-td-status{display:grid;grid-template-columns:1fr auto;gap:7px 16px;font-size:8px;letter-spacing:.11em;text-transform:uppercase;color:#586173}.ss-td-status b{font-weight:500;color:#8a94a6}.ss-td-status em{font-style:normal;color:#34d399}
+@keyframes ss-td-blink{50%{opacity:.28}}
+@keyframes ss-td-candle{from{transform:scaleY(.72)}to{transform:scaleY(1.08)}}
+@keyframes ss-td-sweep{from{transform:translateX(-100%)}to{transform:translateX(100%)}}
+@media(prefers-reduced-motion:reduce){.ss-td-live i,.ss-candle i,.ss-td-scan::after{animation:none}}
+</style>
+
 </head>
 <body>
+
+<div id="ss-themed-loader" aria-hidden="true">
+  <div class="ss-td-loader">
+    <div class="ss-td-top"><span>Terminal / session startup</span><span class="ss-td-live"><i></i>Desk online</span></div>
+    <div class="ss-td-name">THE TRADING DESK<span>ALL-IN-ONE TRADING TERMINAL</span></div>
+    <div class="ss-td-chart">
+      <div class="ss-candle up" style="--t:31px;--h:19px"><i></i></div><div class="ss-candle dn" style="--t:22px;--h:24px"><i></i></div><div class="ss-candle up" style="--t:26px;--h:20px"><i></i></div><div class="ss-candle up" style="--t:15px;--h:27px"><i></i></div><div class="ss-candle dn" style="--t:24px;--h:18px"><i></i></div><div class="ss-candle up" style="--t:18px;--h:29px"><i></i></div><div class="ss-candle dn" style="--t:28px;--h:20px"><i></i></div><div class="ss-candle up" style="--t:12px;--h:31px"><i></i></div><div class="ss-candle up" style="--t:19px;--h:24px"><i></i></div><div class="ss-candle dn" style="--t:27px;--h:17px"><i></i></div><div class="ss-candle up" style="--t:14px;--h:30px"><i></i></div><div class="ss-candle up" style="--t:10px;--h:25px"><i></i></div>
+    </div>
+    <div class="ss-td-scan"></div>
+    <div class="ss-td-status"><b>Market structure</b><em>ready</em><b>Risk desk</b><em>ready</em><b>Reference library</b><em>ready</em></div>
+  </div>
+</div>
+
 <div class="field" aria-hidden="true"><i></i><i></i><i></i></div>
 
 <div class="bg-fx" aria-hidden="true">
@@ -5665,5 +5698,24 @@ route();
 initPrimer();
 </script>
 <script src="learn.js"></script>
+
+<script id="ss-loader-script">
+(()=>{
+  const el=document.getElementById('ss-themed-loader');
+  if(!el) return;
+  const started=performance.now();
+  let leaving=false;
+  const leave=()=>{
+    if(leaving) return;
+    leaving=true;
+    const wait=Math.max(0,1150-(performance.now()-started));
+    setTimeout(()=>{el.classList.add('is-leaving');setTimeout(()=>el.remove(),520)},wait);
+  };
+  if(document.readyState==='complete') leave();
+  else window.addEventListener('load',leave,{once:true});
+  setTimeout(leave,2300);
+})();
+</script>
+
 </body>
 </html>
