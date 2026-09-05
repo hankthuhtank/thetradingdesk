@@ -2390,6 +2390,16 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--cyan);outline-offse
 @media(prefers-reduced-motion:reduce){.ss-td-live i,.ss-candle i,.ss-td-scan::after{animation:none}}
 </style>
 
+<style id="usability-refinement">
+button.cmdk-item{width:100%;border:0;font-family:inherit;text-align:left;background:transparent;color:var(--text);gap:18px;line-height:1.6;min-height:46px}
+button.cmdk-item:focus-visible{outline:2px solid var(--cyan);outline-offset:-3px;background:var(--panel-2);color:var(--cyan)}
+.cmdk-item small{font-size:.75rem;letter-spacing:.04em}.cmdk-empty{padding:18px;font-size:1rem;color:var(--dim)}
+.rail-tx small{font-size:.75rem;line-height:1.4;letter-spacing:0}.rail-tx b{font-size:.875rem;line-height:1.3}
+.rail-btn:focus-visible,.nav-links a:focus-visible{outline:2px solid var(--cyan);outline-offset:3px}
+@media(max-width:600px){#cmdk{padding:76px 14px 20px}.cmdk-win{width:100%;max-height:calc(100svh - 100px);overflow:auto}.cmdk-item small{flex-shrink:0}}
+
+.rail-tx small,.cmdk-item small{color:#9daec3}.rail-btn{white-space:normal}.rail-tx b{overflow-wrap:normal}
+</style>
 </head>
 <body>
 
@@ -3338,7 +3348,10 @@ function pollWhenVisible(fn,ms){
 /* ===== nav / year / reveal ===== */
 const menuBtn=$('#menuBtn'), navLinks=$('#navLinks');
 menuBtn.addEventListener('click',()=>{const o=navLinks.classList.toggle('open');menuBtn.setAttribute('aria-expanded',o);});
-$$('#navLinks a').forEach(a=>a.addEventListener('click',()=>{navLinks.classList.remove('open');menuBtn.setAttribute('aria-expanded','false');}));
+function closeMenu(){navLinks.classList.remove('open');menuBtn.setAttribute('aria-expanded','false')}
+$$('#navLinks a').forEach(a=>a.addEventListener('click',closeMenu));
+document.addEventListener('click',e=>{if(!e.target.closest('#nav'))closeMenu()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&navLinks.classList.contains('open')){closeMenu();menuBtn.focus()}});
 $('#yr').textContent=new Date().getFullYear();
 const io=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}})},{threshold:.06});
 $$('.reveal').forEach(el=>io.observe(el));
@@ -3369,7 +3382,15 @@ function openModal(id){
   if(id==='m-size')setSizeMode(PS_MODE,document.querySelector('#psTabs button[data-p="'+PS_MODE+'"]'));
   const f=m.querySelector('input,select,button.mx'); if(f)f.focus({preventScroll:true});
 }
-function closeModal(id){ $('#'+id).classList.remove('open'); if(!$$('.modal.open').length)document.body.classList.remove('locked'); if(lastFocus)lastFocus.focus({preventScroll:true}); }
+function closeModal(id){ $('#'+id).classList.remove('open'); if(!$$('.modal.open').length&&!$('#cmdk').classList.contains('open'))document.body.classList.remove('locked'); if(lastFocus?.isConnected)lastFocus.focus({preventScroll:true}); }
+document.addEventListener('keydown',e=>{
+ if(e.key!=='Tab')return;
+ const surface=$('#cmdk.open')||$$('.modal.open').at(-1);if(!surface)return;
+ const controls=[...surface.querySelectorAll('button,a[href],input,select,textarea,[tabindex="0"]')].filter(el=>!el.disabled&&el.getClientRects().length);
+ const first=controls[0],last=controls.at(-1);if(!first)return;
+ if(e.shiftKey&&(document.activeElement===first||!surface.contains(document.activeElement))){e.preventDefault();last.focus()}
+ else if(!e.shiftKey&&(document.activeElement===last||!surface.contains(document.activeElement))){e.preventDefault();first.focus()}
+});
 $$('.modal').forEach(m=>m.addEventListener('mousedown',e=>{if(e.target===m)closeModal(m.id);}));
 document.addEventListener('keydown',e=>{ if(e.key==='Escape'){$$('.modal.open').forEach(m=>closeModal(m.id));closeCmdk();} });
 
@@ -3719,7 +3740,7 @@ function answerPsy(i){ const positive=PSY_Q[psyI][1]; psyScore+=positive?(4-i):i
 /* checklist */
 const CHECK_ITEMS=['The setup meets every one of my written criteria','Risk on this trade is within my max (1–2%)','Stop loss is decided and placed before entry','Reward-to-risk is at least 1.5 : 1','I am not trading to make back a previous loss','I checked the higher-timeframe structure','No major news or earnings in the next 2 hours','My daily loss limit has not been hit','I am calm — not bored, tilted, or euphoric','This trade fits my written plan','I know my exit for both the win and the loss','I am genuinely willing to skip this trade'];
 function renderChecklist(){
-  const saved=JSON.parse(localStorage.getItem('tdesk_check')||'[]');
+  let saved=[];try{const value=JSON.parse(localStorage.getItem('tdesk_check')||'[]');if(Array.isArray(value))saved=value}catch(_){}
   $('#checkList').innerHTML=CHECK_ITEMS.map((t,i)=>`<label class="check-item"><input type="checkbox" data-ci="${i}" ${saved.includes(i)?'checked':''} onchange="checkChanged()"><span>${t}</span></label>`).join('');
   checkChanged(false);
 }
@@ -5349,7 +5370,7 @@ renderEnc();
 
 /* ===== LEARNING PATH ===== */
 $('#currGrid').innerHTML=SESSIONS.map((s,i)=>`<details class="sess"><summary><span class="snum">${String(i+1).padStart(2,'0')}</span><span class="stitle">${s[0]}</span><span class="chev">›</span></summary><div class="sbody">${s[1]}<div class="skey"><b>Key takeaway:</b> ${s[2]}</div><button class="mbtn ghost" style="margin-top:14px;width:auto;padding:8px 16px;font-size:.68rem" onclick="toggleDone(${i},this)">Mark complete</button></div></details>`).join('');
-function getDone(){return JSON.parse(localStorage.getItem('tdesk_completed')||'[]');}
+function getDone(){try{const value=JSON.parse(localStorage.getItem('tdesk_completed')||'[]');return Array.isArray(value)?value.filter(x=>Number.isInteger(x)&&x>=0&&x<SESSIONS.length):[]}catch(_){return[]}}
 function updateProgress(){
   const done=getDone(), pct=Math.round(done.length/SESSIONS.length*100);
   $('#currProgress').innerHTML=`Progress: <b>${done.length}/${SESSIONS.length}</b> complete <span style="color:var(--dim)">(${pct}%)</span>`;
@@ -5389,15 +5410,26 @@ const CMDS=[
   ...OPT_STRUCTURES.map(s=>({label:s.n,kind:'structure',run:()=>{location.hash='options';setTimeout(()=>loadOpt(s.id),160);}})),
   ...MISTAKES.map(m=>({label:m.n,kind:'psychology',run:()=>{location.hash='riskdesk';setTimeout(()=>setRdTab('mind',document.querySelectorAll('#rdTabs button')[2]),140);}}))
 ];
-function openCmdk(){cmdk.classList.add('open');document.body.classList.add('locked');cmdkInput.value='';renderCmdk('');cmdkInput.focus();}
-function closeCmdk(){cmdk.classList.remove('open');if(!$$('.modal.open').length)document.body.classList.remove('locked');}
+let cmdkReturn=null;
+function openCmdk(){cmdkReturn=document.activeElement;cmdk.classList.add('open');document.body.classList.add('locked');cmdkInput.value='';renderCmdk('');cmdkInput.focus();}
+function closeCmdk(){const open=cmdk.classList.contains('open');cmdk.classList.remove('open');if(!$$('.modal.open').length)document.body.classList.remove('locked');if(open&&cmdkReturn?.isConnected)cmdkReturn.focus({preventScroll:true});}
 function renderCmdk(q){
   const list=CMDS.filter(c=>c.label.toLowerCase().includes(q.toLowerCase())).slice(0,10);
-  cmdkList.innerHTML=list.length?list.map((c,i)=>`<div class="cmdk-item${i===0?' hot':''}" data-ci="${CMDS.indexOf(c)}"><span>${c.label}</span><small>${c.kind}</small></div>`).join(''):'<div class="cmdk-item"><span>No match — try “gamma”, “payoff”, “flag”…</span></div>';
+  cmdkList.innerHTML=list.length?list.map((c,i)=>`<button type="button" class="cmdk-item${i===0?' hot':''}" data-ci="${CMDS.indexOf(c)}"><span>${esc(c.label)}</span><small>${esc(c.kind)}</small></button>`).join(''):'<p class="cmdk-empty" role="status">No match — try “gamma”, “payoff”, or “flag”.</p>';
   $$('.cmdk-item[data-ci]').forEach(el=>el.addEventListener('click',()=>{closeCmdk();CMDS[+el.dataset.ci].run();}));
 }
 cmdkInput.addEventListener('input',()=>renderCmdk(cmdkInput.value));
-cmdkInput.addEventListener('keydown',e=>{ if(e.key==='Enter'){const first=$('.cmdk-item[data-ci]');if(first){closeCmdk();CMDS[+first.dataset.ci].run();}} });
+cmdkInput.setAttribute('aria-label','Search tools, terms, patterns, and sections');cmdkInput.setAttribute('aria-controls','cmdkList');
+cmdkInput.addEventListener('keydown',e=>{
+ if(e.key==='Enter'){e.preventDefault();cmdkList.querySelector('button')?.click()}
+ if(e.key==='ArrowDown'){e.preventDefault();cmdkList.querySelector('button')?.focus()}
+});
+cmdkList.addEventListener('focusin',e=>{if(e.target.matches('button[data-ci]'))[...cmdkList.querySelectorAll('button')].forEach(button=>button.classList.toggle('hot',button===e.target))});
+cmdkList.addEventListener('keydown',e=>{
+ const buttons=[...cmdkList.querySelectorAll('button')],i=buttons.indexOf(document.activeElement);
+ if(e.key==='ArrowDown'){e.preventDefault();buttons[Math.min(i+1,buttons.length-1)]?.focus()}
+ if(e.key==='ArrowUp'){e.preventDefault();if(i<=0)cmdkInput.focus();else buttons[i-1]?.focus()}
+});
 cmdk.addEventListener('mousedown',e=>{if(e.target===cmdk)closeCmdk();});
 document.addEventListener('keydown',e=>{ if(e.key==='/'&&!/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)){ e.preventDefault(); cmdk.classList.contains('open')?closeCmdk():openCmdk(); } });
 
@@ -5522,7 +5554,8 @@ function route(){
   $('#top').classList.toggle('hidden',!!p);
   $('#terminal').classList.toggle('hidden',!!p);
   $$('.page-view').forEach(sec=>sec.classList.toggle('hidden',sec.dataset.page!==p));
-  $$('#railNav .rail-btn').forEach(b=>b.classList.toggle('on',b.dataset.go===p));
+  $$('#railNav .rail-btn').forEach(b=>{const on=b.dataset.go===p;b.classList.toggle('on',on);if(on)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current')});
+  closeMenu();
   document.title=p?`${SEC_BY_ID[p].name} — The Trading Desk`:BASE_TITLE;
   /* land at the top of the view, and beat the browser’s own jump to the fragment */
   const root=document.documentElement, prevSB=root.style.scrollBehavior;
