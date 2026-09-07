@@ -149,9 +149,9 @@ window.TDESK.HEDGES = [
  trap:'Setting the call strike too close because it funds a nicer put. You will get called away in exactly the scenario you were hoping for.'},
 
 {n:'Index Put Against a Portfolio', when:'You hold many correlated names and want one hedge instead of twenty.',
- how:'Hedge with index puts sized by beta. Contracts = (portfolio value \u00d7 portfolio beta) / (index level \u00d7 100). The calculator below does this arithmetic.',
- cost:'Cheaper than hedging each name and usually more liquid, at the cost of basis risk: your names can fall while the index does not.',
- pick:'SPX for tax treatment under \u00a71256 and cash settlement, SPY for smaller size and easier granularity. Three months out is a common starting point.',
+ how:'A beta-adjusted notional estimate is (portfolio value \u00d7 beta) / (index level \u00d7 100). Dividing again by absolute put delta estimates a current directional offset. These are different quantities; neither guarantees a complete hedge.',
+ cost:'Cost and liquidity depend on the contract and market. Basis risk remains: your holdings can fall differently from the index.',
+ pick:'Compare contract size, settlement, exercise style, liquidity and expiry. Tax treatment depends on the instrument and circumstances; verify current rules before relying on it.',
  trap:'Forgetting the beta step and buying a dollar-for-dollar notional hedge, which over-hedges a low-beta portfolio and under-hedges a high-beta one.'},
 
 {n:'Put Spread', when:'You want a defined amount of protection cheaply and accept it runs out below a level.',

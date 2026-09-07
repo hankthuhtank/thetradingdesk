@@ -163,7 +163,7 @@ window.TDESK.OPT_STRUCTURES = [
 /* the lessons that decide whether any of the above works */
 window.TDESK.OPT_LESSONS = [
 {id:'price', n:'What you are actually paying for',
- b:'An option price has exactly two parts. Intrinsic value is the part that is already real: how far in the money it sits. Extrinsic value is everything else, and it is entirely a bet on time and movement. A $5 call that is $2 in the money carries $3 of extrinsic, and that $3 is guaranteed to reach zero on expiry day.',
+ b:'An option price has exactly two parts. Intrinsic value is the part that is already real: how far in the money it sits. Extrinsic value is premium above intrinsic value. It reflects factors including time, volatility, rates and dividends. A $5 call with $2 intrinsic value has $3 extrinsic value. At expiration the payoff is determined by intrinsic value; before then, time value can rise or fall.',
  t:'When you buy an option you are buying intrinsic at fair value and extrinsic at whatever the market charges for uncertainty. Only one of the two can survive to expiry.'},
 {id:'theta', n:'Time decay is not linear',
  b:'Extrinsic value does not bleed evenly. It drains slowly at first and then steepens sharply inside the last two or three weeks, and fastest of all at the money. That curve is the reason 30 to 45 days is the common window for directional buying and the reason premium sellers cluster inside 45 days.',

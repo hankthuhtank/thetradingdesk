@@ -2400,6 +2400,7 @@ button.cmdk-item:focus-visible{outline:2px solid var(--cyan);outline-offset:-3px
 
 .rail-tx small,.cmdk-item small{color:#9daec3}.rail-btn{white-space:normal}.rail-tx b{overflow-wrap:normal}
 </style>
+<link rel="stylesheet" href="risk-lab.css?v=20260907">
 </head>
 <body>
 
@@ -2814,12 +2815,12 @@ button.cmdk-item:focus-visible{outline:2px solid var(--cyan);outline-offset:-3px
         <div class="hg-left" id="hedgeList"></div>
         <div class="hg-right">
           <div class="hg-calc">
-            <h4>Index hedge sizing</h4>
-            <p class="hc-p">Beta-adjust first, then divide. Skipping the beta step over-hedges a defensive portfolio and under-hedges an aggressive one.</p>
-            <label>Portfolio value<input id="hgVal" type="number" value="100000" step="1000" inputmode="decimal"></label>
-            <label>Portfolio beta<input id="hgBeta" type="number" value="1.15" step="0.05" inputmode="decimal"></label>
-            <label>Index level<input id="hgIdx" type="number" value="6000" step="10" inputmode="decimal"></label>
-            <div class="hg-outs" id="hgOut"></div>
+            <h4>Index put exposure model</h4>
+            <p class="hc-p">Compare beta-adjusted notional with an approximate delta offset. Delta and beta change; neither number guarantees portfolio protection.</p>
+            <label>Portfolio value<input id="hgVal" type="number" min="0" value="100000" step="1000" inputmode="decimal"></label>
+            <label>Portfolio beta<input id="hgBeta" type="number" min="0" value="1.15" step="0.05" inputmode="decimal"></label>
+            <label>Index level<input id="hgIdx" type="number" min="0.01" value="6000" step="10" inputmode="decimal"></label>
+            <label>Absolute put delta (0–1)<input id="hgDelta" type="number" min="0.01" max="1" value="0.50" step="0.01" inputmode="decimal"></label><div class="hg-outs" id="hgOut" aria-live="polite"></div><p class="hc-p">Assumes a 100 multiplier. Notional contracts = value × beta ÷ (index × 100). Delta-offset contracts divide that result by absolute delta. This local sensitivity estimate excludes premium, basis risk and changing Greeks. <a href="https://www.optionseducation.org/advancedconcepts/volatility-the-greeks" target="_blank" rel="noopener">OIC: Greeks ↗</a></p>
           </div>
           <div class="hg-pay">
             <svg id="hpSVG" viewBox="0 0 520 250" role="img" aria-label="Hedged versus unhedged payoff"></svg>
@@ -3256,10 +3257,11 @@ button.cmdk-item:focus-visible{outline:2px solid var(--cyan);outline-offset:-3px
 <script src="patterns.js"></script>
 <script src="encyclopedia.js"></script>
 <script src="reference.js"></script>
-<script src="strategies.js"></script>
+<script src="progress.js?v=20260907"></script>
+<script src="strategies.js?v=20260907"></script>
 <script src="indicators.js"></script>
-<script src="riskdesk.js"></script>
-<script src="options.js"></script>
+<script src="riskdesk.js?v=20260907"></script>
+<script src="options.js?v=20260907"></script>
 <script>
 'use strict';
 const $=(s,el=document)=>el.querySelector(s);
@@ -4767,21 +4769,12 @@ function renderHedges(){
   $('#contractList').innerHTML=CONTRACTS.map(([k,v],i)=>
     `<div class="ct"><span class="ct-i">${String(i+1).padStart(2,'0')}</span><div><h5>${k}</h5><p>${v}</p></div></div>`).join('');
 }
+$('#hgDelta').addEventListener('input',hedgeCalc);
 function hedgeCalc(){
-  const V=parseFloat($('#hgVal').value)||0, b=parseFloat($('#hgBeta').value)||1, ix=parseFloat($('#hgIdx').value)||1;
-  const raw=(V*b)/(ix*100), n=Math.max(1,Math.round(raw)), covers=ix*100;
-  let note='';
-  if(raw<0.75) note=`One contract covers ${usd(covers)} of notional, which is larger than the exposure you are hedging.
-    Rounding up to one contract over-hedges by roughly ${(1/Math.max(raw,.01)).toFixed(1)}\u00d7. A smaller-notional
-    instrument, an ETF option at roughly a tenth the size, gives the granularity this portfolio needs.`;
-  else if(Math.abs(raw-n)>0.25) note=`Rounding ${raw.toFixed(2)} to ${n} shifts your coverage by
-    ${Math.abs((n/raw-1)*100).toFixed(0)}%. Decide deliberately whether to round down and stay slightly under-hedged.`;
-  $('#hgOut').innerHTML=
-    `<div class="hg-o"><span>Beta-adjusted exposure</span><b>${usd(V*b)}</b></div>
-     <div class="hg-o"><span>Contracts for a full hedge</span><b>${raw.toFixed(2)}</b></div>
-     <div class="hg-o"><span>Practical size</span><b>${n} contract${n===1?'':'s'}</b></div>
-     <div class="hg-o dim"><span>Each contract covers</span><b>${usd(covers)}</b></div>`
-    +(note?`<p class="hg-warn">${note}</p>`:'');
+  const ids=['hgVal','hgBeta','hgIdx','hgDelta'];
+  if(!ids.every(id=>$('#'+id).value.trim()!==''&&$('#'+id).validity.valid)){$('#hgOut').textContent='Enter valid values; absolute put delta must be above zero and no greater than one.';return}
+  const V=Number($('#hgVal').value),b=Number($('#hgBeta').value),ix=Number($('#hgIdx').value),delta=Number($('#hgDelta').value),exposure=V*b,covers=ix*100,notional=exposure/covers,raw=notional/delta;
+  $('#hgOut').innerHTML=`<div class="hg-o"><span>Beta-adjusted exposure</span><b>${usd(exposure)}</b></div><div class="hg-o"><span>Notional equivalent</span><b>${notional.toFixed(2)} contracts</b></div><div class="hg-o"><span>Approximate delta offset</span><b>${raw.toFixed(2)} contracts</b></div><div class="hg-o dim"><span>Whole-contract bounds</span><b>${Math.floor(raw)} to ${Math.ceil(raw)}</b></div><p class="hg-warn">Rounding changes the offset. This model does not select a strike, expiry or trade size; zero exposure correctly gives zero contracts.</p>`;
   drawHedgePayoff();
 }
 /* schematic payoff comparison. real arithmetic on the inputs above,
@@ -5370,13 +5363,14 @@ renderEnc();
 
 /* ===== LEARNING PATH ===== */
 $('#currGrid').innerHTML=SESSIONS.map((s,i)=>`<details class="sess"><summary><span class="snum">${String(i+1).padStart(2,'0')}</span><span class="stitle">${s[0]}</span><span class="chev">›</span></summary><div class="sbody">${s[1]}<div class="skey"><b>Key takeaway:</b> ${s[2]}</div><button class="mbtn ghost" style="margin-top:14px;width:auto;padding:8px 16px;font-size:.68rem" onclick="toggleDone(${i},this)">Mark complete</button></div></details>`).join('');
-function getDone(){try{const value=JSON.parse(localStorage.getItem('tdesk_completed')||'[]');return Array.isArray(value)?value.filter(x=>Number.isInteger(x)&&x>=0&&x<SESSIONS.length):[]}catch(_){return[]}}
+function getDone(){return window.DeskProgress.get()}
 function updateProgress(){
   const done=getDone(), pct=Math.round(done.length/SESSIONS.length*100);
   $('#currProgress').innerHTML=`Progress: <b>${done.length}/${SESSIONS.length}</b> complete <span style="color:var(--dim)">(${pct}%)</span>`;
   $$('#currGrid .sess').forEach((d,i)=>{ const b=d.querySelector('button'); if(!b)return; const on=done.includes(i); b.textContent=on?'✓ Completed':'Mark complete'; b.style.borderColor=on?'var(--green)':'var(--line)'; b.style.color=on?'var(--green)':'var(--text)'; });
 }
-function toggleDone(i){ let done=getDone(); if(done.includes(i))done=done.filter(x=>x!==i); else {done.push(i);done.sort((a,b)=>a-b);} localStorage.setItem('tdesk_completed',JSON.stringify(done)); updateProgress(); }
+function toggleDone(i){const done=getDone();window.DeskProgress.set(done.includes(i)?done.filter(x=>x!==i):[...done,i])}
+addEventListener('desk:progress',updateProgress);
 updateProgress();
 
 /* ===== booking ===== */
@@ -5730,7 +5724,7 @@ $('#truthGrid').innerHTML=STRAT_TRUTHS.map(t=>
 route();
 initPrimer();
 </script>
-<script src="learn.js"></script>
+<script src="learn.js?v=20260907"></script>
 
 <script id="ss-loader-script">
 (()=>{
@@ -5750,5 +5744,6 @@ initPrimer();
 })();
 </script>
 
+<script src="risk-lab.js?v=20260907"></script>
 </body>
 </html>

@@ -182,7 +182,7 @@ window.TDESK.STRATEGIES = [
   ],
   fails:'Low-float names where the spread and the halts eat the edge, and any day where nothing has a real catalyst — on those days the correct trade is none.',
   trap:'Confusing volatility with opportunity. A stock moving 20% with a 3% spread is not tradable, it is a slot machine with fees.',
-  claim:'Classic and still heavily used. The screening is 90% of it; the entry pattern is the last 10%.'
+  claim:'Classic and still heavily used. Screening and entry rules both matter; their contribution varies by implementation.'
 },
 
 /* ================= DEALER FLOW \u00b7 GEX ================= */
@@ -367,13 +367,13 @@ window.TDESK.STRATEGIES = [
     'Review on a schedule, not on a headline.'
   ],
   entry:'Scaled in on weakness, over time.',
-  stop:'Thesis-based. A price stop on a multi-year hold guarantees you get shaken out of the winners.',
+  stop:'Define exit conditions and position limits in advance. A price stop can exit during a temporary decline; avoiding stops can leave a position exposed to a much larger loss. Neither approach guarantees a better result.',
   target:'None. The exit is deterioration of the business, not a number.',
   size:'Position limits per name. Conviction is not a risk-management system.',
-  evidence:'Profitability and quality metrics have shown a persistent return premium in factor research. The uncomfortable counterweight: SPIVA data shows roughly 79% of active US large-cap funds underperformed the S&P 500 in 2025, and around 90%+ underperformed over 20 years. These are full-time professionals doing exactly this work. That does not make it impossible — it does mean the honest default for most people is the index, with stock picking as the small satellite.',
+  evidence:'Profitability and quality metrics have shown a persistent return premium in factor research. The uncomfortable counterweight: SPIVA data shows roughly 79% of active US large-cap funds underperformed the S&P 500 in 2025, with long-horizon results available in the same scorecard. These are full-time professionals doing exactly this work. That does not make it impossible — it does mean the honest default for most people is the index, with stock picking as the small satellite.',
   cite:[
-    {t:'S&P Dow Jones Indices — SPIVA U.S. Scorecard, year-end 2025', u:'https://www.marketsgroup.org/strategic-insights/spiva-u-s-scorecard'},
-    {t:'SPIVA long-horizon results by category', u:'https://www.ifa.com/articles/spiva-report-active-vs-passive'}
+    {t:'S&P Dow Jones Indices — SPIVA U.S. Scorecard, year-end 2025', u:'https://www.spglobal.com/spdji/en/spiva/article/spiva-us/'},
+    {t:'SPIVA long-horizon results by category', u:'https://www.spglobal.com/spdji/en/research-insights/spiva/'}
   ],
   fails:'Multiple compression. A great business bought at a terrible price can go nowhere for a decade while earnings grow.',
   trap:'Confusing a story you like with a business that compounds. The narrative is free; the cash flows are the test.',
@@ -399,7 +399,7 @@ window.TDESK.STRATEGIES = [
   size:'Position limits, always. Value traps are unusually convincing on the way down.',
   evidence:'The value premium is one of the original documented anomalies and shows up across decades and international markets. It also spent much of the 2010s underperforming badly enough that serious people declared it dead before it recovered. That is the real lesson: the edge is real and the drought can be longer than most people\u2019s patience or career.',
   cite:[
-    {t:'SPIVA — how professional active management actually fares', u:'https://www.marketsgroup.org/strategic-insights/spiva-u-s-scorecard'}
+    {t:'SPIVA — how professional active management actually fares', u:'https://www.spglobal.com/spdji/en/spiva/article/spiva-us/'}
   ],
   fails:'Structurally declining industries, where cheap keeps getting cheaper because the business really is worth less every year.',
   trap:'Mistaking a low multiple for a discount. The multiple is the question, not the answer.',
@@ -425,7 +425,7 @@ window.TDESK.STRATEGIES = [
   size:'What you can sustain through a bad year without stopping.',
   evidence:'Two findings worth holding at once. First, this beats most professionals: SPIVA reports about 79% of active US large-cap funds trailed the S&P 500 in 2025, with underperformance rates rising the longer the horizon. Second, a nuance most people get backwards — Vanguard\u2019s research across US, UK and Australian markets found that investing a lump sum immediately beat spreading it out roughly 68% of the time, simply because markets rise more often than they fall. Scheduled buying is the right answer for income you receive over time; it is not automatically superior to investing money you already have.',
   cite:[
-    {t:'S&P Dow Jones Indices — SPIVA U.S. Scorecard, year-end 2025', u:'https://www.marketsgroup.org/strategic-insights/spiva-u-s-scorecard'},
+    {t:'S&P Dow Jones Indices — SPIVA U.S. Scorecard, year-end 2025', u:'https://www.spglobal.com/spdji/en/spiva/article/spiva-us/'},
     {t:'Vanguard research on cost averaging vs. investing immediately (summary)', u:'https://www.investing.com/analysis/us-dollarcost-averaging-vs-lumpsum-investing-why-safer-strategy-underperforms-200673577'}
   ],
   fails:'It does not fail so much as it tests you — long flat stretches and deep drawdowns where stopping feels like risk management and is actually the only real mistake available.',

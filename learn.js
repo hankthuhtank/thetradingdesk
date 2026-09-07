@@ -40,10 +40,9 @@ const GOES=[
   {to:'riskdesk',     label:'Open the risk desk'},
   {to:'sessions',     label:'Open the full sessions'}
 ];
-const KEY='tdesk_track_v1';
-let DONE=(()=>{ try{ return new Set(JSON.parse(localStorage.getItem(KEY))||[]); }
-                catch(e){ return new Set(); } })();
-function save(){ try{ localStorage.setItem(KEY,JSON.stringify([...DONE])); }catch(e){} }
+let DONE=new Set(window.DeskProgress.get());
+function save(){window.DeskProgress.set([...DONE])}
+addEventListener('desk:progress',()=>{DONE=new Set(window.DeskProgress.get());drawTrack()});
 
 function nextStep(){
   const S=T.SESSIONS||[];
