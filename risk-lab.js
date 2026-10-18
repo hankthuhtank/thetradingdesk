@@ -1,7 +1,59 @@
-(()=>{
-'use strict';const host=document.createElement('section');host.id='executionLab';host.className='execution-lab';
-host.innerHTML=`<header><span>RISK LAB / A PLAN MEETS AN EXECUTION</span><h2>A stop is a trigger.<br>What if the fill is worse?</h2><p>Size a hypothetical long stock position, then move its exit price. Watch the difference between planned risk and a realized loss.</p></header><div class="execution-grid"><div class="execution-inputs"><label>Account cash ($)<input id="riskCash" type="number" min="1" step="1" value="10000"></label><label>Planned risk budget ($)<input id="riskBudget" type="number" min="1" step="1" value="100"></label><label>Entry price ($ / share)<input id="riskEntry" type="number" min="0.01" step="0.01" value="50"></label><label>Stop trigger ($ / share)<input id="riskStop" type="number" min="0.01" step="0.01" value="48"></label><label>Worse fill below stop ($ / share)<input id="riskSlip" type="range" min="0" max="10" step="0.25" value="0"><output id="riskSlipOut">$0.00</output></label><button type="button" id="riskGap">Try a $3 gap below the stop</button></div><div class="execution-results"><dl><div><dt>Whole shares · no borrowing</dt><dd id="riskShares"></dd></div><div><dt>Capital used</dt><dd id="riskCapital"></dd></div><div><dt>Planned loss at stop</dt><dd id="riskPlanned"></dd></div><div class="execution-actual"><dt>Loss at modeled fill</dt><dd id="riskActual"></dd></div></dl><div class="execution-bars" aria-hidden="true"><span>Planned</span><i id="plannedBar"></i><span>Modeled fill</span><i id="actualBar"></i></div><p id="riskResult" aria-live="polite"></p></div></div><details><summary>Read the assumptions and source</summary><p>Shares = the smaller of floor(risk budget ÷ entry–stop distance) and floor(cash ÷ entry price). This long-only stock example assumes whole shares, no borrowing, no fees and a fill no lower than zero. It does not model options, futures or short positions. The risk amount is an editable example, not a recommended allocation.</p><p>A stop order becomes a market order after its trigger; the execution price can differ. A stop-limit adds a price constraint but can remain unfilled.</p><a href="https://www.investor.gov/introduction-investing/general-resources/news-alerts/alerts-bulletins/investor-bulletins-15" target="_blank" rel="noopener">SEC Investor.gov: stop and stop-limit orders ↗</a></details>`;
-const anchor=document.querySelector('#riskdesk .wrap')||document.querySelector('#riskdesk');if(!anchor)return;anchor.prepend(host);const $=s=>host.querySelector(s),usd=n=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:2}).format(n);
-function draw(){const ids=['riskCash','riskBudget','riskEntry','riskStop'],valid=ids.every(id=>$('#'+id).value.trim()!==''&&$('#'+id).validity.valid),cash=+$('#riskCash').value,budget=+$('#riskBudget').value,entry=+$('#riskEntry').value,stop=+$('#riskStop').value,slip=+$('#riskSlip').value;$('#riskSlipOut').textContent=usd(slip);if(!valid||stop>=entry){['riskShares','riskCapital','riskPlanned','riskActual'].forEach(id=>$('#'+id).textContent='—');$('#riskResult').textContent='Enter positive values and place the stop below the entry for this long-position example.';$('#plannedBar').style.width=$('#actualBar').style.width='0%';return}const shares=Math.max(0,Math.min(Math.floor((budget+1e-9)/(entry-stop)),Math.floor(cash/entry))),planned=shares*(entry-stop),fill=Math.max(0,stop-slip),actual=shares*(entry-fill),max=Math.max(planned,actual,1);$('#riskShares').textContent=shares.toLocaleString();$('#riskCapital').textContent=usd(shares*entry);$('#riskPlanned').textContent=usd(planned);$('#riskActual').textContent=usd(actual);$('#plannedBar').style.width=planned/max*100+'%';$('#actualBar').style.width=actual/max*100+'%';$('#riskResult').textContent=shares?`Modeled exit: ${usd(fill)}. Loss is ${usd(actual-planned)} above the plan (${(actual/cash*100).toFixed(2)}% of account cash). ${actual>budget?'The modeled loss exceeds the chosen risk budget.':'Move the fill slider to test a gap.'}`:'These inputs do not permit one whole share within both the cash and planned risk limits.'}
-host.querySelectorAll('input').forEach(el=>el.addEventListener('input',draw));$('#riskGap').addEventListener('click',()=>{$('#riskSlip').value='3';draw()});draw();
+(() => {
+  "use strict";
+  const host = document.createElement("section");
+  host.id = "executionLab";
+  host.className = "execution-lab";
+  host.innerHTML = `<header><span>RISK LAB / A PLAN MEETS AN EXECUTION</span><h2>A stop is a trigger.<br>What if the fill is worse?</h2><p>Size a hypothetical long stock position, then move its exit price. Watch the difference between planned risk and a realized loss.</p></header><div class="execution-grid"><div class="execution-inputs"><label>Account cash ($)<input id="riskCash" type="number" min="1" step="1" value="10000"></label><label>Planned risk budget ($)<input id="riskBudget" type="number" min="1" step="1" value="100"></label><label>Entry price ($ / share)<input id="riskEntry" type="number" min="0.01" step="0.01" value="50"></label><label>Stop trigger ($ / share)<input id="riskStop" type="number" min="0.01" step="0.01" value="48"></label><label>Worse fill below stop ($ / share)<input id="riskSlip" type="range" min="0" max="10" step="0.25" value="0"><output id="riskSlipOut">$0.00</output></label><button type="button" id="riskGap">Try a $3 gap below the stop</button></div><div class="execution-results"><dl><div><dt>Whole shares · no borrowing</dt><dd id="riskShares"></dd></div><div><dt>Capital used</dt><dd id="riskCapital"></dd></div><div><dt>Planned loss at stop</dt><dd id="riskPlanned"></dd></div><div class="execution-actual"><dt>Loss at modeled fill</dt><dd id="riskActual"></dd></div></dl><div class="execution-bars" aria-hidden="true"><span>Planned</span><i id="plannedBar"></i><span>Modeled fill</span><i id="actualBar"></i></div><p id="riskResult" aria-live="polite"></p></div></div><details><summary>Read the assumptions and source</summary><p>Shares = the smaller of floor(risk budget ÷ entry–stop distance) and floor(cash ÷ entry price). This long-only stock example assumes whole shares, no borrowing, no fees and a fill no lower than zero. It does not model options, futures or short positions. The risk amount is an editable example, not a recommended allocation.</p><p>A stop order becomes a market order after its trigger; the execution price can differ. A stop-limit adds a price constraint but can remain unfilled.</p><a href="https://www.investor.gov/introduction-investing/general-resources/news-alerts/alerts-bulletins/investor-bulletins-15" target="_blank" rel="noopener">SEC Investor.gov: stop and stop-limit orders ↗</a></details>`;
+  const anchor = document.querySelector("#riskdesk .wrap") || document.querySelector("#riskdesk");
+  if (!anchor) return;
+  anchor.prepend(host);
+  const $ = (s) => host.querySelector(s),
+    usd = (n) =>
+      new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: "USD",
+        maximumFractionDigits: 2,
+      }).format(n);
+  function draw() {
+    const ids = ["riskCash", "riskBudget", "riskEntry", "riskStop"],
+      valid = ids.every((id) => $("#" + id).value.trim() !== "" && $("#" + id).validity.valid),
+      cash = +$("#riskCash").value,
+      budget = +$("#riskBudget").value,
+      entry = +$("#riskEntry").value,
+      stop = +$("#riskStop").value,
+      slip = +$("#riskSlip").value;
+    $("#riskSlipOut").textContent = usd(slip);
+    if (!valid || stop >= entry) {
+      ["riskShares", "riskCapital", "riskPlanned", "riskActual"].forEach(
+        (id) => ($("#" + id).textContent = "—"),
+      );
+      $("#riskResult").textContent =
+        "Enter positive values and place the stop below the entry for this long-position example.";
+      $("#plannedBar").style.width = $("#actualBar").style.width = "0%";
+      return;
+    }
+    const shares = Math.max(
+        0,
+        Math.min(Math.floor((budget + 1e-9) / (entry - stop)), Math.floor(cash / entry)),
+      ),
+      planned = shares * (entry - stop),
+      fill = Math.max(0, stop - slip),
+      actual = shares * (entry - fill),
+      max = Math.max(planned, actual, 1);
+    $("#riskShares").textContent = shares.toLocaleString();
+    $("#riskCapital").textContent = usd(shares * entry);
+    $("#riskPlanned").textContent = usd(planned);
+    $("#riskActual").textContent = usd(actual);
+    $("#plannedBar").style.width = (planned / max) * 100 + "%";
+    $("#actualBar").style.width = (actual / max) * 100 + "%";
+    $("#riskResult").textContent = shares
+      ? `Modeled exit: ${usd(fill)}. Loss is ${usd(actual - planned)} above the plan (${((actual / cash) * 100).toFixed(2)}% of account cash). ${actual > budget ? "The modeled loss exceeds the chosen risk budget." : "Move the fill slider to test a gap."}`
+      : "These inputs do not permit one whole share within both the cash and planned risk limits.";
+  }
+  host.querySelectorAll("input").forEach((el) => el.addEventListener("input", draw));
+  $("#riskGap").addEventListener("click", () => {
+    $("#riskSlip").value = "3";
+    draw();
+  });
+  draw();
 })();
