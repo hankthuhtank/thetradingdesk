@@ -3378,24 +3378,30 @@ button.cmdk-item:focus-visible {
             ></div>
         </div>
       </div>
-      <div class="fl-notes">
-        <div class="fl-note">
-          <h4>Where the numbers come from</h4>
-          <div id="fibSeq"></div>
-          <p>Divide any Fibonacci number by the next and the answer converges on 0.618. Skip one and you get 0.382, skip two and you get 0.236, and the square root of 0.618 gives 0.786. The whole ladder falls out of one sequence.</p>
-          <p>The exception is 50%, which is not a Fibonacci ratio at all. It arrived through Dow theory, survived because the middle of a move is a genuine decision point, and every charting package ships it anyway.</p>
+      <details class="edu-details" style="margin:0">
+        <summary style="padding:16px 20px">How Fibonacci levels are calculated and used</summary>
+        <div class="fl-notes">
+          <div class="fl-note">
+            <h4>The calculation</h4>
+            <div id="fibSeq"></div>
+            <p>Ratios approach 61.8%, 38.2%, and 23.6% as the Fibonacci sequence grows.
+              The 78.6% ratio is the square root of 61.8%. The 50% line is a common midpoint,
+              not a Fibonacci ratio.</p>
+          </div>
+          <div class="fl-note">
+            <h4>Choose the swing</h4>
+            <p>Pick a clear high and low before inspecting the levels. Keep your anchor method
+              consistent. Changing the swing just to support a trade introduces hindsight.</p>
+          </div>
+          <div class="fl-note">
+            <h4>Know the limit</h4>
+            <p>The ladder calculates percentages. It does not reveal waiting orders or guarantee
+              a reversal. Compare the marked levels with actual price behaviour.</p>
+            <a class="edu-source" href="https://www.fidelity.com/learning-center/trading-investing/technical-analysis/technical-indicator-guide/fibonacci-retracement"
+              target="_blank" rel="noopener">Fidelity: Fibonacci retracement ↗</a>
+          </div>
         </div>
-        <div class="fl-note">
-          <h4>How to place it without fooling yourself</h4>
-          <p>Anchor to one obvious, finished swing: the impulse anybody would point at, not the one that makes your idea work. Wick to wick or body to body is a preference, but pick one and keep it, because switching mid-analysis is how a level appears out of nothing.</p>
-          <p>And if you catch yourself hunting for the swing that drops a line exactly where you already wanted to buy, you have your answer without the tool.</p>
-        </div>
-        <div class="fl-note">
-          <h4>What the evidence actually says</h4>
-          <p>Batchelor and Ramyar (Cass Business School, 2006) tested retracement and projection ratios in the Dow against what chance alone would produce, found no significant difference, and concluded the idea has no scientific rationale behind it. The Socionomics Institute reviewed the same data and read it the other way.</p>
-          <p>So hold it honestly. The ladder organises a pullback and marks prices a lot of resting orders share, which is not nothing. It is not an edge by itself.</p>
-        </div>
-      </div>
+      </details>
     </div>
   </div>
 </section>
@@ -8340,25 +8346,25 @@ function paintFibReadout() {
     state = "Beyond the swing. This is extension territory, not a retracement.";
     cls = "x";
   } else if (pct < 23.6) {
-    state = "Barely a pullback. Strong trend, but nothing has been tested yet.";
+    state = "Less than 23.6% retraced. Depth alone does not establish trend strength.";
     cls = "s";
   } else if (pct < 38.2) {
-    state = "Shallow. Buyers are stepping in early and defending hard.";
+    state = "Between 23.6% and 38.2% retraced. Check the chart for actual buying or selling.";
     cls = "s";
   } else if (pct < 61.8) {
-    state = "Normal pullback depth. Where most continuation entries live.";
+    state = "Between 38.2% and 61.8% retraced. This describes depth, not an entry signal.";
     cls = "n";
   } else if (pct <= 65) {
-    state = "In the golden pocket. Deep enough to shake people out, shallow enough to hold.";
+    state = "Inside the 61.8–65% band often called the golden pocket. A reversal is not guaranteed.";
     cls = "g";
   } else if (pct <= 78.6) {
-    state = "Deep. Still valid, but this is now a fight rather than a trend.";
+    state = "Between 65% and 78.6% retraced. More of the selected swing has been given back.";
     cls = "d";
   } else if (pct <= 100) {
-    state = "Past 78.6%. A retracement this deep usually means the swing is failing.";
+    state = "Between 78.6% and 100% retraced. Price is approaching the selected swing’s origin.";
     cls = "d";
   } else {
-    state = "Through the origin. The swing is invalidated, not retraced.";
+    state = "Beyond 100% retraced: price has passed the selected swing’s origin.";
     cls = "x";
   }
   $("#fibPct").textContent = pct.toFixed(1) + "%";
@@ -10319,7 +10325,7 @@ $("#truthGrid").innerHTML = STRAT_TRUTHS.map(
 route();
 initPrimer();
 </script>
-<script src="learn.js?v=20260907"></script>
+<script src="learn.js?v=20261018"></script>
 
 <script id="ss-loader-script">
 (() => {
