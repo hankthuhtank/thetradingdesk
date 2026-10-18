@@ -3,11 +3,8 @@
    Scaling by account size, hedging, contract selection, and the
    psychology. Everything here is static reference text plus the
    numbers that drive the ladder calculator.
-   Note on currency: the PDT rule referenced by older material is
-   gone. The SEC approved FINRA's amendments to Rule 4210 on
-   14 Apr 2026 and the change took effect 4 Jun 2026, removing the
-   $25,000 minimum equity requirement and the pattern-day-trader
-   designation entirely, replaced by risk-based intraday margin.
+   US day-trading margin rules are transitioning to FINRA's
+   intraday framework. Broker adoption determines which applies.
    ============================================================ */
 window.TDESK = window.TDESK || {};
 
@@ -47,7 +44,7 @@ window.TDESK.TIERS = [
         rules: [
           "Maximum 2% of the account on any single trade. At $1,000 that is $20. If $20 feels too small to bother with, you are here to gamble, and this page cannot help with that.",
           'One position at a time. Not two, not "one is a hedge". Managing correlated positions is a separate skill you have not built yet.',
-          "Three trades a day maximum, then the platform closes. The old PDT rule that capped this for you was eliminated on 4 June 2026, so the cap is now yours to enforce.",
+          "Use a written daily trade limit that fits your plan. FINRA’s margin framework is in transition; confirm your broker’s current restrictions.",
           "Buy defined risk. Beckmeyer, Branger and Gayda found the median single-leg retail 0DTE position had negative margin-adjusted returns, while median put and call spreads came out around +3%.",
           "Write down entry, stop and target before you click. If you cannot fill in all three, the trade does not exist.",
         ],

@@ -2701,6 +2701,7 @@ button.cmdk-item:focus-visible {
         rel="stylesheet"
         href="risk-lab.css?v=20260907"
       >
+  <link rel="stylesheet" href="education.css?v=20261018">
 </head>
 <body>
 
@@ -2987,7 +2988,7 @@ button.cmdk-item:focus-visible {
     <div class="sec-head reveal">
       <div class="eyebrow">THE ENCYCLOPEDIA</div>
       <h2 class="disp">Every term, <span class="c">for today’s market.</span></h2>
-      <p>Not a dusty glossary — the vocabulary of the market as it actually trades now. Each entry: what it is, why it matters, and the trap most people miss. <b>Start on the path</b> — three levels, in reading order, sixty-one terms that build on each other. The topic tabs and <b>Everything</b> are there when you already know what you're hunting for.</p>
+      <p>Start with the basics, then build at your own pace. Every term has a plain explanation, a small example, and links to related ideas. Search by a term or an abbreviation whenever you get stuck.</p>
     </div>
     <div class="enc-controls reveal">
       <div
@@ -3188,9 +3189,16 @@ button.cmdk-item:focus-visible {
     <div class="sec-head reveal">
       <div class="eyebrow">THE INSTRUMENT PANEL</div>
       <h2 class="disp">Instruments measure. <span class="g">They don’t decide.</span></h2>
-      <p>Every indicator is a measuring device with a price tag attached: it tells you something real, and it tells you late. Pick one off the rack and the bench shows what it measures, the settings that are actually standard and who set them, what it pairs with, and the trap. <b>Change the settings chip and the diagram recomputes</b>, because a setting you can only read about is a setting you never really learn.</p>
+      <p>Pick a question, then a tool. Read the short explanation and example first; open the details when you need more. Change a setting to see how it affects the sample chart.</p>
     </div>
 
+    <div class="edu-guide reveal">
+      <span class="edu-kicker">NEW TO INDICATORS?</span>
+      <p>Start with <button class="term-link" onclick="openInd(4)">Moving Averages</button> for trend,
+        <button class="term-link" onclick="openInd(9)">RSI</button> for momentum, or
+        <button class="term-link" onclick="openInd(12)">ATR</button> for movement size.
+        A period means one chart bar. A setting of 14 means 14 bars.</p>
+    </div>
     <!-- THE BENCH — rack on the left, one instrument under the lamp on the
          right. Deliberately not a card grid: the point of this section is
          depth on one instrument at a time, not a wall of thumbnails. -->
@@ -3251,7 +3259,7 @@ button.cmdk-item:focus-visible {
               viewBox="0 0 760 268"
               preserveAspectRatio="none"
               role="img"
-              aria-label="Indicator diagram"
+              aria-label="Synthetic indicator teaching chart"
             ></svg>
           <div
               class="bm-legend"
@@ -3279,7 +3287,7 @@ button.cmdk-item:focus-visible {
             ></div>
       </div>
     </div>
-    <p class="bench-foot">Each diagram is the real formula computed on one fixed sample series, so the behaviour is truthful and the prices are not pretending to be a feed. Indicators describe. Structure decides.</p>
+    <p class="bench-foot">Charts use synthetic sample data. Some displays simplify market data; each guide explains its calculation. Settings are examples to explore, not proven trade signals.</p>
 
     <!-- THE FIBONACCI LAB -->
     <div
@@ -3291,7 +3299,7 @@ button.cmdk-item:focus-visible {
               class="disp"
               style="font-size:clamp(1.6rem,3.4vw,2.4rem)"
             >The Fibonacci <span class="g">Lab.</span></h2>
-      <p>Fibonacci is the only instrument on the panel that outputs prices rather than a squiggle, which is why it gets a workbench of its own. Type a swing off your own chart, drag the anchors, and the ladder rebuilds as you drag.</p>
+      <p>Enter a high and low from your chart to explore pullback levels. Move the anchors to see how the chosen swing changes the numbers. The levels are reference points, not price predictions.</p>
     </div>
 
     <div
@@ -3580,8 +3588,8 @@ button.cmdk-item:focus-visible {
             <p>Size from the stop, never from the account balance or from how much you like the idea. If your stop is $2 away and you are risking $200, you buy 100 shares. The instrument changes, the arithmetic does not.</p>
           </div>
           <div class="ld-note">
-            <h4>What changed in 2026</h4>
-            <p>The pattern day trader rule is gone. The SEC approved FINRA’s amendments to Rule 4210 on 14 April 2026 and they took effect 4 June 2026, removing the $25,000 minimum equity requirement, the four-trades-in-five-days counter, and the PDT designation itself, replaced by risk-based intraday margin (the ordinary $2,000 margin minimum still applies). Older guides still tell you the rule caps your day trades under $25k. It no longer does, which means the discipline that rule used to impose on small accounts is now entirely yours to supply.</p>
+            <h4>Day-trading margin</h4>
+            <p>FINRA’s intraday margin framework took effect June 4, 2026, replacing the PDT trade-count and $25,000 requirements at firms that adopt it. Firms may transition through October 20, 2027, so your broker may still use the old framework. Confirm its current rules before planning a day-trading approach. <a href="https://www.finra.org/investors/insights/intraday-margin-requirements" target="_blank" rel="noopener">FINRA’s explanation ↗</a></p>
           </div>
         </div>
       </div>
@@ -3752,21 +3760,64 @@ button.cmdk-item:focus-visible {
   <div class="wrap">
     <div class="sec-head reveal">
       <div class="eyebrow">THE OPTIONS FLOOR</div>
-      <h2 class="disp">Direction is the easy part. <span class="g">The structure decides.</span></h2>
-      <p>Most losing option trades were correct about direction. They died on the wrong expiry, the wrong strike, or a volatility crush nobody accounted for. Build any structure on the bench below and watch what time and volatility do to it before price moves at all.</p>
+      <h2 class="disp">Options, <span class="g">one step at a time.</span></h2>
+      <p>Begin with what a call and a put actually do. Then learn how price, time, and volatility work together, compare strategies, and explore their payoff shapes.</p>
     </div>
 
-    <!-- THE ASSEMBLY BENCH — simplified.
-         Shows the payoff shape. Full playbooks (legs, cost, rules) now live
-         inside each structure in the library below so everything is in one place. -->
+    <div class="edu-tabs" role="tablist" aria-label="Options learning sections" id="optTabs">
+      <button id="opt-tab-start" role="tab" aria-selected="true" aria-controls="opt-panel-start" data-opt-tab="start" onclick="setOptTab('start')"><span>01</span> Start here</button>
+      <button id="opt-tab-mechanics" role="tab" aria-selected="false" tabindex="-1" aria-controls="opt-panel-mechanics" data-opt-tab="mechanics" onclick="setOptTab('mechanics')"><span>02</span> How options work</button>
+      <button id="opt-tab-library" role="tab" aria-selected="false" tabindex="-1" aria-controls="opt-panel-library" data-opt-tab="library" onclick="setOptTab('library')"><span>03</span> Strategy library</button>
+      <button id="opt-tab-lab" role="tab" aria-selected="false" tabindex="-1" aria-controls="opt-panel-lab" data-opt-tab="lab" onclick="setOptTab('lab')"><span>04</span> Payoff lab</button>
+    </div>
+    <div id="opt-panel-start" class="opt-panel" role="tabpanel" aria-labelledby="opt-tab-start">
+      <div class="opt-start-grid">
+        <div>
+          <div class="edu-section-title"><span class="edu-kicker">THE FOUNDATION</span><h3>Learn the contract before the strategy.</h3></div>
+          <div id="optIntro" class="lessons"></div>
+        </div>
+        <div class="option-example">
+          <span class="edu-kicker">TRY ONE SIMPLE EXAMPLE</span>
+          <h3>What is it worth at expiration?</h3>
+          <p>Buy one standard option. Strike <b>$100</b>. Premium <b>$3 × 100 = $300</b>. Move the stock price to see the result.</p>
+          <div class="edu-toggle" role="group" aria-label="Example option type">
+            <button class="on" id="exampleCall" aria-pressed="true" onclick="setOptionExample('c')">Buy a call</button>
+            <button id="examplePut" aria-pressed="false" onclick="setOptionExample('p')">Buy a put</button>
+          </div>
+          <svg id="exampleSVG" viewBox="0 0 400 180" role="img" aria-label="Example option profit and loss at expiration"></svg>
+          <label class="example-slider" for="exampleStock">Stock at expiration <b id="examplePrice">$105</b></label>
+          <input id="exampleStock" type="range" min="80" max="120" value="105" step="1">
+          <div class="example-results" id="exampleResults" aria-live="polite"></div>
+          <p id="exampleExplanation" class="example-explanation"></p>
+          <p class="edu-footnote">Expiry value minus the original $300 cost. Before expiry, time and IV also affect price. Excludes fees and any share position created by exercise.</p>
+        </div>
+      </div>
+      <div class="edu-next"><p>Comfortable with calls, puts, and premium?</p><button onclick="setOptTab('mechanics');scrollOptionsTop()">Next: how options work →</button></div>
+    </div>
+    <div id="opt-panel-mechanics" class="opt-panel" role="tabpanel" aria-labelledby="opt-tab-mechanics" hidden>
+      <div class="edu-section-title"><span class="edu-kicker">EIGHT SHORT LESSONS</span><h3>What changes an option’s value?</h3><p>Open one topic at a time. Unfamiliar terms open a short definition.</p></div>
+      <div class="lessons" id="optLessons"></div>
+      <div class="edu-next"><p>Now compare what different combinations do.</p><button onclick="setOptTab('library');scrollOptionsTop()">Next: strategy library →</button></div>
+    </div>
+    <div id="opt-panel-library" class="opt-panel" role="tabpanel" aria-labelledby="opt-tab-library" hidden>
+      <div class="edu-section-title"><span class="edu-kicker">19 STRUCTURES</span><h3>Find the shape that explains the idea.</h3><p>Start with one bought call or put. Then compare spreads and more complex combinations.</p></div>
+      <div class="opt-library-controls">
+        <div class="edu-filters" id="optFilters" role="group" aria-label="Strategy categories"></div>
+        <label class="enc-search"><input type="search" id="optSearch" placeholder="Search strategies…" aria-label="Search option strategies"></label>
+      </div>
+      <p class="edu-footnote">Examples assume standard 100-share contracts, matched expirations unless stated, and no fees. Labels describe learning complexity; broker approval requirements vary.</p>
+      <div class="olib" id="optLib"></div>
+      <p id="optLibraryCount" class="enc-count" aria-live="polite"></p>
+    </div>
+    <div id="opt-panel-lab" class="opt-panel" role="tabpanel" aria-labelledby="opt-tab-lab" hidden>
     <div
-            class="obench reveal"
+            class="obench"
             id="optBench"
           >
       <div class="ob-head">
         <div>
           <h3>Payoff shape</h3>
-          <p><b class="ob-k1">Solid</b> = expiration · <b class="ob-k2">Curved</b> = today. Change the structure from the picker or from any library card below.</p>
+          <p><b class="ob-k1">Solid</b> = first expiry · <b class="ob-k2">Curved</b> = selected time and IV. For calendars and diagonals, the solid line still includes the later option’s model value.</p>
         </div>
         <div
               class="ob-picker"
@@ -3849,41 +3900,18 @@ button.cmdk-item:focus-visible {
               class="op-greeks"
               id="optGreeks"
             ></div>
-          <p class="ob-fine">European pricing, zero rates. Shape and direction are right; last-cent precision is not the point. Full entry rules live in the structure cards below.</p>
+          <p class="ob-fine">Illustration only: European-style Black–Scholes pricing, constant IV, zero rates and dividends, 100 multiplier, no fees or early exercise. Model probabilities are not forecasts. Library examples use separate hypothetical prices.</p>
         </div>
       </div>
     </div>
 
-    <div
-            class="sec-head reveal"
-            style="margin:64px 0 22px"
-          >
-      <div class="eyebrow">THE STRUCTURE LIBRARY</div>
-      <h2
-              class="disp"
-              style="font-size:clamp(1.6rem,3.4vw,2.4rem)"
-            >Nineteen structures, <span class="c">and what each one is really for.</span></h2>
-      <p>Grouped by what you are actually betting on. Every one opens onto the bench, so you can see it before you trade it.</p>
+      <div class="edu-next"><p>Looking for the legs and a worked example?</p><button onclick="showCurrentStrategy()">Read this strategy →</button></div>
     </div>
-    <div
-            class="olib reveal"
-            id="optLib"
-          ></div>
-
-    <div
-            class="sec-head reveal"
-            style="margin:64px 0 22px"
-          >
-      <div class="eyebrow">THE EIGHT THAT DECIDE EVERYTHING</div>
-      <h2
-              class="disp"
-              style="font-size:clamp(1.6rem,3.4vw,2.4rem)"
-            >What nobody explains <span class="c">until it costs you.</span></h2>
-    </div>
-    <div
-            class="lessons reveal"
-            id="optLessons"
-          ></div>
+    <details class="edu-sources"><summary>Source references</summary>
+      <a href="https://www.optionseducation.org/optionsoverview/options-basics" target="_blank" rel="noopener">OIC: options basics ↗</a>
+      <a href="https://www.optionseducation.org/strategies/all-strategies" target="_blank" rel="noopener">OIC: strategy reference ↗</a>
+      <a href="https://www.optionseducation.org/optionsoverview/exercising-options" target="_blank" rel="noopener">OIC: exercise and assignment ↗</a>
+    </details>
   </div>
 </section>
 
@@ -5001,13 +5029,13 @@ button.cmdk-item:focus-visible {
   <div class="cmdk-foot"><span>/ open · esc close · ↑↓ enter</span><span>THE DESK</span></div>
 </div></div>
 <script src="patterns.js"></script>
-<script src="encyclopedia.js"></script>
+<script src="encyclopedia.js?v=20261018"></script>
 <script src="reference.js"></script>
 <script src="progress.js?v=20260907"></script>
 <script src="strategies.js?v=20260907"></script>
-<script src="indicators.js"></script>
-<script src="riskdesk.js?v=20260907"></script>
-<script src="options.js?v=20260907"></script>
+<script src="indicators.js?v=20261018"></script>
+<script src="riskdesk.js?v=20261018"></script>
+<script src="options.js?v=20261018"></script>
 <script>
 "use strict";
 const $ = (s, el = document) => el.querySelector(s);
@@ -5194,6 +5222,44 @@ function esc(s) {
     /[&<>"']/g,
     (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c],
   );
+}
+function glossaryButton(title, label = title) {
+  const i = ENC.findIndex((e) => e.t === title);
+  return i < 0
+    ? esc(label)
+    : `<button type="button" class="term-link" onclick="openEnc(${i}, true)">${esc(label)}</button>`;
+}
+function relatedTerms(titles) {
+  return `<div class="related-terms"><span>Related terms</span>${titles.map((t) => glossaryButton(t)).join("")}</div>`;
+}
+function termLinks(value, current = "") {
+  const terms = [
+    ["implied volatility", "Implied Volatility (IV)"],
+    ["intrinsic value", "Intrinsic & Extrinsic Value"],
+    ["extrinsic value", "Intrinsic & Extrinsic Value"],
+    ["open interest", "Open Interest"],
+    ["assignment", "Assignment & Exercise"],
+    ["liquidity", "Liquidity"],
+    ["premium", "Premium"],
+    ["delta", "Delta"],
+    ["gamma", "Gamma"],
+    ["theta", "Theta"],
+    ["vega", "Vega"],
+    ["strike", "Strike & Expiration"],
+    ["IV", "Implied Volatility (IV)"],
+    ["VWAP", "VWAP"],
+  ].filter(([, title]) => title !== current);
+  const pattern = new RegExp("\\b(" + terms.map(([word]) => word).join("|") + ")\\b", "gi");
+  let last = 0,
+    out = "",
+    count = 0;
+  for (const match of String(value).matchAll(pattern)) {
+    if (count++ >= 2) break;
+    const title = terms.find(([word]) => word.toLowerCase() === match[0].toLowerCase())[1];
+    out += esc(value.slice(last, match.index)) + glossaryButton(title, match[0]);
+    last = match.index + match[0].length;
+  }
+  return out + esc(value.slice(last));
 }
 function timeAgo(d) {
   const s = (Date.now() - d.getTime()) / 1000;
@@ -6898,7 +6964,7 @@ function oBs(S, K, T, v, type) {
   return type === "c" ? { p: call, d: nd1, g, th, ve } : { p: put, d: nd1 - 1, g, th, ve };
 }
 const OPT_CAT_LABEL = Object.fromEntries(OPT_CATS.map((c) => [c[0], c[1]]));
-const OPT = { id: "bcs", spot: 100, dte: 45, iv: 30, elapsed: 0, ivShift: 0 };
+const OPT = { id: "lc", spot: 100, dte: 45, iv: 30, elapsed: 0, ivShift: 0 };
 
 function strikeStep(s) {
   return s < 25 ? 0.5 : s < 200 ? 1 : s < 1000 ? 5 : 25;
@@ -6968,22 +7034,61 @@ function breakevens(xs, ys) {
   }
   return out;
 }
-/* probability the position finishes profitable, integrating the
-   lognormal terminal distribution over the winning regions */
-function probProfit(xs, expy) {
-  const T = OPT.dte / 365,
-    v = OPT.iv / 100,
-    S0 = OPT.spot;
-  if (T <= 0) return null;
-  const st = v * Math.sqrt(T);
-  let p = 0;
-  for (let i = 1; i < xs.length; i++) {
-    if (expy[i] <= 0) continue;
-    const a = Math.log(xs[i - 1] / S0) / st + st / 2,
-      b = Math.log(xs[i] / S0) / st + st / 2;
-    p += oCnd(b) - oCnd(a);
+/* Same-expiry extrema occur at zero, a strike, or an unbounded upper tail. */
+function optionExpiryStats() {
+  const legs = optLegs();
+  const mixed = legs.some((leg) => leg.x !== 1);
+  if (mixed) return { mixed: true };
+  const entry = optEntry();
+  const payoff = (price) => posValue(price, OPT.dte, OPT.iv) - entry;
+  const strikes = [...new Set(legs.map((leg) => leg.K))].sort((a, b) => a - b);
+  const points = [0, ...strikes];
+  const upperSlope =
+    optShares() + legs.filter((leg) => leg.t === "c").reduce((sum, leg) => sum + leg.s * 100, 0);
+  const values = points.map(payoff);
+  const roots = [];
+  const addRoot = (value) => {
+    if (value >= 0 && !roots.some((root) => Math.abs(root - value) < 1e-6)) roots.push(value);
+  };
+  for (let i = 1; i < points.length; i++) {
+    const left = values[i - 1],
+      right = values[i];
+    if (Math.abs(left) < 1e-8) addRoot(points[i - 1]);
+    if (left * right < 0)
+      addRoot(points[i - 1] - (left * (points[i] - points[i - 1])) / (right - left));
+    if (Math.abs(right) < 1e-8) addRoot(points[i]);
   }
-  return Math.max(0, Math.min(1, p));
+  const last = points.at(-1),
+    lastValue = values.at(-1);
+  if (upperSlope !== 0 && lastValue * upperSlope < 0) addRoot(last - lastValue / upperSlope);
+  return {
+    mixed: false,
+    maxProfit: upperSlope > 0 ? Infinity : Math.max(...values),
+    maxLoss: upperSlope < 0 ? Infinity : Math.max(0, -Math.min(...values)),
+    roots: roots.sort((a, b) => a - b),
+    payoff,
+  };
+}
+/* Constant-IV risk-neutral model over the full positive price range, not just the chart window. */
+function probProfit(stats) {
+  if (stats.mixed) return null;
+  const volTime = (OPT.iv / 100) * Math.sqrt(OPT.dte / 365);
+  if (!(volTime > 0)) return null;
+  const cdf = (price) =>
+    price === Infinity
+      ? 1
+      : price <= 0
+        ? 0
+        : oCnd(Math.log(price / OPT.spot) / volTime + volTime / 2);
+  const bounds = [0, ...stats.roots.filter((root) => root > 0), Infinity];
+  let probability = 0;
+  for (let i = 1; i < bounds.length; i++) {
+    const left = bounds[i - 1],
+      right = bounds[i];
+    const test = right === Infinity ? Math.max(left + OPT.spot, OPT.spot) : (left + right) / 2;
+    if (stats.payoff(test) > 0) probability += cdf(right) - cdf(left);
+  }
+  return Math.max(0, Math.min(1, probability));
 }
 
 function drawOptChart() {
@@ -7053,59 +7158,57 @@ function drawOptChart() {
 }
 function paintOptRead(c) {
   const st = optStruct();
-  const mx = Math.max(...c.expy),
-    mn = Math.min(...c.expy),
-    n = c.expy.length;
-  /* Unbounded is a question about slope at the edges, not value. A capped
-     spread sits flat at its maximum for every price above the short strike,
-     so testing "is the edge equal to the max" calls every spread unlimited. */
-  const tol = Math.max(1e-6, (mx - mn) * 1e-4);
-  const dR = c.expy[n - 1] - c.expy[n - 2],
-    dL = c.expy[0] - c.expy[1];
-  /* Price cannot go below zero, so the downside is always bounded even
-     when it runs off the left of the chart. Only a naked short call is
-     genuinely unlimited. Where the curve is still moving at the left
-     edge, price the position at zero and use that as the real extreme. */
-  const floor = posValue(0.01, OPT.dte, OPT.iv) - c.entry;
-  const openUp = dR > tol,
-    openDn = dR < -tol;
-  const mxT = dL > tol ? Math.max(mx, floor) : mx;
-  const mnT = dL < -tol ? Math.min(mn, floor) : mn;
-  const bes = breakevens(c.xs, c.expy),
-    pop = probProfit(c.xs, c.expy);
-  const nowPL = c.nowy[Math.round(((OPT.spot - c.lo) / (c.hi - c.lo)) * (c.xs.length - 1))];
+  const stats = optionExpiryStats();
+  const bes = stats.mixed ? breakevens(c.xs, c.expy) : stats.roots;
+  const pop = probProfit(stats);
+  const nowPL = posValue(OPT.spot, OPT.elapsed, optNowIV()) - c.entry;
   const g = posGreeks(OPT.spot, OPT.elapsed, optNowIV());
+  const expiryLabel = stats.mixed
+    ? "at first expiry, within plotted prices"
+    : "at expiry, before fees";
   $("#optNums").innerHTML = [
     [
       "Net " + (c.entry >= 0 ? "debit" : "credit"),
       oUsd2(Math.abs(c.entry)),
-      c.entry >= 0 ? "paid to open" : "received to open",
+      optShares() ? "includes share purchase" : c.entry >= 0 ? "paid to open" : "received to open",
     ],
-    ["Max profit", openUp ? "Unlimited" : oUsd(mxT), openUp ? "no upside cap" : "at expiry"],
     [
-      "Max loss",
-      openDn ? "UNDEFINED" : oUsd(mnT),
-      openDn
-        ? "unlimited above, size accordingly"
-        : dL < -tol
-          ? "if it goes to zero"
-          : "the most this can cost",
+      stats.mixed ? "Projected high" : "Max profit",
+      stats.mixed
+        ? oUsd(Math.max(...c.expy))
+        : stats.maxProfit === Infinity
+          ? "Unlimited"
+          : oUsd(stats.maxProfit),
+      expiryLabel,
+    ],
+    [
+      stats.mixed ? "Projected low" : "Max loss",
+      stats.mixed
+        ? oUsd(Math.min(...c.expy))
+        : stats.maxLoss === Infinity
+          ? "Unlimited"
+          : oUsd(stats.maxLoss),
+      expiryLabel,
     ],
     [
       "Breakeven" + (bes.length > 1 ? "s" : ""),
-      bes.length ? bes.map((b) => b.toFixed(2)).join(" / ") : "none in range",
-      "at expiry",
+      bes.length
+        ? bes.map((value) => "$" + value.toFixed(2)).join(" / ")
+        : stats.mixed
+          ? "None in plot"
+          : "None",
+      stats.mixed ? "model-dependent, in plotted range" : "at expiry",
     ],
     [
-      "Chance of profit",
-      pop == null ? "\u2014" : (pop * 100).toFixed(0) + "%",
-      "at expiry, from current IV",
+      "Model profit probability",
+      pop == null ? "Not shown" : (pop * 100).toFixed(0) + "%",
+      stats.mixed ? "later leg retains time value" : "constant-IV pricing model, not forecast",
     ],
-    ["P/L right now", oUsd2(nowPL), `day ${OPT.elapsed} of ${OPT.dte}`],
+    ["Scenario P/L at spot", oUsd2(nowPL), `day ${OPT.elapsed} of ${OPT.dte}`],
   ]
     .map(
-      ([k, v, sub]) =>
-        `<div class="op-n"><span class="on-k">${k}</span><span class="on-v${/UNDEF|Unlimited/.test(v) ? " warn" : ""}">${v}</span><span class="on-s">${sub}</span></div>`,
+      ([key, value, sub]) =>
+        `<div class="op-n"><span class="on-k">${key}</span><span class="on-v${value === "Unlimited" ? " warn" : ""}">${value}</span><span class="on-s">${sub}</span></div>`,
     )
     .join("");
   $("#optGreeks").innerHTML = [
@@ -7116,66 +7219,18 @@ function paintOptRead(c) {
   ]
     .map(([k, v, s]) => `<div class="op-g"><b>${k}</b><span>${v}</span><em>${s}</em></div>`)
     .join("");
-  const decay = nowPL - c.expy[Math.round(((OPT.spot - c.lo) / (c.hi - c.lo)) * (c.xs.length - 1))];
-  renderPlay(st);
-  $("#optNote").innerHTML = st
-    ? `<b>${st.n}</b> \u00b7 ${st.dir} \u00b7 ${st.risk} risk \u00b7 needs level ${st.lvl}. <span class="op-want">${st.want}</span>` +
-      (OPT.elapsed > 0 || OPT.ivShift !== 0
-        ? ` The gap between the two lines at spot is <b>${oUsd2(decay)}</b>: that is what time and volatility are worth to this position right now, before price does anything at all.`
-        : " Move the two sliders below and watch the curved line fall onto the kinked one. That collapse is time decay, and it is the whole game for a buyer.")
-    : "";
-}
-
-/* ---- how to actually put it on ----------------------------------------
-   The payoff curve shows the shape. This shows the ticket: the exact
-   contracts in entry order, what it costs, and the rule that closes it. */
-function renderPlay(st) {
-  const host = $("#optPlay");
-  if (!host) return;
-  const P = (T.OPT_PLAYS || {})[st && st.id];
-  if (!P) {
-    host.innerHTML = "";
-    return;
-  }
-  const tier = (T.OPT_TIERS || {})[P.tier] || ["", ""];
-  const legRow = (l) => {
-    const k = /^BUY/.test(l)
-      ? "buy"
-      : /^SELL/.test(l)
-        ? "sell"
-        : /^OWN|^HOLD/.test(l)
-          ? "own"
-          : "note";
-    const [head, ...rest] = l.split(" · ");
-    return (
-      `<li class="pl-${k}"><span class="pl-a">${head}</span>` +
-      (rest.length ? `<span class="pl-b">${rest.join(" · ")}</span>` : "") +
-      `</li>`
-    );
-  };
-  host.innerHTML = `
-    <div class="play-head">
-      <h3>How to put it on</h3>
-      <span class="play-tier t${P.tier}">${tier[0]}</span>
-    </div>
-    <p class="play-who">${tier[1]}</p>
-    <ol class="play-legs">${P.legs.map(legRow).join("")}</ol>
-    <div class="play-nums">
-      <div><span class="k">Ticket</span><span class="v">${P.cost}</span></div>
-      <div><span class="k">Best and worst</span><span class="v">${P.max}</span></div>
-      <div><span class="k">Breakeven</span><span class="v">${P.be}</span></div>
-    </div>
-    <div class="play-steps">
-      <div class="ps"><span class="n">1</span><div><b>Before you click</b><p>${P.enter}</p></div></div>
-      <div class="ps"><span class="n">2</span><div><b>While it is open</b><p>${P.manage}</p></div></div>
-      <div class="ps"><span class="n">3</span><div><b>How you close it</b><p>${P.exit}</p></div></div>
-      <div class="ps"><span class="n">4</span><div><b>How much to risk</b><p>${P.size}</p></div></div>
-    </div>
-    <p class="play-foot">Every figure is priced on the same imaginary $100 stock so the structures compare side by side. Real premiums move with implied volatility, so read the dollars as proportions.</p>`;
+  $("#optNote").innerHTML = `<b>${st.n}</b> · ${st.dir}. ${esc(st.want)}
+    <br><span class="edu-footnote">Lab legs: ${optLegs()
+      .map(
+        (l) =>
+          `${l.s > 0 ? "Buy" : "Sell"} ${l.t === "c" ? "call" : "put"} $${l.K} (${OPT.dte * l.x} days at entry)`,
+      )
+      .join(" · ")}${optShares() ? ` · Own ${optShares()} shares` : ""}.</span>`;
 }
 
 function pickOpt(id) {
   OPT.id = id;
+  if ($("#optStructureSelect")) $("#optStructureSelect").value = id;
   OPT.elapsed = 0;
   OPT.ivShift = 0;
   $("#optElapsed").value = 0;
@@ -7195,73 +7250,183 @@ function syncOptLabels() {
   $("#optIvShiftL").textContent =
     (OPT.ivShift > 0 ? "+" : "") + OPT.ivShift + "% \u00b7 IV now " + optNowIV().toFixed(0);
 }
-function renderOptPicker() {
-  $("#optPicker").innerHTML = OPT_STRUCTURES.map(
-    (s) =>
-      `<button data-o="${s.id}" class="${s.id === OPT.id ? "on" : ""}" onclick="pickOpt('${s.id}')">${s.n}</button>`,
-  ).join("");
+function setOptTab(key, focusTab = true) {
+  if (!$("#opt-panel-" + key)) return;
+  $$("#optTabs [role=tab]").forEach((button) => {
+    const active = button.dataset.optTab === key;
+    button.setAttribute("aria-selected", String(active));
+    button.tabIndex = active ? 0 : -1;
+    if (active && focusTab) button.focus();
+  });
+  $$("#options .opt-panel").forEach((panel) => {
+    panel.hidden = panel.id !== "opt-panel-" + key;
+  });
 }
+function scrollOptionsTop() {
+  $("#optTabs").scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
+}
+$("#optTabs").addEventListener("keydown", (event) => {
+  if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+  const tabs = $$("#optTabs [role=tab]");
+  let i = tabs.indexOf(document.activeElement);
+  if (i < 0) return;
+  event.preventDefault();
+  i =
+    event.key === "Home"
+      ? 0
+      : event.key === "End"
+        ? tabs.length - 1
+        : (i + (event.key === "ArrowRight" ? 1 : -1) + tabs.length) % tabs.length;
+  setOptTab(tabs[i].dataset.optTab, true);
+});
+let optionExampleType = "c";
+function setOptionExample(type) {
+  optionExampleType = type;
+  [
+    ["#exampleCall", "c"],
+    ["#examplePut", "p"],
+  ].forEach(([id, value]) => {
+    $(id).classList.toggle("on", value === type);
+    $(id).setAttribute("aria-pressed", String(value === type));
+  });
+  drawOptionExample();
+}
+function drawOptionExample() {
+  const price = +$("#exampleStock").value;
+  const value = (stock) => Math.max(0, optionExampleType === "c" ? stock - 100 : 100 - stock) * 100;
+  const worth = value(price),
+    pl = worth - 300;
+  const x = (stock) => 32 + ((stock - 80) / 40) * 336;
+  const y = (profit) => 133 - (profit / 1700) * 94;
+  const path = Array.from(
+    { length: 41 },
+    (_, i) => `${i ? "L" : "M"}${x(80 + i)},${y(value(80 + i) - 300)}`,
+  ).join(" ");
+  $("#exampleSVG").innerHTML = `
+    <line x1="32" x2="368" y1="${y(0)}" y2="${y(0)}" class="op-zero"/>
+    <text x="32" y="${y(0) - 8}" class="op-ax">break even</text>
+    <path d="${path}" class="op-exp" fill="none"/>
+    <line x1="${x(price)}" x2="${x(price)}" y1="20" y2="160" class="op-spot"/>
+    <circle cx="${x(price)}" cy="${y(pl)}" r="5" fill="var(--gold)"/>
+    <text x="32" y="176" class="op-ax">$80</text><text x="194" y="176" class="op-ax">$100 stock</text><text x="344" y="176" class="op-ax">$120</text>`;
+  $("#examplePrice").textContent = "$" + price;
+  $("#exampleResults").innerHTML =
+    `<div><small>Option expiry value</small><b>${oUsd(worth)}</b></div>
+    <div><small>Your profit / loss</small><b class="${pl < 0 ? "example-loss" : "example-gain"}">${oUsd(pl)}</b></div>`;
+  const formula =
+    optionExampleType === "c" ? `max($${price} − $100, $0)` : `max($100 − $${price}, $0)`;
+  $("#exampleExplanation").textContent =
+    `${formula} × 100 = ${oUsd(worth)} expiry value. Subtract the $300 cost: ${oUsd(pl)}. Breakeven is $${optionExampleType === "c" ? 103 : 97} at expiry.`;
+}
+$("#exampleStock").addEventListener("input", drawOptionExample);
+$("#optIntro").innerHTML = T.OPT_INTRO.map(
+  (lesson, i) => `
+  <details class="ols" name="options-intro"${i === 0 ? " open" : ""}>
+    <summary><span class="ol-i">${String(i + 1).padStart(2, "0")}</span><span class="ol-n">${esc(lesson.n)}</span></summary>
+    <div class="ol-b"><p>${termLinks(lesson.b)}</p><p class="edu-example">${esc(lesson.example)}</p>${relatedTerms(lesson.related)}</div>
+  </details>`,
+).join("");
+drawOptionExample();
+function renderOptPicker() {
+  $("#optPicker").innerHTML =
+    `<label class="edu-select">Choose a structure<select id="optStructureSelect" onchange="pickOpt(this.value)">${OPT_CATS.map(
+      ([cat, label]) =>
+        `<optgroup label="${esc(label)}">${OPT_STRUCTURES.filter((s) => s.cat === cat)
+          .map(
+            (s) =>
+              `<option value="${s.id}"${s.id === OPT.id ? " selected" : ""}>${esc(s.n)}</option>`,
+          )
+          .join("")}</optgroup>`,
+    ).join("")}</select></label>`;
+}
+let optLibraryFilter = "all",
+  optLibraryQuery = "";
+function setOptFilter(key) {
+  optLibraryFilter = key;
+  $$("#optFilters button").forEach((b) => {
+    b.classList.toggle("on", b.dataset.cat === key);
+    b.setAttribute("aria-pressed", String(b.dataset.cat === key));
+  });
+  renderOptLibrary();
+}
+$("#optFilters").innerHTML = [["all", "All"], ...OPT_CATS]
+  .map(
+    ([key, label]) =>
+      `<button data-cat="${key}" aria-pressed="${key === "all"}" class="${key === "all" ? "on" : ""}" onclick="setOptFilter('${key}')">${label}</button>`,
+  )
+  .join("");
+$("#optSearch").addEventListener("input", (event) => {
+  optLibraryQuery = event.target.value.trim().toLowerCase();
+  renderOptLibrary();
+});
 function renderOptLibrary() {
-  const playBlock = (s) => {
-    const P = (T.OPT_PLAYS || {})[s.id];
-    if (!P) return "";
-    const tier = (T.OPT_TIERS || {})[P.tier] || ["", ""];
-    const legRow = (l) => {
-      const k = /^BUY/.test(l)
-        ? "buy"
-        : /^SELL/.test(l)
-          ? "sell"
-          : /^OWN|^HOLD/.test(l)
-            ? "own"
-            : "note";
-      const [head, ...rest] = l.split(" · ");
-      return (
-        `<li class="pl-${k}"><span class="pl-a">${head}</span>` +
-        (rest.length ? `<span class="pl-b">${rest.join(" · ")}</span>` : "") +
-        `</li>`
-      );
-    };
-    return `<div class="os-play">
-      <div class="play-head"><h4>How to put it on</h4><span class="play-tier t${P.tier}">${tier[0] || ""}</span></div>
-      <p class="play-who">${tier[1] || ""}</p>
-      <ol class="play-legs">${P.legs.map(legRow).join("")}</ol>
-      <div class="play-nums">
-        <div><span class="k">Ticket</span><span class="v">${P.cost}</span></div>
-        <div><span class="k">Best / worst</span><span class="v">${P.max}</span></div>
-        <div><span class="k">Breakeven</span><span class="v">${P.be}</span></div>
-      </div>
-      <div class="play-steps">
-        <div class="ps"><span class="n">1</span><div><b>Before you click</b><p>${P.enter}</p></div></div>
-        <div class="ps"><span class="n">2</span><div><b>While it is open</b><p>${P.manage}</p></div></div>
-        <div class="ps"><span class="n">3</span><div><b>How you close it</b><p>${P.exit}</p></div></div>
-        <div class="ps"><span class="n">4</span><div><b>How much to risk</b><p>${P.size}</p></div></div>
-      </div>
-    </div>`;
-  };
-  $("#optLib").innerHTML = OPT_CATS.map(([k, label, blurb]) => {
-    const rows = OPT_STRUCTURES.filter((s) => s.cat === k);
-    return `<div class="ogrp"><div class="og-h"><h4>${label}</h4><p>${blurb}</p></div>
-      ${rows
-        .map(
-          (s) => `<details class="ostruct" data-o="${s.id}">
-        <summary><span class="os-n">${s.n}</span>
-          <span class="os-tags"><i class="${/UNDEF/i.test(s.risk) ? "bad" : "ok"}">${s.risk}</i><i>${s.dir}</i><i>lvl ${s.lvl}</i></span></summary>
+  const matches = OPT_STRUCTURES.filter(
+    (st) =>
+      (optLibraryFilter === "all" || st.cat === optLibraryFilter) &&
+      [st.n, st.dir, st.risk, st.want, st.when, OPT_CAT_LABEL[st.cat]]
+        .join(" ")
+        .toLowerCase()
+        .includes(optLibraryQuery),
+  );
+  $("#optLib").innerHTML =
+    OPT_CATS.map(([cat, label, description]) => {
+      const rows = matches.filter((st) => st.cat === cat);
+      if (!rows.length) return "";
+      return `<div class="ogrp"><div class="og-h"><h4>${label}</h4><p>${description}</p></div>${rows
+        .map((st) => {
+          const play = T.OPT_PLAYS[st.id];
+          const [tier] = T.OPT_TIERS[play.tier];
+          return `<details class="ostruct" name="option-strategy" data-o="${st.id}">
+        <summary><span class="os-n">${st.n}</span><span class="os-tags">
+          <i class="${/Unlimited|Large|Stock downside|Complex/.test(st.risk) ? "bad" : "ok"}">${st.risk}</i><i>${st.dir}</i><i>${tier}</i></span></summary>
         <div class="os-b">
-          <div class="os-r"><span class="k">You want</span><span class="v">${s.want}</span></div>
-          <div class="os-r"><span class="k">When to use it</span><span class="v">${s.when}</span></div>
-          <div class="os-r"><span class="k">Where it fails</span><span class="v">${s.fails}</span></div>
-          <div class="os-r trap"><span class="k">The trap</span><span class="v">${s.trap}</span></div>
-          ${playBlock(s)}
-          <button class="os-load" onclick="loadOpt('${s.id}')">Build it on the bench \u2192</button>
-        </div></details>`,
-        )
+          <div class="os-r"><span class="k">The idea</span><span class="v">${termLinks(st.want)}</span></div>
+          <div class="os-r"><span class="k">Where it loses</span><span class="v">${termLinks(st.fails)}</span></div>
+          <div class="os-r trap"><span class="k">Remember</span><span class="v">${termLinks(st.trap)}</span></div>
+          <div class="os-play"><h4>Worked example</h4>
+            <p class="edu-footnote">Hypothetical prices, independent of the lab. Same expiry unless the legs say otherwise.</p>
+            <ol class="play-legs">${play.legs.map((leg) => `<li><span class="pl-a">${esc(leg)}</span></li>`).join("")}</ol>
+            <div class="play-nums"><div><span class="k">Cost / credit</span><span class="v">${play.cost}</span></div>
+              <div><span class="k">At expiration</span><span class="v">${play.max}</span></div>
+              <div><span class="k">Breakeven</span><span class="v">${play.be}</span></div></div>
+            <p class="edu-example">${esc(play.math)}</p>
+            <details class="edu-details"><summary>Planning and managing the position</summary>
+              <div class="play-steps">${[
+                ["Before entry", play.enter],
+                ["While open", play.manage],
+                ["Closing", play.exit],
+                ["Sizing", play.size],
+              ]
+                .map(
+                  ([key, value]) =>
+                    `<div class="ps"><div><b>${key}</b><p>${termLinks(value)}</p></div></div>`,
+                )
+                .join("")}</div>
+            </details>
+          </div>${relatedTerms(st.related)}
+          <button class="os-load" onclick="loadOpt('${st.id}')">Explore this payoff →</button>
+        </div></details>`;
+        })
         .join("")}</div>`;
-  }).join("");
+    }).join("") ||
+    `<p class="edu-empty">No strategies match. Try “call”, “put”, or choose All.</p>`;
+  $("#optLibraryCount").textContent = `${matches.length} of ${OPT_STRUCTURES.length} strategies`;
 }
 function loadOpt(id) {
+  setOptTab("lab");
   pickOpt(id);
-  const el = $("#optBench");
-  if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+  scrollOptionsTop();
+}
+function showCurrentStrategy() {
+  optLibraryQuery = "";
+  $("#optSearch").value = "";
+  setOptFilter("all");
+  setOptTab("library");
+  const card = document.querySelector(`.ostruct[data-o="${OPT.id}"]`);
+  if (card) {
+    card.open = true;
+    card.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
+  }
 }
 $("#optSpot").addEventListener("input", (e) => {
   OPT.spot = +e.target.value || 100;
@@ -7294,9 +7459,11 @@ $("#optIvShift").addEventListener("input", (e) => {
   drawOptChart();
 });
 $("#optLessons").innerHTML = OPT_LESSONS.map(
-  (l, i) =>
-    `<details class="ols"${i === 0 ? " open" : ""}><summary><span class="ol-i">${String(i + 1).padStart(2, "0")}</span><span class="ol-n">${l.n}</span></summary>
-   <div class="ol-b"><p>${l.b}</p><p class="ol-t">${l.t}</p></div></details>`,
+  (lesson, i) => `
+  <details class="ols" name="options-mechanics">
+    <summary><span class="ol-i">${String(i + 1).padStart(2, "0")}</span><span class="ol-n">${esc(lesson.n)}</span></summary>
+    <div class="ol-b"><p>${termLinks(lesson.b)}</p><p class="ol-t">${termLinks(lesson.t)}</p>${relatedTerms(lesson.related)}</div>
+  </details>`,
 ).join("");
 renderOptPicker();
 renderOptLibrary();
@@ -7315,20 +7482,35 @@ const S_C = IND_SERIES.map((b) => b.c),
   S_L = IND_SERIES.map((b) => b.l),
   S_V = IND_SERIES.map((b) => b.v);
 
-const smaA = (a, p) =>
-  a.map((_, i) => (i < p - 1 ? null : a.slice(i - p + 1, i + 1).reduce((s, x) => s + x, 0) / p));
-function emaA(a, p) {
-  let e = null;
-  return a.map((v, i) => {
-    if (i < p - 1) return null;
-    if (e === null) {
-      e = a.slice(0, p).reduce((s, x) => s + x, 0) / p;
-      return e;
+const smaA = (values, periods) =>
+  values.map((_, i) => {
+    if (i < periods - 1) return null;
+    const sample = values.slice(i - periods + 1, i + 1);
+    return sample.every(Number.isFinite)
+      ? sample.reduce((sum, value) => sum + value, 0) / periods
+      : null;
+  });
+function smoothA(values, periods, alpha) {
+  let average = null,
+    total = 0,
+    count = 0;
+  return values.map((value) => {
+    if (!Number.isFinite(value)) {
+      average = null;
+      total = 0;
+      count = 0;
+      return null;
     }
-    e = v * (2 / (p + 1)) + e * (1 - 2 / (p + 1));
-    return e;
+    if (average === null) {
+      total += value;
+      count++;
+      if (count < periods) return null;
+      average = total / periods;
+    } else average += alpha * (value - average);
+    return average;
   });
 }
+const emaA = (values, periods) => smoothA(values, periods, 2 / (periods + 1));
 function rsiA(a, p) {
   let g = 0,
     l = 0;
@@ -7340,11 +7522,11 @@ function rsiA(a, p) {
     if (i <= p) {
       g += u / p;
       l += n / p;
-      if (i === p) o[i] = l === 0 ? 100 : 100 - 100 / (1 + g / l);
+      if (i === p) o[i] = l === 0 ? (g === 0 ? 50 : 100) : 100 - 100 / (1 + g / l);
     } else {
       g = (g * (p - 1) + u) / p;
       l = (l * (p - 1) + n) / p;
-      o[i] = l === 0 ? 100 : 100 - 100 / (1 + g / l);
+      o[i] = l === 0 ? (g === 0 ? 50 : 100) : 100 - 100 / (1 + g / l);
     }
   }
   return o;
@@ -7467,10 +7649,7 @@ const VIZ = {
     const f = emaA(S_C, p.f),
       sl = emaA(S_C, p.s),
       m = f.map((v, i) => (v == null || sl[i] == null ? null : v - sl[i]));
-    const sig = emaA(
-      m.map((v) => (v == null ? 0 : v)),
-      p.g,
-    ).map((v, i) => (m[i] == null ? null : v));
+    const sig = emaA(m, p.g);
     const H = m.map((v, i) => (v == null || sig[i] == null ? null : v - sig[i]));
     const M = cut(m),
       G = cut(sig),
@@ -7533,18 +7712,8 @@ const VIZ = {
         ? null
         : (100 * Math.abs(v - ndi[i])) / Math.max(1e-9, v + ndi[i]),
     );
-    let a = null;
-    const adx = dx.map((v, i) => {
-      if (v == null) return null;
-      if (a === null && i > p.n * 3) {
-        a = dx.slice(i - p.n + 1, i + 1).reduce((x, y) => x + y, 0) / p.n;
-        return a;
-      }
-      if (a === null) return null;
-      a = (a * (p.n - 1) + v) / p.n;
-      return a;
-    });
-    const s = sc([[0, 60]], g.w, g.y0, g.y1);
+    const adx = smoothA(dx, p.n, 1 / p.n);
+    const s = sc([[0, 100]], g.w, g.y0, g.y1);
     return {
       s:
         priceStrip(g) +
@@ -7563,7 +7732,7 @@ const VIZ = {
   supertrend(g, p) {
     const at = atrA(p.n),
       mid = S_H.map((v, i) => (v + S_L[i]) / 2);
-    let dir = 1,
+    let dir = -1,
       fu = null,
       fl = null;
     const up = [],
@@ -7624,18 +7793,20 @@ const VIZ = {
     const P = cut(S_C),
       A = cut(sa),
       B = cut(sb),
-      s = sc([P, A, B], g.w, g.y0, g.y1);
+      s = sc([P, A, B, cut(cv), cut(bs)], g.w, g.y0, g.y1);
     return {
       s:
         band(A, B, s, "iv-cloud") +
         ln(A, s, "iv-a", 1) +
         ln(B, s, "iv-b", 1) +
         ln(cut(cv), s, "iv-up", 1.2) +
+        ln(cut(bs), s, "iv-dn", 1.2) +
         ln(P, s, "iv-px", 1.5),
       legend: [
         ["iv-px", "price"],
         ["iv-cloud", "the cloud"],
         ["iv-up", "conversion " + p.a],
+        ["iv-dn", "base " + p.b],
       ],
     };
   },
@@ -7663,14 +7834,8 @@ const VIZ = {
     const k = S_C.map((c, i) =>
       hh[i] == null ? null : (100 * (c - ll[i])) / Math.max(1e-9, hh[i] - ll[i]),
     );
-    const ks = smaA(
-      k.map((v) => (v == null ? 0 : v)),
-      p.k,
-    ).map((v, i) => (k[i] == null ? null : v));
-    const d = smaA(
-      ks.map((v) => (v == null ? 0 : v)),
-      p.d,
-    ).map((v, i) => (ks[i] == null ? null : v));
+    const ks = smaA(k, p.k);
+    const d = smaA(ks, p.d);
     const s = sc([[0, 100]], g.w, g.y0, g.y1);
     return {
       s:
@@ -7768,7 +7933,7 @@ const VIZ = {
   },
   rvol(g, p) {
     const av = smaA(S_V, p.n),
-      r = S_V.map((v, i) => (av[i] ? v / av[i] : null));
+      r = S_V.map((v, i) => (i > 0 && av[i - 1] ? v / av[i - 1] : null));
     const R = cut(r),
       s = sc([[0, 3]], g.w, g.y0, g.y1);
     return {
@@ -7784,7 +7949,7 @@ const VIZ = {
       legend: [
         ["iv-hp", "at or above the gate"],
         ["iv-vb", "below it"],
-        ["iv-thr", p.n + "-period average"],
+        ["iv-thr", p.t + "× prior-" + p.n + "-bar reference"],
       ],
     };
   },
@@ -7975,14 +8140,15 @@ const VIZ = {
 };
 
 /* ---- the bench ---- */
-let benchI = 0,
+let benchI = 4,
   benchSet = 0,
   benchQ = "";
 const IND_LABEL = Object.fromEntries(IND_CATS);
 function indHit(x) {
   if (!benchQ) return true;
   const q = benchQ.toLowerCase();
-  return (x.n + " " + x.meas + " " + x.use + " " + x.trap + " " + x.origin)
+  return [x.n, x.meas, x.use, x.trap, x.example, ...(x.related || [])]
+    .join(" ")
     .toLowerCase()
     .includes(q);
 }
@@ -8008,6 +8174,8 @@ function pickInd(i) {
   benchSet = 0;
   renderRack();
   renderBench();
+  if (matchMedia("(max-width: 900px)").matches)
+    $(".bench-main").scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
 }
 function pickSet(j) {
   benchSet = j;
@@ -8027,33 +8195,48 @@ function renderBench() {
   const g = { w: W, y0: x.split ? PH + 14 : 0, y1: H, ph: PH };
   const r = VIZ[x.viz](g, st.p);
   $("#benchSVG").setAttribute("viewBox", `0 0 ${W} ${H}`);
+  $("#benchSVG").setAttribute("aria-label", `${x.n}: ${st.v}, synthetic sample`);
   $("#benchSVG").innerHTML = r.s;
   $("#benchLegend").innerHTML = r.legend
     .map(([c, t]) => `<span class="lg"><i class="lgd ${c}"></i>${t}</span>`)
     .join("");
   $("#bmName").textContent = x.n;
   $("#bmCat").textContent = IND_LABEL[x.cat];
-  $("#bmMeas").textContent = x.meas;
+  $("#bmMeas").innerHTML = termLinks(x.meas);
   $("#benchSets").innerHTML = x.sets
     .map(
       (s, j) =>
         `<button class="st${j === benchSet ? " on" : ""}" onclick="pickSet(${j})"><b>${s.v}</b><small>${s.t}</small></button>`,
     )
     .join("");
-  $("#benchSetNote").innerHTML = `<span class="sn-k">${st.t}</span>${st.d}`;
-  $("#bmRows").innerHTML = [
-    ["Best used for", x.use, ""],
-    ["Pairs with", x.pairs, ""],
-    ["Timeframe fit", x.tf, ""],
-    ["The lag", x.lag, "warn"],
-    ["The trap", x.trap, "trap"],
-  ]
-    .map(
-      ([k, v, c]) =>
-        `<div class="bm-row ${c}"><span class="k">${k}</span><span class="v">${v}</span></div>`,
-    )
-    .join("");
-  $("#bmOrigin").innerHTML = `<span class="k">Origin</span>${x.origin}`;
+  $("#benchSetNote").innerHTML = `<span class="sn-k">${esc(st.t)}</span>${termLinks(st.d)}`;
+  $("#bmRows").innerHTML =
+    [
+      ["Use it for", x.use, ""],
+      ["Example", x.example, "example"],
+      ["Watch out", x.trap, "trap"],
+    ]
+      .map(
+        ([key, value, cls]) =>
+          `<div class="bm-row ${cls}"><span class="k">${key}</span><span class="v">${termLinks(value)}</span></div>`,
+      )
+      .join("") +
+    `<details class="edu-details"><summary>Pairings, timeframe, and calculation details</summary>
+      ${[
+        ["Pairs with", x.pairs],
+        ["Timeframe", x.tf],
+        ["Response / lag", x.lag],
+        ["Chart method", x.diagram],
+      ]
+        .map(
+          ([key, value]) =>
+            `<div class="bm-row"><span class="k">${key}</span><span class="v">${termLinks(value)}</span></div>`,
+        )
+        .join("")}
+      <p class="edu-footnote">${esc(x.origin)}</p>
+      <a class="edu-source" href="${esc(x.source[1])}" target="_blank" rel="noopener">${esc(x.source[0])} ↗</a>
+    </details>${relatedTerms(x.related)}`;
+  $("#bmOrigin").innerHTML = "";
   const lab = $("#bmLab");
   lab.hidden = x.opt !== "lab";
 }
@@ -9253,7 +9436,9 @@ $("#encFilters").innerHTML = ENC_CATS.map(
 function setEncFilter(k, btn) {
   encFilter = k;
   $$("#encFilters button").forEach((b) => b.classList.remove("on"));
-  btn.classList.add("on");
+  if (btn) btn.classList.add("on");
+  encQuery = "";
+  $("#encSearch").value = "";
   renderEnc();
 }
 $("#encSearch").addEventListener("input", (e) => {
@@ -9268,7 +9453,13 @@ $("#encSearch").addEventListener("input", (e) => {
 });
 
 function encSearchHit(e) {
-  return !encQuery || (e.t + " " + e.def + " " + (e.tag || "")).toLowerCase().includes(encQuery);
+  return (
+    !encQuery ||
+    [e.t, e.def, e.why, e.watch, e.example, e.tag, ...(e.aliases || []), ...(e.related || [])]
+      .join(" ")
+      .toLowerCase()
+      .includes(encQuery.trim())
+  );
 }
 
 function encList() {
@@ -9279,7 +9470,9 @@ function encList() {
       .filter(Boolean)
       .filter(encSearchHit);
   }
-  return ENC.filter((e) => (encFilter === "all" || e.cat === encFilter) && encSearchHit(e));
+  return ENC.filter((e) => (encFilter === "all" || e.cat === encFilter) && encSearchHit(e)).sort(
+    (a, b) => a.t.localeCompare(b.t),
+  );
 }
 
 function renderEnc() {
@@ -9294,7 +9487,7 @@ function renderEnc() {
         <span class="ei-t">${ttl}</span>
         <span class="ei-n">${list.length} terms, in order</span></div>
       <p class="ei-x">${txt}</p>
-      <div class="ei-bar" role="progressbar" aria-valuenow="${done}" aria-valuemin="0" aria-valuemax="${ENC_PATH[encFilter].length}">
+      <div class="ei-bar" role="progressbar" aria-label="Terms opened in ${esc(ttl)}" aria-valuenow="${done}" aria-valuemin="0" aria-valuemax="${ENC_PATH[encFilter].length}">
         <span style="width:${((done / ENC_PATH[encFilter].length) * 100).toFixed(1)}%"></span></div>
       <div class="ei-p">${done} of ${ENC_PATH[encFilter].length} opened${done ? ` · <button class="ei-reset" onclick="encResetProgress('${encFilter}')">reset</button>` : ""}</div>`;
     intro.hidden = false;
@@ -9315,7 +9508,7 @@ function renderEnc() {
       <span class="emore">${seen[e.t] ? "Read again" : "Read more"} →</span></button>`;
       })
       .join("") ||
-    `<p class="mnote" style="grid-column:1/-1">No entries match “${encQuery}”. Try a broader term.</p>`;
+    `<p class="mnote" style="grid-column:1/-1">No entries match “${esc(encQuery)}”. Try a broader term.</p>`;
   $("#encCount").textContent = path
     ? `${list.length} on this level · ${ENC.length} total in the encyclopedia`
     : `${list.length} of ${ENC.length} entries shown`;
@@ -9349,8 +9542,20 @@ function encResetProgress(k) {
   } catch (e) {}
   renderEnc();
 }
-function openEnc(i) {
+let encHistory = [];
+function backEnc() {
+  const i = encHistory.pop();
+  if (i !== undefined) openEnc(i, false, true);
+}
+function openEnc(i, related = false, fromBack = false) {
   const e = ENC[i];
+  if (!e) return;
+  const modal = $("#m-enc");
+  const wasOpen = modal.classList.contains("open");
+  const current = Number($("#encBody").dataset.entry);
+  if (related && wasOpen && Number.isInteger(current) && current !== i) encHistory.push(current);
+  else if (!fromBack) encHistory = [];
+  $("#encBody").dataset.entry = String(i);
   $("#enc-bar").textContent = "ENCYCLOPEDIA // " + e.t.toUpperCase();
   const lv = ENC_LEVEL_OF[e.t];
   /* Next-on-the-path link. Reading one term and being dropped back into a grid
@@ -9374,9 +9579,29 @@ function openEnc(i) {
     }
   }
   $("#encBody").innerHTML =
-    `<h3>${e.t}</h3><div class="pd-meta">${lv ? `<span class="elv ${lv}" style="border-color:currentColor">${LVL_DOT[lv]} ${LVL_NAME[lv]}</span>` : ""}<span style="color:var(--gold);border-color:var(--gold)">${ENC_CATLABEL[e.cat] || e.cat}</span><span>${e.tag || ""}</span></div><div class="enc-row"><span class="k">What it is</span><span class="v">${e.def}</span></div><div class="enc-row"><span class="k">Why it matters</span><span class="v">${e.why}</span></div><div class="enc-row"><span class="k">The catch</span><span class="v"><b>${e.watch}</b></span></div>${nextHtml}`;
+    `${encHistory.length ? '<button class="enc-back" onclick="backEnc()">← Back to previous term</button>' : ""}
+    <h3 tabindex="-1">${esc(e.t)}</h3>
+    <div class="pd-meta">${lv ? `<span class="elv ${lv}" style="border-color:currentColor">${LVL_DOT[lv]} ${LVL_NAME[lv]}</span>` : ""}<span>${esc(ENC_CATLABEL[e.cat] || e.cat)}</span></div>
+    ${[
+      ["In plain English", e.def],
+      ["Example", e.example],
+      ["Why it matters", e.why],
+      ["Remember", e.watch],
+    ]
+      .map(
+        ([key, value]) =>
+          `<div class="enc-row${key === "Example" ? " enc-example" : ""}"><span class="k">${key}</span><span class="v">${termLinks(value, e.t)}</span></div>`,
+      )
+      .join("")}
+    ${relatedTerms(e.related || [])}
+    ${e.source ? `<a class="edu-source" href="${esc(e.source[1])}" target="_blank" rel="noopener">${esc(e.source[0])} ↗</a>` : ""}${nextHtml}`;
   encMark(e.t);
-  openModal("m-enc");
+  renderEnc();
+  if (!wasOpen) openModal("m-enc");
+  modal.scrollTop = 0;
+  const body = $("#encBody").closest(".mbody");
+  if (body) body.scrollTop = 0;
+  $("#encBody h3").focus({ preventScroll: true });
 }
 renderEnc();
 
@@ -9665,7 +9890,7 @@ const SECTIONS = [
     accent: "var(--brass)",
     fade: "rgba(217,164,65,.13)",
     ic: "M4 20h16M4 20V9M9 20v-5M14 20V4M19 20v-8",
-    desc: "What each instrument measures, the settings that are actually standard, and the trap. Plus a Fibonacci lab built from your own swing.",
+    desc: "Short explanations, worked examples, adjustable sample charts, and the limitations of each indicator. Includes a Fibonacci lab.",
     count: () => INDICATORS.length + " instruments",
   },
   {
@@ -9676,7 +9901,7 @@ const SECTIONS = [
     accent: "var(--cyan)",
     fade: "rgba(34,211,238,.13)",
     ic: "M3 17l4-8 4 5 3-7 3 4 4-9M3 21h18",
-    desc: "Nineteen structures priced live, with a bench that shows what time and volatility do to a position before price moves at all.",
+    desc: "A beginner introduction, short mechanics lessons, 19 strategy examples, and an interactive payoff lab.",
     count: () => OPT_STRUCTURES.length + " structures",
   },
   {

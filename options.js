@@ -1,325 +1,485 @@
-/* ============================================================
-   THE TRADING DESK - THE OPTIONS FLOOR
-   Structures are defined by their legs so the Lab can build and
-   price every one of them from live inputs. Strike offsets are a
-   percentage from spot, which keeps a structure the same shape
-   whether you point it at a $9 stock or a 6,000 index.
-     t: 'c' call, 'p' put      s: +1 long, -1 short
-     k: strike as % from spot  x: expiry multiplier (1 = near, 2 = far)
-   sh: shares held alongside the legs, so a covered call is priced as
-       the stock-plus-short-call it actually is rather than a naked call
-   ============================================================ */
 window.TDESK = window.TDESK || {};
 
 window.TDESK.OPT_CATS = [
-  [
-    "dir",
-    "Directional",
-    "You have a view on where it goes, and you want the leverage without the loss that comes with being wrong twice.",
-  ],
+  ["dir", "Directional", "Positions built around a rise or fall. Timing and premium still matter."],
   [
     "inc",
-    "Income",
-    "You are selling somebody else time and volatility. Wins are small and frequent; the losses are the whole job.",
+    "Premium selling",
+    "Collect a credit and take an obligation. A small credit can carry a large loss.",
   ],
   [
     "vol",
-    "Volatility",
-    "No directional view at all. You are betting on the size of the move, or on the size of the move being wrong.",
+    "Movement & time",
+    "Positions sensitive to move size, volatility, or the difference between expirations.",
   ],
   [
     "adv",
     "Advanced",
-    "Structures that trade one specific risk for another. Every one of them exists because a simpler structure had a flaw somebody wanted gone.",
+    "More complex payoffs, uneven risk, or uncovered options. Learn the individual legs first.",
   ],
 ];
 
+window.TDESK.OPT_INTRO = [
+  {
+    n: "An option is a contract with a deadline",
+    b: "It gives the buyer a right involving another asset, such as a stock. That asset is the underlying. The buyer pays a premium; the contract ends at expiration.",
+    example: "You can buy a contract linked to a $100 stock without buying the shares themselves.",
+    related: ["Stock & ETF", "Call & Put", "Premium"],
+  },
+  {
+    n: "A call is a right to buy. A put is a right to sell.",
+    b: "The agreed price is the strike. Bought calls generally benefit from a rise; bought puts generally benefit from a fall. Price, time, and volatility all affect their value.",
+    example: "A $100 call gives a right to buy at $100. A $100 put gives a right to sell at $100.",
+    related: ["Call & Put", "Strike & Expiration", "Long & Short"],
+  },
+  {
+    n: "A $3 quote usually means $300 per contract",
+    b: "A standard US stock option usually represents 100 shares. Quotes are per share: premium × 100 × contract count, plus fees. Adjusted contracts can differ.",
+    example:
+      "Two standard contracts quoted at $3 cost $600 before fees. The $100 strike is separate from this cost.",
+    related: ["Premium", "The Options Chain", "Intrinsic & Extrinsic Value"],
+  },
+  {
+    n: "Buying a right and selling an obligation are different",
+    b: "Buy to open creates a long option. Sell to open creates a short option. A bought put is still long an option, even though it generally benefits from a price fall.",
+    example:
+      "If assigned on a standard short $100 put, you generally must buy 100 shares for $10,000.",
+    related: ["Long & Short", "Assignment & Exercise", "Margin & The Margin Call"],
+  },
+  {
+    n: "You can close the option before expiration",
+    b: "A buyer can sell to close. A seller can buy to close. You do not have to exercise to realise a gain or loss, provided the market lets you close at an acceptable price.",
+    example: "Buy a call for $3, sell it for $4: a $100 gain per standard contract before fees.",
+    related: ["Bid / Ask / Spread", "Assignment & Exercise", "Pin Risk"],
+  },
+  {
+    n: "Start with the cost and the worst outcome",
+    b: "Name the underlying, call or put, strike, expiry, contract size, and full loss before placing an order. Learn in a practice account before putting money behind a new structure.",
+    example:
+      "A $300 bought option can lose the entire $300. Selling an option may expose you to far more than its premium.",
+    related: ["Position Sizing", "Discipline & The Plan", "Moneyness (ITM / ATM / OTM)"],
+  },
+];
+
 window.TDESK.OPT_STRUCTURES = [
-  /* ---------------- DIRECTIONAL ---------------- */
   {
     id: "lc",
     n: "Long Call",
     cat: "dir",
     dir: "Bullish",
-    risk: "Defined",
-    lvl: 2,
-    legs: [{ t: "c", s: 1, k: 0 }],
-    want: "Up, and soon. Every day you are right but early costs you money.",
-    when: "A strong directional read with a catalyst inside the expiry, and implied volatility that is not already elevated.",
-    fails:
-      "Sideways. The stock can finish exactly where you predicted and you still lose, because time was never free.",
-    trap: "Buying cheap far-out-of-the-money calls because the payoff table looks exciting. The most likely outcome of a 0.10 delta call is zero, and it is the most likely outcome by a wide margin.",
+    risk: "Premium paid",
+    lvl: 1,
+    legs: [
+      {
+        t: "c",
+        s: 1,
+        k: 0,
+      },
+    ],
+    want: "A rise large enough to cover the call's cost by expiry.",
+    when: "Study how a bought call responds to price, time, and IV.",
+    fails: "Price falls, stays flat, or rises too little to cover the premium.",
+    trap: "A correct direction is not enough. A cheap out-of-the-money call can lose its full premium.",
+    related: ["Call & Put", "Premium", "Theta"],
   },
-
   {
     id: "lp",
     n: "Long Put",
     cat: "dir",
     dir: "Bearish",
-    risk: "Defined",
-    lvl: 2,
-    legs: [{ t: "p", s: 1, k: 0 }],
-    want: "Down, and soon. Same clock as a long call, running against you daily.",
-    when: "A bearish read, or as insurance on shares you own and intend to keep.",
-    fails:
-      "A slow drift down that never arrives before expiry, or a volatility collapse that shrinks the premium faster than price falls.",
-    trap: "Buying puts after the drop has started. Implied volatility spikes on the way down, so protection costs the most exactly when you finally want it.",
+    risk: "Premium paid",
+    lvl: 1,
+    legs: [
+      {
+        t: "p",
+        s: 1,
+        k: 0,
+      },
+    ],
+    want: "A fall large enough to cover the put's cost by expiry.",
+    when: "Study a bearish position or protection for shares.",
+    fails: "Price rises, or the decline is too small or too late.",
+    trap: "Buying after a selloff may mean paying elevated IV. A bounce or IV drop can reduce the put's value.",
+    related: ["Call & Put", "IV Crush", "Premium"],
   },
-
   {
     id: "bcs",
     n: "Bull Call Spread",
     cat: "dir",
     dir: "Bullish",
-    risk: "Defined",
-    lvl: 3,
+    risk: "Defined expiry loss",
+    lvl: 2,
     legs: [
-      { t: "c", s: 1, k: 0 },
-      { t: "c", s: -1, k: 6 },
+      {
+        t: "c",
+        s: 1,
+        k: 0,
+      },
+      {
+        t: "c",
+        s: -1,
+        k: 6,
+      },
     ],
-    want: "Up to the short strike, no further. Past it you stop earning.",
-    when: "You are bullish but the premium is rich, or you want a known cost and a known ceiling instead of an open-ended bet.",
+    want: "A rise toward or above the higher, sold call strike.",
+    when: "Compare a capped bullish spread with buying a call alone.",
     fails:
-      "A move so large it blows through the short strike, where you watch the rest of the run without you.",
-    trap: "Setting the short strike too close because it makes the trade nearly free. You have then sold the entire move you were trying to buy.",
+      "A flat or falling stock can lose the debit. A larger rise does not increase profit beyond the cap.",
+    trap: "Passing the short strike is the best expiry region, not a failure. You exchanged extra upside for lower cost.",
+    related: ["Credit vs. Debit Spreads", "Strike & Expiration", "Assignment & Exercise"],
   },
-
   {
     id: "bps",
     n: "Bear Put Spread",
     cat: "dir",
     dir: "Bearish",
-    risk: "Defined",
-    lvl: 3,
+    risk: "Defined expiry loss",
+    lvl: 2,
     legs: [
-      { t: "p", s: 1, k: 0 },
-      { t: "p", s: -1, k: -6 },
+      {
+        t: "p",
+        s: 1,
+        k: 0,
+      },
+      {
+        t: "p",
+        s: -1,
+        k: -6,
+      },
     ],
-    want: "Down to the short strike. The mirror of the bull call spread.",
-    when: "Bearish with elevated volatility, where an outright put is too expensive to justify.",
+    want: "A fall toward or below the lower, sold put strike.",
+    when: "Compare a capped bearish spread with buying a put alone.",
     fails:
-      "A crash straight through your short strike, which caps you well above the move you called correctly.",
-    trap: "Treating it as a crash hedge. It is a measured-move trade, and a real crash is exactly where it stops paying.",
+      "A flat or rising stock can lose the debit. Further declines beyond the short strike add no profit.",
+    trap: "It limits the value of crash protection. Passing the short strike reaches the expiry profit cap.",
+    related: ["Credit vs. Debit Spreads", "Strike & Expiration", "Assignment & Exercise"],
   },
-
   {
     id: "bull-put",
     n: "Bull Put Spread",
     cat: "dir",
     dir: "Bullish",
-    risk: "Defined",
-    lvl: 3,
+    risk: "Defined expiry loss",
+    lvl: 2,
     legs: [
-      { t: "p", s: -1, k: -5 },
-      { t: "p", s: 1, k: -11 },
+      {
+        t: "p",
+        s: -1,
+        k: -5,
+      },
+      {
+        t: "p",
+        s: 1,
+        k: -11,
+      },
     ],
-    want: "Anything except a real drop. Up, flat, or slightly down all pay the same.",
-    when: "Bullish-to-neutral with high implied volatility, so you are selling expensive premium rather than buying it.",
-    fails:
-      "A hard drop through the short strike. Your maximum loss is several times the credit you collected, which is the arrangement you agreed to.",
-    trap: "The win rate flatters you. Winning eight of ten trades means nothing if the two losses are five times the size of a win, and that is the default geometry here.",
+    want: "Price above the sold put's strike at expiry.",
+    when: "Study a bullish-to-neutral credit spread with a protective lower put.",
+    fails: "A fall through both strikes reaches the maximum expiry loss.",
+    trap: "A high chance of a small gain does not make the expected return positive.",
+    related: ["Credit vs. Debit Spreads", "Strike & Expiration", "Assignment & Exercise"],
   },
-
   {
     id: "bear-call",
     n: "Bear Call Spread",
     cat: "dir",
     dir: "Bearish",
-    risk: "Defined",
-    lvl: 3,
+    risk: "Defined expiry loss",
+    lvl: 2,
     legs: [
-      { t: "c", s: -1, k: 5 },
-      { t: "c", s: 1, k: 11 },
+      {
+        t: "c",
+        s: -1,
+        k: 5,
+      },
+      {
+        t: "c",
+        s: 1,
+        k: 11,
+      },
     ],
-    want: "Anything except a rally. Flat and down both pay in full.",
-    when: "Bearish-to-neutral into resistance, with rich premium to sell.",
-    fails:
-      "A grinding rally through the short strike, and rallies grind more often than they crash.",
-    trap: "Selling calls above a level you have not actually checked. The short strike needs to sit above real resistance, not above a round number that feels far away.",
+    want: "Price below the sold call's strike at expiry.",
+    when: "Study a bearish-to-neutral credit spread with a protective higher call.",
+    fails: "A rise through both strikes reaches the maximum expiry loss.",
+    trap: "A resistance level is not protection; the bought call is what caps the spread's expiry loss.",
+    related: ["Credit vs. Debit Spreads", "Strike & Expiration", "Assignment & Exercise"],
   },
-
-  /* ---------------- INCOME ---------------- */
   {
     id: "csp",
     n: "Cash-Secured Put",
     cat: "inc",
     dir: "Bullish",
-    risk: "Defined by the strike",
-    lvl: 2,
-    legs: [{ t: "p", s: -1, k: -6 }],
-    want: "Flat or up. If it drops below your strike you buy the shares, which you should have wanted anyway.",
-    when: "You are willing to own the stock at the strike price and you have the cash sitting there to do it.",
-    fails:
-      "A collapse well below the strike. You own shares at a price that made sense last week and does not now.",
-    trap: "Selling puts on something you would never actually want to own, purely because the premium is fat. Fat premium is the market telling you the risk is real.",
+    risk: "Large downside",
+    lvl: 1,
+    legs: [
+      {
+        t: "p",
+        s: -1,
+        k: -6,
+      },
+    ],
+    want: "Price above the put strike, or assignment at a price you can fund.",
+    when: "Study selling a put with the full share-purchase cash available.",
+    fails: "The stock falls far below the strike and you must buy at the higher agreed price.",
+    trap: "The premium is small compared with the possible share loss. Cash collateral does not remove downside.",
+    related: ["Cash-Secured Put", "Assignment & Exercise", "Position Sizing"],
   },
-
   {
     id: "cc",
     n: "Covered Call",
     cat: "inc",
     dir: "Neutral to mildly bullish",
-    risk: "Capped upside",
-    lvl: 2,
+    risk: "Stock downside",
+    lvl: 1,
     sh: 100,
-    legs: [{ t: "c", s: -1, k: 6 }],
-    want: "Flat, or up to your short strike. You are renting out the upside you were not counting on.",
-    when: "You hold 100 shares, you are not expecting a violent move up, and you want the shares to pay you something while you wait.",
+    legs: [
+      {
+        t: "c",
+        s: -1,
+        k: 6,
+      },
+    ],
+    want: "Keep the premium and accept a sale of your shares at the strike.",
+    when: "Study exchanging potential share upside for an option credit.",
     fails:
-      "The stock gaps far above the strike. You keep the premium and lose the entire move above it.",
-    trap: "Selling calls on a position you are emotionally attached to. When it runs and gets called away, most people chase it back at a higher price, which converts a small win into a real loss.",
+      "A stock decline can create a large loss. A rally above the strike gives no further expiry gain.",
+    trap: "It is still a stock-risk position. Being called away can occur at a loss relative to your share cost.",
+    related: ["Covered Call", "Assignment & Exercise", "Stock & ETF"],
   },
-
   {
     id: "ic",
     n: "Iron Condor",
     cat: "inc",
     dir: "Neutral",
-    risk: "Defined",
-    lvl: 3,
+    risk: "Defined expiry loss",
+    lvl: 2,
     legs: [
-      { t: "p", s: 1, k: -13 },
-      { t: "p", s: -1, k: -7 },
-      { t: "c", s: -1, k: 7 },
-      { t: "c", s: 1, k: 13 },
+      {
+        t: "p",
+        s: 1,
+        k: -13,
+      },
+      {
+        t: "p",
+        s: -1,
+        k: -7,
+      },
+      {
+        t: "c",
+        s: -1,
+        k: 7,
+      },
+      {
+        t: "c",
+        s: 1,
+        k: 13,
+      },
     ],
-    want: "Nothing. Literally nothing. You profit if price stays inside your two short strikes and volatility falls.",
-    when: "High implied volatility relative to its own recent range, in something that has been rotating rather than trending.",
-    fails:
-      "A trend. Any real move in either direction takes it out, and the loss is far larger than the credit.",
-    trap: "It looks like free money because it wins most of the time. The distribution is brutally asymmetric: many small wins, occasional large losses. Manage it early, take profit at half the credit, and never let it run into expiry untouched.",
+    want: "Price between the two sold strikes at expiry.",
+    when: "Study combining a put credit spread and a call credit spread.",
+    fails: "A large move either way can reach the maximum expiry loss.",
+    trap: "The protection limits expiry risk only while the complete position is intact; assignment can leave shares.",
+    related: ["Iron Condor", "Credit vs. Debit Spreads", "Pin Risk"],
   },
-
   {
     id: "ib",
     n: "Iron Butterfly",
     cat: "inc",
     dir: "Neutral",
-    risk: "Defined",
-    lvl: 3,
+    risk: "Defined expiry loss",
+    lvl: 2,
     legs: [
-      { t: "p", s: 1, k: -9 },
-      { t: "p", s: -1, k: 0 },
-      { t: "c", s: -1, k: 0 },
-      { t: "c", s: 1, k: 9 },
+      {
+        t: "p",
+        s: 1,
+        k: -9,
+      },
+      {
+        t: "p",
+        s: -1,
+        k: 0,
+      },
+      {
+        t: "c",
+        s: -1,
+        k: 0,
+      },
+      {
+        t: "c",
+        s: 1,
+        k: 9,
+      },
     ],
-    want: "Price to finish exactly where it is now. A condor with the two short strikes collapsed onto the money.",
-    when: "You want a larger credit than a condor and you have a genuine reason to think price is pinned.",
-    fails: "Any move at all. The profit zone is a needle compared to a condor.",
-    trap: "Taking the bigger credit without pricing the much narrower window. You are paid more because you are far more likely to be wrong.",
+    want: "Price near the shared sold strike at expiry.",
+    when: "Study a higher-credit, narrower-range alternative to an iron condor.",
+    fails: "Moving far enough from the middle strike creates a loss.",
+    trap: "The maximum gain needs an exact expiry price. A move away can still be profitable within the breakevens.",
+    related: ["Credit vs. Debit Spreads", "Strike & Expiration", "Assignment & Exercise"],
   },
-
   {
     id: "ss",
     n: "Short Strangle",
     cat: "inc",
     dir: "Neutral",
-    risk: "UNDEFINED",
+    risk: "Unlimited upside loss",
     lvl: 3,
     legs: [
-      { t: "p", s: -1, k: -8 },
-      { t: "c", s: -1, k: 8 },
+      {
+        t: "p",
+        s: -1,
+        k: -8,
+      },
+      {
+        t: "c",
+        s: -1,
+        k: 8,
+      },
     ],
-    want: "Price to stay between your strikes while volatility bleeds out.",
-    when: "Rarely, and only with the account and the discipline to manage it actively. This is an iron condor without the insurance.",
-    fails:
-      "A gap. Loss on the call side is theoretically unlimited, and the put side runs to zero.",
-    trap: "This structure is why brokers have levels. The buying power it ties up is large and it can go against you faster than you can react. If a defined-risk condor would express the same view, use the condor.",
+    want: "Price between the sold put and call strikes at expiry.",
+    when: "Study the risk that protective wings remove from a condor.",
+    fails: "A large rise creates unlimited call-side loss; a fall creates large put-side loss.",
+    trap: "Margin and a stop order do not cap the worst-case loss.",
+    related: ["Long & Short", "Margin & The Margin Call", "Gamma"],
   },
-
-  /* ---------------- VOLATILITY ---------------- */
   {
     id: "straddle",
     n: "Long Straddle",
     cat: "vol",
     dir: "Big move, either way",
-    risk: "Defined",
+    risk: "Premium paid",
     lvl: 2,
     legs: [
-      { t: "c", s: 1, k: 0 },
-      { t: "p", s: 1, k: 0 },
+      {
+        t: "c",
+        s: 1,
+        k: 0,
+      },
+      {
+        t: "p",
+        s: 1,
+        k: 0,
+      },
     ],
-    want: "A large move in either direction, larger than the market has priced in.",
-    when: "You expect volatility to expand and you believe the current implied volatility is too low for what is coming.",
-    fails:
-      "The move arrives but was already priced. Post-event volatility collapse can lose you money on a move you called correctly, in the right direction.",
-    trap: "Buying straddles into earnings. Implied volatility is at its annual high the day before and crushes the morning after. You need a move bigger than the one everybody already agreed on.",
+    want: "A large enough move in either direction to cover both bought options.",
+    when: "Compare a non-directional long-volatility position with buying one option.",
+    fails: "A small move leaves both premiums partly or fully lost.",
+    trap: "An earnings move can be smaller than the amount already priced in. IV can also fall after the event.",
+    related: ["Credit vs. Debit Spreads", "Strike & Expiration", "Assignment & Exercise"],
   },
-
   {
     id: "strangle",
     n: "Long Strangle",
     cat: "vol",
     dir: "Big move, either way",
-    risk: "Defined",
+    risk: "Premium paid",
     lvl: 2,
     legs: [
-      { t: "p", s: 1, k: -6 },
-      { t: "c", s: 1, k: 6 },
+      {
+        t: "p",
+        s: 1,
+        k: -6,
+      },
+      {
+        t: "c",
+        s: 1,
+        k: 6,
+      },
     ],
-    want: "An even bigger move than a straddle needs, for a lower entry cost.",
-    when: "Same conditions as a straddle, when you want the cheaper version and accept a wider dead zone.",
-    fails:
-      "Anything moderate. The gap between the two strikes is a zone where both legs decay to nothing.",
-    trap: "Choosing it over a straddle purely on price. Cheaper here means a materially lower probability of ever paying out.",
+    want: "A large move beyond the two out-of-the-money strikes and the total cost.",
+    when: "Compare a lower-cost but wider-breakeven alternative to a straddle.",
+    fails: "A modest move may leave both options worthless at expiry.",
+    trap: "Lower cost alone does not mean better value; the required move is usually larger.",
+    related: ["Credit vs. Debit Spreads", "Strike & Expiration", "Assignment & Exercise"],
   },
-
   {
     id: "cal",
     n: "Calendar Spread",
     cat: "vol",
     dir: "Neutral, near term",
-    risk: "Defined",
+    risk: "Debit + assignment risk",
     lvl: 3,
     legs: [
-      { t: "c", s: -1, k: 0, x: 1 },
-      { t: "c", s: 1, k: 0, x: 2 },
+      {
+        t: "c",
+        s: -1,
+        k: 0,
+        x: 1,
+      },
+      {
+        t: "c",
+        s: 1,
+        k: 0,
+        x: 2,
+      },
     ],
-    want: "Price to sit near the strike while the near expiry decays faster than the far one.",
-    when: "Near-term implied volatility is high relative to further-out expiries, and you expect quiet followed by movement.",
-    fails:
-      "A move away from the strike in either direction, or the volatility term structure moving against you.",
-    trap: "The only structure here where volatility matters more than direction. Rising volatility helps a calendar and falling volatility hurts it, which is the opposite of most income trades and catches people who assume all short premium works the same way.",
+    want: "Price near a shared strike as the nearer option expires.",
+    when: "Study selling a nearer option and buying the same strike further out.",
+    fails: "A large move away or an adverse change in the two expirations' IV can reduce value.",
+    trap: "The long leg still has time value at the first expiry. There is no fixed final-payoff peak at that date.",
+    related: ["Theta", "Vega", "Assignment & Exercise"],
   },
-
   {
     id: "diag",
     n: "Diagonal Spread",
     cat: "vol",
     dir: "Mildly directional",
-    risk: "Defined",
+    risk: "Complex assignment risk",
     lvl: 3,
     legs: [
-      { t: "c", s: -1, k: 5, x: 1 },
-      { t: "c", s: 1, k: 0, x: 2 },
+      {
+        t: "c",
+        s: -1,
+        k: 5,
+        x: 1,
+      },
+      {
+        t: "c",
+        s: 1,
+        k: 0,
+        x: 2,
+      },
     ],
-    want: "A slow drift toward your short strike while the near leg decays.",
-    when: "You want a calendar with a directional lean, or a long-dated call financed by repeatedly selling short-dated ones.",
-    fails:
-      "A fast move through the short strike before the long leg has gained enough to cover it.",
-    trap: "Rolling the short leg mechanically without re-checking the thesis. A diagonal managed on autopilot slowly turns into a position nobody chose.",
+    want: "A favourable move toward the sold strike as the near option decays.",
+    when: "Study a spread with different strikes and expirations.",
+    fails: "Adverse price moves, IV changes, or short-leg assignment can disrupt the position.",
+    trap: "A long call is not 100 shares. Assignment can create a share obligation while the long option remains open.",
+    related: ["LEAPS", "Delta", "Assignment & Exercise"],
   },
-
-  /* ---------------- ADVANCED ---------------- */
   {
     id: "fly",
     n: "Long Butterfly",
     cat: "adv",
     dir: "Pinned",
-    risk: "Defined",
-    lvl: 3,
+    risk: "Defined expiry loss",
+    lvl: 2,
     legs: [
-      { t: "c", s: 1, k: -6 },
-      { t: "c", s: -1, k: 0 },
-      { t: "c", s: -1, k: 0 },
-      { t: "c", s: 1, k: 6 },
+      {
+        t: "c",
+        s: 1,
+        k: -6,
+      },
+      {
+        t: "c",
+        s: -1,
+        k: 0,
+      },
+      {
+        t: "c",
+        s: -1,
+        k: 0,
+      },
+      {
+        t: "c",
+        s: 1,
+        k: 6,
+      },
     ],
-    want: "Price to land on the middle strike at expiry. The highest reward-to-risk ratio on this page, and the lowest probability.",
-    when: 'You have a specific price target and a specific date, which is a much stronger claim than "I think it goes up".',
-    fails: "Almost everything. The profit peak is a single point and the wings are wide.",
-    trap: "It looks irresistible on the payoff diagram because the ratio can be ten to one. That ratio is the market pricing how unlikely the outcome is.",
+    want: "Price near the middle strike at expiry.",
+    when: "Study a defined-risk position with a narrow profit area.",
+    fails: "Price outside the outer strikes loses the debit at expiry.",
+    trap: "A high payoff ratio does not give a high probability of reaching it.",
+    related: ["Credit vs. Debit Spreads", "Strike & Expiration", "Assignment & Exercise"],
   },
-
   {
     id: "bwb",
     n: "Broken Wing Butterfly",
@@ -328,444 +488,508 @@ window.TDESK.OPT_STRUCTURES = [
     risk: "Defined, uneven",
     lvl: 3,
     legs: [
-      { t: "p", s: 1, k: -14 },
-      { t: "p", s: -1, k: -7 },
-      { t: "p", s: -1, k: -7 },
-      { t: "p", s: 1, k: 3 },
+      {
+        t: "p",
+        s: 1,
+        k: -15,
+      },
+      {
+        t: "p",
+        s: -1,
+        k: -5,
+      },
+      {
+        t: "p",
+        s: -1,
+        k: -5,
+      },
+      {
+        t: "p",
+        s: 1,
+        k: 0,
+      },
     ],
-    want: "A drift toward the body, with one wing pushed out so the structure can often be opened for a credit.",
-    when: "You want a butterfly with no cost to put on, and you accept that the risk is now lopsided toward one side.",
-    fails:
-      "A move into the wide wing, where the loss is significantly larger than the narrow side.",
-    trap: "The credit makes it feel risk-free. Look at the wide side before you open it, because that is where the entire risk of the structure now lives.",
+    want: "Price near the middle strike, with unequal wing widths.",
+    when: "Study how moving one protective strike changes a butterfly's risk.",
+    fails: "A move into the wider wing can create the larger expiry loss.",
+    trap: "A credit entry is not guaranteed. The direction with no expiry loss depends on strikes and actual premium.",
+    related: ["Credit vs. Debit Spreads", "Strike & Expiration", "Assignment & Exercise"],
   },
-
   {
     id: "jade",
     n: "Jade Lizard",
     cat: "adv",
     dir: "Neutral to bullish",
-    risk: "Undefined below",
+    risk: "Large downside",
     lvl: 3,
     legs: [
-      { t: "p", s: -1, k: -7 },
-      { t: "c", s: -1, k: 6 },
-      { t: "c", s: 1, k: 12 },
+      {
+        t: "p",
+        s: -1,
+        k: -7,
+      },
+      {
+        t: "c",
+        s: -1,
+        k: 6,
+      },
+      {
+        t: "c",
+        s: 1,
+        k: 12,
+      },
     ],
-    want: "Flat to up, with the total credit exceeding the width of the call spread so there is no upside risk at all.",
-    when: "High implied volatility with a bullish lean, when you specifically want the upside risk eliminated.",
-    fails: "A drop. The short put is naked below and carries the entire risk of the position.",
-    trap: "The clever construction distracts from what it is: a cash-secured put with a financed call spread stapled on. Size it as the short put it fundamentally is.",
+    want: "Price between the sold put and call strikes at expiry.",
+    when: "Study a short put combined with a call credit spread.",
+    fails:
+      "A fall creates large put losses. A rise can also lose if the total credit is less than the call-spread width.",
+    trap: "No upside expiry loss requires credit at least equal to the call-spread width, before fees. The model may not meet that condition.",
+    related: ["Cash-Secured Put", "Credit vs. Debit Spreads", "Assignment & Exercise"],
   },
-
   {
     id: "ratio",
     n: "Ratio Spread",
     cat: "adv",
     dir: "Measured move",
-    risk: "UNDEFINED",
+    risk: "Unlimited upside loss",
     lvl: 3,
     legs: [
-      { t: "c", s: 1, k: 0 },
-      { t: "c", s: -1, k: 7 },
-      { t: "c", s: -1, k: 7 },
+      {
+        t: "c",
+        s: 1,
+        k: 0,
+      },
+      {
+        t: "c",
+        s: -1,
+        k: 7,
+      },
+      {
+        t: "c",
+        s: -1,
+        k: 7,
+      },
     ],
-    want: "A move up to the short strikes and no further, often financed to a credit or zero cost.",
-    when: "Rarely, and only when you can articulate why the move stops where it stops.",
-    fails:
-      "The move continues. Past the short strikes you are net short options and the loss accelerates without limit.",
-    trap: "It behaves like a free bull spread right up until it does not. The extra short leg is what pays for the structure and it is also what can hurt you the most.",
+    want: "A measured rise toward the two sold call strikes.",
+    when: "Study why an extra sold call changes a bull spread into an uncovered position.",
+    fails: "A strong rise leaves one net uncovered call and unlimited upside loss.",
+    trap: "A credit at entry does not mean a safe trade. The second sold call funds the premium and adds the main risk.",
+    related: ["Long & Short", "Gamma", "Margin & The Margin Call"],
   },
 ];
 
-/* the lessons that decide whether any of the above works */
 window.TDESK.OPT_LESSONS = [
   {
     id: "price",
-    n: "What you are actually paying for",
-    b: "An option price has exactly two parts. Intrinsic value is the part that is already real: how far in the money it sits. Extrinsic value is premium above intrinsic value. It reflects factors including time, volatility, rates and dividends. A $5 call with $2 intrinsic value has $3 extrinsic value. At expiration the payoff is determined by intrinsic value; before then, time value can rise or fall.",
-    t: "When you buy an option you are buying intrinsic at fair value and extrinsic at whatever the market charges for uncertainty. Only one of the two can survive to expiry.",
+    n: "Price: intrinsic plus extrinsic value",
+    b: "A $100 call on a $105 stock has $5 of intrinsic value. If its premium is $7, the remaining $2 is extrinsic value: what the market pays above immediate exercise value.",
+    t: "At expiry, extrinsic value is zero. Before expiry, an option can be sold for more or less than its eventual expiry payoff.",
+    related: ["Intrinsic & Extrinsic Value", "Premium"],
   },
   {
     id: "theta",
-    n: "Time decay is not linear",
-    b: "Extrinsic value does not bleed evenly. It drains slowly at first and then steepens sharply inside the last two or three weeks, and fastest of all at the money. That curve is the reason 30 to 45 days is the common window for directional buying and the reason premium sellers cluster inside 45 days.",
-    t: "Buying a weekly and buying a quarterly are not the same trade at different sizes. They are different bets on completely different parts of the decay curve.",
+    n: "Time: the clock keeps changing",
+    b: "Theta estimates one day of price change from time alone. Near-the-money decay often accelerates near expiry, but it varies by strike, IV, and remaining time.",
+    t: "There is no universally best number of days to buy or sell. Choose a horizon that matches the idea and compare the full premium at risk.",
+    related: ["Theta", "Strike & Expiration"],
   },
   {
     id: "iv",
-    n: "The crush that beats a correct call",
-    b: "Implied volatility is the market\u2019s price for uncertainty, and it rises into known events and collapses immediately after them. Buy a call the day before earnings, watch the stock rise 4% the next morning, and still lose money, because the uncertainty you paid for no longer exists.",
-    t: "What matters is IV rank, meaning where implied volatility sits inside its own one-year range, not the raw number. High rank favours selling, low rank favours buying. Check it before you decide whether to be a buyer or a seller at all.",
+    n: "Volatility: the stock can move your way and you still lose",
+    b: "A fall in IV can reduce a bought option’s value. After earnings, a favourable stock move may be too small to offset the uncertainty premium that disappears.",
+    t: "IV rank adds historical context; it does not automatically tell you to buy low or sell high.",
+    related: ["Implied Volatility (IV)", "IV Crush", "Vega"],
   },
   {
     id: "defined",
-    n: "Defined risk is not a beginner setting",
-    b: "A spread caps your loss at a number you know before you click. That is not a training wheel, it is the structural reason spreads survive a bad week. Beckmeyer, Branger and Gayda found the median single-leg retail 0DTE position had negative margin-adjusted returns while median put and call spreads came out around positive 3%.",
-    t: "The same directional read, expressed through a spread instead of a naked long, changed the sign of the median outcome in the data. Structure did that, not skill.",
+    n: "Risk: a spread has conditions",
+    b: "A same-expiry vertical spread combines a bought and sold option. With both legs intact, its expiry loss can be calculated from the strike width and net premium.",
+    t: "Assignment, exercise, fees, or closing one leg can create different exposure. Defined expiry risk is not a guarantee about every account outcome.",
+    related: ["Credit vs. Debit Spreads", "Assignment & Exercise"],
   },
   {
     id: "liq",
-    n: "The spread you pay twice",
-    b: "The gap between bid and ask is a cost you pay entering and again exiting. On a contract marked at $1.00 with a 10-cent spread, you are 10% down the instant you fill, and you owe it again on the way out. Open interest under a few hundred contracts is where that gap gets wide and where a good trade quietly becomes a bad one.",
-    t: "Use limit orders, always, and start at the mid. A market order on an illiquid option is a donation with a confirmation screen.",
+    n: "Execution: the spread is a real cost",
+    b: "If you buy at $1.05 and immediately sell at a $0.95 bid, you lose $0.10 per share: $10 per standard contract, before fees. You do not pay two full spreads for that unchanged round trip.",
+    t: "A limit order controls the worst acceptable price, but may not fill. Volume and open interest alone do not guarantee liquidity.",
+    related: ["Bid / Ask / Spread", "Liquidity", "Market vs. Limit"],
   },
   {
     id: "assign",
-    n: "Assignment, and when it actually happens",
-    b: "Short American-style options can be assigned any day, but early assignment is rare and predictable: it happens when there is almost no extrinsic value left, and most often on short calls the day before a dividend goes ex. Index options like SPX are European and settle in cash, so assignment risk does not exist there at all.",
-    t: "If you are short a leg with pennies of extrinsic remaining and a dividend is coming, close it. That is the one scenario worth watching for, and the rest of the anxiety about assignment is misplaced.",
+    n: "Exercise: know whether you could end up with shares",
+    b: "American-style options can be exercised before expiry. Short calls near an ex-dividend date and deep-in-the-money puts deserve attention, but assignment is never limited to one scenario.",
+    t: "European-style products do not allow early exercise. Cash settlement, exercise timing, and final-settlement risk still need checking.",
+    related: ["Assignment & Exercise", "Pin Risk"],
   },
   {
     id: "exp",
-    n: "Expiration week is a different instrument",
-    b: "Gamma rises sharply as expiry approaches, which means delta swings violently for small moves in the underlying. A position that behaved gently all month can go from flat to fully directional in minutes. This is what makes 0DTE feel like a slot machine: you are trading almost pure gamma with almost no time value left to cushion anything.",
-    t: "Pin risk is the specific nightmare: finishing right at your short strike, not knowing whether you were assigned until the weekend. Close short legs that are near the money rather than carrying them into the close.",
+    n: "Expiration: small moves can change exposure quickly",
+    b: "Gamma can become very large near the strike close to expiry. A spread can also leave a share position if only one leg is exercised or assigned.",
+    t: "An expiry breakeven is not the price required to sell the option at a profit earlier. Earlier prices still include time value.",
+    related: ["Gamma", "0DTE Options", "Pin Risk"],
   },
   {
     id: "size",
-    n: "Sizing options is not sizing stock",
-    b: "One contract controls 100 shares, so a $3 premium is $300 of real risk and controls maybe $18,000 of stock. When you buy a long option outright with no stop, your position size is the entire premium, because the whole premium can go to zero and frequently does.",
-    t: "For a long option, risk budget divided by premium per contract gives you your contract count. That is the arithmetic. Anything that requires a bigger number than that arithmetic allows is a trade you cannot afford.",
+    n: "Sizing: calculate the dollars before the contracts",
+    b: "For a bought option, full premium × multiplier is the option loss at risk. For a standard $5-wide credit spread sold for $2, maximum intact expiry loss is ($5 − $2) × 100 = $300.",
+    t: "Fees and execution costs add to losses. Stops and margin do not replace a calculation of the full exposure.",
+    related: ["Position Sizing", "Premium", "Margin & The Margin Call"],
   },
 ];
 
-/* ============================================================================
-   HOW TO ACTUALLY PUT IT ON
-   ----------------------------------------------------------------------------
-   The structures above say what each shape IS. This says how you open it, hold
-   it and close it: the exact contracts in the order you would enter them, what
-   the ticket costs, and the rule that ends the trade.
-
-   Every example is priced on the same imaginary $100 stock so seventeen
-   structures can be compared without arithmetic. Real premiums move with
-   implied volatility, so read the dollars as proportions rather than quotes.
-   ============================================================================ */
 window.TDESK.OPT_TIERS = {
-  1: ["Beginner", "One leg, or fully covered. Defined loss, nothing that can surprise you."],
-  2: ["Intermediate", "Two or more legs. You need to see how they offset before this is safe."],
+  1: ["Foundation", "A simpler construction to study first. Simpler does not mean low risk."],
+  2: [
+    "Spreads & combinations",
+    "Understand every leg, its expiry payoff, and any assignment obligation.",
+  ],
   3: [
     "Advanced",
-    "Undefined risk or assignment risk. The worst case is not obvious from the payoff diagram.",
+    "Different expirations, uneven wings, or uncovered positions require extra care.",
   ],
 };
 
 window.TDESK.OPT_PLAYS = {
-  "bull-put": {
-    tier: 2,
-    legs: ["SELL 1 put at 0.30 delta · 30 to 45 days out", "BUY 1 put $5 lower · same expiry"],
-    cost: "Net credit about $1.55 ($155) on a $5 wide spread",
-    max: "Gain capped at the $155. Loss is width minus credit, $345.",
-    be: "Short strike minus the credit. A 95/90 at $1.55 breaks even at $93.45.",
-    enter:
-      "The credit version of a bullish bet, and the one most people should reach for before buying calls. You are paid up front and you win if the stock rises, sits still, or even drifts slightly lower, which is three outcomes out of four. Put the short strike below real support so price has to break something before the trade is in trouble, and sell into elevated IV, because you are a net seller of premium.",
-    manage:
-      "Close at 50% of max credit. The last half of the profit takes most of the remaining time and carries all of the remaining risk.",
-    exit: "50% of max, or 21 days to expiry, whichever comes first. If the short strike is breached and you still like the thesis, roll down and out for a credit, never for a debit.",
-    size: "Risk is $345 per spread, not $155. Size against the width, which is the number that leaves the account if it goes wrong.",
-  },
-
-  "bear-call": {
-    tier: 2,
-    legs: ["SELL 1 call at 0.30 delta · 30 to 45 days out", "BUY 1 call $5 higher · same expiry"],
-    cost: "Net credit about $1.45 ($145) on a $5 wide spread",
-    max: "Gain capped at the $145. Loss is width minus credit, $355.",
-    be: "Short strike plus the credit. A 105/110 at $1.45 breaks even at $106.45.",
-    enter:
-      "The mirror image, and the safer way to express a bearish view than buying puts, because you get paid for time passing rather than paying for it. It wins if price falls, goes nowhere, or rises a little. Put the short strike above a level price has already failed at. Skew works against you here, since calls are relatively cheaper than puts, so the credit is thinner than the bull put for the same delta.",
-    manage:
-      "Close at 50% of max credit. Watch for early assignment on the short call around ex-dividend dates, which is the one thing that catches people out on this structure.",
-    exit: "50% of max, or 21 days. Roll up and out for a credit if tested and the thesis holds.",
-    size: "Risk is $355 per spread. Same rule: size against the width.",
-  },
-
   lc: {
     tier: 1,
-    legs: ["BUY 1 call · 0.60 to 0.70 delta · 45 to 60 days out"],
-    cost: "Debit about $7.00 per contract ($700)",
-    max: "Loss capped at the $700. Gain uncapped in theory.",
-    be: "Strike plus premium. A $100 strike at $7.00 breaks even at $107.",
+    legs: ["BUY 1 call at $100"],
+    cost: "$3 debit = $300 paid",
+    max: "Max loss $300; theoretical gain uncapped.",
+    be: "$103 at expiry.",
+    math: "(max(stock − $100, 0) − $3) × 100",
     enter:
-      "Buy the deeper delta, not the cheap one. A 0.65 delta call moves about 65 cents per dollar of stock and is mostly intrinsic value, so you are paying for the move rather than for hope. Forty-five days minimum: theta on a 45-day option is roughly a third of a 10-day option, which buys you the right to be early.",
-    manage: "At +50% on the premium, sell half. The rest is playing with the house money.",
-    exit: "Close by 21 days to expiry regardless. Past that, gamma and theta both accelerate and the trade stops being about your directional read. Hard stop at minus 50%.",
-    size: "1 to 2% of the account. The realistic worst case is the entire debit.",
+      "Check the bid and ask of every leg, contract multiplier, expiry, and total debit or credit.",
+    manage:
+      "Review the full position as price, time, and IV change. A roll closes one trade and opens another; it does not erase a loss.",
+    exit: "Choose an exit plan before entry. For multiple legs, understand the exposure left behind if only part of the position closes.",
+    size: "Use the full possible loss and any share obligation to check affordability. The credit received is not the risk budget.",
+    source: [
+      "OIC: options strategies",
+      "https://www.optionseducation.org/strategies/all-strategies",
+    ],
   },
-
   lp: {
     tier: 1,
-    legs: ["BUY 1 put · 0.60 to 0.70 delta · 45 to 60 days out"],
-    cost: "Debit about $7.00 per contract ($700)",
-    max: "Loss capped at the $700. Gain is the strike minus premium if it goes to zero.",
-    be: "Strike minus premium. A $100 put at $7.00 breaks even at $93.",
+    legs: ["BUY 1 put at $100"],
+    cost: "$3 debit = $300 paid",
+    max: "Max loss $300; max gain $9,700 if stock is zero.",
+    be: "$97 at expiry.",
+    math: "(max($100 − stock, 0) − $3) × 100",
     enter:
-      "Same delta and duration logic as a long call, with one asymmetry: puts cost more than the equivalent call because of skew. The market charges more for downside protection, so your breakeven sits further away than instinct suggests. Buying puts after a selloff has already started is the classic error, since IV has expanded and you are paying peak price for the insurance.",
+      "Check the bid and ask of every leg, contract multiplier, expiry, and total debit or credit.",
     manage:
-      "On a fast drop, much of your gain is volatility rather than direction, and that part evaporates on any bounce. Take it while it is there.",
-    exit: "Out by 21 days. Take +50% to +100%. Stop at minus 50%.",
-    size: "1 to 2%. As portfolio insurance, size against what you are protecting instead.",
+      "Review the full position as price, time, and IV change. A roll closes one trade and opens another; it does not erase a loss.",
+    exit: "Choose an exit plan before entry. For multiple legs, understand the exposure left behind if only part of the position closes.",
+    size: "Use the full possible loss and any share obligation to check affordability. The credit received is not the risk budget.",
+    source: [
+      "OIC: options strategies",
+      "https://www.optionseducation.org/strategies/all-strategies",
+    ],
   },
-
   bcs: {
     tier: 2,
-    legs: [
-      "BUY 1 call at 0.60 delta · 30 to 45 days out",
-      "SELL 1 call at 0.30 delta · same expiry",
-    ],
-    cost: "Net debit about $3.20 ($320)",
-    max: "Loss capped at $320. Gain is the width minus the debit, so $680 on a $10 spread.",
-    be: "Long strike plus net debit. A 100/110 at $3.20 breaks even at $103.20.",
+    legs: ["BUY 1 call at $100", "SELL 1 call at $105"],
+    cost: "$2 net debit = $200 paid",
+    max: "Max loss $200; max gain $300.",
+    be: "$102 at expiry.",
+    math: "($5 width − $2 debit) × 100 = $300 max gain",
     enter:
-      "This is the long call with the lottery ticket sold off. The short call cuts your cost by about a third and cuts theta bleed sharply, in exchange for a ceiling. Use it when you have a price target rather than just a direction: put the short strike at the level you actually expect price to reach, because everything above it is money you are handing to somebody else.",
+      "Check the bid and ask of every leg, contract multiplier, expiry, and total debit or credit.",
     manage:
-      "The spread does not reach full value until near expiry, so being right early feels underwhelming. That is normal, not a reason to close.",
-    exit: "Take 50 to 75% of max gain. Close both legs as one order. Never leg out, because an unhedged short call is a completely different trade.",
-    size: "2 to 3%. Defined loss makes this one of the few you can size with confidence.",
+      "Review the full position as price, time, and IV change. A roll closes one trade and opens another; it does not erase a loss.",
+    exit: "Choose an exit plan before entry. For multiple legs, understand the exposure left behind if only part of the position closes.",
+    size: "Use the full possible loss and any share obligation to check affordability. The credit received is not the risk budget.",
+    source: [
+      "OIC: options strategies",
+      "https://www.optionseducation.org/strategies/all-strategies",
+    ],
   },
-
   bps: {
     tier: 2,
-    legs: ["BUY 1 put at 0.60 delta · 30 to 45 days out", "SELL 1 put at 0.30 delta · same expiry"],
-    cost: "Net debit about $3.50 ($350)",
-    max: "Loss capped at $350. Gain is width minus debit, $650 on a $10 spread.",
-    be: "Long strike minus debit. A 100/90 at $3.50 breaks even at $96.50.",
+    legs: ["BUY 1 put at $100", "SELL 1 put at $95"],
+    cost: "$2 net debit = $200 paid",
+    max: "Max loss $200; max gain $300.",
+    be: "$98 at expiry.",
+    math: "($5 width − $2 debit) × 100 = $300 max gain",
     enter:
-      "The bearish mirror of the bull call spread, and skew works in your favour: the put you sell is relatively more expensive than the one you buy, so it costs less than symmetry suggests. Put the short strike at real support, because that is where a decline is most likely to stall.",
+      "Check the bid and ask of every leg, contract multiplier, expiry, and total debit or credit.",
     manage:
-      "A gap through both strikes still will not show full value until expiry approaches. Assignment on the short put is possible if it goes deep in the money, especially around a dividend.",
-    exit: "50 to 75% of max. Close as one order.",
-    size: "2 to 3%.",
+      "Review the full position as price, time, and IV change. A roll closes one trade and opens another; it does not erase a loss.",
+    exit: "Choose an exit plan before entry. For multiple legs, understand the exposure left behind if only part of the position closes.",
+    size: "Use the full possible loss and any share obligation to check affordability. The credit received is not the risk budget.",
+    source: [
+      "OIC: options strategies",
+      "https://www.optionseducation.org/strategies/all-strategies",
+    ],
   },
-
+  "bull-put": {
+    tier: 2,
+    legs: ["SELL 1 put at $95", "BUY 1 put at $90"],
+    cost: "$2 net credit = $200 received",
+    max: "Max gain $200; max loss $300.",
+    be: "$93 at expiry.",
+    math: "($5 width − $2 credit) × 100 = $300 max loss",
+    enter:
+      "Check the bid and ask of every leg, contract multiplier, expiry, and total debit or credit.",
+    manage:
+      "Review the full position as price, time, and IV change. A roll closes one trade and opens another; it does not erase a loss.",
+    exit: "Choose an exit plan before entry. For multiple legs, understand the exposure left behind if only part of the position closes.",
+    size: "Use the full possible loss and any share obligation to check affordability. The credit received is not the risk budget.",
+    source: [
+      "OIC: options strategies",
+      "https://www.optionseducation.org/strategies/all-strategies",
+    ],
+  },
+  "bear-call": {
+    tier: 2,
+    legs: ["SELL 1 call at $105", "BUY 1 call at $110"],
+    cost: "$2 net credit = $200 received",
+    max: "Max gain $200; max loss $300.",
+    be: "$107 at expiry.",
+    math: "($5 width − $2 credit) × 100 = $300 max loss",
+    enter:
+      "Check the bid and ask of every leg, contract multiplier, expiry, and total debit or credit.",
+    manage:
+      "Review the full position as price, time, and IV change. A roll closes one trade and opens another; it does not erase a loss.",
+    exit: "Choose an exit plan before entry. For multiple legs, understand the exposure left behind if only part of the position closes.",
+    size: "Use the full possible loss and any share obligation to check affordability. The credit received is not the risk budget.",
+    source: [
+      "OIC: options strategies",
+      "https://www.optionseducation.org/strategies/all-strategies",
+    ],
+  },
   csp: {
     tier: 1,
-    legs: [
-      "SELL 1 put at 0.20 to 0.30 delta · 30 to 45 days out",
-      "HOLD the full cash to buy 100 shares",
-    ],
-    cost: "Credit about $1.80 received ($180)",
-    max: "Gain capped at the $180. Loss is strike minus premium, so $9,320 if a $95 strike goes to zero.",
-    be: "Strike minus premium, $93.20 on a $95 strike.",
+    legs: ["SELL 1 put at $95", "HOLD $9,500 cash for assignment"],
+    cost: "$2 credit = $200 received",
+    max: "Max gain $200; max loss $9,300 if stock is zero.",
+    be: "$93 at expiry.",
+    math: "($95 strike − $2 premium) × 100 = $9,300 max loss",
     enter:
-      "Only sell puts on something you would be genuinely happy to own at that strike, because that is the actual outcome you are underwriting. The 0.20 to 0.30 delta band is roughly a 70 to 80% chance of expiring worthless, which is the entire business model. Never through earnings unless assignment is the goal: a gap can put you thousands underwater on a $180 credit.",
+      "Check the bid and ask of every leg, contract multiplier, expiry, and total debit or credit.",
     manage:
-      "Buy it back at 50% of max profit and redeploy. Squeezing the last half takes most of the remaining time for a fraction of the return.",
-    exit: "Close at 50% profit or at 21 days, whichever comes first. If tested and you still want the shares, let it assign and start selling covered calls.",
-    size: "Cash-secured means exactly that. If you cannot hold the cash for 100 shares, you are trading a naked put.",
+      "Review the full position as price, time, and IV change. A roll closes one trade and opens another; it does not erase a loss.",
+    exit: "Choose an exit plan before entry. For multiple legs, understand the exposure left behind if only part of the position closes.",
+    size: "Include the stock falling to zero, not just the option credit. Check cash or share requirements for assignment.",
+    source: [
+      "OIC: options strategies",
+      "https://www.optionseducation.org/strategies/all-strategies",
+    ],
   },
-
   cc: {
     tier: 1,
-    legs: ["OWN 100 shares", "SELL 1 call at 0.20 to 0.30 delta · 30 to 45 days out"],
-    cost: "Credit about $1.60 received ($160)",
-    max: "Gain is the premium plus appreciation up to the strike. Loss is the stock going to zero, minus the premium.",
-    be: "Your share cost basis minus the premium collected.",
+    legs: ["OWN 100 shares bought at $100", "SELL 1 call at $105"],
+    cost: "$2 option credit = $200; shares cost $10,000",
+    max: "Max gain $700; max loss $9,800 if stock is zero.",
+    be: "$98 including the share cost and premium.",
+    math: "($105 strike − $100 share cost + $2 credit) × 100 = $700 max gain",
     enter:
-      "The premium is real income, but you are selling your upside for it. Pick a strike above a price you would be content to sell at, because being called away is the deal you signed rather than a failure. Do not sell calls through earnings on a stock you want to keep, and do not sell below your cost basis on a position you are underwater on.",
+      "Check the bid and ask of every leg, contract multiplier, expiry, and total debit or credit.",
     manage:
-      "Buy back at 50 to 70% of max profit and resell further out. If it rips through the strike you can roll up and out, but only if the roll genuinely still pays.",
-    exit: "Let it expire worthless or get assigned. Both are wins on a position you sized correctly.",
-    size: "Per hundred shares owned. The most conservative income structure there is.",
+      "Review the full position as price, time, and IV change. A roll closes one trade and opens another; it does not erase a loss.",
+    exit: "Choose an exit plan before entry. For multiple legs, understand the exposure left behind if only part of the position closes.",
+    size: "Include the stock falling to zero, not just the option credit. Check cash or share requirements for assignment.",
+    source: [
+      "OIC: options strategies",
+      "https://www.optionseducation.org/strategies/all-strategies",
+    ],
   },
-
   ic: {
     tier: 2,
-    legs: [
-      "SELL 1 put at 0.16 delta",
-      "BUY 1 put $5 lower",
-      "SELL 1 call at 0.16 delta",
-      "BUY 1 call $5 higher",
-      "all same expiry · 30 to 45 days out",
-    ],
-    cost: "Credit about $1.60 ($160) on $5 wings",
-    max: "Gain capped at $160. Loss is width minus credit, $340.",
-    be: "About $93.40 and $106.60 on the example.",
+    legs: ["BUY 1 put at $90", "SELL 1 put at $95", "SELL 1 call at $105", "BUY 1 call at $110"],
+    cost: "$2 total net credit = $200 received",
+    max: "Max gain $200; max loss $300.",
+    be: "$93 and $107 at expiry.",
+    math: "($5 wing width − $2 credit) × 100 = $300 max loss",
     enter:
-      "You are betting on a range, so it needs high implied volatility to be worth doing: IV rank above 50 means the market is paying you a wider range for the same risk. The 0.16 delta shorts sit near a one standard deviation move, roughly a 68% chance of finishing between them. Liquid underlyings only, because four legs means four bid-ask spreads and an illiquid chain eats the whole credit on entry and exit.",
+      "Check the bid and ask of every leg, contract multiplier, expiry, and total debit or credit.",
     manage:
-      "Close at 50% of max profit. Risk-reward gets worse the longer you hold. Rolling the untested side closer collects more credit but narrows the profit zone on a trade already going against you.",
-    exit: "50% of max, or 21 days. Do not hold four legs into expiration week hoping.",
-    size: "Risk is $340 per condor. Size by that, never by the credit.",
+      "Review the full position as price, time, and IV change. A roll closes one trade and opens another; it does not erase a loss.",
+    exit: "Choose an exit plan before entry. For multiple legs, understand the exposure left behind if only part of the position closes.",
+    size: "Use the full possible loss and any share obligation to check affordability. The credit received is not the risk budget.",
+    source: [
+      "OIC: options strategies",
+      "https://www.optionseducation.org/strategies/all-strategies",
+    ],
   },
-
   ib: {
     tier: 2,
-    legs: [
-      "SELL 1 call at the money",
-      "SELL 1 put at the same strike",
-      "BUY 1 call $10 higher",
-      "BUY 1 put $10 lower",
-      "same expiry · 30 to 45 days out",
-    ],
-    cost: "Credit about $4.00 ($400) on $10 wings",
-    max: "Gain $400 if it pins the short strike exactly. Loss is width minus credit, $600.",
-    be: "$96 and $104 on the example.",
+    legs: ["BUY 1 put at $90", "SELL 1 put at $100", "SELL 1 call at $100", "BUY 1 call at $110"],
+    cost: "$4 total credit = $400 received",
+    max: "Max gain $400 at $100; max loss $600.",
+    be: "$96 and $104 at expiry.",
+    math: "($10 wing width − $4 credit) × 100 = $600 max loss",
     enter:
-      "An iron condor with the shorts collapsed onto one strike, which is why it pays far more and wins far less often. You need a genuine pin thesis: a stock parked at a big open-interest strike, a post-earnings drift into a known level, or a low realised-volatility regime. Sell into high IV and take it off before the move you bet against has time to happen.",
+      "Check the bid and ask of every leg, contract multiplier, expiry, and total debit or credit.",
     manage:
-      "Profit comes fast if price sits still, and it is at max risk the moment it does not. There is no drifting back.",
-    exit: "25 to 35% of max profit is the standard target. Close on any decisive break of a breakeven rather than hoping.",
-    size: "Half what you would size an iron condor. Touching a short strike is close to certain.",
+      "Review the full position as price, time, and IV change. A roll closes one trade and opens another; it does not erase a loss.",
+    exit: "Choose an exit plan before entry. For multiple legs, understand the exposure left behind if only part of the position closes.",
+    size: "Use the full possible loss and any share obligation to check affordability. The credit received is not the risk budget.",
+    source: [
+      "OIC: options strategies",
+      "https://www.optionseducation.org/strategies/all-strategies",
+    ],
   },
-
   ss: {
     tier: 3,
-    legs: [
-      "SELL 1 call at 0.16 delta",
-      "SELL 1 put at 0.16 delta",
-      "same expiry · 30 to 45 days out",
-      "NO protective wings",
-    ],
-    cost: "Credit about $3.20 ($320)",
-    max: "Gain capped at $320. Loss theoretically unlimited on the call side.",
-    be: "About $91.80 and $108.20.",
+    legs: ["SELL 1 put at $95", "SELL 1 call at $105"],
+    cost: "$3 total credit = $300 received",
+    max: "Max gain $300; unlimited upside loss; $9,200 loss at zero.",
+    be: "$92 and $108 at expiry.",
+    math: "Below $95: ($95 − stock − $3) × 100 is the loss; above $105: (stock − $105 − $3) × 100",
     enter:
-      "The iron condor with the insurance removed, and the insurance is what turns a bad week into a survivable one. Requires margin approval, a large account, and a written plan for a 2x credit loss before you enter. Never on a single stock through earnings, never on anything that can be acquired or squeezed. If you cannot state your maximum loss as a number, trade the iron condor instead.",
+      "Check the bid and ask of every leg, contract multiplier, expiry, and total debit or credit.",
     manage:
-      "Defend at 2x the credit received. Roll the tested side out in time for a credit, or close. Rolling forever is deferral, not management, and it is how a $320 credit becomes a five-figure loss.",
-    exit: "50% of max, or 21 days. Close at 2x credit loss without negotiating.",
-    size: "If one position can meaningfully damage the account it is too big. Most retail accounts should not be here.",
+      "Review the full position as price, time, and IV change. A roll closes one trade and opens another; it does not erase a loss.",
+    exit: "Choose an exit plan before entry. For multiple legs, understand the exposure left behind if only part of the position closes.",
+    size: "Loss is not capped above. No stop order or margin deposit turns this into a defined-loss position.",
+    source: [
+      "OIC: options strategies",
+      "https://www.optionseducation.org/strategies/all-strategies",
+    ],
   },
-
   straddle: {
     tier: 2,
-    legs: [
-      "BUY 1 call at the money",
-      "BUY 1 put at the same strike",
-      "same expiry · 30 to 45 days out",
-    ],
-    cost: "Debit about $8.50 total ($850)",
-    max: "Loss $850 if it finishes exactly at the strike. Gain uncapped on the upside.",
-    be: "$91.50 and $108.50.",
+    legs: ["BUY 1 call at $100", "BUY 1 put at $100"],
+    cost: "$8 total debit = $800 paid",
+    max: "Max loss $800 at $100; upside gain uncapped; gain $9,200 at zero.",
+    be: "$92 and $108 at expiry.",
+    math: "(|stock − $100| − $8) × 100",
     enter:
-      "You are buying a move without picking a side, and the price of that is the stock must travel more than 8% just to get you flat. Only worth it when the expected move priced into the options is smaller than the move you actually expect, which usually means low IV rank ahead of a catalyst the market has not woken up to. Buying a straddle the day before earnings is the classic trap: IV is at its annual peak and the crush the next morning routinely wipes out more than the gap creates.",
+      "Check the bid and ask of every leg, contract multiplier, expiry, and total debit or credit.",
     manage:
-      "When one leg doubles, consider selling it and letting the other ride at zero further cost.",
-    exit: "Out well before 21 days. Two long at-the-money options is the fastest theta bleed in this list.",
-    size: "1 to 2%. The most likely single outcome is a partial loss.",
+      "Review the full position as price, time, and IV change. A roll closes one trade and opens another; it does not erase a loss.",
+    exit: "Choose an exit plan before entry. For multiple legs, understand the exposure left behind if only part of the position closes.",
+    size: "Use the full possible loss and any share obligation to check affordability. The credit received is not the risk budget.",
+    source: [
+      "OIC: options strategies",
+      "https://www.optionseducation.org/strategies/all-strategies",
+    ],
   },
-
   strangle: {
     tier: 2,
-    legs: [
-      "BUY 1 call at 0.30 delta",
-      "BUY 1 put at 0.30 delta",
-      "same expiry · 45 to 60 days out",
+    legs: ["BUY 1 put at $95", "BUY 1 call at $105"],
+    cost: "$4 total debit = $400 paid",
+    max: "Max loss $400 between strikes; upside gain uncapped.",
+    be: "$91 and $109 at expiry.",
+    math: "(max($95 − stock, 0) + max(stock − $105, 0) − $4) × 100",
+    enter:
+      "Check the bid and ask of every leg, contract multiplier, expiry, and total debit or credit.",
+    manage:
+      "Review the full position as price, time, and IV change. A roll closes one trade and opens another; it does not erase a loss.",
+    exit: "Choose an exit plan before entry. For multiple legs, understand the exposure left behind if only part of the position closes.",
+    size: "Use the full possible loss and any share obligation to check affordability. The credit received is not the risk budget.",
+    source: [
+      "OIC: options strategies",
+      "https://www.optionseducation.org/strategies/all-strategies",
     ],
-    cost: "Debit about $4.20 total ($420)",
-    max: "Loss $420 if it finishes between the strikes. Gain uncapped above.",
-    be: "About $89.80 and $110.20.",
-    enter:
-      "Half the cost of a straddle and it needs a bigger move to pay. Use it when you expect something violent rather than merely significant, and give it more time, because the strikes are further away and need room to be reached.",
-    manage:
-      "Same as the straddle: sell the winning leg into a sharp move rather than waiting for perfection.",
-    exit: "Out before 21 days.",
-    size: "1 to 2%.",
   },
-
   cal: {
-    tier: 2,
-    legs: ["SELL 1 call at the money · 30 days out", "BUY 1 call at the same strike · 60 days out"],
-    cost: "Net debit about $1.90 ($190)",
-    max: "Loss capped near $190. Gain depends on IV when the front leg expires, typically two to three times the debit at best.",
-    be: "A range around the strike that widens with back-month volatility, not a fixed number.",
+    tier: 3,
+    legs: ["SELL 1 call at $100 · nearer expiry", "BUY 1 call at $100 · later expiry"],
+    cost: "Assume a $2 net debit = $200 paid",
+    max: "Debit is the basic risk reference if properly managed; assignment can create additional account exposure.",
+    be: "No fixed first-expiry breakevens; the later option retains time value.",
+    math: "At the first expiry: (remaining long-call value − short-call intrinsic value) × 100 − $200",
     enter:
-      "You are selling fast time and buying slow time, so it profits when the stock sits still and when back-month IV rises. Enter when the front month is expensive relative to the back, which happens ahead of a known event inside the near expiry. Put the strike where you expect the stock to be, because a calendar is most valuable when price pins it.",
+      "Check the bid and ask of every leg, contract multiplier, expiry, and total debit or credit.",
     manage:
-      "Roll the short leg forward after it decays out, converting into a new calendar at a lower cost basis. If the stock runs away in either direction, it loses regardless of which way.",
-    exit: "Close when the front leg has given up most of its value, typically 25 to 50% of the debit as profit.",
-    size: "1 to 2%. Vega exposure means an IV collapse hurts even when price behaves.",
+      "Monitor the near expiry and short-call assignment. Exercising the longer call can forfeit its remaining time value.",
+    exit: "Choose an exit plan before entry. For multiple legs, understand the exposure left behind if only part of the position closes.",
+    size: "Use the full possible loss and any share obligation to check affordability. The credit received is not the risk budget.",
+    source: [
+      "OIC: options strategies",
+      "https://www.optionseducation.org/strategies/all-strategies",
+    ],
   },
-
   diag: {
     tier: 3,
-    legs: [
-      "SELL 1 call at 0.30 delta · 30 days out",
-      "BUY 1 call at a lower strike · 60 to 90 days out",
-    ],
-    cost: "Net debit about $4.50 ($450)",
-    max: "Loss capped near the debit if managed. Gain depends on where price lands relative to both strikes.",
-    be: "Not a single number. Model it before entry rather than estimating.",
+    legs: ["SELL 1 call at $105 · nearer expiry", "BUY 1 call at $100 · later expiry"],
+    cost: "Assume a $4 net debit = $400 paid",
+    max: "Outcome depends on both expirations and IV; short assignment can leave a share obligation.",
+    be: "Model the first-expiry value; there is no single fixed expiry-payoff diagram.",
+    math: "At the first expiry, subtract the short payoff and original debit from the remaining long-call value",
     enter:
-      "A calendar with a directional tilt, and the base of the poor mans covered call: the long back-month call stands in for 100 shares at a fraction of the capital. The long leg should be deep enough in the money, around 0.75 to 0.80 delta, that it behaves like stock. Critical rule: the strike gap between your legs must exceed the debit paid, or an adverse assignment locks in a loss you cannot escape.",
+      "Check the bid and ask of every leg, contract multiplier, expiry, and total debit or credit.",
     manage:
-      "Sell a new short call each cycle against the long. Roll the long out well before it enters its own steep decay.",
-    exit: "Close the whole structure if the long leg falls below 0.60 delta, because it has stopped standing in for stock.",
-    size: "2 to 3%, and treat the long leg as a stock position for exposure purposes.",
+      "Monitor the near expiry and short-call assignment. Exercising the longer call can forfeit its remaining time value.",
+    exit: "Choose an exit plan before entry. For multiple legs, understand the exposure left behind if only part of the position closes.",
+    size: "Use the full possible loss and any share obligation to check affordability. The credit received is not the risk budget.",
+    source: [
+      "OIC: options strategies",
+      "https://www.optionseducation.org/strategies/all-strategies",
+    ],
   },
-
   fly: {
-    tier: 3,
-    legs: [
-      "BUY 1 call $5 below the target",
-      "SELL 2 calls at the target",
-      "BUY 1 call $5 above the target",
-      "same expiry · 20 to 30 days out",
-    ],
-    cost: "Net debit about $1.10 ($110)",
-    max: "Loss capped at $110. Gain is wing width minus debit, $390.",
-    be: "About $96.10 and $103.90.",
+    tier: 2,
+    legs: ["BUY 1 call at $95", "SELL 2 calls at $100", "BUY 1 call at $105"],
+    cost: "$1 total debit = $100 paid",
+    max: "Max loss $100; max gain $400 at $100.",
+    be: "$96 and $104 at expiry.",
+    math: "($5 wing width − $1 debit) × 100 = $400 max gain",
     enter:
-      "A precision instrument with a superb ratio and a narrow window. You are naming a price and a date and getting paid three or four to one for being close. Enter closer to expiry than most structures, because the profit peak only sharpens as time runs out. Best around known pin points: large open interest strikes, round numbers, or a post-event drift into a level.",
+      "Check the bid and ask of every leg, contract multiplier, expiry, and total debit or credit.",
     manage:
-      "It is worth very little until the final week, so early paper losses mean little. That patience is also the trap, since there is no time left to recover if you are wrong.",
-    exit: "Take anything above 50% of max. Waiting for the perfect pin usually converts a good win into a full loss.",
-    size: "Under 1%. The low win rate is priced into the payoff, so many small tickets rather than one large one.",
+      "Review the full position as price, time, and IV change. A roll closes one trade and opens another; it does not erase a loss.",
+    exit: "Choose an exit plan before entry. For multiple legs, understand the exposure left behind if only part of the position closes.",
+    size: "Use the full possible loss and any share obligation to check affordability. The credit received is not the risk budget.",
+    source: [
+      "OIC: options strategies",
+      "https://www.optionseducation.org/strategies/all-strategies",
+    ],
   },
-
   bwb: {
     tier: 3,
-    legs: [
-      "BUY 1 put $10 below the target",
-      "SELL 2 puts at the target",
-      "BUY 1 put $25 below the target",
-      "same expiry · 30 to 45 days out",
-    ],
-    cost: "Often a small credit or near zero debit",
-    max: "Gain is roughly the narrow wing plus any credit. Loss is the wide wing minus the narrow wing minus the credit, a substantially larger number.",
-    be: "One breakeven on the wide side. The narrow side often has none, which is the point.",
+    legs: ["BUY 1 put at $85", "SELL 2 puts at $95", "BUY 1 put at $100"],
+    cost: "Assume a $0.50 net debit = $50 paid",
+    max: "Max gain $450 at $95; max loss $550 at or below $85.",
+    be: "$90.50 and $99.50 at expiry.",
+    math: "Lower wing $10, upper wing $5: max loss ($10 − $5 + $0.50) × 100 = $550",
     enter:
-      "A butterfly with one wing pushed out, financing the structure so it costs nothing or pays you to enter. The result has no risk at all in one direction and a real, larger risk in the other. Put the wide wing where you least expect price to go. It is a genuinely good shape, and it sits at advanced because the payoff diagram makes the risk look smaller than it is.",
+      "Check the bid and ask of every leg, contract multiplier, expiry, and total debit or credit.",
     manage:
-      "Watch the wide side. That is where the loss lives, and it can exceed the credit many times over.",
-    exit: "Take 25 to 50% of max. Close on any decisive move toward the wide wing rather than negotiating with it.",
-    size: "Size against the wide-wing loss, never against the credit received.",
+      "Review the full position as price, time, and IV change. A roll closes one trade and opens another; it does not erase a loss.",
+    exit: "Choose an exit plan before entry. For multiple legs, understand the exposure left behind if only part of the position closes.",
+    size: "Use the full possible loss and any share obligation to check affordability. The credit received is not the risk budget.",
+    source: [
+      "OIC: options strategies",
+      "https://www.optionseducation.org/strategies/all-strategies",
+    ],
   },
-
   jade: {
     tier: 3,
-    legs: [
-      "SELL 1 put at 0.25 delta",
-      "SELL 1 call at 0.25 delta",
-      "BUY 1 call $5 above the short call",
-      "same expiry · 30 to 45 days out",
-    ],
-    cost: "Credit about $2.90 ($290)",
-    max: "Gain capped at the credit. Loss undefined below the short put, defined above.",
-    be: "Short put strike minus the credit, about $92.10.",
+    legs: ["SELL 1 put at $95", "SELL 1 call at $105", "BUY 1 call at $110"],
+    cost: "Assume $5.20 total credit = $520 received",
+    max: "Max gain $520; loss $8,980 at zero; $20 gain above $110 before fees.",
+    be: "$89.80 at expiry; no upper breakeven in this example.",
+    math: "Upside expiry result ($5.20 credit − $5 call width) × 100 = $20; a smaller credit can leave upside loss",
     enter:
-      "The one rule that makes this a jade lizard rather than a random three-legged position: the total credit must exceed the width of the call spread. Collect $2.90 on a $5 wide spread and you still have upside risk. Collect $5.10 on a $5 wide spread and there is literally no way to lose if the stock goes up, at any price, forever. That is the entire reason the structure exists. Sell into elevated IV on something you would not mind owning.",
+      "Check the bid and ask of every leg, contract multiplier, expiry, and total debit or credit.",
     manage:
-      "All the risk is below. Manage the short put exactly as a cash-secured put: roll down and out for a credit, or take assignment on a name you wanted anyway.",
-    exit: "50% of max profit, or 21 days.",
-    size: "Size as though you are short the put naked, because below the short strike you are.",
+      "Review the full position as price, time, and IV change. A roll closes one trade and opens another; it does not erase a loss.",
+    exit: "Choose an exit plan before entry. For multiple legs, understand the exposure left behind if only part of the position closes.",
+    size: "Include the stock falling to zero, not just the option credit. Check cash or share requirements for assignment.",
+    source: [
+      "OIC: options strategies",
+      "https://www.optionseducation.org/strategies/all-strategies",
+    ],
   },
-
   ratio: {
     tier: 3,
-    legs: [
-      "BUY 1 call at 0.50 delta",
-      "SELL 2 calls at 0.25 delta",
-      "same expiry · 30 to 45 days out",
-    ],
-    cost: "Small credit or near zero, about $0.40 received",
-    max: "Best case at the short strike. Loss unlimited above it, because one of the two short calls is uncovered.",
-    be: "One below and one above. The upper breakeven is the number that matters.",
+    legs: ["BUY 1 call at $100", "SELL 2 calls at $105"],
+    cost: "Assume $0.50 total credit = $50 received",
+    max: "Max gain $550 at $105; unlimited upside loss.",
+    be: "$110.50 at expiry; below $100 keeps the $50 credit.",
+    math: "Upper breakeven: 2 × $105 − $100 + $0.50 = $110.50",
     enter:
-      "You want a measured move to a level and nothing beyond it. Because you sell two and buy one it often costs nothing, and that free entry is exactly what makes it dangerous: the second short call is naked. A gap through the short strike produces losses with no ceiling. Never ahead of earnings, a takeover rumour, or anything with squeeze potential.",
+      "Check the bid and ask of every leg, contract multiplier, expiry, and total debit or credit.",
     manage:
-      "Decide a hard price above the short strike at which you buy back a short call, before entry rather than during the move.",
-    exit: "Close well before expiry. Gamma near the short strike in the final week turns a manageable position into an ungovernable one.",
-    size: "The smallest size in this list. If a gap up would meaningfully damage the account, it is too large.",
+      "Review the full position as price, time, and IV change. A roll closes one trade and opens another; it does not erase a loss.",
+    exit: "Choose an exit plan before entry. For multiple legs, understand the exposure left behind if only part of the position closes.",
+    size: "Loss is not capped above. No stop order or margin deposit turns this into a defined-loss position.",
+    source: [
+      "OIC: options strategies",
+      "https://www.optionseducation.org/strategies/all-strategies",
+    ],
   },
 };
